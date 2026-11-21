@@ -27,7 +27,7 @@ const { chromium } = require('playwright'); const OUT = process.env.OUT || '/tmp
   check('in a roofed room F refuels it (to 60 s)', s.k === 'fuel' && s.fuel === 60, JSON.stringify(s));
   // (round 30) chin-gun ammo is bought in the shop like gun ammo
   s = await p.evaluate(() => { const me = W.p[0]; me.gam = 0; for (const k in W.res) W.res[k] = 99; const can = canCraft(me), blk = craftBlocked(me, CRAFT.find(c => c.gam)); doCraft(me, 'gammo'); return { can, blk, gam: me.gam }; });
-  check('in a building you can buy 60 chin-gun rounds for the gyrocopter', s.can && !s.blk && s.gam === 60, JSON.stringify(s));
+  check('in a building you can buy 150 chin-gun rounds for the gyrocopter', s.can && !s.blk && s.gam === 150, JSON.stringify(s));
   s = await p.evaluate(() => { const me = W.p[0]; me.fuel = 12; const blk = craftBlocked(me, CRAFT.find(c => c.fuel)); doCraft(me, 'gfuel'); SET.shopTab = 'veh'; openCraft(); const card = /旋翼机油箱/.test($('clist').textContent); closeCraft(); return { blk, fuel: me.fuel, card, full: craftBlocked(me, CRAFT.find(c => c.fuel)) }; });
   check('the shop refuels it too (any time it is not full; free and instant), with its own card in the 载具 tab', !s.blk && s.fuel === 60 && s.card && s.full === '油是满的', JSON.stringify(s));
   // from a roof: allowed

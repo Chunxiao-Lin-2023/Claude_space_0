@@ -341,7 +341,7 @@ function genMap(seed) {
   let cars = M.cars;
   if (!cars) { cars = []; const rc = [...roadCells].filter(i => tt[i] !== TT.water); for (let k = 0; k < 400 && cars.length < (M.nCars || 28); k++) { const i = rc[Math.floor(r() * rc.length)], x = i % MW, y = Math.floor(i / MW); if (!cars.some(([a, b]) => Math.abs(a - x) + Math.abs(b - y) < 8) && radioDist0(x, y) > 9) cars.push([x, y]); } }
   for (const [x, y] of cars) if (inMap(x, y) && !slab[ci(x, y, 0)] && G[col(x, y)] === 0 && !blk[ci(x, y, 0)]) put(x, y, 0, 25, Math.floor(r() * 4));
-  const crates = M.crates || Array.from({ length: 19 }, () => [Math.floor(r() * MW), Math.floor(r() * MH)]);
+  const crates = M.crates || Array.from({ length: Math.round(19 * MW * MH / 25600) }, () => [Math.floor(r() * MW), Math.floor(r() * MH)]);
   for (const [x, y] of crates) if (inMap(x, y) && !blk[ci(x, y, G[col(x, y)])] && tt[col(x, y)] !== TT.water && radioDist0(x, y) > 9) put(x, y, G[col(x, y)], 26);
   if (M.after) M.after(K);
   for (const [x0, y0, x1, y1] of TOWN_HOUSES) for (let x = x0 - 1; x <= x1 + 1; x++) { const y = y1 + 2; if (inMap(x, y) && !blk[ci(x, y, 0)] && G[col(x, y)] === 0 && tt[col(x, y)] !== TT.road && tt[col(x, y)] !== TT.water && hash2(x, y) < 0.7) put(x, y, 0, 27); }

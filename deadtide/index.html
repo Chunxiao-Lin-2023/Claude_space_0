@@ -72,9 +72,15 @@ input:focus{border-color:var(--amber)}
 #hTC{position:absolute;left:50%;transform:translateX(-50%);top:calc(10px + var(--sa-t));display:flex;flex-direction:column;align-items:center;gap:6px;min-width:260px}
 #phase{font-size:16px;font-weight:700;letter-spacing:.06em;text-align:center}#phase .sub{font-weight:400;font-size:13px;color:var(--sub);margin-left:6px}
 #phase.night{color:#ffd27a}#phase.blood{color:#ff6a5a}
-#tasks{display:flex;flex-direction:column;gap:3px;width:100%;font-size:11.5px;color:var(--sub);text-align:left;cursor:pointer;pointer-events:auto}
+#tasks{position:relative;display:flex;flex-direction:column;align-items:center;width:100%;font-size:11.5px;color:var(--sub);text-align:left;cursor:pointer;pointer-events:auto}
+/* (round 33) the task list folds into a small pill; opened, it drops down over the scene instead of pushing the 准备入夜 button down */
+#tasks .tklist{position:absolute;top:calc(100% + 4px);left:50%;transform:translateX(-50%);width:min(300px,82vw);display:none;flex-direction:column;gap:4px;padding:8px 10px;background:rgba(14,16,20,.88);border:1px solid rgba(255,255,255,.12);border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.4);z-index:30}
+#tasks.open .tklist{display:flex}
+#tasks .tksum{display:inline-block;padding:2px 10px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1)}
+#tasks .tksum.ping{animation:tkping 1.2s ease-out 2}@keyframes tkping{0%{background:rgba(255,215,106,.55)}100%{background:rgba(255,255,255,.06)}}
+#tasks .tkhide{display:block;text-align:center;font-size:11px;color:#9aa0a6;margin-top:2px}
 #tasks .tksum{text-align:center;color:#ffd76a;font-size:12px}#tasks .tksum span{opacity:.7}#tasks.open .tksum span{display:inline-block;transform:rotate(180deg)}
-#tasks:not(.open) .tk{display:none}
+
 #tasks .tk{display:grid;grid-template-columns:14px 1fr auto;column-gap:5px;align-items:center;line-height:1.25}
 #tasks .tk i{width:12px;height:12px;border:1px solid rgba(255,255,255,.3);border-radius:3px;font-style:normal;font-size:10px;line-height:11px;text-align:center;color:#7fd36b}
 #tasks .tk .tt{color:#e9e2d0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#tasks .tk b{color:#ffd76a;font-weight:600}
@@ -4810,7 +4816,8 @@ const FXR = mulberry(99); const frnd = (a = 0, b = 1) => a + FXR() * (b - a);
 const angDiff = (a, b) => { let d = (b - a) % (Math.PI * 2); if (d > Math.PI) d -= Math.PI * 2; if (d < -Math.PI) d += Math.PI * 2; return d; };
 
 /* ---------- world geometry ---------- */
-const MW = 160, MH = 160, ML = 10;     // grid columns, rows, layers
+const MW = 240, MH = 240, ML = 10;     // grid columns, rows, layers (round 33: 160 → 240; the old 160×160 map sits in the middle)
+const MOFF = 40, MW0 = 160;              // (round 33) where the classic 160×160 layout starts, its size
 const FH = 1.3;
 const PH = 0.62;
 const LEAN = 1.7;                   // shooters lean over parapets this close to them                    // parapet height: upper-floor walls with nothing on top are only waist high                      // height of one layer (storey / terrain step) in world units
@@ -4914,12 +4921,12 @@ for (const g of ITEMS) if (!['build', 'ladder'].includes(g.k)) for (const id of 
 const itemOf = id => ITEMS.find(g => g.ids.includes(id)) || ITEMS[0];
 // vehicles (round 22: their own category; you pick a default and T gets on it). spd = walking speed multiplier, seats 2 = a pillion seat
 const VEH = [null,
-  { k: 'bike', name: '自行车', spd: 1.6, tag: '便宜轻快：走得快 60%' },
-  { k: 'moto', name: '摩托车', spd: 1.9, seats: 2, tag: '最快：走得快 90%，后座能带一个队友' },
-  { k: 'cargo', name: '货运三轮', spd: 1.45, search: 1, tag: '搜刮用：坐在车上就能搜（够得更远、时间减半），搜到的材料 +50%' },
-  { k: 'armor', name: '装甲车', spd: 1.3, seats: 2, armor: 0.35, ram: 1, tag: '保护用：受到的伤害只剩 35%，撞开挡路的丧尸，后座能带一个队友' },
-  { k: 'gyro', name: '旋翼机', spd: 1.9, fly: 1, fuel: 60, seats: 2, gun: 'chin', tag: '会飞：越过屋顶和尸群。只能从地面或楼顶起飞（头顶不能有屋顶）；一箱油飞 60 秒，没满就能加：商店「载具」栏一键加满，或在有屋顶的房间里按 F；飞着用机头下的机枪打（机上自己的子弹，商店里买），手里的枪不能用；后座能带一个队友，队友能开枪' }, // (round 29)
-  { k: 'tank', name: '坦克', spd: 1.0, armor: 0.2, ram: 1, gun: 'cannon', outdoor: 1, tag: '自带炮塔：开火打炮弹（落点爆炸 150，半径 2.6），炮弹商店里买；受到的伤害只剩 20%，撞开丧尸；慢，太大进不了楼' }, // (round 31)
+  { k: 'bike', name: '自行车', spd: 1.7, quiet: 1, mud: 1, tag: '便宜、安静、灵活：走得快 70%；没有发动机，攻楼时骑着不会把楼里的丧尸吵醒；泥地不减速；单手骑车，开枪的射速几乎不降（别的车上射速减半还多）' },
+  { k: 'moto', name: '摩托车', spd: 1.9, seats: 2, noise: 6, tag: '最快：走得快 90%，后座能带一个队友；发动机响，攻楼时会吵醒附近楼里的丧尸' },
+  { k: 'cargo', name: '货运三轮', spd: 1.45, search: 1, noise: 5, tag: '搜刮用：坐在车上就能搜（够得更远、时间减半），搜到的材料 +50%' },
+  { k: 'armor', name: '装甲车', spd: 1.3, seats: 2, armor: 0.35, ram: 1, noise: 8, tag: '保护用：受到的伤害只剩 35%，撞开挡路的丧尸，后座能带一个队友' },
+  { k: 'gyro', name: '旋翼机', spd: 1.9, fly: 1, fuel: 60, seats: 2, gun: 'chin', noise: 9, tag: '会飞：越过屋顶和尸群。只能从地面或楼顶起飞（头顶不能有屋顶）；一箱油飞 60 秒，没满就能加：商店「载具」栏一键加满，或在有屋顶的房间里按 F；飞着用机头下的机枪打（机上自己的子弹，商店里买），手里的枪不能用；后座能带一个队友，队友能开枪' }, // (round 29)
+  { k: 'tank', name: '坦克', spd: 1.0, armor: 0.2, ram: 1, gun: 'cannon', outdoor: 1, noise: 10, tag: '自带炮塔：开火打炮弹（落点爆炸 150，半径 2.6），炮弹商店里买；受到的伤害只剩 20%，撞开丧尸；慢，太大进不了楼' }, // (round 31)
 ];
 const NVEH = VEH.length - 1;
 const PILLION = 0.38;                                   // how far behind the driver the back-seat rider sits
@@ -5016,8 +5023,7 @@ const PERM = [
 const PERK = { hp: ['生命上限 +10', 10], bag: ['背包：弹药上限 +25%', 0.25], med: ['医疗包上限 +2', 2], nade: ['手雷上限 +3（特殊手雷各 +2）', 3], life: ['复活次数 +1', 1] };
 const perkLv = k => (typeof W !== 'undefined' && W && W.perk && W.perk[k]) || 0;
 // carry limits grow with the upgrades (read through getters so every place that checks a cap sees the current one)
-// (round 32) ammo you can carry for a gun: 12 pickups' worth, +25% per backpack upgrade
-const ammoCap = wi => Math.round((WPN[wi].loot || WPN[wi].mag) * 12 * (1 + PERK.bag[1] * perkLv('bag')));
+const ammoCap = wi => Math.round((WPN[wi].gl ? 100 : 500) * (1 + PERK.bag[1] * perkLv('bag'))); // (round 33) 500 rounds a gun (grenade launcher 100), +25% per backpack upgrade
 /* ---------- daily tasks (before round 32): three are rolled every dawn (and at the start) and last until the next dawn ---------- */
 // need(d, W) -> target count for upcoming night d; min = first night it can appear; rw = reward pool keys
 const TASKS = {
@@ -5066,9 +5072,9 @@ const CRAFT = [
   { id: 'shells', cat: 'gun', name: '霰弹 ×12', desc: '', cost: { parts: 2 }, ammo: [1, 12] },
   { id: 'rounds', cat: 'gun', name: '步枪弹 ×60', desc: '', cost: { parts: 3 }, ammo: [2, 60] },
   { id: 'slugs', cat: 'gun', name: '狙击弹 ×10', desc: '', cost: { parts: 3 }, ammo: [3, 10] },
-  { id: 'tshell', cat: 'gun', name: '坦克炮弹 ×10', desc: '坦克主炮用的炮弹，车里最多放 30 发；造坦克时送 10 发', cost: { parts: 4, steel: 3 }, shl: 10 }, // (round 31)
+  { id: 'tshell', cat: 'gun', name: '坦克炮弹 ×25', desc: '坦克主炮用的炮弹，车里最多放 200 发；造坦克时送 100 发', cost: { parts: 4, steel: 3 }, shl: 25 }, // (round 31)
   { id: 'gfuel', cat: 'fuel', name: '给旋翼机加满油', desc: '', cost: {}, fuel: 1 }, // (round 30) refuel from the shop too (free, instant; F in a roofed room still works)
-  { id: 'gammo', cat: 'gun', name: '旋翼机机枪弹 ×60', desc: '旋翼机机头下的机枪用的子弹（飞的时候按开火），机上最多存 240 发；造旋翼机时送 60 发', cost: { parts: 3, steel: 2 }, gam: 60 }, // (round 30)
+  { id: 'gammo', cat: 'gun', name: '旋翼机机枪弹 ×150', desc: '旋翼机机头下的机枪用的子弹（飞的时候按开火），机上最多存 500 发；造旋翼机时送 250 发', cost: { parts: 3, steel: 2 }, gam: 150 }, // (round 30)
   { id: 'crossbow', cat: 'gun', name: '弩', desc: '几乎没声音：一箭 110 穿 3 只，钉住 1 秒，偷偷清楼用', cost: { parts: 12, wood: 12 }, wpn: 4 },
   { id: 'flamer', cat: 'gun', name: '喷火器', desc: '近距离喷火，点着的丧尸会烧，火还会传给旁边的', cost: { parts: 20, steel: 10 }, wpn: 5 },
   { id: 'launcher', cat: 'gun', name: '榴弹发射器', desc: '打出去落地就炸，炸一片', cost: { parts: 26, steel: 14 }, wpn: 6 },
@@ -5111,8 +5117,8 @@ const BAL = {
   slowR: 3.6, slowT: 8, slowMul: 0.3,                           // slow grenade: a sticky field, zombies inside crawl at 30%
   smokeR: 3.8, smokeT: 10, smokeConf: 1.2,                      // smoke: zombies in the cloud lose you, wander and don't bite (and for 1.2 s after leaving)
   blastR: 4.4, blastDmg: 70, blastKB: 24, blastStun: 1.6,       // blast: little damage, throws everything out of the way (clears a path)
-  tankDmg: 150, tankR: 2.6, tankRate: 1.6, tankRange: 20, tankCap: 30, tankStart: 10, // (round 31) tank cannon: a shell that bursts where it hits
-  gyroDmg: 12, gyroRate: 0.12, gyroSpread: 0.06, gyroRange: 22, gyroCap: 240, gyroStart: 60, // (round 30) gyrocopter chin gun: its own ammo, bought in the shop
+  tankDmg: 150, tankR: 2.6, tankRate: 1.6, tankRange: 20, tankCap: 200, tankStart: 100, // (round 31) tank cannon: a shell that bursts where it hits
+  gyroDmg: 12, gyroRate: 0.12, gyroSpread: 0.06, gyroRange: 22, gyroCap: 500, gyroStart: 250, // (round 30) gyrocopter chin gun: its own ammo, bought in the shop
   flyHover: 2.2, flyClimb: 0.8, flyDrop: 0.6, fuelLow: 10, refuelT: 4, // (round 29) gyrocopter: cruise 2.2 floors over whatever is below, climb / descend rate (of the take-off curve per second), warn at 10 s of fuel, 4 s to refuel indoors
   nadeRange: 12, nadeDmg: 286, nadeR: 3.4, nadeFuse: 1.6, nadeLand: 0.35, nadeMin: 0.5, // (round 18: radius 2.8 -> 3.4, damage at the edge 35% -> 50%, goes off 0.35 s after landing where you aimed)
   headshot: 1.6,
@@ -5498,7 +5504,7 @@ function genMap(seed) {
   let cars = M.cars;
   if (!cars) { cars = []; const rc = [...roadCells].filter(i => tt[i] !== TT.water); for (let k = 0; k < 400 && cars.length < (M.nCars || 28); k++) { const i = rc[Math.floor(r() * rc.length)], x = i % MW, y = Math.floor(i / MW); if (!cars.some(([a, b]) => Math.abs(a - x) + Math.abs(b - y) < 8) && radioDist0(x, y) > 9) cars.push([x, y]); } }
   for (const [x, y] of cars) if (inMap(x, y) && !slab[ci(x, y, 0)] && G[col(x, y)] === 0 && !blk[ci(x, y, 0)]) put(x, y, 0, 25, Math.floor(r() * 4));
-  const crates = M.crates || Array.from({ length: 19 }, () => [Math.floor(r() * MW), Math.floor(r() * MH)]);
+  const crates = M.crates || Array.from({ length: Math.round(19 * MW * MH / 25600) }, () => [Math.floor(r() * MW), Math.floor(r() * MH)]);
   for (const [x, y] of crates) if (inMap(x, y) && !blk[ci(x, y, G[col(x, y)])] && tt[col(x, y)] !== TT.water && radioDist0(x, y) > 9) put(x, y, G[col(x, y)], 26);
   if (M.after) M.after(K);
   for (const [x0, y0, x1, y1] of TOWN_HOUSES) for (let x = x0 - 1; x <= x1 + 1; x++) { const y = y1 + 2; if (inMap(x, y) && !blk[ci(x, y, 0)] && G[col(x, y)] === 0 && tt[col(x, y)] !== TT.road && tt[col(x, y)] !== TT.water && hash2(x, y) < 0.7) put(x, y, 0, 27); }
@@ -5640,7 +5646,7 @@ MAPS.town = {
   at(46, 13, 40); at(47, 15, 40); at(59, 12, 39); at(60, 6, 35);                                                                                    // farmyard
 
   },
-  after({ blk, G, tt, col, put }) {
+  after({ blk, G, tt, col, put, ci }) {
   // fences: around the farm fields and along the town lots
   for (let x = 31; x <= 43; x++) for (const y of [1, 15]) if (!blk[ci(x, y, 0)] && G[col(x, y)] === 0 && tt[col(x, y)] !== TT.road && tt[col(x, y)] !== TT.water) put(x, y, 0, 27);
   for (let y = 2; y <= 14; y++) if (!blk[ci(31, y, 0)] && G[col(31, y)] === 0 && tt[col(31, y)] !== TT.water) put(31, y, 0, 27);
@@ -5692,8 +5698,8 @@ MAPS.desert = {
 const ISLES = [[80, 82, 46], [30, 28, 20], [132, 28, 21], [28, 134, 19], [134, 132, 22]];
 MAPS.islands = {
   name: '海岛', desc: '一座大岛和四座小岛，桥连在一起：雨林、海滩，过桥是咽喉要道', camp: [80, 82],
-  lots: [[84, 100, 98, 109, 1, 'shop'], [84, 50, 99, 60, 2, 'clinic'], [104, 76, 118, 87, 2, 'villa'], [20, 18, 36, 29, 2, 'villa'], [122, 18, 140, 30, 2, 'police'], [16, 126, 36, 137, 1, 'garage'], [122, 122, 144, 134, 3, 'apt'], [46, 70, 58, 80, 1, 'shop']],
-  ocean: (x, y, noise) => !TOWN_HOUSES.some(([x0, y0, x1, y1]) => x >= x0 - 3 && x <= x1 + 3 && y >= y0 - 3 && y <= y1 + 3) && !ISLES.some(([cx, cy, r]) => Math.hypot(x - cx, y - cy) < r * (0.86 + noise(x, y, 9) * 0.28)),
+  lots: [[84, 102, 98, 111, 1, 'shop'], [84, 50, 99, 60, 2, 'clinic'], [104, 76, 118, 87, 2, 'villa'], [20, 18, 36, 29, 2, 'villa'], [122, 18, 140, 30, 2, 'police'], [16, 126, 36, 137, 1, 'garage'], [122, 122, 144, 134, 3, 'apt'], [46, 70, 58, 80, 1, 'shop']],
+  ocean: (x, y, noise) => !TOWN_HOUSES.some(([x0, y0, x1, y1]) => x >= x0 - 3 && x <= x1 + 3 && y >= y0 - 3 && y <= y1 + 3) && !(MAPDEF.isles || ISLES).some(([cx, cy, r]) => Math.hypot(x - cx, y - cy) < r * (0.86 + noise(x, y, 9) * 0.28)), // (round 33) called in full-map coordinates; MAPDEF.isles = shifted + outskirts islands
   hills: [[70, 110, 5, false], [26, 22, 4, false], [138, 138, 5, true]],
   roads({ road }) {
     const line = (x0, y0, x1, y1) => { const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)); for (let k = 0; k <= n; k++) { const x = Math.round(x0 + (x1 - x0) * k / n), y = Math.round(y0 + (y1 - y0) * k / n); road(x, y); road(x + 1, y); road(x, y + 1); } };
@@ -5742,13 +5748,145 @@ MAPS.city = {
 const MAP_IDS = ['town', 'forest', 'desert', 'islands', 'snow', 'city'];
 let MAPDEF = MAPS.town, MAP_ID = 'town';
 // switch the live map: building lots, camp position, and everything derived from them (house ids, roof cells, cut boxes)
+// (round 33) the maps grew from 160×160 to 240×240: every preset is drawn in its own (classic) coordinates and shifted by MOFF into the middle;
+// the ring around it gets roads out to the edge and themed outskirts scenes (OUTSKIRTS in 13_outskirts.js)
+const WIDE = {};
+// (round 33) where a preset's roads leave the old square: columns crossing the top/bottom edge and rows crossing the left/right one,
+// so the outskirts scenes keep clear of the roads that carry on out to the new edge
+function edgeRoads(M) {
+  const E = { t: new Set(), b: new Set(), l: new Set(), r: new Set() }, N = MW0 - 1;
+  M.roads({ road: (x, y) => { if (x < 0 || y < 0 || x > N || y > N) return; if (y === 0) E.t.add(x + MOFF); if (y === N) E.b.add(x + MOFF); if (x === 0) E.l.add(y + MOFF); if (x === N) E.r.add(y + MOFF); }, col: () => -1, roadCells: new Set() });
+  return E;
+}
+function widen(id) {
+  if (WIDE[id]) return WIDE[id];
+  const M = MAPS[id], O = MOFF, sh = a => [a[0] + O, a[1] + O].concat(a.slice(2)), shLot = l => [l[0] + O, l[1] + O, l[2] + O, l[3] + O].concat(l.slice(4));
+  const kOff = K => Object.assign({}, K, {
+    road: (x, y) => x >= 0 && y >= 0 && x < MW0 && y < MW0 && K.road(x + O, y + O), col: (x, y) => { x += O; y += O; return x >= 0 && y >= 0 && x < MW && y < MH ? K.col(x, y) : -1; },
+    lot: (a, b, c, d, t) => K.lot && K.lot(a + O, b + O, c + O, d + O, t), at: (x, y, id, d) => K.at && K.at(x + O, y + O, id, d),
+    put: (x, y, L, id, d) => inMap(x + O, y + O) && K.put(x + O, y + O, L, id, d), putS: K.putS && ((x, y, L, s) => inMap(x + O, y + O) && K.putS(x + O, y + O, L, s)),
+    free: (x, y) => K.free && K.free(x + O, y + O), ci: (x, y, L) => inMap(x + O, y + O) ? ci(x + O, y + O, L) : 0 });
+  const X = typeof outskirtsFor === 'function' ? outskirtsFor(id, edgeRoads(M)) : { lots: [], isles: [], hills: [], cars: [], crates: [], roads() { }, props() { } };
+  const D = Object.assign({}, M, {
+    camp: sh(M.camp), lots: M.lots.map(shLot).concat(X.lots), hills: (M.hills || []).map(sh).concat(X.hills), ponds: (M.ponds || []).map(sh), bridges: (M.bridges || []).map(b => [b[0] + O, b[1] + O, b[2] + O]),
+    isles: ISLES.map(sh).concat(X.isles), cars: M.cars ? M.cars.map(sh).concat(X.cars) : M.cars, crates: M.crates ? M.crates.map(sh).concat(X.crates) : M.crates,
+    river: M.river ? { c: y => M.river.c(y - O) + O, w: M.river.w } : null,
+    roads(K) {
+      M.roads(kOff(K));
+      // roads that ran into the old map edge carry on out to the new one
+      const T = K.tt, cells = [...K.roadCells];
+      const inScene = (x, y) => X.placed && X.placed.some(q => x >= q.x0 - 1 && x <= q.x1 + 1 && y >= q.y0 - 1 && y <= q.y1 + 1); // an edge road that runs into a scene stops there
+      for (const i of cells) { const x = i % MW, y = Math.floor(i / MW);
+        if (x === O) for (let k = O - 1; k >= 0 && !inScene(k, y); k--) K.road(k, y); if (x === O + MW0 - 1) for (let k = O + MW0; k < MW && !inScene(k, y); k++) K.road(k, y);
+        if (y === O) for (let k = O - 1; k >= 0 && !inScene(x, k); k--) K.road(x, k); if (y === O + MW0 - 1) for (let k = O + MW0; k < MH && !inScene(x, k); k++) K.road(x, k); }
+      X.roads(K);
+    },
+    fields: M.fields && (K => M.fields(kOff(K))), noVeg: M.noVeg && ((x, y) => M.noVeg(x - O, y - O)),
+    landmarks: K => { if (M.landmarks) M.landmarks(kOff(K)); X.props(K); }, after: M.after && (K => M.after(kOff(K))),
+    nCars: M.cars ? M.nCars : Math.round((M.nCars || 28) * 1.8), outskirts: X,
+  });
+  if (typeof outskirtsFor === 'function') WIDE[id] = D; return D; // (cache only once the outskirts module has loaded)
+}
 function setMap(id) {
-  if (!MAPS[id]) id = 'town'; MAP_ID = id; MAPDEF = MAPS[id];
+  if (!MAPS[id]) id = 'town'; MAP_ID = id; MAPDEF = widen(id);
   TOWN_HOUSES.length = 0; for (const h of MAPDEF.lots) TOWN_HOUSES.push(h.slice());
   RADIO_XY[0] = MAPDEF.camp[0]; RADIO_XY[1] = MAPDEF.camp[1];
   if (typeof archMapInit === 'function') archMapInit();
   if (typeof cutHousesInit === 'function') cutHousesInit();
 }
+
+/* ---- 13_outskirts.js ---- */
+/* ================= (round 33) outskirts: themed scenes in the ring around the classic 160×160 map ================= */
+// Each map grew to 240×240 with the old layout in the middle (MOFF). The 40-tile ring around it gets about a dozen scenes picked from
+// ten scene types that fit the map's theme, each a small cluster of buildings (normal lots, so they get interiors, loot, sleepers)
+// and props, joined to the old roads by a short road (a bridge over water). Placement is fixed per map (seeded by the map id).
+const SC = {};
+// helpers each scene builder gets, in its own local coordinates: at(x, y, id, d), lot(x0, y0, x1, y1, tt), ring(x0, y0, x1, y1, id, gapEvery), scatter(id, n, x0, y0, x1, y1), r()
+SC.farm = { w: 30, h: 26, lots: [[2, 2, 15, 11, 1, 'barn'], [18, 2, 29, 11, 2, 'villa']], props(P) { P.lot(2, 14, 27, 24, TT.dirt); for (let y = 15; y <= 23; y += 2) for (let x = 3; x <= 26; x++) P.lot(x, y, x, y, TT.grass); P.ring(1, 13, 28, 25, 27, 7); P.scatter(26, 4, 3, 14, 26, 24); P.at(16, 13, 25, 0); P.scatter(22, 3, 0, 0, 29, 1); } };
+SC.gas = { w: 26, h: 20, lots: [[2, 2, 15, 11, 1, 'shop']], props(P) { P.lot(0, 12, 25, 19, TT.road); P.lot(17, 2, 25, 11, TT.road); for (const [x, y] of [[19, 5], [22, 5], [19, 8], [22, 8]]) P.at(x, y, 37); P.at(16, 3, 38); P.at(24, 14, 25, 1); P.at(5, 16, 25, 0); P.at(13, 15, 32); } };
+SC.motel = { w: 30, h: 18, lots: [[2, 2, 27, 9, 2, 'apt']], props(P) { P.lot(0, 11, 29, 17, TT.road); for (let x = 3; x <= 27; x += 5) if (P.r() < 0.7) P.at(x, 14, 25, P.r() < 0.5 ? 1 : 3); P.at(1, 10, 38); P.at(28, 10, 32); } };
+SC.yard = { w: 30, h: 24, lots: [[2, 2, 19, 15, 2, 'ware']], props(P) { P.lot(0, 17, 29, 23, TT.dirt); P.lot(21, 0, 29, 23, TT.dirt); for (let k = 0; k < 7; k++) { const x = 22 + Math.floor(P.r() * 6), y = 2 + Math.floor(P.r() * 19); P.at(x, y, P.r() < 0.5 ? 26 : 36); } P.scatter(39, 4, 2, 18, 28, 22); P.at(10, 20, 25, 0); P.ring(0, 0, 29, 23, 27, 6); } };
+SC.police = { w: 26, h: 22, lots: [[2, 2, 19, 13, 2, 'police']], props(P) { P.lot(0, 15, 25, 21, TT.road); for (const x of [4, 8, 16]) P.at(x, 18, 25, 0); for (let x = 1; x <= 24; x += 3) P.at(x, 15, 12); P.scatter(36, 3, 20, 2, 25, 13); P.at(22, 18, 37); } };
+SC.clinic = { w: 26, h: 22, lots: [[2, 2, 17, 13, 2, 'clinic']], props(P) { P.lot(0, 15, 25, 21, TT.road); P.at(6, 18, 25, 0); P.at(13, 18, 25, 2); for (let k = 0; k < 4; k++) P.at(19 + (k % 2) * 3, 4 + Math.floor(k / 2) * 4, 26); P.at(20, 16, 31); P.at(23, 16, 31); } };
+SC.camp = { w: 22, h: 18, lots: [], props(P) { P.lot(6, 5, 15, 12, TT.dirt); P.at(10, 8, 37); for (const [x, y] of [[7, 6], [14, 6], [7, 11], [14, 11]]) P.at(x, y, 26); P.scatter(40, 3, 3, 3, 18, 14); P.scatter(33, 2, 6, 5, 15, 12); P.scatter(32, 1, 6, 5, 15, 12); P.scatter(22, 8, 0, 0, 21, 17); } };
+SC.junk = { w: 26, h: 22, lots: [[2, 2, 15, 11, 1, 'garage']], props(P) { P.lot(0, 13, 25, 21, TT.dirt); P.lot(17, 0, 25, 21, TT.dirt); P.scatter(39, 9, 1, 13, 24, 20); for (let k = 0; k < 5; k++) P.at(18 + Math.floor(P.r() * 7), 2 + Math.floor(P.r() * 18), 25, Math.floor(P.r() * 4)); P.ring(0, 0, 25, 21, 27, 5); } };
+SC.mill = { w: 30, h: 24, lots: [[2, 2, 17, 13, 1, 'ware']], props(P) { P.lot(0, 15, 29, 23, TT.dirt); for (let k = 0; k < 8; k++) P.at(3 + Math.floor(P.r() * 25), 16 + Math.floor(P.r() * 7), 40); P.at(20, 4, 35); P.at(24, 9, 25, 1); P.scatter(22, 6, 19, 0, 29, 14); } };
+SC.checkpoint = { w: 24, h: 16, lots: [], props(P) { P.lot(0, 6, 23, 9, TT.road); for (let x = 0; x <= 23; x++) if (x < 9 || x > 14) { P.at(x, 4, 27); P.at(x, 11, 27); } for (const x of [9, 14]) { P.at(x, 5, 12); P.at(x, 10, 12); } P.at(11, 2, 36); P.at(12, 13, 36); P.at(4, 7, 25, 0); P.at(19, 8, 25, 2); P.at(2, 2, 37); P.at(21, 13, 37); } };
+SC.ruins = { w: 26, h: 22, lots: [], props(P) { P.lot(1, 1, 24, 20, TT.dirt); for (let k = 0; k < 4; k++) { const x0 = 2 + Math.floor(P.r() * 14), y0 = 2 + Math.floor(P.r() * 10), w = 5 + Math.floor(P.r() * 5), h = 4 + Math.floor(P.r() * 5); for (let x = x0; x <= x0 + w; x++) for (const y of [y0, y0 + h]) if (P.r() < 0.6) P.at(x, y, 24); for (let y = y0; y <= y0 + h; y++) for (const x of [x0, x0 + w]) if (P.r() < 0.6) P.at(x, y, 24); } P.scatter(29, 8, 1, 1, 24, 20); P.scatter(41, 6, 0, 0, 25, 21); } };
+SC.houses = { w: 30, h: 24, lots: [[2, 2, 13, 11, 2, 'villa'], [16, 2, 27, 11, 2, 'villa'], [2, 13, 14, 22, 1, 'garage']], props(P) { P.lot(16, 14, 29, 23, TT.grass); P.scatter(41, 6, 16, 14, 29, 23); P.scatter(22, 3, 17, 15, 28, 22); P.at(20, 18, 25, 1); P.ring(15, 13, 29, 23, 27, 4); } };
+SC.tower = { w: 24, h: 22, lots: [[2, 2, 21, 17, 5, 'apt']], props(P) { P.lot(0, 19, 23, 21, TT.road); P.at(4, 20, 25, 0); P.at(16, 20, 25, 0); P.at(22, 19, 32); P.at(1, 19, 38); } };
+SC.park = { w: 26, h: 22, lots: [], props(P) { P.lot(2, 10, 23, 11, TT.dirt); P.lot(12, 2, 13, 19, TT.dirt); P.scatter(22, 9, 1, 1, 24, 20); P.scatter(41, 10, 1, 1, 24, 20); for (const [x, y] of [[8, 9], [17, 12], [11, 6], [14, 15]]) P.at(x, y, 31); P.at(14, 9, 32); P.ring(0, 0, 25, 21, 41, 3); } };
+SC.quarry = { w: 24, h: 20, lots: [[13, 9, 23, 19, 1, 'garage']], props(P) { P.lot(0, 0, 12, 19, TT.dirt); for (let k = 0; k < 14; k++) P.at(Math.floor(P.r() * 12), Math.floor(P.r() * 19), 21); P.scatter(39, 3, 0, 0, 12, 19); P.at(16, 4, 25, 1); P.scatter(40, 2, 14, 0, 23, 7); } };
+SC.base = { w: 30, h: 26, lots: [[2, 2, 17, 13, 2, 'police'], [19, 2, 29, 12, 1, 'garage']], props(P) { P.lot(0, 15, 29, 25, TT.road); P.ring(0, 0, 29, 25, 27, 9); for (const x of [6, 13, 22]) P.at(x, 19, 25, 0); P.scatter(36, 5, 1, 16, 28, 24); for (let x = 2; x <= 27; x += 4) P.at(x, 15, 12); } };
+SC.shopblock = { w: 30, h: 18, lots: [[2, 2, 15, 11, 1, 'shop'], [16, 2, 28, 11, 1, 'shop']], props(P) { P.lot(0, 13, 29, 17, TT.road); for (const x of [4, 12, 20, 26]) if (P.r() < 0.7) P.at(x, 15, 25, 0); P.at(15, 12, 38); P.at(29, 12, 32); } };
+SC.cabin = { w: 20, h: 18, lots: [[3, 3, 15, 12, 1, 'villa']], props(P) { P.lot(5, 13, 13, 16, TT.dirt); P.at(9, 15, 37); P.scatter(40, 3, 0, 13, 19, 17); P.scatter(22, 7, 0, 0, 19, 17); P.at(17, 6, 26); } };
+SC.harbor = { w: 30, h: 20, lots: [[2, 2, 17, 12, 1, 'ware']], props(P) { P.lot(0, 14, 29, 19, TT.road); for (let k = 0; k < 8; k++) P.at(19 + Math.floor(P.r() * 10), 1 + Math.floor(P.r() * 12), [26, 36, 37][k % 3]); P.at(6, 16, 25, 0); P.at(14, 16, 25, 2); } };
+SC.resort = { w: 30, h: 22, lots: [[2, 2, 14, 12, 2, 'villa'], [16, 2, 28, 12, 2, 'villa']], props(P) { P.lot(0, 14, 29, 21, TT.sand); for (const x of [4, 9, 20, 25]) P.at(x, 17, 31); P.scatter(22, 5, 0, 14, 29, 21); P.at(15, 18, 38); } };
+SC.lighthouse = { w: 20, h: 20, lots: [[4, 4, 15, 15, 4, 'apt']], props(P) { P.lot(0, 0, 19, 19, TT.sand); P.at(2, 17, 37); P.at(17, 2, 26); P.at(17, 17, 26); P.scatter(21, 4, 0, 0, 19, 19); } };
+const SCENES = {
+  town: ['farm', 'gas', 'motel', 'yard', 'police', 'clinic', 'houses', 'junk', 'park', 'camp'],
+  forest: ['mill', 'camp', 'cabin', 'police', 'ruins', 'quarry', 'farm', 'checkpoint', 'houses', 'yard'],
+  desert: ['gas', 'motel', 'junk', 'quarry', 'ruins', 'checkpoint', 'base', 'camp', 'yard', 'police'],
+  islands: ['resort', 'harbor', 'lighthouse', 'houses', 'camp', 'gas', 'clinic', 'ruins', 'park', 'yard'],
+  snow: ['base', 'checkpoint', 'mill', 'cabin', 'ruins', 'yard', 'clinic', 'gas', 'camp', 'quarry'],
+  city: ['tower', 'houses', 'yard', 'police', 'clinic', 'shopblock', 'motel', 'junk', 'park', 'ruins'],
+};
+const SCENE_NAME = { farm: '农场', gas: '加油站', motel: '汽车旅馆', yard: '货场', police: '警哨', clinic: '诊所', camp: '营地', junk: '废车场', mill: '伐木场', checkpoint: '检查站', ruins: '废墟', houses: '住宅区', tower: '高楼', park: '公园', quarry: '采石场', base: '军营', shopblock: '商业街', cabin: '小屋', harbor: '码头', resort: '度假屋', lighthouse: '灯塔' };
+// slots in the ring: four along the top and bottom, three down each side (the scene sits somewhere inside its slot)
+function outskirtsSlots() {
+  const O = MOFF, E = MOFF + MW0, S = [];
+  for (const x of [4, 64, 124, 184]) { S.push({ x0: x, y0: 3, x1: x + 52, y1: O - 3, side: 3 }); S.push({ x0: x, y0: E + 3, x1: x + 52, y1: MH - 3, side: 1 }); }
+  for (const y of [O + 4, O + 58, O + 112]) { S.push({ x0: 3, y0: y, x1: O - 3, y1: y + 46, side: 2 }); S.push({ x0: E + 3, y0: y, x1: MW - 3, y1: y + 46, side: 0 }); }
+  return S;
+}
+function outskirtsFor(id, ER) {
+  const M = MAPS[id], list = SCENES[id] || SCENES.town; let h = 7; for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  const r = mulberry(h ^ 0x5eed), slots = outskirtsSlots(), river = M.river ? (y => M.river.c(y - MOFF) + MOFF) : null;
+  for (let k = slots.length - 1; k > 0; k--) { const j = Math.floor(r() * (k + 1)); [slots[k], slots[j]] = [slots[j], slots[k]]; }
+  const order = list.slice(); for (let k = order.length - 1; k > 0; k--) { const j = Math.floor(r() * (k + 1)); [order[k], order[j]] = [order[j], order[k]]; }
+  const out = { lots: [], isles: [], hills: [], cars: [], crates: [], placed: [] };
+  let n = 0;
+  for (const sl of slots) {
+    if (out.placed.length >= 12) break; const key = order[n % order.length], T = SC[key]; n++;
+    const fw = sl.x1 - sl.x0 - T.w, fh = sl.y1 - sl.y0 - T.h; if (fw < 0 || fh < 0) continue;
+    let x0 = sl.x0 + Math.floor(r() * (fw + 1)), y0 = sl.y0 + Math.floor(r() * (fh + 1));
+    if (ER) { // keep off the roads running out to the map edge (try a few spots in the slot)
+      const band = [ER.r, ER.b, ER.l, ER.t][sl.side], clash = (x, y) => [...band].some(c => sl.side % 2 ? c >= x - 3 && c <= x + T.w + 2 : c >= y - 3 && c <= y + T.h + 2);
+      let t = 0; while (clash(x0, y0) && t++ < 40) { x0 = sl.x0 + Math.floor(r() * (fw + 1)); y0 = sl.y0 + Math.floor(r() * (fh + 1)); }
+      /* (still clashing: place it anyway; the edge road stops at the scene, see widen) */
+    }
+    if (river) { let hit = false; for (let y = y0 - 2; y <= y0 + T.h + 2; y++) { const c = river(y); if (c > x0 - 6 && c < x0 + T.w + 3) hit = true; } if (hit) { const alt = x0 + (river(y0) < x0 + T.w / 2 ? 8 : -8); if (alt >= sl.x0 && alt + T.w <= sl.x1) x0 = alt; else continue; } }
+    const pl = { key, x0, y0, x1: x0 + T.w - 1, y1: y0 + T.h - 1, side: sl.side, seed: Math.floor(r() * 1e9) };
+    out.placed.push(pl);
+    for (const l of T.lots) out.lots.push([l[0] + x0, l[1] + y0, l[2] + x0, l[3] + y0, l[4], l[5]]);
+    out.isles.push([x0 + T.w / 2, y0 + T.h / 2, Math.max(T.w, T.h) * 0.72]);
+  }
+  // a few low hills out in the open, away from the scenes
+  for (let k = 0; k < 5; k++) { const x = Math.floor(r() * MW), y = Math.floor(r() * MH); if (x > MOFF - 4 && x < MOFF + MW0 + 4 && y > MOFF - 4 && y < MOFF + MW0 + 4) continue; if (out.placed.some(p => x > p.x0 - 10 && x < p.x1 + 10 && y > p.y0 - 10 && y < p.y1 + 10)) continue; out.hills.push([x, y, 4 + r() * 4, r() < 0.5]); }
+  for (let k = 0; k < 14; k++) { const x = Math.floor(r() * MW), y = Math.floor(r() * MH); if (x < MOFF || x >= MOFF + MW0 || y < MOFF || y >= MOFF + MW0) out.crates.push([x, y]); }
+  // a road from each scene in to the nearest road (a bridge where it crosses water)
+  out.roads = K => {
+    for (const p of out.placed) {
+      const cx = Math.floor((p.x0 + p.x1) / 2), cy = Math.floor((p.y0 + p.y1) / 2), [dx, dy] = [[-1, 0], [0, -1], [1, 0], [0, 1]][p.side];
+      let x = p.side === 0 ? p.x0 - 1 : p.side === 2 ? p.x1 + 1 : cx, y = p.side === 1 ? p.y0 - 1 : p.side === 3 ? p.y1 + 1 : cy;
+      for (let k = 0; k < 90 && inMap(x, y); k++) { if (k > 1 && TOWN_HOUSES.some(([a, b, c, d]) => x + Math.abs(dy) >= a - 1 && x <= c + 1 && y + Math.abs(dx) >= b - 1 && y <= d + 1)) break; /* never through a building */ const hit = K.roadCells.has(K.col(x, y)) || K.roadCells.has(K.col(x + Math.abs(dy), y + Math.abs(dx))); K.road(x, y); K.road(x + Math.abs(dy), y + Math.abs(dx)); if (hit && k > 1) break; x += dx; y += dy; }
+    }
+  };
+  out.props = K => {
+    for (const p of out.placed) {
+      const T = SC[p.key], rr = mulberry(p.seed), X = p.x0, Y = p.y0;
+      const nearRoad = (x, y) => { for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (inMap(x + dx, y + dy) && K.tt[K.col(x + dx, y + dy)] === TT.road) return true; return false; };
+      const KA = (x, y, id, d) => { if (id === 22 && nearRoad(x, y)) return; K.at(x, y, id, d); }; // no trees right by a road
+      const P = { r: rr, at: (x, y, id, d) => KA(x + X, y + Y, id, d), lot: (a, b, c, d, t) => K.lot(a + X, b + Y, c + X, d + Y, t),
+        ring: (a, b, c, d, id, gap) => { for (let x = a; x <= c; x++) for (const y of [b, d]) if (!gap || (x - a) % gap) KA(x + X, y + Y, id); for (let y = b + 1; y < d; y++) for (const x of [a, c]) if (!gap || (y - b) % gap) KA(x + X, y + Y, id); },
+        scatter: (id, n, a, b, c, d) => { for (let k = 0; k < n; k++) KA(a + X + Math.floor(rr() * (c - a + 1)), b + Y + Math.floor(rr() * (d - b + 1)), id); } };
+      T.props(P);
+    }
+  };
+  return out;
+}
+// the outskirts scene a cell is in (for labels), or null
+function sceneAt(x, y) { const X = MAPDEF && MAPDEF.outskirts; if (!X) return null; for (const p of X.placed) if (x >= p.x0 && x <= p.x1 && y >= p.y0 && y <= p.y1) return p; return null; }
 
 /* ---- 20_nav.js ---- */
 /* ================= navigation: grid movement with stairs & ledges, flow fields, 3D rays ================= */
@@ -5852,12 +5990,14 @@ function navNbrs(x, y, L, climb, cb) {
     }
   }
 }
-function buildField(out, sources, climb) {
+// (round 33) maxD: stop spreading past this path cost (the maps are 2.25× bigger now; zombies farther out than that walk straight at you)
+function buildField(out, sources, climb, maxD = Infinity) {
   out.fill(Infinity);
   const H = HEAP; H.n = 0;
   for (const s of sources) { out[s] = 0; H.push(0, s); }
   while (H.n) {
     const k = H.k[0], v = H.pop();
+    if (k > maxD) break;
     if (k > out[v]) continue;
     const x = cx_(v), y = cy_(v), L = cl_(v), ec = enterCost(v) + 0;
     navNbrs(x, y, L, climb, (nx, ny, nL, extra) => {
@@ -5871,15 +6011,16 @@ function radioSources() {
   for (const [dx, dy] of DIRS) { const i = ci(x + dx, y + dy, L); if (navNode(x + dx, y + dy, L)) out.push(i); }
   return out;
 }
+const NAV_PR = 95, NAV_RR = 140; // (round 33) how far (path cost) the hunt-the-players / go-for-the-base fields spread
 function updateFields(dt, force) {
   const F = W.ff;
   F.rT -= dt; F.pT -= dt;
-  if ((W.navDirty && F.rT <= 0) || force) { buildField(F.rw, radioSources(), false); if (W.zs.some(z => z.k === 'climber')) buildField(F.rc, radioSources(), true); else F.rc.set(F.rw); W.navDirty = false; F.rT = 0.4; }
+  if ((W.navDirty && F.rT <= 0) || force) { buildField(F.rw, radioSources(), false, NAV_RR); if (W.zs.some(z => z.k === 'climber')) buildField(F.rc, radioSources(), true, NAV_RR); else F.rc.set(F.rw); W.navDirty = false; F.rT = 0.4; }
   if (F.pT <= 0 || force) {
     F.pT = 0.35;
     const src = W.p.filter(p => !p.gone && !p.dead).map(p => ci(Math.floor(p.x), Math.floor(p.y), airborne(p) ? skyTop(p.x, p.y) : p.L)); // (round 29) a flying player: they crowd the spot under it
-    buildField(F.pw, src, false);
-    if (W.zs.some(z => z.k === 'climber')) buildField(F.pc, src, true); else F.pc.set(F.pw);
+    buildField(F.pw, src, false, NAV_PR);
+    if (W.zs.some(z => z.k === 'climber')) buildField(F.pc, src, true, NAV_PR); else F.pc.set(F.pw);
   }
 }
 
@@ -5999,7 +6140,7 @@ const rand = (a = 0, b = 1) => a + W.rng() * (b - a);
 const activeP = () => W.p.filter(p => !p.gone);
 const standingP = p => !p.gone && !p.dead && !p.down;
 // shooting from a vehicle (round 20): the driver fires at 40% the rate, a pillion rider at 70% (same accuracy as on foot)
-const rideK = p => p.ride ? { rate: 2.5, spread: 1 } : p.pass != null && p.pass >= 0 ? { rate: 1.43, spread: 1 } : { rate: 1, spread: 1 }; // only the rate drops; aim stays as true as on foot
+const rideK = p => p.ride ? { rate: VEH[p.veh] && VEH[p.veh].quiet ? 1.2 : 2.5, spread: 1 } : p.pass != null && p.pass >= 0 ? { rate: 1.43, spread: 1 } : { rate: 1, spread: 1 }; // only the rate drops; aim stays as true as on foot
 function emit(e) { if (!W) return; e.q = ++W.seq; /* NB: `q`, not `s` — cell events carry the slab id in `s` */ fxEvent(e); if (NETROLE === 'host') netSendCtl({ t: 'ev', e }); }
 function say(text, col) { emit({ k: 'say', text, col: col || '' }); }
 const pZ = p => surfZ(p.x, p.y, p.L);
@@ -6126,7 +6267,7 @@ function stepMove(p, dt) {
   }
   if (p.dash) { const D = p.dash, f = Math.min(dt, D.T - D.t) / D.T; moveEnt(p, D.dx * f, D.dy * f, 'p', true); D.t += dt; if (D.t >= D.T) p.dash = null; p.z = pZ(p); p.anim += dt * 8; return; }
   if (p.L > 0 && p.L > skyTop(p.x, p.y)) { p.L = skyTop(p.x, p.y); p.z = pZ(p); } // (round 31) knocked down mid-air, or a save made in flight: fall to what is below
-  const spd = BAL.pSpeed * (p.down ? 0.22 : 1) * (p.medT > 0 ? 0.45 : 1) * (p.build ? 0.9 : 1) * (inMud(p.x, p.y, p.L) ? MUD_SLOW : 1) * (p.ride && VEH[p.veh] ? VEH[p.veh].spd : 1);
+  const spd = BAL.pSpeed * (p.down ? 0.22 : 1) * (p.medT > 0 ? 0.45 : 1) * (p.build ? 0.9 : 1) * (inMud(p.x, p.y, p.L) && !(p.ride && VEH[p.veh] && VEH[p.veh].mud) ? MUD_SLOW : 1) * (p.ride && VEH[p.veh] ? VEH[p.veh].spd : 1);
   const tx = I.mx * k * spd, ty = I.my * k * spd, a = Math.min(1, dt * 14);
   p.vx = lerp(p.vx, tx, a); p.vy = lerp(p.vy, ty, a);
   p.kbx *= Math.max(0, 1 - dt * 6); p.kby *= Math.max(0, 1 - dt * 6);
@@ -6221,6 +6362,7 @@ function stepActions(p, dt) {
   } else { p._lowF = p.fuel < BAL.fuelLow ? p._lowF : 0; if (p.land) p.land = false; }
   // each gun has its own fire cooldown, and a reload keeps going in the holster (round 18: was one shared timer, swapping cancelled the reload)
   if (!p.cdW) p.cdW = WPN.map(() => 0); if (!p.rlBg) p.rlBg = WPN.map(() => 0);
+  if (p.ride && VEH[p.veh] && VEH[p.veh].noise && Math.hypot(p.vx, p.vy) > 0.5 && (p.engT = (p.engT || 0) - dt) <= 0) { p.engT = 0.5; noiseAt(p.x, p.y, VEH[p.veh].noise, p.z); } // (round 33) engines are loud in 攻楼 (the bike isn't)
   if (p.ride && VEH[p.veh] && VEH[p.veh].ram && Math.hypot(p.vx, p.vy) > BAL.ramSpd) for (const z of W.zs) { // (round 22) the armoured car shoves zombies aside
     if (z.hp <= 0 || z.L !== p.L || z.hidden || (z.ramT || 0) > W.t) continue;
     const dx = z.x - p.x, dy = z.y - p.y, d = Math.hypot(dx, dy) || 0.01;
@@ -6549,8 +6691,9 @@ function doAct(p, a, v) {
     case 'wpn': if (!p.down && v >= 0 && v < NW && p.owned[v] && p.wpn !== v) {
       if (!p.rlBg) p.rlBg = WPN.map(() => 0); const o = p.wpn, ow = WPN[o];
       if (p.reloadT > 0 && p.reloadW === o) p.rlBg[o] = p.reloadT;                                    // the reload you started carries on in the holster
-      else if (p.mag[o] === 0 && (ow.inf || p.ammo[o] > 0)) p.rlBg[o] = ow.reload;                  // an empty gun reloads itself while you use the other
+      else if (p.mag[o] < ow.mag && (ow.inf || p.ammo[o] > 0)) p.rlBg[o] = ow.reload;               // (round 33) any gun that isn't full reloads itself in the holster while you use the other
       p.wpn = v; p.reloadT = 0; if (p.rlBg[v] > 0) { p.reloadT = p.rlBg[v]; p.reloadW = v; p.rlBg[v] = 0; } // back to a gun that was reloading: pick up where it was
+      else if (p.mag[v] === 0) startReload(p);                                                       // (round 33) drew an empty gun: it starts reloading at once
       p.fireCD = Math.max(p.fireCD, 0.2); emit({ k: 'sfx', n: 'swap', x: p.x, y: p.y, o: p.i }); } break;
     case 'knife': if (p.melee === 1 && p.shield) bash(p, v); else knife(p, typeof v === 'number' ? v : -1); break;
     case 'melee': p.melee = v === 1 && p.shield ? 1 : 0; break;
@@ -6889,6 +7032,7 @@ function simStep(dt) {
 }
 
 /* ---- 35_zombies.js ---- */
+let NAV_FAR = null;
 /* ================= zombie AI (host only): flow fields, smashing, climbing, spitting ================= */
 function zAttackCell(z, i) {
   z.st = 'attack'; z.atk = 0.3;
@@ -6951,7 +7095,8 @@ function stepZombies(dt) {
     }
     const rf = climbT ? F.rc : F.rw, pf = climbT ? F.pc : F.pw;
     // pure survival: always hunt the nearest reachable player (smashing through walls if needed)
-    const field = pf[i] < Infinity ? pf : rf;
+    let field = pf[i] < Infinity ? pf : rf;
+    if (!(pf[i] < Infinity)) { let nd = 1e9; for (const p of W.p) if (standingP(p)) nd = Math.min(nd, Math.abs(p.x - z.x) + Math.abs(p.y - z.y)); if (nd > NAV_PR * 0.75) field = NAV_FAR || (NAV_FAR = new Float32Array(NC).fill(Infinity)); } // (round 33) out past the players' field: walk straight at the nearest player
     // spitter: lob acid at a visible player in range
     let hold = false;
     if (z.k === 'spitter' && !(z.conf > 0)) {
@@ -7128,7 +7273,7 @@ function placeObj(x, y, L, id) { const i = ci(x, y, L); W.blk[i] = id; W.bhp[i] 
 function zAround(k, x, y, rmin, rmax) {
   for (let t = 0; t < 30; t++) {
     const a = rand() * Math.PI * 2, d = rmin + rand() * (rmax - rmin), zx = Math.floor(x + Math.cos(a) * d), zy = Math.floor(y + Math.sin(a) * d);
-    if (!inMap(zx, zy)) continue; const L = gAt(zx, zy); if (!standable(zx, zy, L, 'z') || ttAt(zx, zy) === TT.water || !(W.ff.rw[ci(zx, zy, L)] < Infinity)) continue; // not on a ledge it can't get down from
+    if (!inMap(zx, zy)) continue; const L = gAt(zx, zy); if (!standable(zx, zy, L, 'z') || ttAt(zx, zy) === TT.water || !(W.ff.rw[ci(zx, zy, L)] < Infinity || W.ff.pw[ci(zx, zy, L)] < Infinity || radioDist(zx, zy) > NAV_RR * 0.5)) continue; // not on a ledge it can't get down from (round 33: past the capped base field, trust open ground)
     const z = spawnZombie(k, 0); z.x = zx + 0.5; z.y = zy + 0.5; z.L = L; z.z = surfZ(z.x, z.y, L); z.mz = 1; return z;
   }
   return null;
@@ -10456,8 +10601,9 @@ function hostFromSave(S, n) {
   const g = W.p[1], P = S.p && S.p[1], h = W.p[0];
   if (g) { if (P) Object.assign(g, { hp: P.dead ? BAL.pMaxHp * 0.5 : P.hp, wpn: P.wpn, owned: P.owned, mag: P.mag, ammo: P.ammo, meds: P.meds, nades: P.nades, kills: P.kills, veh: P.veh || 0, vehs: P.vehs || 0, shield: P.shield ? 1 : 0, melee: P.shield ? P.melee || 0 : 0, gn: P.gn || [0, 0, 0], lives: P.lives != null ? P.lives : livesFor(W.diff, W.mode), fuel: P.fuel != null ? P.fuel : 60, gam: P.gam || 0, shl: P.shl || 0 });
     for (const k of ['owned', 'mag', 'ammo']) while (g[k].length < NW) g[k].push(0);
-    const at = P && P.L <= skyTop(P.x, P.y) ? [P.x, P.y, P.L] : [h.x + 1, h.y + 0.5, h.L]; g.x = at[0]; g.y = at[1]; g.L = at[2]; g.z = surfZ(g.x, g.y, g.L); g.maxHp = BAL.pMaxHp; }
-  netSendCtl({ t: 'wsync', g: S.g, srch: [...W.srch], me: g ? [g.x, g.y, g.L] : null, label: saveLabel(S) });
+    const lo = S.mw === MW0 && MW !== MW0 ? MOFF : 0, px = P ? P.x + lo : 0, py = P ? P.y + lo : 0; /* (round 33) an old 160×160 save */
+    const at = P && P.L <= skyTop(px, py) ? [px, py, P.L] : [h.x + 1, h.y + 0.5, h.L]; g.x = at[0]; g.y = at[1]; g.L = at[2]; g.z = surfZ(g.x, g.y, g.L); g.maxHp = BAL.pMaxHp; }
+  netSendCtl({ t: 'wsync', g: S.g, leg: S.mw === MW0 && MW !== MW0 ? 1 : 0, srch: [...W.srch], me: g ? [g.x, g.y, g.L] : null, label: saveLabel(S) });
   banner('继续 · 存档 ' + n, saveLabel(S) + ' · 双人', '#ffe7b0');
 }
 const ZI = ZKEYS;
@@ -10503,7 +10649,7 @@ function guestRecv(m) {
     case 'bye': hostGone(); return;
     case 'lobby': NET.ready = m.ready; NET.hostName = m.host; NET.diff = m.diff; NET.mode = m.mode; NET.map = m.map; lobbyUI(); return;
     case 'start': startGame(m.seed, m.names, m.diff, 1, m.mode, m.map); return;
-    case 'wsync': if (W) { applyWorld(m.g); W.srch = new Set(m.srch || []); const me = W.p[ME]; if (me && m.me) { me.x = m.me[0]; me.y = m.me[1]; me.L = m.me[2]; me.z = surfZ(me.x, me.y, me.L); me.zv = me.z; CAM.tx = me.x; CAM.ty = me.y; } banner('继续存档', m.label || '', '#ffe7b0'); } return; // (round 32) the host opened the room from a save
+    case 'wsync': if (W) { applyWorld(m.g, !!m.leg); W.srch = new Set(m.srch || []); const me = W.p[ME]; if (me && m.me) { me.x = m.me[0]; me.y = m.me[1]; me.L = m.me[2]; me.z = surfZ(me.x, me.y, me.L); me.zv = me.z; CAM.tx = me.x; CAM.ty = me.y; } banner('继续存档', m.label || '', '#ffe7b0'); } return; // (round 32) the host opened the room from a save
     case 'toLobby': backToLobby(); return;
     case 'ev': if (W && m.e.q > (W.rq || 0)) { W.rq = m.e.q; fxEvent(m.e); } return; // own counter: local emits on the guest never swallow host events
     case 's': if (W && STATE.mode === 'play') applySnap(m); return;
@@ -10771,14 +10917,14 @@ function hudTick(dt) {
   // tasks: a one-line summary that opens on tap, and pops open for a few seconds when something changes
   if (UI.tkv !== W.tkv) {
     const changed = UI.tkv != null && UI.tkv >= 0 && W.tasks.some(t => t.done) !== UI.tkDone;
-    if ((UI.tkv === -1 || changed) && !INP.touch) UI.tkOpenT = 5; // on phones it stays folded unless tapped
+    if (changed && UI.tkv !== -1) UI.tkPing = 1; /* (round 33) never pops open by itself: the pill just flashes */
     UI.tkv = W.tkv; UI.tkDone = W.tasks.some(t => t.done);
     const nd = W.tasks.filter(t => t.done).length;
     const pk = W.perk ? Object.values(W.perk).reduce((a, b) => a + b, 0) : 0; /* (round 32) permanent tasks */
-    $('tasks').innerHTML = `<div class="tksum">永久任务 · 已拿 ${pk} 项提升 <span>▾</span></div>` + W.tasks.map(t => `<div class="tk${t.done ? ' done' : ''}"><i>${t.done ? '✔' : ''}</i><span class="tt">${t.txt}</span><b>${t.done ? '完成' : t.got + '/' + t.need}</b><span class="tr">${t.rt}</span></div>`).join('');
+    $('tasks').innerHTML = `<div class="tksum${UI.tkPing ? ' ping' : ''}">任务 · 提升 ${pk} <span>▾</span></div><div class="tklist">` + W.tasks.map(t => `<div class="tk${t.done ? ' done' : ''}"><i>${t.done ? '✔' : ''}</i><span class="tt">${t.txt}</span><b>${t.done ? '完成' : t.got + '/' + t.need}</b><span class="tr">${t.rt}</span></div>`).join('') + '<span class="tkhide">点这里收起 ▴</span></div>'; UI.tkPing = 0;
   }
   UI.tkOpenT = Math.max(0, (UI.tkOpenT || 0) - dt);
-  $('tasks').classList.toggle('open', !!UI.tkPin || UI.tkOpenT > 0);
+  $('tasks').classList.toggle('open', !!UI.tkPin);
   const rb = $('readyBtn'); rb.classList.toggle('hidden', W.phase !== 'day');
   if (W.phase === 'day') { const n = activeP().filter(p => !p.dead && p.ready).length, tot = activeP().filter(p => !p.dead).length; rb.classList.toggle('on', me.ready); rb.innerHTML = (me.ready ? '已准备' : '准备入夜') + (tot > 1 ? ` ${n}/${tot}` : '') + ' <span class="kbd">(N)</span>'; }
   // resources
@@ -11272,7 +11418,7 @@ function saveGame(quiet) {
 }
 const NSLOT = 5; let SLOT = 0; // (round 30) 3 → 5 slots                                   // the slot this run saves into (0 = not chosen yet)
 const slotKey = n => n > 1 ? 'save' + n : 'save';
-function loadSlot(n) { const s = lsGet(slotKey(n), null); return s && s.v === SAVE_V && s.g && s.mw === MW ? s : null; }
+function loadSlot(n) { const s = lsGet(slotKey(n), null); return s && s.v === SAVE_V && s.g && (s.mw === MW || s.mw === MW0) ? s : null; } // (round 33) saves from the 160×160 maps still load (moved into the middle)
 function latestSlot() { let b = 0, t = -1; for (let n = 1; n <= NSLOT; n++) { const s = loadSlot(n); if (s && (s.at || 0) > t) { t = s.at || 0; b = n; } } return b; }
 function freeSlot() { for (let n = 1; n <= NSLOT; n++) if (!loadSlot(n)) return n; return 0; }
 function oldestSlot() { let b = 1, t = Infinity; for (let n = 1; n <= NSLOT; n++) { const s = loadSlot(n); const a = s ? s.at || 0 : -1; if (a < t) { t = a; b = n; } } return b; }
@@ -11295,9 +11441,25 @@ function continueGame(n) {
   banner('继续 · 存档 ' + n, saveLabel(S), '#ffe7b0');
 }
 // (round 32) the world part of a save: blocks, floors, facing, hp (also sent to a teammate when the host opens a room from a save)
-function applyWorld(gs) { const g = gs.map(b64d); W.blk.set(rleDec(g[0], NC)); W.slab.set(rleDec(g[1], NC)); W.bdir.set(rleDec(g[2], NC)); hpUnpack(rleDec(g[3], NC * 2), W.bhp); hpUnpack(rleDec(g[4], NC * 2), W.shp); recomputeStab(); W.navDirty = true; W.ver++; W.dirty = new Set(); }
+// (round 33) a cell index from a 160×160 save → the same cell in the middle of the 240×240 map
+const NC0 = MW0 * MW0 * ML, legIdx = i => { const L = Math.floor(i / (MW0 * MW0)), q = i % (MW0 * MW0); return ci(q % MW0 + MOFF, Math.floor(q / MW0) + MOFF, L); };
+function applyWorld(gs, legacy) {
+  const g = gs.map(b64d);
+  if (!legacy) { W.blk.set(rleDec(g[0], NC)); W.slab.set(rleDec(g[1], NC)); W.bdir.set(rleDec(g[2], NC)); hpUnpack(rleDec(g[3], NC * 2), W.bhp); hpUnpack(rleDec(g[4], NC * 2), W.shp); }
+  else { // the old world goes into the middle; the new outskirts stay as generated
+    const b = rleDec(g[0], NC0), s = rleDec(g[1], NC0), d = rleDec(g[2], NC0), h = new Float32Array(NC0), h2 = new Float32Array(NC0); hpUnpack(rleDec(g[3], NC0 * 2), h); hpUnpack(rleDec(g[4], NC0 * 2), h2);
+    for (let i = 0; i < NC0; i++) { const j = legIdx(i); W.blk[j] = b[i]; W.slab[j] = s[i]; W.bdir[j] = d[i]; W.bhp[j] = h[i]; W.shp[j] = h2[i]; } }
+  recomputeStab(); W.navDirty = true; W.ver++; W.dirty = new Set();
+}
+// shift everything with a position or a cell index inside an old save's objective data
+function legObj(o) { if (!o || typeof o !== 'object') return o; if (Array.isArray(o)) { o.forEach(legObj); return o; }
+  if (typeof o.x === 'number' && typeof o.y === 'number') { o.x += MOFF; o.y += MOFF; } if (typeof o.ci === 'number') o.ci = legIdx(o.ci);
+  for (const k of ['tam', 'tamB']) if (o[k] && typeof o[k] === 'object') { const m = {}; for (const i in o[k]) m[legIdx(+i)] = o[k][i]; o[k] = m; }
+  for (const k in o) if (k !== 'tam' && k !== 'tamB' && o[k] && typeof o[k] === 'object') legObj(o[k]); return o; }
 function applySave(S) {
-  applyWorld(S.g);
+  const leg = S.mw === MW0 && MW !== MW0; // (round 33) an old 160×160 save
+  if (leg) { S = JSON.parse(JSON.stringify(S)); S.srch = (S.srch || []).map(legIdx); S.mine = (S.mine || []).map(legIdx); for (const z of S.zs || []) { z[1] += MOFF; z[2] += MOFF; } for (const P of S.p || []) { P.x += MOFF; P.y += MOFF; } legObj(S.obj); }
+  applyWorld(S.g, leg);
   W.perm = S.perm || null; W.perk = S.perk || null; W.mine = new Set(S.mine || []);
   Object.assign(W, { night: S.night, phase: S.phase, clock: S.clock, dayLen: S.dayLen, nightT: S.nightT || 0, res: S.res, upg: S.upg, kills: S.kills, stats: S.stats, endless: !!S.endless, clean: S.clean !== false, tasks: S.tasks || [], t: S.t || 0 });
   W.srch = new Set(S.srch || []); W.spotN = S.spotN || null; if (!W.spotN) { W.spotN = spotCount(); for (const k in W.spotN) W.spotN[k] = Math.round(W.spotN[k] * 2); } W.tkv++; W.rng = mulberry((S.seed ^ (S.night * 7919) ^ (S.at & 0xffff)) >>> 0);

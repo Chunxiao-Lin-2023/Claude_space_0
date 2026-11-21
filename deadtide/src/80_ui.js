@@ -194,14 +194,14 @@ function hudTick(dt) {
   // tasks: a one-line summary that opens on tap, and pops open for a few seconds when something changes
   if (UI.tkv !== W.tkv) {
     const changed = UI.tkv != null && UI.tkv >= 0 && W.tasks.some(t => t.done) !== UI.tkDone;
-    if ((UI.tkv === -1 || changed) && !INP.touch) UI.tkOpenT = 5; // on phones it stays folded unless tapped
+    if (changed && UI.tkv !== -1) UI.tkPing = 1; /* (round 33) never pops open by itself: the pill just flashes */
     UI.tkv = W.tkv; UI.tkDone = W.tasks.some(t => t.done);
     const nd = W.tasks.filter(t => t.done).length;
     const pk = W.perk ? Object.values(W.perk).reduce((a, b) => a + b, 0) : 0; /* (round 32) permanent tasks */
-    $('tasks').innerHTML = `<div class="tksum">永久任务 · 已拿 ${pk} 项提升 <span>▾</span></div>` + W.tasks.map(t => `<div class="tk${t.done ? ' done' : ''}"><i>${t.done ? '✔' : ''}</i><span class="tt">${t.txt}</span><b>${t.done ? '完成' : t.got + '/' + t.need}</b><span class="tr">${t.rt}</span></div>`).join('');
+    $('tasks').innerHTML = `<div class="tksum${UI.tkPing ? ' ping' : ''}">任务 · 提升 ${pk} <span>▾</span></div><div class="tklist">` + W.tasks.map(t => `<div class="tk${t.done ? ' done' : ''}"><i>${t.done ? '✔' : ''}</i><span class="tt">${t.txt}</span><b>${t.done ? '完成' : t.got + '/' + t.need}</b><span class="tr">${t.rt}</span></div>`).join('') + '<span class="tkhide">点这里收起 ▴</span></div>'; UI.tkPing = 0;
   }
   UI.tkOpenT = Math.max(0, (UI.tkOpenT || 0) - dt);
-  $('tasks').classList.toggle('open', !!UI.tkPin || UI.tkOpenT > 0);
+  $('tasks').classList.toggle('open', !!UI.tkPin);
   const rb = $('readyBtn'); rb.classList.toggle('hidden', W.phase !== 'day');
   if (W.phase === 'day') { const n = activeP().filter(p => !p.dead && p.ready).length, tot = activeP().filter(p => !p.dead).length; rb.classList.toggle('on', me.ready); rb.innerHTML = (me.ready ? '已准备' : '准备入夜') + (tot > 1 ? ` ${n}/${tot}` : '') + ' <span class="kbd">(N)</span>'; }
   // resources

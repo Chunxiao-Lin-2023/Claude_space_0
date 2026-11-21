@@ -34,7 +34,7 @@ MAPS.town = {
   at(46, 13, 40); at(47, 15, 40); at(59, 12, 39); at(60, 6, 35);                                                                                    // farmyard
 
   },
-  after({ blk, G, tt, col, put }) {
+  after({ blk, G, tt, col, put, ci }) {
   // fences: around the farm fields and along the town lots
   for (let x = 31; x <= 43; x++) for (const y of [1, 15]) if (!blk[ci(x, y, 0)] && G[col(x, y)] === 0 && tt[col(x, y)] !== TT.road && tt[col(x, y)] !== TT.water) put(x, y, 0, 27);
   for (let y = 2; y <= 14; y++) if (!blk[ci(31, y, 0)] && G[col(31, y)] === 0 && tt[col(31, y)] !== TT.water) put(31, y, 0, 27);
@@ -86,8 +86,8 @@ MAPS.desert = {
 const ISLES = [[80, 82, 46], [30, 28, 20], [132, 28, 21], [28, 134, 19], [134, 132, 22]];
 MAPS.islands = {
   name: '海岛', desc: '一座大岛和四座小岛，桥连在一起：雨林、海滩，过桥是咽喉要道', camp: [80, 82],
-  lots: [[84, 100, 98, 109, 1, 'shop'], [84, 50, 99, 60, 2, 'clinic'], [104, 76, 118, 87, 2, 'villa'], [20, 18, 36, 29, 2, 'villa'], [122, 18, 140, 30, 2, 'police'], [16, 126, 36, 137, 1, 'garage'], [122, 122, 144, 134, 3, 'apt'], [46, 70, 58, 80, 1, 'shop']],
-  ocean: (x, y, noise) => !TOWN_HOUSES.some(([x0, y0, x1, y1]) => x >= x0 - 3 && x <= x1 + 3 && y >= y0 - 3 && y <= y1 + 3) && !ISLES.some(([cx, cy, r]) => Math.hypot(x - cx, y - cy) < r * (0.86 + noise(x, y, 9) * 0.28)),
+  lots: [[84, 102, 98, 111, 1, 'shop'], [84, 50, 99, 60, 2, 'clinic'], [104, 76, 118, 87, 2, 'villa'], [20, 18, 36, 29, 2, 'villa'], [122, 18, 140, 30, 2, 'police'], [16, 126, 36, 137, 1, 'garage'], [122, 122, 144, 134, 3, 'apt'], [46, 70, 58, 80, 1, 'shop']],
+  ocean: (x, y, noise) => !TOWN_HOUSES.some(([x0, y0, x1, y1]) => x >= x0 - 3 && x <= x1 + 3 && y >= y0 - 3 && y <= y1 + 3) && !(MAPDEF.isles || ISLES).some(([cx, cy, r]) => Math.hypot(x - cx, y - cy) < r * (0.86 + noise(x, y, 9) * 0.28)), // (round 33) called in full-map coordinates; MAPDEF.isles = shifted + outskirts islands
   hills: [[70, 110, 5, false], [26, 22, 4, false], [138, 138, 5, true]],
   roads({ road }) {
     const line = (x0, y0, x1, y1) => { const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)); for (let k = 0; k <= n; k++) { const x = Math.round(x0 + (x1 - x0) * k / n), y = Math.round(y0 + (y1 - y0) * k / n); road(x, y); road(x + 1, y); road(x, y + 1); } };
@@ -136,8 +136,47 @@ MAPS.city = {
 const MAP_IDS = ['town', 'forest', 'desert', 'islands', 'snow', 'city'];
 let MAPDEF = MAPS.town, MAP_ID = 'town';
 // switch the live map: building lots, camp position, and everything derived from them (house ids, roof cells, cut boxes)
+// (round 33) the maps grew from 160×160 to 240×240: every preset is drawn in its own (classic) coordinates and shifted by MOFF into the middle;
+// the ring around it gets roads out to the edge and themed outskirts scenes (OUTSKIRTS in 13_outskirts.js)
+const WIDE = {};
+// (round 33) where a preset's roads leave the old square: columns crossing the top/bottom edge and rows crossing the left/right one,
+// so the outskirts scenes keep clear of the roads that carry on out to the new edge
+function edgeRoads(M) {
+  const E = { t: new Set(), b: new Set(), l: new Set(), r: new Set() }, N = MW0 - 1;
+  M.roads({ road: (x, y) => { if (x < 0 || y < 0 || x > N || y > N) return; if (y === 0) E.t.add(x + MOFF); if (y === N) E.b.add(x + MOFF); if (x === 0) E.l.add(y + MOFF); if (x === N) E.r.add(y + MOFF); }, col: () => -1, roadCells: new Set() });
+  return E;
+}
+function widen(id) {
+  if (WIDE[id]) return WIDE[id];
+  const M = MAPS[id], O = MOFF, sh = a => [a[0] + O, a[1] + O].concat(a.slice(2)), shLot = l => [l[0] + O, l[1] + O, l[2] + O, l[3] + O].concat(l.slice(4));
+  const kOff = K => Object.assign({}, K, {
+    road: (x, y) => x >= 0 && y >= 0 && x < MW0 && y < MW0 && K.road(x + O, y + O), col: (x, y) => { x += O; y += O; return x >= 0 && y >= 0 && x < MW && y < MH ? K.col(x, y) : -1; },
+    lot: (a, b, c, d, t) => K.lot && K.lot(a + O, b + O, c + O, d + O, t), at: (x, y, id, d) => K.at && K.at(x + O, y + O, id, d),
+    put: (x, y, L, id, d) => inMap(x + O, y + O) && K.put(x + O, y + O, L, id, d), putS: K.putS && ((x, y, L, s) => inMap(x + O, y + O) && K.putS(x + O, y + O, L, s)),
+    free: (x, y) => K.free && K.free(x + O, y + O), ci: (x, y, L) => inMap(x + O, y + O) ? ci(x + O, y + O, L) : 0 });
+  const X = typeof outskirtsFor === 'function' ? outskirtsFor(id, edgeRoads(M)) : { lots: [], isles: [], hills: [], cars: [], crates: [], roads() { }, props() { } };
+  const D = Object.assign({}, M, {
+    camp: sh(M.camp), lots: M.lots.map(shLot).concat(X.lots), hills: (M.hills || []).map(sh).concat(X.hills), ponds: (M.ponds || []).map(sh), bridges: (M.bridges || []).map(b => [b[0] + O, b[1] + O, b[2] + O]),
+    isles: ISLES.map(sh).concat(X.isles), cars: M.cars ? M.cars.map(sh).concat(X.cars) : M.cars, crates: M.crates ? M.crates.map(sh).concat(X.crates) : M.crates,
+    river: M.river ? { c: y => M.river.c(y - O) + O, w: M.river.w } : null,
+    roads(K) {
+      M.roads(kOff(K));
+      // roads that ran into the old map edge carry on out to the new one
+      const T = K.tt, cells = [...K.roadCells];
+      const inScene = (x, y) => X.placed && X.placed.some(q => x >= q.x0 - 1 && x <= q.x1 + 1 && y >= q.y0 - 1 && y <= q.y1 + 1); // an edge road that runs into a scene stops there
+      for (const i of cells) { const x = i % MW, y = Math.floor(i / MW);
+        if (x === O) for (let k = O - 1; k >= 0 && !inScene(k, y); k--) K.road(k, y); if (x === O + MW0 - 1) for (let k = O + MW0; k < MW && !inScene(k, y); k++) K.road(k, y);
+        if (y === O) for (let k = O - 1; k >= 0 && !inScene(x, k); k--) K.road(x, k); if (y === O + MW0 - 1) for (let k = O + MW0; k < MH && !inScene(x, k); k++) K.road(x, k); }
+      X.roads(K);
+    },
+    fields: M.fields && (K => M.fields(kOff(K))), noVeg: M.noVeg && ((x, y) => M.noVeg(x - O, y - O)),
+    landmarks: K => { if (M.landmarks) M.landmarks(kOff(K)); X.props(K); }, after: M.after && (K => M.after(kOff(K))),
+    nCars: M.cars ? M.nCars : Math.round((M.nCars || 28) * 1.8), outskirts: X,
+  });
+  if (typeof outskirtsFor === 'function') WIDE[id] = D; return D; // (cache only once the outskirts module has loaded)
+}
 function setMap(id) {
-  if (!MAPS[id]) id = 'town'; MAP_ID = id; MAPDEF = MAPS[id];
+  if (!MAPS[id]) id = 'town'; MAP_ID = id; MAPDEF = widen(id);
   TOWN_HOUSES.length = 0; for (const h of MAPDEF.lots) TOWN_HOUSES.push(h.slice());
   RADIO_XY[0] = MAPDEF.camp[0]; RADIO_XY[1] = MAPDEF.camp[1];
   if (typeof archMapInit === 'function') archMapInit();

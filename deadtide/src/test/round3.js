@@ -13,7 +13,7 @@ require('fs').mkdirSync(OUT, { recursive: true });
   // props on the map
   const pc = await p.evaluate(() => { const c = {}; for (let i = 0; i < NC; i++) { const k = B[W.blk[i]].key; if ([32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 25, 26, 29].includes(W.blk[i])) c[k] = (c[k] || 0) + 1; } return c; });
   ok('every searchable / gatherable type is on the map', Object.keys(pc).length >= 13, JSON.stringify(pc));
-  ok('town spread out', await p.evaluate(() => TOWN_HOUSES.length) <= 18);
+  ok('town spread out', await p.evaluate(() => TOWN_HOUSES.filter(h => h[0] >= MOFF && h[0] < MOFF + MW0 && h[1] >= MOFF && h[1] < MOFF + MW0).length) <= 18); // (round 33) the outskirts scenes are out in the ring
   // search a crate: it vanishes; car: marked; dawn restocks
   const SPOTS_N_CRATE = 16; const BAL_SEARCH = 3;
   const sr = await p.evaluate(() => {
@@ -79,7 +79,7 @@ require('fs').mkdirSync(OUT, { recursive: true });
     return { ladders: L1.name + ',' + L2.name, stun: z.stun, trapGone: W.blk[ci(X, Y, 0)] !== 15 };
   });
   ok('starter house has two ladders', lr.ladders === '爬梯,爬梯', lr.ladders);
-  ok('bear trap holds a zombie and breaks', lr.stun > 2 && lr.trapGone, JSON.stringify(lr));
+  ok('bear trap holds a zombie (1.8 s since round 28; it lasts three catches)', lr.stun > 1.7, JSON.stringify(lr));
   // one tap searches to the end without holding
   const tapI = await p.evaluate(() => { const me = W.p[0]; me.build = false; W.zs.length = 0; for (let i = 0; i < NC; i++) { if (W.blk[i] !== 26) continue; const x = cx_(i), y = cy_(i), L = cl_(i); const f = DIRS.map(([dx, dy]) => [x + dx, y + dy]).find(([a, b]) => standable(a, b, L, 'p')); if (!f) continue; me.x = f[0] + 0.5; me.y = f[1] + 0.5; me.L = L; me.z = pZ(me); const t = useTarget(me); if (t && t.i === i) { INP.useReq = true; return i; } } return -1; });
   await simWait(BAL_SEARCH);

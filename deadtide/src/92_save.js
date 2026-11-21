@@ -42,7 +42,7 @@ function saveGame(quiet) {
 }
 const NSLOT = 5; let SLOT = 0; // (round 30) 3 → 5 slots                                   // the slot this run saves into (0 = not chosen yet)
 const slotKey = n => n > 1 ? 'save' + n : 'save';
-function loadSlot(n) { const s = lsGet(slotKey(n), null); return s && s.v === SAVE_V && s.g && s.mw === MW ? s : null; }
+function loadSlot(n) { const s = lsGet(slotKey(n), null); return s && s.v === SAVE_V && s.g && (s.mw === MW || s.mw === MW0) ? s : null; } // (round 33) saves from the 160×160 maps still load (moved into the middle)
 function latestSlot() { let b = 0, t = -1; for (let n = 1; n <= NSLOT; n++) { const s = loadSlot(n); if (s && (s.at || 0) > t) { t = s.at || 0; b = n; } } return b; }
 function freeSlot() { for (let n = 1; n <= NSLOT; n++) if (!loadSlot(n)) return n; return 0; }
 function oldestSlot() { let b = 1, t = Infinity; for (let n = 1; n <= NSLOT; n++) { const s = loadSlot(n); const a = s ? s.at || 0 : -1; if (a < t) { t = a; b = n; } } return b; }
@@ -65,9 +65,25 @@ function continueGame(n) {
   banner('继续 · 存档 ' + n, saveLabel(S), '#ffe7b0');
 }
 // (round 32) the world part of a save: blocks, floors, facing, hp (also sent to a teammate when the host opens a room from a save)
-function applyWorld(gs) { const g = gs.map(b64d); W.blk.set(rleDec(g[0], NC)); W.slab.set(rleDec(g[1], NC)); W.bdir.set(rleDec(g[2], NC)); hpUnpack(rleDec(g[3], NC * 2), W.bhp); hpUnpack(rleDec(g[4], NC * 2), W.shp); recomputeStab(); W.navDirty = true; W.ver++; W.dirty = new Set(); }
+// (round 33) a cell index from a 160×160 save → the same cell in the middle of the 240×240 map
+const NC0 = MW0 * MW0 * ML, legIdx = i => { const L = Math.floor(i / (MW0 * MW0)), q = i % (MW0 * MW0); return ci(q % MW0 + MOFF, Math.floor(q / MW0) + MOFF, L); };
+function applyWorld(gs, legacy) {
+  const g = gs.map(b64d);
+  if (!legacy) { W.blk.set(rleDec(g[0], NC)); W.slab.set(rleDec(g[1], NC)); W.bdir.set(rleDec(g[2], NC)); hpUnpack(rleDec(g[3], NC * 2), W.bhp); hpUnpack(rleDec(g[4], NC * 2), W.shp); }
+  else { // the old world goes into the middle; the new outskirts stay as generated
+    const b = rleDec(g[0], NC0), s = rleDec(g[1], NC0), d = rleDec(g[2], NC0), h = new Float32Array(NC0), h2 = new Float32Array(NC0); hpUnpack(rleDec(g[3], NC0 * 2), h); hpUnpack(rleDec(g[4], NC0 * 2), h2);
+    for (let i = 0; i < NC0; i++) { const j = legIdx(i); W.blk[j] = b[i]; W.slab[j] = s[i]; W.bdir[j] = d[i]; W.bhp[j] = h[i]; W.shp[j] = h2[i]; } }
+  recomputeStab(); W.navDirty = true; W.ver++; W.dirty = new Set();
+}
+// shift everything with a position or a cell index inside an old save's objective data
+function legObj(o) { if (!o || typeof o !== 'object') return o; if (Array.isArray(o)) { o.forEach(legObj); return o; }
+  if (typeof o.x === 'number' && typeof o.y === 'number') { o.x += MOFF; o.y += MOFF; } if (typeof o.ci === 'number') o.ci = legIdx(o.ci);
+  for (const k of ['tam', 'tamB']) if (o[k] && typeof o[k] === 'object') { const m = {}; for (const i in o[k]) m[legIdx(+i)] = o[k][i]; o[k] = m; }
+  for (const k in o) if (k !== 'tam' && k !== 'tamB' && o[k] && typeof o[k] === 'object') legObj(o[k]); return o; }
 function applySave(S) {
-  applyWorld(S.g);
+  const leg = S.mw === MW0 && MW !== MW0; // (round 33) an old 160×160 save
+  if (leg) { S = JSON.parse(JSON.stringify(S)); S.srch = (S.srch || []).map(legIdx); S.mine = (S.mine || []).map(legIdx); for (const z of S.zs || []) { z[1] += MOFF; z[2] += MOFF; } for (const P of S.p || []) { P.x += MOFF; P.y += MOFF; } legObj(S.obj); }
+  applyWorld(S.g, leg);
   W.perm = S.perm || null; W.perk = S.perk || null; W.mine = new Set(S.mine || []);
   Object.assign(W, { night: S.night, phase: S.phase, clock: S.clock, dayLen: S.dayLen, nightT: S.nightT || 0, res: S.res, upg: S.upg, kills: S.kills, stats: S.stats, endless: !!S.endless, clean: S.clean !== false, tasks: S.tasks || [], t: S.t || 0 });
   W.srch = new Set(S.srch || []); W.spotN = S.spotN || null; if (!W.spotN) { W.spotN = spotCount(); for (const k in W.spotN) W.spotN[k] = Math.round(W.spotN[k] * 2); } W.tkv++; W.rng = mulberry((S.seed ^ (S.night * 7919) ^ (S.at & 0xffff)) >>> 0);

@@ -36,7 +36,7 @@ const rand = (a = 0, b = 1) => a + W.rng() * (b - a);
 const activeP = () => W.p.filter(p => !p.gone);
 const standingP = p => !p.gone && !p.dead && !p.down;
 // shooting from a vehicle (round 20): the driver fires at 40% the rate, a pillion rider at 70% (same accuracy as on foot)
-const rideK = p => p.ride ? { rate: 2.5, spread: 1 } : p.pass != null && p.pass >= 0 ? { rate: 1.43, spread: 1 } : { rate: 1, spread: 1 }; // only the rate drops; aim stays as true as on foot
+const rideK = p => p.ride ? { rate: VEH[p.veh] && VEH[p.veh].quiet ? 1.2 : 2.5, spread: 1 } : p.pass != null && p.pass >= 0 ? { rate: 1.43, spread: 1 } : { rate: 1, spread: 1 }; // only the rate drops; aim stays as true as on foot
 function emit(e) { if (!W) return; e.q = ++W.seq; /* NB: `q`, not `s` — cell events carry the slab id in `s` */ fxEvent(e); if (NETROLE === 'host') netSendCtl({ t: 'ev', e }); }
 function say(text, col) { emit({ k: 'say', text, col: col || '' }); }
 const pZ = p => surfZ(p.x, p.y, p.L);
@@ -163,7 +163,7 @@ function stepMove(p, dt) {
   }
   if (p.dash) { const D = p.dash, f = Math.min(dt, D.T - D.t) / D.T; moveEnt(p, D.dx * f, D.dy * f, 'p', true); D.t += dt; if (D.t >= D.T) p.dash = null; p.z = pZ(p); p.anim += dt * 8; return; }
   if (p.L > 0 && p.L > skyTop(p.x, p.y)) { p.L = skyTop(p.x, p.y); p.z = pZ(p); } // (round 31) knocked down mid-air, or a save made in flight: fall to what is below
-  const spd = BAL.pSpeed * (p.down ? 0.22 : 1) * (p.medT > 0 ? 0.45 : 1) * (p.build ? 0.9 : 1) * (inMud(p.x, p.y, p.L) ? MUD_SLOW : 1) * (p.ride && VEH[p.veh] ? VEH[p.veh].spd : 1);
+  const spd = BAL.pSpeed * (p.down ? 0.22 : 1) * (p.medT > 0 ? 0.45 : 1) * (p.build ? 0.9 : 1) * (inMud(p.x, p.y, p.L) && !(p.ride && VEH[p.veh] && VEH[p.veh].mud) ? MUD_SLOW : 1) * (p.ride && VEH[p.veh] ? VEH[p.veh].spd : 1);
   const tx = I.mx * k * spd, ty = I.my * k * spd, a = Math.min(1, dt * 14);
   p.vx = lerp(p.vx, tx, a); p.vy = lerp(p.vy, ty, a);
   p.kbx *= Math.max(0, 1 - dt * 6); p.kby *= Math.max(0, 1 - dt * 6);
@@ -258,6 +258,7 @@ function stepActions(p, dt) {
   } else { p._lowF = p.fuel < BAL.fuelLow ? p._lowF : 0; if (p.land) p.land = false; }
   // each gun has its own fire cooldown, and a reload keeps going in the holster (round 18: was one shared timer, swapping cancelled the reload)
   if (!p.cdW) p.cdW = WPN.map(() => 0); if (!p.rlBg) p.rlBg = WPN.map(() => 0);
+  if (p.ride && VEH[p.veh] && VEH[p.veh].noise && Math.hypot(p.vx, p.vy) > 0.5 && (p.engT = (p.engT || 0) - dt) <= 0) { p.engT = 0.5; noiseAt(p.x, p.y, VEH[p.veh].noise, p.z); } // (round 33) engines are loud in 攻楼 (the bike isn't)
   if (p.ride && VEH[p.veh] && VEH[p.veh].ram && Math.hypot(p.vx, p.vy) > BAL.ramSpd) for (const z of W.zs) { // (round 22) the armoured car shoves zombies aside
     if (z.hp <= 0 || z.L !== p.L || z.hidden || (z.ramT || 0) > W.t) continue;
     const dx = z.x - p.x, dy = z.y - p.y, d = Math.hypot(dx, dy) || 0.01;
@@ -586,8 +587,9 @@ function doAct(p, a, v) {
     case 'wpn': if (!p.down && v >= 0 && v < NW && p.owned[v] && p.wpn !== v) {
       if (!p.rlBg) p.rlBg = WPN.map(() => 0); const o = p.wpn, ow = WPN[o];
       if (p.reloadT > 0 && p.reloadW === o) p.rlBg[o] = p.reloadT;                                    // the reload you started carries on in the holster
-      else if (p.mag[o] === 0 && (ow.inf || p.ammo[o] > 0)) p.rlBg[o] = ow.reload;                  // an empty gun reloads itself while you use the other
+      else if (p.mag[o] < ow.mag && (ow.inf || p.ammo[o] > 0)) p.rlBg[o] = ow.reload;               // (round 33) any gun that isn't full reloads itself in the holster while you use the other
       p.wpn = v; p.reloadT = 0; if (p.rlBg[v] > 0) { p.reloadT = p.rlBg[v]; p.reloadW = v; p.rlBg[v] = 0; } // back to a gun that was reloading: pick up where it was
+      else if (p.mag[v] === 0) startReload(p);                                                       // (round 33) drew an empty gun: it starts reloading at once
       p.fireCD = Math.max(p.fireCD, 0.2); emit({ k: 'sfx', n: 'swap', x: p.x, y: p.y, o: p.i }); } break;
     case 'knife': if (p.melee === 1 && p.shield) bash(p, v); else knife(p, typeof v === 'number' ? v : -1); break;
     case 'melee': p.melee = v === 1 && p.shield ? 1 : 0; break;

@@ -14,7 +14,8 @@ const FXR = mulberry(99); const frnd = (a = 0, b = 1) => a + FXR() * (b - a);
 const angDiff = (a, b) => { let d = (b - a) % (Math.PI * 2); if (d > Math.PI) d -= Math.PI * 2; if (d < -Math.PI) d += Math.PI * 2; return d; };
 
 /* ---------- world geometry ---------- */
-const MW = 160, MH = 160, ML = 10;     // grid columns, rows, layers
+const MW = 240, MH = 240, ML = 10;     // grid columns, rows, layers (round 33: 160 → 240; the old 160×160 map sits in the middle)
+const MOFF = 40, MW0 = 160;              // (round 33) where the classic 160×160 layout starts, its size
 const FH = 1.3;
 const PH = 0.62;
 const LEAN = 1.7;                   // shooters lean over parapets this close to them                    // parapet height: upper-floor walls with nothing on top are only waist high                      // height of one layer (storey / terrain step) in world units
@@ -118,12 +119,12 @@ for (const g of ITEMS) if (!['build', 'ladder'].includes(g.k)) for (const id of 
 const itemOf = id => ITEMS.find(g => g.ids.includes(id)) || ITEMS[0];
 // vehicles (round 22: their own category; you pick a default and T gets on it). spd = walking speed multiplier, seats 2 = a pillion seat
 const VEH = [null,
-  { k: 'bike', name: '自行车', spd: 1.6, tag: '便宜轻快：走得快 60%' },
-  { k: 'moto', name: '摩托车', spd: 1.9, seats: 2, tag: '最快：走得快 90%，后座能带一个队友' },
-  { k: 'cargo', name: '货运三轮', spd: 1.45, search: 1, tag: '搜刮用：坐在车上就能搜（够得更远、时间减半），搜到的材料 +50%' },
-  { k: 'armor', name: '装甲车', spd: 1.3, seats: 2, armor: 0.35, ram: 1, tag: '保护用：受到的伤害只剩 35%，撞开挡路的丧尸，后座能带一个队友' },
-  { k: 'gyro', name: '旋翼机', spd: 1.9, fly: 1, fuel: 60, seats: 2, gun: 'chin', tag: '会飞：越过屋顶和尸群。只能从地面或楼顶起飞（头顶不能有屋顶）；一箱油飞 60 秒，没满就能加：商店「载具」栏一键加满，或在有屋顶的房间里按 F；飞着用机头下的机枪打（机上自己的子弹，商店里买），手里的枪不能用；后座能带一个队友，队友能开枪' }, // (round 29)
-  { k: 'tank', name: '坦克', spd: 1.0, armor: 0.2, ram: 1, gun: 'cannon', outdoor: 1, tag: '自带炮塔：开火打炮弹（落点爆炸 150，半径 2.6），炮弹商店里买；受到的伤害只剩 20%，撞开丧尸；慢，太大进不了楼' }, // (round 31)
+  { k: 'bike', name: '自行车', spd: 1.7, quiet: 1, mud: 1, tag: '便宜、安静、灵活：走得快 70%；没有发动机，攻楼时骑着不会把楼里的丧尸吵醒；泥地不减速；单手骑车，开枪的射速几乎不降（别的车上射速减半还多）' },
+  { k: 'moto', name: '摩托车', spd: 1.9, seats: 2, noise: 6, tag: '最快：走得快 90%，后座能带一个队友；发动机响，攻楼时会吵醒附近楼里的丧尸' },
+  { k: 'cargo', name: '货运三轮', spd: 1.45, search: 1, noise: 5, tag: '搜刮用：坐在车上就能搜（够得更远、时间减半），搜到的材料 +50%' },
+  { k: 'armor', name: '装甲车', spd: 1.3, seats: 2, armor: 0.35, ram: 1, noise: 8, tag: '保护用：受到的伤害只剩 35%，撞开挡路的丧尸，后座能带一个队友' },
+  { k: 'gyro', name: '旋翼机', spd: 1.9, fly: 1, fuel: 60, seats: 2, gun: 'chin', noise: 9, tag: '会飞：越过屋顶和尸群。只能从地面或楼顶起飞（头顶不能有屋顶）；一箱油飞 60 秒，没满就能加：商店「载具」栏一键加满，或在有屋顶的房间里按 F；飞着用机头下的机枪打（机上自己的子弹，商店里买），手里的枪不能用；后座能带一个队友，队友能开枪' }, // (round 29)
+  { k: 'tank', name: '坦克', spd: 1.0, armor: 0.2, ram: 1, gun: 'cannon', outdoor: 1, noise: 10, tag: '自带炮塔：开火打炮弹（落点爆炸 150，半径 2.6），炮弹商店里买；受到的伤害只剩 20%，撞开丧尸；慢，太大进不了楼' }, // (round 31)
 ];
 const NVEH = VEH.length - 1;
 const PILLION = 0.38;                                   // how far behind the driver the back-seat rider sits
@@ -220,8 +221,7 @@ const PERM = [
 const PERK = { hp: ['生命上限 +10', 10], bag: ['背包：弹药上限 +25%', 0.25], med: ['医疗包上限 +2', 2], nade: ['手雷上限 +3（特殊手雷各 +2）', 3], life: ['复活次数 +1', 1] };
 const perkLv = k => (typeof W !== 'undefined' && W && W.perk && W.perk[k]) || 0;
 // carry limits grow with the upgrades (read through getters so every place that checks a cap sees the current one)
-// (round 32) ammo you can carry for a gun: 12 pickups' worth, +25% per backpack upgrade
-const ammoCap = wi => Math.round((WPN[wi].loot || WPN[wi].mag) * 12 * (1 + PERK.bag[1] * perkLv('bag')));
+const ammoCap = wi => Math.round((WPN[wi].gl ? 100 : 500) * (1 + PERK.bag[1] * perkLv('bag'))); // (round 33) 500 rounds a gun (grenade launcher 100), +25% per backpack upgrade
 /* ---------- daily tasks (before round 32): three are rolled every dawn (and at the start) and last until the next dawn ---------- */
 // need(d, W) -> target count for upcoming night d; min = first night it can appear; rw = reward pool keys
 const TASKS = {
@@ -270,9 +270,9 @@ const CRAFT = [
   { id: 'shells', cat: 'gun', name: '霰弹 ×12', desc: '', cost: { parts: 2 }, ammo: [1, 12] },
   { id: 'rounds', cat: 'gun', name: '步枪弹 ×60', desc: '', cost: { parts: 3 }, ammo: [2, 60] },
   { id: 'slugs', cat: 'gun', name: '狙击弹 ×10', desc: '', cost: { parts: 3 }, ammo: [3, 10] },
-  { id: 'tshell', cat: 'gun', name: '坦克炮弹 ×10', desc: '坦克主炮用的炮弹，车里最多放 30 发；造坦克时送 10 发', cost: { parts: 4, steel: 3 }, shl: 10 }, // (round 31)
+  { id: 'tshell', cat: 'gun', name: '坦克炮弹 ×25', desc: '坦克主炮用的炮弹，车里最多放 200 发；造坦克时送 100 发', cost: { parts: 4, steel: 3 }, shl: 25 }, // (round 31)
   { id: 'gfuel', cat: 'fuel', name: '给旋翼机加满油', desc: '', cost: {}, fuel: 1 }, // (round 30) refuel from the shop too (free, instant; F in a roofed room still works)
-  { id: 'gammo', cat: 'gun', name: '旋翼机机枪弹 ×60', desc: '旋翼机机头下的机枪用的子弹（飞的时候按开火），机上最多存 240 发；造旋翼机时送 60 发', cost: { parts: 3, steel: 2 }, gam: 60 }, // (round 30)
+  { id: 'gammo', cat: 'gun', name: '旋翼机机枪弹 ×150', desc: '旋翼机机头下的机枪用的子弹（飞的时候按开火），机上最多存 500 发；造旋翼机时送 250 发', cost: { parts: 3, steel: 2 }, gam: 150 }, // (round 30)
   { id: 'crossbow', cat: 'gun', name: '弩', desc: '几乎没声音：一箭 110 穿 3 只，钉住 1 秒，偷偷清楼用', cost: { parts: 12, wood: 12 }, wpn: 4 },
   { id: 'flamer', cat: 'gun', name: '喷火器', desc: '近距离喷火，点着的丧尸会烧，火还会传给旁边的', cost: { parts: 20, steel: 10 }, wpn: 5 },
   { id: 'launcher', cat: 'gun', name: '榴弹发射器', desc: '打出去落地就炸，炸一片', cost: { parts: 26, steel: 14 }, wpn: 6 },
@@ -315,8 +315,8 @@ const BAL = {
   slowR: 3.6, slowT: 8, slowMul: 0.3,                           // slow grenade: a sticky field, zombies inside crawl at 30%
   smokeR: 3.8, smokeT: 10, smokeConf: 1.2,                      // smoke: zombies in the cloud lose you, wander and don't bite (and for 1.2 s after leaving)
   blastR: 4.4, blastDmg: 70, blastKB: 24, blastStun: 1.6,       // blast: little damage, throws everything out of the way (clears a path)
-  tankDmg: 150, tankR: 2.6, tankRate: 1.6, tankRange: 20, tankCap: 30, tankStart: 10, // (round 31) tank cannon: a shell that bursts where it hits
-  gyroDmg: 12, gyroRate: 0.12, gyroSpread: 0.06, gyroRange: 22, gyroCap: 240, gyroStart: 60, // (round 30) gyrocopter chin gun: its own ammo, bought in the shop
+  tankDmg: 150, tankR: 2.6, tankRate: 1.6, tankRange: 20, tankCap: 200, tankStart: 100, // (round 31) tank cannon: a shell that bursts where it hits
+  gyroDmg: 12, gyroRate: 0.12, gyroSpread: 0.06, gyroRange: 22, gyroCap: 500, gyroStart: 250, // (round 30) gyrocopter chin gun: its own ammo, bought in the shop
   flyHover: 2.2, flyClimb: 0.8, flyDrop: 0.6, fuelLow: 10, refuelT: 4, // (round 29) gyrocopter: cruise 2.2 floors over whatever is below, climb / descend rate (of the take-off curve per second), warn at 10 s of fuel, 4 s to refuel indoors
   nadeRange: 12, nadeDmg: 286, nadeR: 3.4, nadeFuse: 1.6, nadeLand: 0.35, nadeMin: 0.5, // (round 18: radius 2.8 -> 3.4, damage at the edge 35% -> 50%, goes off 0.35 s after landing where you aimed)
   headshot: 1.6,

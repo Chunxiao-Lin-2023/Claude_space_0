@@ -49,7 +49,7 @@ function placeObj(x, y, L, id) { const i = ci(x, y, L); W.blk[i] = id; W.bhp[i] 
 function zAround(k, x, y, rmin, rmax) {
   for (let t = 0; t < 30; t++) {
     const a = rand() * Math.PI * 2, d = rmin + rand() * (rmax - rmin), zx = Math.floor(x + Math.cos(a) * d), zy = Math.floor(y + Math.sin(a) * d);
-    if (!inMap(zx, zy)) continue; const L = gAt(zx, zy); if (!standable(zx, zy, L, 'z') || ttAt(zx, zy) === TT.water || !(W.ff.rw[ci(zx, zy, L)] < Infinity)) continue; // not on a ledge it can't get down from
+    if (!inMap(zx, zy)) continue; const L = gAt(zx, zy); if (!standable(zx, zy, L, 'z') || ttAt(zx, zy) === TT.water || !(W.ff.rw[ci(zx, zy, L)] < Infinity || W.ff.pw[ci(zx, zy, L)] < Infinity || radioDist(zx, zy) > NAV_RR * 0.5)) continue; // not on a ledge it can't get down from (round 33: past the capped base field, trust open ground)
     const z = spawnZombie(k, 0); z.x = zx + 0.5; z.y = zy + 0.5; z.L = L; z.z = surfZ(z.x, z.y, L); z.mz = 1; return z;
   }
   return null;

@@ -78,8 +78,9 @@ function hostFromSave(S, n) {
   const g = W.p[1], P = S.p && S.p[1], h = W.p[0];
   if (g) { if (P) Object.assign(g, { hp: P.dead ? BAL.pMaxHp * 0.5 : P.hp, wpn: P.wpn, owned: P.owned, mag: P.mag, ammo: P.ammo, meds: P.meds, nades: P.nades, kills: P.kills, veh: P.veh || 0, vehs: P.vehs || 0, shield: P.shield ? 1 : 0, melee: P.shield ? P.melee || 0 : 0, gn: P.gn || [0, 0, 0], lives: P.lives != null ? P.lives : livesFor(W.diff, W.mode), fuel: P.fuel != null ? P.fuel : 60, gam: P.gam || 0, shl: P.shl || 0 });
     for (const k of ['owned', 'mag', 'ammo']) while (g[k].length < NW) g[k].push(0);
-    const at = P && P.L <= skyTop(P.x, P.y) ? [P.x, P.y, P.L] : [h.x + 1, h.y + 0.5, h.L]; g.x = at[0]; g.y = at[1]; g.L = at[2]; g.z = surfZ(g.x, g.y, g.L); g.maxHp = BAL.pMaxHp; }
-  netSendCtl({ t: 'wsync', g: S.g, srch: [...W.srch], me: g ? [g.x, g.y, g.L] : null, label: saveLabel(S) });
+    const lo = S.mw === MW0 && MW !== MW0 ? MOFF : 0, px = P ? P.x + lo : 0, py = P ? P.y + lo : 0; /* (round 33) an old 160×160 save */
+    const at = P && P.L <= skyTop(px, py) ? [px, py, P.L] : [h.x + 1, h.y + 0.5, h.L]; g.x = at[0]; g.y = at[1]; g.L = at[2]; g.z = surfZ(g.x, g.y, g.L); g.maxHp = BAL.pMaxHp; }
+  netSendCtl({ t: 'wsync', g: S.g, leg: S.mw === MW0 && MW !== MW0 ? 1 : 0, srch: [...W.srch], me: g ? [g.x, g.y, g.L] : null, label: saveLabel(S) });
   banner('继续 · 存档 ' + n, saveLabel(S) + ' · 双人', '#ffe7b0');
 }
 const ZI = ZKEYS;
@@ -125,7 +126,7 @@ function guestRecv(m) {
     case 'bye': hostGone(); return;
     case 'lobby': NET.ready = m.ready; NET.hostName = m.host; NET.diff = m.diff; NET.mode = m.mode; NET.map = m.map; lobbyUI(); return;
     case 'start': startGame(m.seed, m.names, m.diff, 1, m.mode, m.map); return;
-    case 'wsync': if (W) { applyWorld(m.g); W.srch = new Set(m.srch || []); const me = W.p[ME]; if (me && m.me) { me.x = m.me[0]; me.y = m.me[1]; me.L = m.me[2]; me.z = surfZ(me.x, me.y, me.L); me.zv = me.z; CAM.tx = me.x; CAM.ty = me.y; } banner('继续存档', m.label || '', '#ffe7b0'); } return; // (round 32) the host opened the room from a save
+    case 'wsync': if (W) { applyWorld(m.g, !!m.leg); W.srch = new Set(m.srch || []); const me = W.p[ME]; if (me && m.me) { me.x = m.me[0]; me.y = m.me[1]; me.L = m.me[2]; me.z = surfZ(me.x, me.y, me.L); me.zv = me.z; CAM.tx = me.x; CAM.ty = me.y; } banner('继续存档', m.label || '', '#ffe7b0'); } return; // (round 32) the host opened the room from a save
     case 'toLobby': backToLobby(); return;
     case 'ev': if (W && m.e.q > (W.rq || 0)) { W.rq = m.e.q; fxEvent(m.e); } return; // own counter: local emits on the guest never swallow host events
     case 's': if (W && STATE.mode === 'play') applySnap(m); return;

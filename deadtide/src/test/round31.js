@@ -17,8 +17,8 @@ const { chromium } = require('playwright'); const OUT = process.env.OUT || '/tmp
     return { room, open: { x, y, L } }; });
   const tp = s => p.evaluate(s => { const me = W.p[0]; me.x = s.x + 0.5; me.y = s.y + 0.5; me.L = s.L; me.z = surfZ(me.x, me.y, s.L); me.zv = me.z; }, s);
   await tp(spots.room);
-  s = await p.evaluate(() => { const me = W.p[0]; const can = canCraft(me); doCraft(me, 'tank'); const own = ownsVeh(me, 6), shl = me.shl; doCraft(me, 'tshell'); const shl2 = me.shl; doAct(me, 'ride', 6); return { can, own, shl, shl2, ride: me.ride }; });
-  check('the tank is built in the shop with 10 shells, shells are bought ×10, and it will not start indoors', s.can && s.own && s.shl === 10 && s.shl2 === 20 && !s.ride, JSON.stringify(s));
+  s = await p.evaluate(() => { const me = W.p[0]; const can = canCraft(me); doCraft(me, 'tank'); const own = ownsVeh(me, 6), shl = me.shl; me.shl = 50; doCraft(me, 'tshell'); const shl2 = me.shl; doAct(me, 'ride', 6); return { can, own, shl, shl2, ride: me.ride }; });
+  check('the tank is built in the shop with 100 shells, shells are bought ×25, and it will not start indoors', s.can && s.own && s.shl === 100 && s.shl2 === 75 && !s.ride, JSON.stringify(s));
   await tp(spots.open);
   s = await p.evaluate(() => { const me = W.p[0]; doAct(me, 'ride', 6); const hp = me.hp; window.__dbg.god = false; hurtPlayer(me, 50); const lost = hp - me.hp; window.__dbg.god = true; me.hp = hp; return { ride: me.ride, veh: me.veh, lost }; });
   check('outdoors it starts; inside it a 50 hit does only 10 (×0.2)', s.ride && s.veh === 6 && Math.abs(s.lost - 10) < 0.6, JSON.stringify(s));

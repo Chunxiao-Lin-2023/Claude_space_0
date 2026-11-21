@@ -21,7 +21,7 @@ const { chromium } = require('playwright');
   });
   for (const r of curve) console.log('      night', String(r.n).padStart(2), 'zombies', String(r.total).padStart(3), 'in', String(r.packs).padStart(3), 'herds (' + r.mixed + ' mixed, ' + r.spots + ' spawn spots) from', r.sides, 'side(s), hp x' + r.hp, 'speed x' + r.spd, 'all out by', r.last + 's', JSON.stringify(r.kinds));
   check('night 1 already has more than walkers and crawlers', curve[0].kinds.runner > 0 && curve[0].total >= 40, JSON.stringify(curve[0].kinds));
-  check('each night brings more than the last', curve.every((r, i) => !i || r.total > curve[i - 1].total || (curve[i - 1].n % 5 === 0)));
+  check('each night brings at least as many as the last (a level every two nights since round 31)', curve.every((r, i) => !i || r.total >= curve[i - 1].total || (curve[i - 1].n % 5 === 0)) && curve[curve.length - 1].total > curve[0].total * 2);
   check('zombies come in herds (several per herd)', curve.every(r => r.packs < r.total * 0.5));
   check('a herd is spread over the edge (not one spawn cell) and some herds are mixed', curve.every(r => r.spots > r.packs * 1.3) && curve.slice(1).every(r => r.mixed > 0), JSON.stringify(curve.map(r => [r.spots, r.packs, r.mixed])));
   // packs stay together on the way in

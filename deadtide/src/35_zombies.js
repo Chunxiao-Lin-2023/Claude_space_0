@@ -1,3 +1,4 @@
+let NAV_FAR = null;
 /* ================= zombie AI (host only): flow fields, smashing, climbing, spitting ================= */
 function zAttackCell(z, i) {
   z.st = 'attack'; z.atk = 0.3;
@@ -60,7 +61,8 @@ function stepZombies(dt) {
     }
     const rf = climbT ? F.rc : F.rw, pf = climbT ? F.pc : F.pw;
     // pure survival: always hunt the nearest reachable player (smashing through walls if needed)
-    const field = pf[i] < Infinity ? pf : rf;
+    let field = pf[i] < Infinity ? pf : rf;
+    if (!(pf[i] < Infinity)) { let nd = 1e9; for (const p of W.p) if (standingP(p)) nd = Math.min(nd, Math.abs(p.x - z.x) + Math.abs(p.y - z.y)); if (nd > NAV_PR * 0.75) field = NAV_FAR || (NAV_FAR = new Float32Array(NC).fill(Infinity)); } // (round 33) out past the players' field: walk straight at the nearest player
     // spitter: lob acid at a visible player in range
     let hold = false;
     if (z.k === 'spitter' && !(z.conf > 0)) {

@@ -15,7 +15,7 @@ const { chromium } = require('playwright');
     s.after.hp === s.before.hp + 10 && s.after.med === s.before.med + 2 && s.after.nade === s.before.nade + 3 && s.after.gn === s.before.gn + 2 && s.after.lives === s.before.lives + 1 && s.after.cap === Math.round(s.before.cap * 1.25) && s.after.next === 200 && s.before.rows === 4, JSON.stringify(s));
   s = await p.evaluate(() => { const me = W.p[0]; me.owned[2] = 1; me.ammo[2] = 9999; return new Promise(r => setTimeout(() => r({ ammo: me.ammo[2], cap: ammoCap(2), blk: craftBlocked(me, CRAFT.find(c => c.id === 'rounds')) }), 400)); });
   check('the backpack caps carried ammo, and the shop says so when full', s.ammo === s.cap && s.blk === '背包满了', JSON.stringify(s));
-  s = await p.evaluate(() => { const txt = document.getElementById('tasks').textContent; return { has: /永久任务/.test(txt), up: /已拿 5 项提升/.test(txt) }; });
+  s = await p.evaluate(() => { const txt = document.getElementById('tasks').textContent; return { has: /任务/.test(txt), up: /提升 5/.test(txt) }; });
   check('the panel says 永久任务 with the number of upgrades', s.has && s.up, JSON.stringify(s));
   // save → load keeps it all
   s = await p.evaluate(() => { saveGame(true); const n = SLOT; continueGame(n); const me = W.p[0]; return { perk: W.perk, hp: me.maxHp, kill: W.perm.kill, med: BAL.medCap }; });

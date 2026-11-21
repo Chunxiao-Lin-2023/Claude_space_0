@@ -69,9 +69,15 @@ input:focus{border-color:var(--amber)}
 #hTC{position:absolute;left:50%;transform:translateX(-50%);top:calc(10px + var(--sa-t));display:flex;flex-direction:column;align-items:center;gap:6px;min-width:260px}
 #phase{font-size:16px;font-weight:700;letter-spacing:.06em;text-align:center}#phase .sub{font-weight:400;font-size:13px;color:var(--sub);margin-left:6px}
 #phase.night{color:#ffd27a}#phase.blood{color:#ff6a5a}
-#tasks{display:flex;flex-direction:column;gap:3px;width:100%;font-size:11.5px;color:var(--sub);text-align:left;cursor:pointer;pointer-events:auto}
+#tasks{position:relative;display:flex;flex-direction:column;align-items:center;width:100%;font-size:11.5px;color:var(--sub);text-align:left;cursor:pointer;pointer-events:auto}
+/* (round 33) the task list folds into a small pill; opened, it drops down over the scene instead of pushing the 准备入夜 button down */
+#tasks .tklist{position:absolute;top:calc(100% + 4px);left:50%;transform:translateX(-50%);width:min(300px,82vw);display:none;flex-direction:column;gap:4px;padding:8px 10px;background:rgba(14,16,20,.88);border:1px solid rgba(255,255,255,.12);border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.4);z-index:30}
+#tasks.open .tklist{display:flex}
+#tasks .tksum{display:inline-block;padding:2px 10px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1)}
+#tasks .tksum.ping{animation:tkping 1.2s ease-out 2}@keyframes tkping{0%{background:rgba(255,215,106,.55)}100%{background:rgba(255,255,255,.06)}}
+#tasks .tkhide{display:block;text-align:center;font-size:11px;color:#9aa0a6;margin-top:2px}
 #tasks .tksum{text-align:center;color:#ffd76a;font-size:12px}#tasks .tksum span{opacity:.7}#tasks.open .tksum span{display:inline-block;transform:rotate(180deg)}
-#tasks:not(.open) .tk{display:none}
+
 #tasks .tk{display:grid;grid-template-columns:14px 1fr auto;column-gap:5px;align-items:center;line-height:1.25}
 #tasks .tk i{width:12px;height:12px;border:1px solid rgba(255,255,255,.3);border-radius:3px;font-style:normal;font-size:10px;line-height:11px;text-align:center;color:#7fd36b}
 #tasks .tk .tt{color:#e9e2d0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#tasks .tk b{color:#ffd76a;font-weight:600}

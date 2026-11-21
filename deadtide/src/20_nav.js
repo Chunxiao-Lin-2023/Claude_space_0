@@ -99,12 +99,14 @@ function navNbrs(x, y, L, climb, cb) {
     }
   }
 }
-function buildField(out, sources, climb) {
+// (round 33) maxD: stop spreading past this path cost (the maps are 2.25× bigger now; zombies farther out than that walk straight at you)
+function buildField(out, sources, climb, maxD = Infinity) {
   out.fill(Infinity);
   const H = HEAP; H.n = 0;
   for (const s of sources) { out[s] = 0; H.push(0, s); }
   while (H.n) {
     const k = H.k[0], v = H.pop();
+    if (k > maxD) break;
     if (k > out[v]) continue;
     const x = cx_(v), y = cy_(v), L = cl_(v), ec = enterCost(v) + 0;
     navNbrs(x, y, L, climb, (nx, ny, nL, extra) => {
@@ -118,15 +120,16 @@ function radioSources() {
   for (const [dx, dy] of DIRS) { const i = ci(x + dx, y + dy, L); if (navNode(x + dx, y + dy, L)) out.push(i); }
   return out;
 }
+const NAV_PR = 95, NAV_RR = 140; // (round 33) how far (path cost) the hunt-the-players / go-for-the-base fields spread
 function updateFields(dt, force) {
   const F = W.ff;
   F.rT -= dt; F.pT -= dt;
-  if ((W.navDirty && F.rT <= 0) || force) { buildField(F.rw, radioSources(), false); if (W.zs.some(z => z.k === 'climber')) buildField(F.rc, radioSources(), true); else F.rc.set(F.rw); W.navDirty = false; F.rT = 0.4; }
+  if ((W.navDirty && F.rT <= 0) || force) { buildField(F.rw, radioSources(), false, NAV_RR); if (W.zs.some(z => z.k === 'climber')) buildField(F.rc, radioSources(), true, NAV_RR); else F.rc.set(F.rw); W.navDirty = false; F.rT = 0.4; }
   if (F.pT <= 0 || force) {
     F.pT = 0.35;
     const src = W.p.filter(p => !p.gone && !p.dead).map(p => ci(Math.floor(p.x), Math.floor(p.y), airborne(p) ? skyTop(p.x, p.y) : p.L)); // (round 29) a flying player: they crowd the spot under it
-    buildField(F.pw, src, false);
-    if (W.zs.some(z => z.k === 'climber')) buildField(F.pc, src, true); else F.pc.set(F.pw);
+    buildField(F.pw, src, false, NAV_PR);
+    if (W.zs.some(z => z.k === 'climber')) buildField(F.pc, src, true, NAV_PR); else F.pc.set(F.pw);
   }
 }
 
