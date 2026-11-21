@@ -46,11 +46,12 @@ function noteEvade(g, role, topic, kind) {
   if ((kind === 'evade' || kind === 'crack') && !g.evadeT[role][topic]) { g.evadeT[role][topic] = 1; g.evade[role]++; }
 }
 const promptFor = (g, r) => g.prompts.some(p => p.to === r);
+const ownText = q => { const t = String(q || '').replace(/\s+/g, ' ').trim().slice(0, 120); return t || null; };
 /* AI 回答一个问题；对真人则弹出问题 */
-function answer(g, from, to, topic) {
+function answer(g, from, to, topic, q) {
   const sc = SCRIPTS[g.sid], key = to + ':' + topic;
   g.asked[key] = (g.asked[key] || 0) + 1;
-  logPush(g, { k: 'ask', who: from, to, topic, text: topicQ(sc, topic) });
+  logPush(g, { k: 'ask', who: from, to, topic, text: q || topicQ(sc, topic), own: q ? 1 : 0 });
   if (g.seats.includes(to)) { addPrompt(g, { to, from, topic }); return; }
   const a = pickAns(g, to, topic);
   if (!a) { logPush(g, { k: 'ans', who: to, to: from, text: rnd(g, sc.show[to]._) }); return; }
@@ -98,8 +99,8 @@ function applyEffects(g, role, ent) {
   if (ent.cut) g.cut[ent.cut] = g.seats.includes(role) ? .4 : .6;
   if (ent.uncut) delete g.cut[ent.uncut];
 }
-function humanSay(g, role, ent, prompt, topic) {
-  logPush(g, { k: topic === 'final' ? 'final' : prompt ? 'ans' : 'say', who: role, to: prompt ? prompt.from : null, text: ent.say, kind: ent.kind });
+function humanSay(g, role, ent, prompt, topic, own) {
+  logPush(g, { k: topic === 'final' ? 'final' : prompt ? 'ans' : 'say', who: role, to: prompt ? prompt.from : null, text: own || ent.say, kind: ent.kind, own: own ? 1 : 0 });
   if (prompt) noteEvade(g, role, prompt.topic, ent.kind);
   if (ent.confess === 1) { g.confess[role] = 1; g.contraAdd[role] = (g.contraAdd[role] || 0) + 30; }
   if (ent.confess === 2) g.confess[role + '2'] = 1;
@@ -314,8 +315,15 @@ function apply(g, a, seat) {
       aiSearch(g, 1); break;
     }
     case 'publish': if (g.own[role].includes(a.id)) { logPush(g, { k: 'pub', who: role, ref: a.id, text: '公开了' + itemTitle(sc, a.id) }); reveal(g, [a.id], role); } break;
-    case 'ask': if (disc && a.to !== role && sc.suspects.includes(a.to)) { answer(g, role, a.to, a.topic); g.acts++; } break;
-    case 'show': if (disc && (g.pub.includes(a.id) || g.own[role].includes(a.id)) && sc.suspects.includes(a.to) && a.to !== role) { showTo(g, role, a.to, a.id); g.acts++; } break;
+    case 'ask': if (disc && a.to !== role && sc.suspects.includes(a.to)) { answer(g, role, a.to, a.topic, ownText(a.q)); g.acts++; } break;
+    case 'show': if (disc && (g.pub.includes(a.id) || g.own[role].includes(a.id)) && sc.suspects.includes(a.to) && a.to !== role) { if (ownText(a.q)) logPush(g, { k: 'say', who: role, to: a.to, text: ownText(a.q), own: 1 }); showTo(g, role, a.to, a.id); g.acts++; } break;
+    case 'free': { /* 自由打字但不属于任何话题：记下原话，对方只回一句不含事实的话 */
+      const q = ownText(a.q); if (!disc || !q) return;
+      if (a.to && sc.suspects.includes(a.to) && a.to !== role) { logPush(g, { k: 'ask', who: role, to: a.to, text: q, own: 1 }); if (g.seats.includes(a.to)) addPrompt(g, { to: a.to, from: role, topic: '_', q }); else logPush(g, { k: 'ans', who: a.to, to: role, text: rnd(g, sc.idle[a.to]), kind: 'evade', free: 1 }); }
+      else logPush(g, { k: 'say', who: role, text: q, own: 1, kind: a.kind || 'truth' });
+      g.acts++; break;
+    }
+    case 'freeText': { const q = ownText(a.text); if (!q) return; g.freeQ = g.freeQ || []; if (!disc && a.pid == null) return; g.freeQ.push({ id: g.nid++, role, text: q, pid: a.pid != null ? a.pid : null, to: a.to || null, say: !!a.say }); return; }
     case 'link': if (disc) { linkItems(g, role, a.a, a.b); g.acts++; } break;
     case 'hint': if (disc || g.phase === 'r2') { g.hints[role] = (g.hints[role] || 0) + 1; g.hintText[role] = { n: g.nid++, text: hintFor(g, role) }; } break;
     case 'say': {
@@ -323,7 +331,7 @@ function apply(g, a, seat) {
       const topic = pr ? pr.topic : a.topic; const ent = deckFor(g, role, topic)[a.i]; if (!ent) return;
       if (topic === 'final') { if (g.phase !== 'final' || g.finalSaid[role]) return; g.finalSaid[role] = 1; humanSay(g, role, ent, null, 'final'); break; }
       if (pr) g.prompts.splice(g.prompts.indexOf(pr), 1); else if (!ent.vol || g.saidV[saidKey(role, ent)]) return;
-      humanSay(g, role, ent, pr); g.acts++; break;
+      humanSay(g, role, ent, pr, null, a.fromFree ? ownText(a.q) : null); g.acts++; break;
     }
     case 'chat': { const t = String(a.text || '').trim().slice(0, 120); if (t && humanRoles(g).length > 1) logPush(g, { k: 'chat', who: role, text: t }); return; }
     case 'status': g.status[role] = String(a.s || '').slice(0, 20); return;

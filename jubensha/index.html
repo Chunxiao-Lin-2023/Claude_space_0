@@ -103,7 +103,7 @@ h1,h2,h3{font-family:var(--serif);font-weight:700;margin:.2em 0}
 .it.gone{opacity:.45}
 .ap{font-family:var(--mono);font-size:18px;color:var(--acc)}
 /* 弹窗 */
-.mask{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:50;display:flex;align-items:center;justify-content:center;padding:16px;animation:fade .2s}
+.mask{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:56;display:flex;align-items:center;justify-content:center;padding:16px;animation:fade .2s}
 .dlg{background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:16px;max-width:760px;width:100%;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.5)}
 .dlg .dh{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--line)}
 .dlg .dh h3{flex:1;margin:0}
@@ -152,6 +152,12 @@ h3.grp{font-size:15px;color:var(--mut);margin:10px 0 2px}
 .rate{display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:12px;font-family:var(--serif);font-weight:900;font-size:34px;color:#fff;background:#666}
 .r-S{background:#b8860b}.r-A{background:#2f6b4f}.r-B{background:#3d5a80}.r-C{background:#6b4040}
 .optl button.on{outline:2px solid var(--acc)}
+.dots{display:inline-flex;gap:4px;padding:4px 0}.dots i{width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.35;animation:dot 1.1s infinite}.dots i:nth-child(2){animation-delay:.18s}.dots i:nth-child(3){animation-delay:.36s}
+@keyframes dot{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:.9;transform:translateY(-3px)}}
+.aitag{font-size:10px;padding:0 5px;border-radius:5px;border:1px solid var(--line);margin-left:6px;opacity:.7;cursor:help}
+.freebar{display:flex;gap:8px;padding:8px 12px 0;border-top:1px solid var(--line);background:rgba(0,0,0,.12)}.freebar input{flex:1;font-size:16px;padding:8px 10px;min-height:42px}
+.freebox{display:flex;gap:8px;margin-top:12px}.freebox input{flex:1;font-size:16px;padding:8px 10px}
+.aichip{font-size:12px;padding:2px 8px;border-radius:999px;border:1px solid var(--acc);color:var(--acc);background:transparent;min-height:28px}
 .prompt-badge{background:#d9524a;color:#fff;border-radius:999px;padding:0 7px;font-size:12px;margin-left:4px}
 @media (max-width:640px){.hot{font-size:13px;padding:0;min-height:30px;min-width:30px;width:30px;height:30px}.hot span{display:none}.hot b{display:inline}.legend{display:flex}.seats{flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;padding:4px 8px 22px;gap:4px}.seats .seal.big{width:34px;height:34px;font-size:19px;border-radius:7px}.st{min-width:58px;padding:4px 6px}.st .nm{font-size:11px}.sbar{width:44px}.hide-n,.partner{display:none}.seats .logtg{bottom:2px;right:6px;min-height:26px;padding:2px 8px;font-size:12px}.top{padding:6px 8px;gap:4px}.top .tm{display:none}.book{padding:18px 16px;font-size:17px}.msg .tx{font-size:16px}.top .ph{font-size:16px}button{padding:9px 12px}}
 </style>
@@ -800,6 +806,99 @@ h3.grp{font-size:15px;color:var(--mut);margin:10px 0 2px}
   window.TitleKit = { create, version: 1 };
 })();
 
+/* AIKit — Claude as an AI player for the hub's browser games (shared/aikit; games vendor a copy into src/vendor/).
+   Backends, picked automatically:
+     · hub / GitHub Pages: the owner's own API key, stored only in this browser (localStorage 'hub.ai', shared by every
+       game on the hub origin), called straight from the page with the browser-access header. No server.
+     · claude.ai artifact: the page's `sample` capability (the viewer's own claude.ai account, no key).
+     · neither: AIKit.available() is false and games fall back to their scripted AI.
+   In co-op only the host calls the API (the host runs the AI); guests never need a key.
+   Games pass a JSON-schema tool and always get structured input back; they must validate it themselves. */
+const AIKit = (() => {
+  const CFG = 'hub.ai', USE = 'hub.ai.usage';
+  const MODELS = { quick: 'claude-haiku-5-5', smart: 'claude-sonnet-5-5' };
+  const PRICE = { 'claude-haiku-5-5': { i: 0.10, o: 0.50, cr: 0.01, cw: 0.125 }, 'claude-sonnet-5-5': { i: 2, o: 10, cr: 0.10, cw: 2.5 } };
+  const TIERS = { eco: '省钱：全部用 Haiku', bal: '均衡：平时 Haiku，关键台词 Sonnet', best: '高质量：全部用 Sonnet' };
+  const get = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } };
+  const put = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { } };
+  let sample = null, sampleTried = false, chain = Promise.resolve(), session = { calls: 0, usd: 0, fails: 0 };
+  const isArtifact = () => !!window.__ARTIFACT__;
+  function cfg() { return Object.assign({ key: '', on: true, tier: 'bal' }, get(CFG, {})); }
+  function setCfg(p) { put(CFG, Object.assign(cfg(), p)); }
+  async function loadSample() {
+    if (sampleTried) return sample; sampleTried = true;
+    try { if (window.claude && window.claude.use) sample = await window.claude.use('sample'); } catch (e) { sample = null; }
+    return sample;
+  }
+  if (isArtifact()) setTimeout(loadSample, 0);
+  function available() { const c = cfg(); if (!c.on) return false; return isArtifact() ? !!sample : !!c.key; }
+  function backend() { return isArtifact() ? (sample ? 'claude.ai 账号' : '不可用') : cfg().key ? '你的 API 密钥' : '未设置密钥'; }
+  function model(want) { const t = cfg().tier; return MODELS[t === 'eco' ? 'quick' : t === 'best' ? 'smart' : (want === 'smart' ? 'smart' : 'quick')]; }
+  function track(m, u) {
+    const p = PRICE[m] || PRICE[MODELS.quick]; if (!u) return;
+    const usd = ((u.input_tokens || 0) * p.i + (u.output_tokens || 0) * p.o + (u.cache_read_input_tokens || 0) * p.cr + (u.cache_creation_input_tokens || 0) * p.cw) / 1e6;
+    session.calls++; session.usd += usd; const all = get(USE, { calls: 0, usd: 0 }); all.calls++; all.usd += usd; put(USE, all);
+  }
+  function usage() { return { session: Object.assign({}, session), total: get(USE, { calls: 0, usd: 0 }) }; }
+  function resetSession() { session = { calls: 0, usd: 0, fails: 0 }; }
+  /* one call at a time, so a burst of lines never trips the rate limit */
+  function call(opts) { const p = chain.then(() => callNow(opts)); chain = p.catch(() => { }); return p; }
+  async function callNow({ system, user, tool, want, maxTokens, timeout }) {
+    if (!available()) throw new Error('AI 不可用');
+    const m = model(want), ctl = new AbortController(), to = setTimeout(() => ctl.abort(), timeout || (want === 'smart' ? 20000 : 12000));
+    try {
+      if (isArtifact()) {
+        const s = await loadSample(); if (!s) throw new Error('claude.ai 不允许这个页面调用 Claude');
+        const prompt = system + '\n\n' + user + '\n\n只输出一个 JSON 对象，字段：' + JSON.stringify(tool.schema.properties) + '。不要输出别的。';
+        try { const v = await s.json(prompt, { modelTier: want === 'smart' ? 'default' : 'quick', signal: ctl.signal, cache: false }); session.calls++; return v; }
+        catch (e) { if (e && e.code === 'not_granted') sample = null; throw new Error((e && e.message) || 'claude.ai 调用失败'); }
+      }
+      const r = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST', signal: ctl.signal,
+        headers: { 'content-type': 'application/json', 'x-api-key': cfg().key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+        body: JSON.stringify({ model: m, max_tokens: maxTokens || 400, system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }],
+          messages: [{ role: 'user', content: user }], tools: [{ name: tool.name, description: tool.description || tool.name, input_schema: tool.schema }], tool_choice: { type: 'tool', name: tool.name } })
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) { const msg = (j.error && j.error.message) || ('HTTP ' + r.status); const e = new Error(r.status === 401 ? '密钥无效（401）' : r.status === 429 ? '调用太频繁或额度用完（429）' : msg); e.status = r.status; throw e; }
+      track(m, j.usage);
+      const b = (j.content || []).find(x => x.type === 'tool_use'); if (!b) throw new Error('没有拿到结构化结果');
+      return b.input;
+    } catch (e) { session.fails++; if (e.name === 'AbortError') throw new Error('超时'); throw e; }
+    finally { clearTimeout(to); }
+  }
+  async function test() {
+    const v = await call({ system: '你是连通性测试。', user: '回复“通了”。', tool: { name: 'ok', schema: { type: 'object', properties: { text: { type: 'string' } }, required: ['text'] } }, maxTokens: 30, timeout: 15000 });
+    return v && v.text;
+  }
+  /* settings block any game can drop into its own dialog: returns HTML; bind with AIKit.bind(root, onChange) */
+  function panelHTML(note) {
+    const c = cfg(), u = usage(), esc = s => String(s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+    const keyRow = isArtifact() ? `<p class="ak-mut">claude.ai 里的版本用你自己的 claude.ai 账号调用 Claude，不需要密钥。第一次会弹窗请你同意。</p>`
+      : `<label class="ak-row">API 密钥<input class="ak-key" type="password" autocomplete="off" spellcheck="false" placeholder="${c.key ? '已保存：••••' + esc(c.key.slice(-4)) : 'sk-ant-…'}"></label>
+         <div class="ak-btns"><button class="ak-save">保存密钥</button>${c.key ? '<button class="ak-clear">删除密钥</button>' : ''}</div>
+         <p class="ak-mut">密钥只存在这台设备的浏览器里（游戏厅所有游戏共用），不会上传到任何地方，也不会进存档。打开浏览器开发者工具的人能看到它，所以建议单独建一个密钥，并在 Claude Console 里给它设消费上限。联机时只有开房间的人需要密钥。</p>`;
+    return `<div class="ak">
+      <label class="ak-row"><input class="ak-on" type="checkbox" ${c.on ? 'checked' : ''}> 用 Claude 扮演 AI 玩家 <span class="ak-mut">（${esc(backend())}）</span></label>
+      ${keyRow}
+      <div class="ak-row">档位 ${Object.keys(TIERS).map(k => `<label class="ak-tier"><input type="radio" name="ak-tier" value="${k}" ${c.tier === k ? 'checked' : ''}> ${TIERS[k]}</label>`).join('')}</div>
+      <div class="ak-btns"><button class="ak-test">测试连接</button><span class="ak-msg ak-mut"></span></div>
+      <p class="ak-mut">这次打开以来：${u.session.calls} 次调用，约 $${u.session.usd.toFixed(3)}${u.session.fails ? '，失败 ' + u.session.fails + ' 次（失败时自动用脚本台词）' : ''}；累计 ${u.total.calls} 次，约 $${u.total.usd.toFixed(2)}。费用按官网标价估算，以 Console 账单为准。</p>
+      ${note ? `<p class="ak-mut">${note}</p>` : ''}</div>`;
+  }
+  function bind(root, onChange) {
+    const q = s => root.querySelector(s), msg = t => { const m = q('.ak-msg'); if (m) m.textContent = t; };
+    const on = q('.ak-on'); if (on) on.onchange = () => { setCfg({ on: on.checked }); onChange && onChange(); };
+    root.querySelectorAll('input[name=ak-tier]').forEach(r => r.onchange = () => { setCfg({ tier: r.value }); onChange && onChange(); });
+    const sv = q('.ak-save'); if (sv) sv.onclick = () => { const k = q('.ak-key').value.trim(); if (!/^sk-ant-/.test(k)) return msg('密钥应该以 sk-ant- 开头'); setCfg({ key: k, on: true }); onChange && onChange(); };
+    const cl = q('.ak-clear'); if (cl) cl.onclick = () => { setCfg({ key: '' }); onChange && onChange(); };
+    const t = q('.ak-test'); if (t) t.onclick = async () => { msg('测试中…'); try { const r = await test(); msg('✅ 通了（' + (r || 'ok') + '）'); } catch (e) { msg('❌ ' + e.message); } };
+  }
+  const css = `.ak{display:flex;flex-direction:column;gap:10px;font-size:15px}.ak-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px}.ak-key{flex:1;min-width:200px;font:15px ui-monospace,Menlo,monospace;padding:8px 10px;border-radius:8px;border:1px solid rgba(128,128,128,.4);background:rgba(0,0,0,.2);color:inherit}.ak-btns{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.ak-mut{opacity:.7;font-size:13px;line-height:1.6;margin:0}.ak-tier{display:flex;gap:6px;align-items:center;width:100%}`;
+  if (typeof document !== 'undefined') { const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st); }
+  return { cfg, setCfg, available, backend, call, test, usage, resetSession, panelHTML, bind, MODELS, TIERS, loadSample };
+})();
+
 const TEXT = {"rcr_bg": "【人吃人】\n\nA国南城外的大山之中，有一个与世隔绝的村落，已经享受了百年宁静。但在2032年，有几位不速之客却进入了山村，而前来扶助山村的赵慈善，竟然惨死在了住所之中。是和原住民的冲突，还是和闯入者的纠葛？这个山村还隐藏了什么秘密，一切都等待着公诸于世……\n\n这个世界从来也不是非黑即白的，有吃人的利益，就有吃人的人。\n\n人物角色：\n\n①王村长，山村的村长。\n\n②张村民，山村中不爱与人交流的村民。\n\n③李警察，在山村执行任务的警察。\n\n④胡调研，来山村调研贫困人口的调研员。", "rcr_hu": "胡调研是A国南城的调研员，从很久以前就开始研究贫困人口。他发现一条重要的定理，就是越贫穷的地方，人们的心智就会越不开化，如同坐井观天，而且很容易沉迷黄赌毒等不良嗜好。依靠这个定理，他把扶贫工作分为了经济扶持和知识扶持两部分，在扶贫事业上做出了巨大的贡献。\n\n2032年2月，胡调研在南城外大山之中，发现了一个非常贫困的村庄。这个村庄与外界全无联系，全村人都说着听不懂的方言，只有村里王村长能说普通话。他立即在村中住了下来，把这个村子当成重要的调研对象。\n\n因为语言不通，在普及知识上出现了非常严重的阻碍，只能靠村长口述来传达。可村民依旧是不闻不问的样子，眼神里透露出的无知让胡调研非常头疼。\n\n在胡调研来之前，村内还有一个外面来的人住在里面，是李警察。李警察过来执行一个秘密任务，不能透露内容。但毕竟都是体系内的人，二人平时还是经常交流的。\n\n可在4月份，村里又来了一人，叫做赵慈善。胡调研早就听说过这个人，他在贫困区周围开设工厂，表面扶贫，其实给的工资极少，完全是压榨贫困劳动力，但这个人家大业大，在公众中名声又好，知道他真相的人，都拿他没有办法。\n\n胡调研一直是非常同情贫困人口的，非常看不惯赵慈善这种人。既然这人撞上门来，胡调研决定找寻证据，让他翻不了身。经过一番潜查，他终于录下了一段赵慈善指示手下拖欠贫困员工工资，违法让员工无偿加班的录音。可是在录完音之后，不小心弄出了点动静，被赵慈善发现了。\n\n赵慈善发现了他，还看到了他的录音笔，立刻逼迫胡调研交出录音。胡调研要是能屈服淫威，从一开始就不来和他做对了。他不愿交出，赵慈善也没有跟班，只能言语威胁他说：“你很厉害，希望你不要后悔。”\n\n正当胡调研准备把这份录音上交时，赵慈善找到了他，给他看了一段视频，是胡调研的两个儿子，被绑在椅子上，对着摄像头嚎啕大哭。胡调研立刻急红了眼，可赵慈善却很淡定，删掉了视频，然后告诉胡调研，要是不把录音交出来，后果自负。\n\n胡调研回了家，非常痛苦，而且在仔细思索之后，他知道事情不是交出录音这么简单。胡调研不傻，他知道这种人是什么样，等录音交上去，手里没有他的把柄之后，自己这个不知道什么时候就会爆炸的炸弹会是赵慈善的心头刺。而赵慈善是肯定要拔掉自己这根刺的。自己开始后悔惹上这样的人，还把自己年幼的儿子牵涉其中。自己不怕死，可是儿子是说什么都要保护的。想要保护儿子，胡调研只剩一条路可走了。\n\n2032年5月14日\n\n胡调研听说，赵慈善明天就要离开了，这是他实施行动的最后机会。从来没有干过什么坏事的胡调研内心非常的忐忑，可对儿子的爱让这位父亲可以付出任何代价。他决定先抓住赵慈善，逼他说出儿子的位置，然后再将他彻底解决掉。\n\n晚上9点25分，胡调研离开了住处，来到了赵慈善的家。门没有锁，屋里很黑，什么都看不见。胡调研以为赵慈善睡了，悄悄的来到卧室。卧室门没关，胡调研按耐住了紧张的心情，掏出了准备好的水果刀，左手往床上摸索过去，却发现床上也没人。屋子就这么大，没其他地方藏人了。胡调研还是害怕，又有个好借口安慰自己，便急匆匆的离开了。\n\n晚上9点40分，胡调研在住处辗转反侧，感觉自己不能这么轻易就放弃了，要不然自己的全家可能都受到牵连。他拿起灯笼，再一次前往赵慈善的住处。在路上，胡调研遇到了张村民。到了赵慈善家，再一次推开门的时候，发现赵慈善已经趴在了地上，口吐鲜血，甚是恐怖，已然是死绝了。胡调研大松一口气，恶有恶报，自己也不用付出代价，简直是再好不过了。\n\n『支线任务』（完成+10分）：\n\n很显然你不是凶手，你需要调查王村长隐藏的秘密。", "rcr_li": "李警察在2030年末接到上级命令，调查最近在A国南城闹得腥风血雨的杀人狂事件。根据各方回报，这个南城杀人狂作案十几起，每一次杀人之后都会砍下被害者的食指和中指，而且被害者都是家境比较好的人。可是最近因为居民防范意识加强，杀人狂很难得手，已经销声匿迹许久了，调查一度陷入僵局。\n\n在2032年2月，一次偶然的机会，李警察在南城外寻到一处小山村，山村非常贫穷，连条像样的路都没有。山村中只有一个人会说普通话，就是王村长。李警察隐晦的询问一番之后，并没问出什么有用的线索，可是他总是觉得这个村隐隐有一些诡异。所有的村民眼中都毫无神采，就像是被操控的行尸走肉一般，看不出一点人该有的希望，在李警察的记忆中，有这样眼神的人，只有在监狱中等待死亡的死刑犯而已。\n\n察觉到异样的李警察决定在村庄住下来调查一阵子，村庄中太穷了，电也没通，他随身携带的通讯设备很快就没有电了，村中也没有多余的粮食给他，他只能靠自己去市里采购补给。在一次去市里时，李警察的女友联系他，说担心他的安危，希望和他一起。李警察很无奈，真要碰上危险，女孩子能帮上什么忙？可女友太倔，他拗不过，只得让她跟着进了山村。\n\n同在2月份，村外还来了一个市里派来的扶贫调查员，同属体制内的人，总归还是能聊上两句的。这人叫胡调研，研究A国贫困现象已经很久了，但他说即使这样，也很少能碰到穷到这种地步的村子。胡调研告诉他，贫困人口研究中有一个重要的定理，就是越贫穷的地方，人们的心智就会越不开化，这个村子就是很典型的现象，人们眼中毫无智慧的神采。这种地方的扶贫工作是异常难做的。\n\n在村中的时间里，李警察经常用各种手段调查人们的行为，可因为村中说的方言自己完全听不懂，很难获得有用的线索。李警察只是发现，在夜晚的时候，总是有一些居民三三两两的前往村长家，很久才离开。\n\n4月，村里又来了一个人，赵慈善。不知为什么，赵慈善来了之后不久，胡调研就变得没有原来健谈了，经常在村中发呆。李警察刚意识到不对劲，准备去安慰安慰胡调研时，发生了一件让李警察再也无暇顾及其他的事情——女友失踪了！\n\n女友肯定不会走丢，李警察知道越是此时，越是不能打草惊蛇，加上这个村子诡谲异常，更是让李警察警觉起来，生怕让这个绑架自己女友的人情急之下撕票。\n\n可是怎么调查，都找不到一丁点线索。正在这时，女友却回来了，眼神空洞，衣衫破烂。李警察没有多问，只是默默抱住了女友。女友好像才回过神来，大声哭了出来，还哽咽着说着：“赵慈善，这个恶魔！他不是人！”李警察明白了一切。\n\n女友哭累了之后，渐渐的睡过去了，这么多天肯定都没有好好休息过。李警察心里一阵阵发疼。他去给女友准备了一些吃的，可是再回来时，女友竟然在房梁上上吊自杀了。\n\n赵慈善，赵慈善，赵慈善！\n\n李警察红了眼，他已经把警察的一切抛在了脑后，他心里想的只有一件事，就是将赵慈善碎尸万段。李警察将女友的尸体带下了山，交给了她的父母，之后独自返回，准备为女友复仇。\n\n【2032年5月14日】\n\n李警察打听到，明天赵慈善就要离开了，这是他动手的最后机会。满心复仇的他，将自己配枪反复擦拭，安装好了消音器，便起身前往赵慈善的家中了。\n\n9点10分，李警察来到了赵慈善的住处，他推开门，赵慈善正在屋里看书。赵慈善抬头看到他，好像是被浑身杀气的他吓到了，再加上心里有鬼，把书一扔，拔腿就跑。李警察掏出手枪，心情激动的他手有些发抖，开了几枪都没打中。而赵慈善已经把躲进卧室中，把门反锁了。\n\n李警察一脚把卧室门踹开，卧室里却空空荡荡，窗户是开着的。李警察翻窗而出，在周围四处寻找，却没找到赵慈善的影子。李警察有些悔恨，这下打草惊蛇，能报仇不知道是什么时候了。可是没关系，自己不能复仇，还有法律可以制裁他，至于自己会不会因为这次冲动行为承担后果，他已经不在乎了。想通了这一点，李警察安心了一些。\n\n支线任务（完成+10分）：在村中找到杀人狂的线索，并且发现明确证据或者原因。", "rcr_truth": "凶手是王村长，锁定凶手的关键线索自然就是死者遗留下来的文字。由胡调研的研究“定理”所得，越是贫穷的地方，人们的心智就越不开化（此处为剧情需要进而虚构，并不是真实定理，请不要代入真实生活，更没有歧视意味），所谓“定理”，就是放之四海而皆准的，所以在如此贫困的山村自然也是这样。而根据李警察的发现，人群在夜晚三三两两来到王村长的家中，和张村民父亲借的高利贷，可以推论出，村中有地下赌场的存在。而王村长刻意不申请贫困补助，说明王村长并不想让山村富起来，这背后的原因，就是想利用村民心智低下的弱点来控制他们。结论是，王村长不仅设置赌局，更是拿村民永远不会发现自己的阴谋在赌，称得上【赌徒】二字，也就是死者留下的文字。\n\n以上是凶手杀机和行为的推论。借由时间线，我们能更清晰的锁定凶手。\n\n9：10，李警察前往死者住处，并开枪射击死者，死者躲进地洞，李警察四处寻找没看到，便回去了。李警察进入和出来的过程被张村民目击。\n\n9：15，张村民进入，找到了地洞，却被躲藏其中的赵慈善敲晕。\n\n9：25，胡调研来到赵慈善屋里，没发现人。\n\n9：30，王村长来到赵慈善屋里，在地洞中发现了赵慈善。他没有进入，而是好言相劝，赵慈善正处极度恐慌之际，遇到了一个能救他的人，便病急乱投医，出来之后，王村长给他倒了杯水，下了农药，毒死了赵慈善。\n\n9：40，张村民醒来，发现了被毒死的赵慈善，回去路上碰到了胡调研，胡调研也发现了死者。这里有一个隐藏的逻辑，两人先后发现尸体，因为只有一人撒谎，杀人的只可能是张村民。而张村民杀人必取双指，所以可证明不是张村民。凶案现场没有发现不利于胡调研的物证，所以胡调研没有在杀人之后回到案发现场的理由，自然也不是胡调研。\n\n以上推论，证明凶手在李警察和王村长中间。从凶杀现场的物证“井水”和“矿泉水”看出，死者既然带了矿泉水，自然是没有喝井水的习惯的。所以这杯井水自然是下毒之人亲自倒给死者的，而不可能是将毒药下在井中，等其自投罗网。李警察已经准备枪杀赵慈善了，赵慈善怎么可能喝李警察倒的水，所以凶手只能锁定在王村长身上。", "rcr_wang": "王村长所在的村子位处A国南城外的大山之中，非常贫困，想去到附近的城里需要走十几里的山路，一下雨道路泥泞难行，几乎就与外界完全隔离了。王村长却很受村民拥护，王村长说什么村民都当做圣旨一样看待。全村只有一个例外，就是张村民，张村民早年家庭变故，成了孤儿，从此性格孤僻，但也不会闹事，王村长就没有在意他。\n\n背地里，王村长其实是全村最富有的人，这个村子的穷，和王村长不无关系，或者说，和王村长的家族不无关系。从王村长的某一代祖宗开始，村里的村长就一直由王家人担任了。当王村长年轻时问父亲治理村子的法门时，父亲说了一段话，让王村长这辈子都久久不能忘记：\n\n“你要记住，聪明人不好管，蠢人才能被你玩在手里。什么人会蠢？你要是有钱，不愁吃穿，你就有功夫研究学问，这种人蠢不了。穷人才蠢，越穷的人就越蠢。人穷到只顾得上想明天会不会被饿死，没功夫想别的事，他能不蠢吗。你要让他们一直穷下去，让他们这辈子都搞不清楚这个世界是什么样，让他们变成被你圈养起来的牲口，他们生下来的命就是养着你，仅此而已。”\n\n王村长终于理解了王家在这村中\"统治\"多年的秘密，他想到那些活如行尸走肉的穷苦村民，不旦没有同情，反而是异常的兴奋。没有人不喜欢权力的感觉，在这个村庄，王家就是帝王，就是神。王村长上任之后，每次出村拿着村民的血汗钱去花天酒地时，还觉得钱太少了，于是，他开始在村中开设赌场，自己发明了一些通俗易懂，又有大量作弊空间的赌博方式，自己坐庄，把这些村民仅剩的一点钱还搜刮干净。毕竟被贫穷限制了心智发展的这帮人，控制起来真是太轻松了。\n\n因为村子跟外界隔绝，村民不会说外面的语言，不知道外面是什么样子，没有人有能力发现任何一点不对的地方。\n\n但情况在2030年出现了一些变化，这是王村长上任的第十个年头。村里突然来了一些人，说是什么市里派来扶贫的。这还了得，贫穷是王家统治村庄的唯一武器。扶贫组的人把一张表格交给王村长，让他收集好村民信息之后去市里申报。王村长表面笑着相迎，等人走后就把表放在一边再也不管了。从此时之后，村里还来了一些商人的，说要在这投资，也都被王村长以各种理由回绝了，而有些慈善家给的钱，自然全都被王村长私吞了。\n\n2032年2月，村中来了两个不速之客，一个是李警察，一个是胡调研。李警察说自己是来办案的，需要隐藏在村子里调查一些东西，胡调研说自己是市里扶贫调研组的，过来收集资料。这又让王村长着急了，这两个人简直就像定时炸弹，不知道会给自己惹上什么事。现在唯一的护城河，就是语言不通了。王村长在胡调研和村民之间充当翻译，其实告诉胡调研的话都是自己瞎编的。至于警察，一直深居简出，王村长也没办法接触。\n\n2032年4月，村中又来了一个人，是赵慈善，和往日的慈善家不同，他不是单纯来募捐，而是要在村里投资工厂，其实和往日的投资商没什么不同。王村长就像应付其他投资商一样应付他。一般人考察一圈，发现村庄没有任何发展潜力之后就走了，可赵慈善看了一圈之后，竟然决定住下，长期调研。他说，他不是那些商人，做的是慈善，越是封闭穷苦的地方，他越是要救助。王村长又急了，可人家是外面来的人，自己不能表现得不对劲，要不出去一说，就捅破天了。他查过法律，自己在村中干的这些事，枪毙十次八次都不够。\n\n2032年5月初，赵慈善跟王村长说，自己已经调研好了，准备5月15号就出发回去，派人过来开发。王村长急坏了，连连劝阻他。谁知赵慈善当即拍桌怒斥:你搞的那些勾当，别以为我不知道是什么。你还有脸在这拦我，告诉你，等着回去吃枪子吧！\n\n王村长脑袋发蒙，他知道这下全完了。多年不劳而获的生活，和享受权力的感觉，不允许被任何人破坏，这个赵慈善，敬酒不吃吃罚酒，王村长只剩一条路了。\n\n2032年5月14日\n\n这天就是赵慈善临走前的最后一天了，再不行动就来不及了。这天晚上9点30分，王村长拎着灯笼来到了赵慈善的住处。这其实是王村长自己的房子，临时借给赵慈善住的。\n\n到了地方之后，屋里黑漆漆的，没有找到赵慈善的影子。这时王村长想到，这个房子有一个地下室，入口在卧室的床底下，是王村长前面几代人盖这个房子时就留下的，倒是不知道建地下室的原因。\n\n王村长掀开床板，把灯笼垂了下去，果然发现了赵慈善，地上还趴着一个人，面朝下，看不清是谁。赵慈善发现了他，手上拿着根木棒，拼命的挥舞，嘴里还念叨着别过来，别过来。王村长不知道他受了什么刺激，但想着还是先把他骗出来再说。他安慰着赵慈善，让他冷静点，渐渐地，赵慈善不再像刚才那样了。王村长接着说，自己都想清楚了，愿意接受赵慈善的救助，希望和他好好谈谈相关事宜。\n\n赵慈善听了，这才愿意出来，王村长把他扶到椅子上。转身王村长给赵慈善倒了杯水，然后把自己准备好的农药倒在水杯里递给他。赵慈善把水喝下去，刚喘两口气，立刻感觉到不对劲。这是烈性的农药，一小杯能毒死一头牛的。看着倒在地上怒瞪着他的赵慈善，王村长笑了笑，头也不回的离开了。\n\n回到家里，王村长才想起来地下室里还有一个人。王村长大骂自己糊涂，可毕竟是杀人，怎么能不激动呢？这时候再回去看已经不现实了，王村长干脆就当不知道，就这么过去了。\n\n支线任务（完成+10分）：隐藏自己利用贫穷控制人心的勾当\n\n提示：\n\n1.  你是凶手，千万不要主动说出自己在村里的那些勾当，特别是赌局，否则你基本是无法脱罪了。不要担心张村民，他是个怪人，对村里的事都没什么了解。\n\n2.  当晚的时间线你没有跟任何人重合，建议你把和赵慈善会面的时间提前到晚上9点以前，也不要提到地下室，这样别人看到他的时候还是活着的，能大大减轻你的嫌疑。\n\n3．死者可能留下了一些对你不利的信息", "rcr_zhang": "2015年，张村民出生在A国南市外大山中的小村子里。这个当然是他最后才知道的。很长一段时间里，他都不知道山外还有人居住。\n\n直到2022年，父亲偶然去到了大山外面帮王村长干活，回来之后还带回来很多钱，跟他讲外面有各种各样的好东西。父亲还将他带出山，可就在那一次，他们在街上莫名其妙被一帮凶神恶煞的人抓住，父亲跪在那群人面前求他，可是却被痛打，还被为首的人用食指和中指插瞎了双眼。7岁的张村民受不了这么血腥的刺激，吓晕了过去。等张村民醒来时，父亲虚弱的躺在地上，奄奄一息了。父亲虚弱而又充满怨气的说，有钱人都不是好东西，全都该死，全都该死！张村民忘不了父亲临终前那张扭曲的脸和两个血糊糊的眼洞。他翻遍父亲的身上，只找到一张纸，纸上的字他看不懂，便揣在身上，年幼的他凭着意志和忍耐，硬是将父亲背回了村下葬。他找回了村子，母亲在生他的时候就去世了，没人养他，他就开始靠一些野果野菜为生。他立下志愿，要把父亲说的那些有钱人，全部杀掉。\n\n从2030年开始，已经15岁的张村民已经是个强壮的小伙子了。他开始执行自己的计划，他到外面去，可他分不清哪些人有钱，他就找那些房子漂亮的人去调查，发现这个人如果经常出入一些豪华的地方，就一定是有钱人了，张村民就会杀了这个人，砍下他们的两根手指，就是当初戳瞎父亲的食指和中指。一开始计划很顺利，他杀完人之后还能在人家里吃喝两天，他发现，外面的人过得日子比村里强上千百倍。可他没功夫享受，他要完成自己的志愿。\n\n可渐渐的，他发现外面的人变得警觉起来，门窗锁的严严实实的，他没有机会，很久才能\"猎杀\"到一个有钱人。\n\n2032年2月，村子里来了两个人，住了下来，张村民没有管。可是4月又来了一人，吸引了他的注意，因为这个人很像外面那些有钱人，这人叫赵慈善。张村民开始调查他，可他在村里深居简出，没有什么迹象。在这段时间里，村外来的两个人中有一个人总是鬼鬼祟祟的跟着他，另一个人则会主动找他说话。张村民不会说外面的话，都是由王村长翻译的，问一些他平时都在干嘛，张村民就随便糊弄过去。后来张村民知道，跟着他的那人是李警察，找他说话的是胡调研。\n\n在一番调查之后，张村民终于在赵慈善住处发现了很多钱。他知道赵慈善就是有钱人，自己会跟往常一样杀了他。\n\n2032年5月14日\n\n这天晚上，张村民准备动手了。他带着一直使用的柴刀，前往了赵慈善的住处。大约是9点5分，张村民来到了地方。一直以来的凶杀让他成为了一个智慧的野兽，总会潜伏在暗处等待最佳的时机。现在也不例外。\n\n赵慈善的家里亮着烛光，肯定还没有睡觉。张村民躲在赵慈善住处外面的树丛中，等待着“猎物”睡着。\n\n9点10分，有个人进入了赵慈善家，晚上太黑，什么都看不清。这人推开门之后走了进去，过了一会，传来一声非常用力的踹门声，没过一会，就有一个人影从屋后绕过来了，好像在四处寻找什么，同样的，看不清那个人是谁，那人走远之后没有再回来。\n\n9点15分，张村民觉得时机成熟，便进入了屋子。房里还亮着蜡烛，卧室的门也是开的，张村民将大门关上，把蜡烛吹灭，蹑手蹑脚的走向卧室。卧室里没有人，窗户是开的，张村民到处翻了翻，却发现床板是可以掀开的，底下是一个洞。张村民二话没说跳了进去，还没站稳，头上就挨了一下，昏了过去。\n\n张村民再醒来的时候，已经不知道是什么时间了，他摸了一下，自己插在腰间的柴刀还在。他推开床板爬了出去，出卧室的时候隐约发现地上有个人在趴着，却没有呼吸声，凑近了看，正是赵慈善，吐了很多血，已然是死绝了。张村民没有任何情绪波动，既然不是自己杀的，“战利品”就不取了，于是张村民便径直离开了。\n\n回去的路上，张村民碰到了一个人，还提着灯笼，借着光线，他看出是胡调研。\n\n支线任务（完成+10分）：不主动暴露自己是个杀人狂的事情，被人分析出来依旧算完成。\n\n提示：\n\n1.  由于场外因素，生活在村中的嫌疑人是你和王村长，这点会让你很不好隐藏杀人狂的真相。建议你说自己和杀人狂无关，杀人狂可能是村内的其他人。"};
 /* 剧本杀 · 核心：工具、状态、存档、难度 */
 const SCRIPTS = {};
@@ -1370,6 +1469,37 @@ Object.assign(SCRIPTS.renchiren, {
   quick: ['我怀疑你。', '你刚才说的和证词对不上。', '我同意。', '先别急着下结论。', '你手上还有没公开的线索吧？', '我觉得是王村长。', '我觉得是张村民。', '我觉得是李警察。', '我觉得是胡调研。']
 });
 
+/* Claude 扮演 AI 玩家时用：说话风格，以及“没公开之前谁都不许说出口”的词 */
+Object.assign(SCRIPTS.renchiren, {
+  voice: {
+    wang: '圆滑热情，满口“领导”“同志”，爱打官腔，带点乡音；心里有鬼时会急着把话题往别人身上引。',
+    zhang: '极少说话，一次只蹦几个词，方言很重，像山里的野兽一样警惕；从不长篇大论，一句话不超过二十个字。',
+    li: '冷峻、话少、像审讯一样直接；提到女友时压着情绪。',
+    hu: '知识分子，说话讲道理，爱用“定理”“研究”这类词；紧张时语速快、会结巴。',
+    det: '南城刑警队的探员，冷静、直接。'
+  },
+  /* 词出现在 AI 的台词里时，ok 里至少要有一条已经公开（或原句本来就有这个词），否则这句作废、改用脚本台词 */
+  secrets: [
+    { words: ['赌徒'], ok: ['d_word'] },
+    { words: ['赌局', '赌场', '赌桌', '坐庄', '开赌', '赌博', '赌钱', '牌局'], ok: ['d_gamble'] },
+    { words: ['地洞', '地下室', '床底', '床板', '地窖'], ok: ['c_cellar', 'f_zh_cellar', 'f_wang_cellar', 'd_hid'] },
+    { words: ['老宅', '祖上'], ok: ['c_cellar', 'f_wang_cellar'] },
+    { words: ['绑', '儿子'], ok: ['c_hu_sons', 'f_hu_threat'] },
+    { words: ['女朋友', '女友', '上吊'], ok: ['c_li_gf', 'f_li_gf'] },
+    { words: ['消音器'], ok: ['c_li_gun'] },
+    { words: ['手指', '食指', '中指', '杀人狂', '连环'], ok: ['f_li_case', 'f_li_zk', 'd_zk'] },
+    { words: ['录音'], ok: ['c_hu_rec', 'f_hu_threat'] },
+    { words: ['申请表', '补助'], ok: ['c_wang_form', 'f_hu_theory', 'd_poor'] },
+    { words: ['借条', '高利贷', '李三柱'], ok: ['c_zh_loan'] },
+    { words: ['柴刀'], ok: ['c_zh_knife'] },
+    { words: ['水果刀'], ok: ['c_hu_knife', 'f_hu_925'] },
+    { words: ['矿泉水'], ok: ['c_room', 'f_wang_mineral'] },
+    { words: ['戳瞎', '眼睛没了'], ok: ['c_zh_father'] }
+  ],
+  /* 凶手的 AI 台词里出现这些说法 = 认罪，作废 */
+  confess: /(是我|我)(杀|毒死|下的毒|下了毒|下毒|害死|倒的那杯|倒了那杯)|(我|是我).{0,6}(地洞里找到|劝他出来|劝出来)/
+});
+
 /* 剧本杀 · 规则引擎（只在房主/单机上运行；队友把操作发给房主） */
 function mkP(g, who) {
   const pub = new Set(g.pub);
@@ -1418,11 +1548,12 @@ function noteEvade(g, role, topic, kind) {
   if ((kind === 'evade' || kind === 'crack') && !g.evadeT[role][topic]) { g.evadeT[role][topic] = 1; g.evade[role]++; }
 }
 const promptFor = (g, r) => g.prompts.some(p => p.to === r);
+const ownText = q => { const t = String(q || '').replace(/\s+/g, ' ').trim().slice(0, 120); return t || null; };
 /* AI 回答一个问题；对真人则弹出问题 */
-function answer(g, from, to, topic) {
+function answer(g, from, to, topic, q) {
   const sc = SCRIPTS[g.sid], key = to + ':' + topic;
   g.asked[key] = (g.asked[key] || 0) + 1;
-  logPush(g, { k: 'ask', who: from, to, topic, text: topicQ(sc, topic) });
+  logPush(g, { k: 'ask', who: from, to, topic, text: q || topicQ(sc, topic), own: q ? 1 : 0 });
   if (g.seats.includes(to)) { addPrompt(g, { to, from, topic }); return; }
   const a = pickAns(g, to, topic);
   if (!a) { logPush(g, { k: 'ans', who: to, to: from, text: rnd(g, sc.show[to]._) }); return; }
@@ -1470,8 +1601,8 @@ function applyEffects(g, role, ent) {
   if (ent.cut) g.cut[ent.cut] = g.seats.includes(role) ? .4 : .6;
   if (ent.uncut) delete g.cut[ent.uncut];
 }
-function humanSay(g, role, ent, prompt, topic) {
-  logPush(g, { k: topic === 'final' ? 'final' : prompt ? 'ans' : 'say', who: role, to: prompt ? prompt.from : null, text: ent.say, kind: ent.kind });
+function humanSay(g, role, ent, prompt, topic, own) {
+  logPush(g, { k: topic === 'final' ? 'final' : prompt ? 'ans' : 'say', who: role, to: prompt ? prompt.from : null, text: own || ent.say, kind: ent.kind, own: own ? 1 : 0 });
   if (prompt) noteEvade(g, role, prompt.topic, ent.kind);
   if (ent.confess === 1) { g.confess[role] = 1; g.contraAdd[role] = (g.contraAdd[role] || 0) + 30; }
   if (ent.confess === 2) g.confess[role + '2'] = 1;
@@ -1686,8 +1817,15 @@ function apply(g, a, seat) {
       aiSearch(g, 1); break;
     }
     case 'publish': if (g.own[role].includes(a.id)) { logPush(g, { k: 'pub', who: role, ref: a.id, text: '公开了' + itemTitle(sc, a.id) }); reveal(g, [a.id], role); } break;
-    case 'ask': if (disc && a.to !== role && sc.suspects.includes(a.to)) { answer(g, role, a.to, a.topic); g.acts++; } break;
-    case 'show': if (disc && (g.pub.includes(a.id) || g.own[role].includes(a.id)) && sc.suspects.includes(a.to) && a.to !== role) { showTo(g, role, a.to, a.id); g.acts++; } break;
+    case 'ask': if (disc && a.to !== role && sc.suspects.includes(a.to)) { answer(g, role, a.to, a.topic, ownText(a.q)); g.acts++; } break;
+    case 'show': if (disc && (g.pub.includes(a.id) || g.own[role].includes(a.id)) && sc.suspects.includes(a.to) && a.to !== role) { if (ownText(a.q)) logPush(g, { k: 'say', who: role, to: a.to, text: ownText(a.q), own: 1 }); showTo(g, role, a.to, a.id); g.acts++; } break;
+    case 'free': { /* 自由打字但不属于任何话题：记下原话，对方只回一句不含事实的话 */
+      const q = ownText(a.q); if (!disc || !q) return;
+      if (a.to && sc.suspects.includes(a.to) && a.to !== role) { logPush(g, { k: 'ask', who: role, to: a.to, text: q, own: 1 }); if (g.seats.includes(a.to)) addPrompt(g, { to: a.to, from: role, topic: '_', q }); else logPush(g, { k: 'ans', who: a.to, to: role, text: rnd(g, sc.idle[a.to]), kind: 'evade', free: 1 }); }
+      else logPush(g, { k: 'say', who: role, text: q, own: 1, kind: a.kind || 'truth' });
+      g.acts++; break;
+    }
+    case 'freeText': { const q = ownText(a.text); if (!q) return; g.freeQ = g.freeQ || []; if (!disc && a.pid == null) return; g.freeQ.push({ id: g.nid++, role, text: q, pid: a.pid != null ? a.pid : null, to: a.to || null, say: !!a.say }); return; }
     case 'link': if (disc) { linkItems(g, role, a.a, a.b); g.acts++; } break;
     case 'hint': if (disc || g.phase === 'r2') { g.hints[role] = (g.hints[role] || 0) + 1; g.hintText[role] = { n: g.nid++, text: hintFor(g, role) }; } break;
     case 'say': {
@@ -1695,7 +1833,7 @@ function apply(g, a, seat) {
       const topic = pr ? pr.topic : a.topic; const ent = deckFor(g, role, topic)[a.i]; if (!ent) return;
       if (topic === 'final') { if (g.phase !== 'final' || g.finalSaid[role]) return; g.finalSaid[role] = 1; humanSay(g, role, ent, null, 'final'); break; }
       if (pr) g.prompts.splice(g.prompts.indexOf(pr), 1); else if (!ent.vol || g.saidV[saidKey(role, ent)]) return;
-      humanSay(g, role, ent, pr); g.acts++; break;
+      humanSay(g, role, ent, pr, null, a.fromFree ? ownText(a.q) : null); g.acts++; break;
     }
     case 'chat': { const t = String(a.text || '').trim().slice(0, 120); if (t && humanRoles(g).length > 1) logPush(g, { k: 'chat', who: role, text: t }); return; }
     case 'status': g.status[role] = String(a.s || '').slice(0, 20); return;
@@ -1704,6 +1842,151 @@ function apply(g, a, seat) {
     case 'answers': if (g.phase === 'answer' && Array.isArray(a.v) && a.v.length === sc.questions.length && a.v.every(x => Number.isInteger(x))) { g.answers[role] = a.v.slice(); g.ready[role] = 1; if (allReady(g)) advance(g); } break;
   }
   if (disc && OPT.autoAI && ['ask', 'show', 'say', 'link'].includes(a.t) && g.acts % 2 === 0) aiStep(g);
+}
+
+/* 剧本杀 · Claude 接入（AIKit）。只在单机/房主上运行；朋友那边只看结果。
+   硬性规则（代码保证，不靠提示词）：
+   1. 引擎决定一切事实：谁说实话、透露什么、谁破防，都和脚本 AI 完全一样。Claude 只把引擎已经定好的台词换个说法。
+   2. Claude 拿不到任何还没公开的线索、别人的剧本和真相；凶手 AI 也只拿到自己的人设和要说的那句话。
+   3. 每句 Claude 台词都要过检查，不过就作废、用原来的脚本台词：
+      · 没公开的秘密词（剧本里的 secrets 表）不许出现，除非原句里本来就有；
+      · 出现的时间点必须在原句或已公开证词里出现过；
+      · 凶手的台词不许有认罪说法；不许提 AI、模型、游戏、剧本、玩家；长度有上限。
+   4. 玩家自由打字只会被归到已有的动作（问哪个话题、出示哪条、选哪句说法），不会产生剧本里没有的效果。
+      不是凶手的玩家，说和自己剧本矛盾的话会被拒绝（不能撒谎）。
+   5. 调用失败、超时、没有密钥：直接用脚本台词，游戏不卡。 */
+const AIJ = { busy: 0, voiced: {}, err: '' };
+const aiOn = () => typeof AIKit !== 'undefined' && AIKit.available() && NET.role !== 'guest';
+const VOICE_K = { ans: 1, say: 1, final: 1, intro: 1, contra: 1, ask: 1 };
+const KIND_LABEL = { truth: '实话', evade: '回避（不能透露原句以外的任何东西）', lie: '谎话（照样说谎，不能改口）', crack: '慌了，但还在嘴硬' };
+
+/* 一条日志要不要让 Claude 说 */
+function needVoice(g, e) {
+  if (e.v || !VOICE_K[e.k] || !e.who || !SCRIPTS[g.sid].suspects.includes(e.who) || g.seats.includes(e.who)) return false;
+  if (e.k === 'ask' && e.own) return false;
+  return ['intro', 'd1', 'd2', 'final'].includes(e.ph);
+}
+function aiAfter() {
+  if (!G) return;
+  G.ai = aiOn() ? 1 : 0;
+  if (!G.ai) return;
+  const pend = G.log.filter(e => needVoice(G, e));
+  /* 太旧的不补了，只说最近的几句 */
+  pend.slice(0, -6).forEach(e => e.v = 's');
+  pend.slice(-6).forEach(e => e.v = 'p');
+  pump();
+}
+async function pump() {
+  if (AIJ.busy || !G) return;
+  AIJ.busy = 1;
+  try {
+    for (let guard = 0; guard < 40 && G; guard++) {
+      if (G.freeQ && G.freeQ.length) { await handleFree(G.freeQ.shift()); continue; }
+      const e = G.log.find(x => x.v === 'p'); if (!e) break;
+      await voiceOne(G, e);
+    }
+  } finally { AIJ.busy = 0; }
+}
+function transcript(g, upto, n) {
+  const sc = SCRIPTS[g.sid], out = [];
+  for (const e of g.log) { if (e.i >= upto) break; if (['sys', 'idle'].includes(e.k) || e.v === 'p') continue; out.push(e.k === 'fact' ? '（' + e.text + '）' : roleName(e.who) + (e.to ? ' → ' + roleName(e.to) : '') + '：' + e.text); }
+  return out.slice(-(n || 12)).join('\n');
+}
+const pubFacts = g => g.pub.map(id => { const sc = SCRIPTS[g.sid]; return sc.clues[id] ? '【线索】' + sc.clues[id].title + '：' + sc.clues[id].text.replace(/\n+/g, ' ').slice(0, 90) : sc.facts[id] ? '【证词/推论】' + sc.facts[id].text : ''; }).filter(Boolean);
+const TIME_RE = /([0-9一二三四五六七八九十两]{1,3})\s*点\s*(半|一刻|[0-9一二三四五六七八九十]{1,3}\s*分?)?/g;
+const CN = { 一: 1, 二: 2, 两: 2, 三: 3, 四: 4, 五: 5, 六: 6, 七: 7, 八: 8, 九: 9, 十: 10 };
+const cnNum = s => /^\d+$/.test(s) ? +s : s.length === 1 ? CN[s] : s[0] === '十' ? 10 + (CN[s[1]] || 0) : (CN[s[0]] || 0) * 10 + (s[2] ? CN[s[2]] : 0);
+const times = t => { const r = new Set(); for (const m of String(t).matchAll(TIME_RE)) { const h = cnNum(m[1]); if (!h || (h < 6 && !m[2])) continue; let mi = 0; if (m[2]) mi = m[2] === '半' ? 30 : m[2] === '一刻' ? 15 : cnNum(m[2].replace(/\s*分?$/, '')); r.add(h % 12 + ':' + mi); } return r; };
+/* 硬性检查：返回 null 表示通过，否则返回原因 */
+function aiCheck(g, e, text, orig) {
+  const sc = SCRIPTS[g.sid];
+  if (!text || typeof text !== 'string') return '空';
+  text = text.trim();
+  const max = Math.min(220, Math.max(40, orig.length * 2 + 30)); if (text.length > max) return '太长';
+  if (/AI|人工智能|模型|Claude|剧本|玩家|游戏|系统提示/i.test(text)) return '出戏';
+  const pub = new Set(g.pub);
+  for (const s of sc.secrets || []) for (const w of s.words) if (text.includes(w) && !orig.includes(w) && !s.ok.some(id => pub.has(id))) return '泄露：' + w;
+  const allowed = times(orig + pubFacts(g).join(' '));
+  for (const t of times(text)) if (!allowed.has(t)) return '编造时间：' + t;
+  if (e.who === sc.killer && sc.confess && sc.confess.test(text) && !sc.confess.test(orig)) return '认罪';
+  return null;
+}
+async function voiceOne(g, e) {
+  const sc = SCRIPTS[g.sid], R = sc.roles[e.who], orig = e.text;
+  const smart = e.broke || e.k === 'final' || e.k === 'contra';
+  const system = [
+    `你在一场中文剧本杀里扮演「${R.name}」（${R.title}）。说话风格：${(sc.voice || {})[e.who] || ''}`,
+    '你要做的只有一件事：把给你的“原句”用这个人物的口吻重新说出来，并自然地接上刚才的对话。',
+    '【硬性规则】',
+    '1. 只说原句里已有的事实。可以换说法、加语气、回应对方刚才的话，但不能新增任何事实、时间、地点、人物、物品或动作。',
+    '2. 原句是回避，就继续回避；原句是谎话，就照样说谎，不改口、不暗示真相。' + (e.who === sc.killer ? '你绝不承认自己杀了人，也不承认去过死者家里找到他。' : ''),
+    '3. 不提任何没出现在原句或“已公开信息”里的线索和人名。',
+    '4. 不提 AI、模型、游戏、剧本、玩家；只用中文；不写旁白，除非原句里本来有括号动作。',
+    `5. 长度不超过原句的两倍，最多 ${Math.min(150, orig.length * 2 + 20)} 个字。`,
+    `人物自我介绍（只用来把握语气）：${R.intro}`
+  ].join('\n');
+  const label = { ans: '回答', say: '主动发言', final: '最终陈述（投票前的最后一句）', intro: '自我介绍', contra: '指出对方的矛盾', ask: '提问' }[e.k];
+  const user = `【已公开信息】\n${pubFacts(g).slice(-24).join('\n') || '（无）'}\n\n【刚才的对话】\n${transcript(g, e.i, 10) || '（刚开始）'}\n\n【这一句】类型：${label}${e.kind ? '；性质：' + (KIND_LABEL[e.kind] || e.kind) : ''}${e.to ? '；说给：' + roleName(e.to) : ''}\n原句：${orig}`;
+  try {
+    const v = await AIKit.call({ system, user, want: smart ? 'smart' : 'quick', maxTokens: 300, tool: { name: 'say', description: '说出这一句', schema: { type: 'object', properties: { line: { type: 'string', description: '人物说出口的这一句' } }, required: ['line'] } } });
+    if (!G || G !== g) return;
+    let line = v && String(v.line || '').trim();
+    if (line) line = line.replace(new RegExp('^(' + R.name + '|' + R.seal + ')[：:]\\s*'), '').replace(/^[「“"]+|[」”"]+$/g, '').trim();
+    const why = aiCheck(g, e, line, orig);
+    if (why) { e.v = 's'; e.aiWhy = why; } else { e.text0 = orig; e.text = line; e.v = 'a'; }
+  } catch (err) { e.v = 's'; AIJ.err = err.message; if (/密钥|401/.test(err.message)) { AIKit.setCfg({ on: false }); toast('Claude 调用失败：' + err.message + '。已改回脚本 AI，可在设置里重新打开。', 5000); } }
+  if (G === g) { save(); netSend(); render(); }
+}
+
+/* 玩家自由打字：先归类成已有的动作，再交给引擎 */
+async function handleFree(f) {
+  const g = G, sc = SCRIPTS[g.sid], seat = g.seats.indexOf(f.role); if (seat < 0) return;
+  const msg = t => { g.freeMsg = g.freeMsg || {}; g.freeMsg[f.role] = { n: g.nid++, text: t }; save(); netSend(); render(); };
+  const pr = f.pid != null ? g.prompts.find(p => p.id === f.pid && p.to === f.role) : null;
+  try {
+    if (pr || f.say) {
+      /* 回答问题 / 主动发言：在剧本允许的说法里找最接近的一条，并判断有没有和自己的剧本矛盾 */
+      const topic = pr ? pr.topic : null;
+      const opts = pr ? deckFor(g, f.role, topic) : Object.keys(sc.deck[f.role] || {}).flatMap(tp => deckFor(g, f.role, tp).map((e, i) => Object.assign({ tp, i }, e))).filter(e => e.vol && !g.saidV[saidKey(f.role, e)]);
+      const R = sc.roles[f.role], killer = f.role === sc.killer;
+      const v = await AIKit.call({
+        want: 'quick', maxTokens: 300,
+        system: '你是剧本杀的裁判助手。玩家扮演「' + R.name + '」，打了一句话。你要判断：这句话和下面哪条“可选说法”意思最接近；它是实话、回避还是谎话（以这个人物自己的剧本为准）。只做判断，不评论。',
+        user: '【这个人物的剧本】\n' + (R.bookText || TEXT[R.book]).slice(0, 3000) + '\n\n【可选说法】\n' + opts.map((o, k) => k + '. [' + o.kind + '] ' + o.say).join('\n') + (pr ? '\n\n【被问的问题】' + (pr.q || topicQ(sc, pr.topic)) : '') + '\n\n【玩家打的话】' + f.text,
+        tool: { name: 'judge', schema: { type: 'object', properties: { index: { type: 'integer', description: '最接近的可选说法编号；都不接近填 -1' }, kind: { type: 'string', enum: ['truth', 'evade', 'lie'] }, contradicts: { type: 'boolean', description: '是否和人物剧本里的事实矛盾' } }, required: ['index', 'kind', 'contradicts'] } }
+      });
+      if (!killer && (v.kind === 'lie' || v.contradicts)) return msg('你不是凶手，不能说谎：这句话和你的剧本对不上。换个说法，或者回避。');
+      const k = Number.isInteger(v.index) && v.index >= 0 && v.index < opts.length ? v.index : -1;
+      if (k >= 0) {
+        const o = opts[k];
+        if (!killer && o.kind === 'lie') return msg('你不是凶手，不能说谎。');
+        apply(g, pr ? { t: 'say', pid: pr.id, i: k, fromFree: 1, q: f.text } : { t: 'say', topic: o.tp, i: o.i, fromFree: 1, q: f.text }, seat);
+      } else if (pr) {
+        /* 不像任何一条：当作回避，记下原话 */
+        const list = deckFor(g, f.role, topic), ev = list.findIndex(o => o.kind === 'evade');
+        apply(g, { t: 'say', pid: pr.id, i: ev >= 0 ? ev : 0, fromFree: 1, q: f.text }, seat);
+      } else apply(g, { t: 'free', q: f.text, kind: v.kind }, seat);
+    } else {
+      /* 讨论里的提问：归到 问谁 + 哪个话题 / 出示哪条 / 闲聊 */
+      const R = sc.suspects.filter(r => r !== f.role), tops = sc.topics.filter(x => !x.when || x.when(mkP(g))).map(x => x.id).concat(sc.suspects.map(x => 'about_' + x));
+      const items = (g.own[f.role] || []).concat(g.pub);
+      const v = await AIKit.call({
+        want: 'quick', maxTokens: 300,
+        system: '你是剧本杀的裁判助手，把玩家打的一句话归类成一个游戏动作。只能从给定的选项里选。',
+        user: '【可以问的人】' + R.map(r => r + '=' + sc.roles[r].name).join('，') + (f.to ? '（玩家当前选中了 ' + f.to + '）' : '') +
+          '\n【话题】\n' + tops.map(t => t + '：' + topicQ(sc, t)).join('\n') +
+          '\n【可以出示的线索/证词】\n' + items.map(id => id + '：' + (sc.clues[id] ? sc.clues[id].title : sc.facts[id].text.slice(0, 30))).join('\n') +
+          '\n\n【玩家打的话】' + f.text + '\n\n规则：问某人某件事 → act=ask；拿出某条线索/证词给某人看 → act=show；都不是（闲聊、自言自语、对所有人说的推理）→ act=say。',
+        tool: { name: 'route', schema: { type: 'object', properties: { act: { type: 'string', enum: ['ask', 'show', 'say'] }, to: { type: 'string', enum: R.concat(['none']) }, topic: { type: 'string', enum: tops.concat(['none']) }, item: { type: 'string', enum: items.length ? items.concat(['none']) : ['none'] } }, required: ['act', 'to', 'topic', 'item'] } }
+      });
+      const to = R.includes(v.to) ? v.to : f.to && R.includes(f.to) ? f.to : null;
+      if (v.act === 'ask' && to && tops.includes(v.topic)) apply(g, { t: 'ask', to, topic: v.topic, q: f.text }, seat);
+      else if (v.act === 'show' && to && items.includes(v.item)) apply(g, { t: 'show', to, id: v.item, q: f.text }, seat);
+      else if (v.act === 'ask' && to) apply(g, { t: 'free', to, q: f.text }, seat);
+      else apply(g, { t: 'free', q: f.text, kind: 'truth' }, seat);
+    }
+  } catch (err) { msg('Claude 没能理解这句话（' + err.message + '），请用按钮操作。'); return; }
+  if (G === g) { save(); netSend(); aiAfter(); render(); }
 }
 
 /* 剧本杀 · 界面 */
@@ -1816,6 +2099,7 @@ function topBar() {
   return `<div class="top"><button class="ghost sm" onclick="UI.modal('menu')">≡</button>
     <span class="ph">${esc(p.name)}</span><span class="tm" id="ptm">${mins ? fmtT(phaseClock()) + ' / 建议 ' + mins + ' 分' : ''}</span>${partnerLine()}<span class="sp"></span>
     ${r ? sealH(r) + '<span class="nm small hide-n">' + esc(sc.roles[r].name) + '</span>' : ''}
+    ${G.ai ? `<button class="aichip" onclick="${NET.role === 'guest' ? "toast('房主开着 Claude：AI 玩家由 Claude 扮演')" : "UI.modal('ai')"}" title="AI 玩家由 Claude 扮演">✦ Claude</button>` : ''}
     <button class="sm ghost" onclick="UI.modal('book')" title="剧本">📖</button>
     <button class="sm ghost" onclick="UI.modal('notes')" title="笔记">📝</button>
     <button class="sm ghost" onclick="UI.modal('clues')" title="线索箱">🗂 ${G.pub.filter(i => sc.clues[i]).length + (G.own[r] || []).length}${unseen ? '<span class="dot"></span>' : ''}</button>
@@ -1835,7 +2119,9 @@ function renderGame() {
   const atBottom = m0 && (m0.scrollHeight - m0.scrollTop - m0.clientHeight < 60);
   const r = myRole(), fresh = G.log.filter(e => e.i > U.seenI);
   if (G.gid !== U.gid) { U.gid = G.gid; U.seenI = fresh.length > 8 ? G.log[G.log.length - 1].i : 0; U.unread = 0; U.sheet = null; U.tlShown = 0; U.linkSel = []; U.endArm = 0; U.hintSeen = (G.hintText[r] || {}).n || 0; }
+  const fq0 = $('#freeq'), fqv = fq0 ? fq0.value : '', fqf = fq0 && document.activeElement === fq0, fqs = fq0 ? fq0.selectionStart : 0;
   app().innerHTML = `<div class="scr" ${samePh ? 'style="animation:none"' : ''}>${topBar()}${f()}</div>`;
+  const fq1 = $('#freeq'); if (fq1 && fqv) { fq1.value = fqv; } if (fq1 && fqf) { fq1.focus(); try { fq1.setSelectionRange(fqs, fqs); } catch (e) { } }
   const m = $('.main'), chatty = ph === 'd1' || ph === 'd2' || ph === 'intro' || ph === 'final';
   if (m) {
     if (chatty) {
@@ -1848,14 +2134,18 @@ function renderGame() {
   }
   if (!samePh) { U._ph = ph; U.target = null; U.endArm = 0; sfx('page'); }
   if (fresh.length && U.seenI) { newLogSfx(fresh); fxFor(fresh); typeNew(fresh); }
+  const voicedNow = G.log.filter(e => e.v === 'a' && !AIJ.voiced[e.i]); voicedNow.forEach(e => AIJ.voiced[e.i] = 1);
+  if (voicedNow.length && U.seenI) typeNew(voicedNow);
   U.seenI = G.log.length ? G.log[G.log.length - 1].i : 0;
+  const fm = (G.freeMsg || {})[r]; if (fm && fm.n !== U.freeSeen) { U.freeSeen = fm.n; toast(fm.text, 4200); }
   $$('#app canvas.cimg').forEach(c => drawImg(c));
   if (ph === 'r1') drawPlan($('#plan'), 1);
   if (ph === 'r2') drawPlan($('#plan'), 2);
   const pkey = p => G.gid + ':' + p.id, np = G.prompts.find(p => p.to === r && !U.pSeen[pkey(p)]);
   if (np && !U.modalOpen && (ph === 'd1' || ph === 'd2')) { U.pSeen[pkey(np)] = 1; UI.modal('prompt'); }
   const h = G.hintText[r]; if (h && h.n !== U.hintSeen) { U.hintSeen = h.n; UI.modal('hint'); }
-  if (U.modalOpen && ['clues', 'tl', 'prompt', 'acts'].includes(U.modalOpen)) UI.modal(U.modalOpen, 1);
+  const typingInModal = document.activeElement && document.activeElement.closest && document.activeElement.closest('.mask') && /INPUT|TEXTAREA/.test(document.activeElement.tagName);
+  if (U.modalOpen && ['clues', 'tl', 'prompt', 'acts'].includes(U.modalOpen) && !typingInModal) UI.modal(U.modalOpen, 1);
   coach();
   if (G.restartReq && NET.role !== 'guest') { delete G.restartReq; UI.again(true); }
 }
@@ -1902,7 +2192,9 @@ function msgHTML(e) {
   const who = e.who, to = e.to, mine = who === r;
   const hd = esc(roleName(who)) + (to ? ' → ' + esc(roleName(to)) : '') + ({ pub: ' · 公开', show: ' · 出示', contra: ' · 指出矛盾', chat: ' · 悄悄话（AI 听不到）', final: ' · 最终陈述' }[e.k] || '');
   const tx = e.k === 'show' || e.k === 'pub' ? esc(e.text) + (e.ref && sc.clues[e.ref] ? `<div class="small mut" style="margin-top:4px">${esc(sc.clues[e.ref].text.slice(0, 80))}${sc.clues[e.ref].text.length > 80 ? '…' : ''}</div>` : '') : esc(e.text);
-  return `<div class="msg k-${e.k} ${mine ? 'mine' : ''} ${e.broke ? 'brk' : ''} ${e.k === 'contra' ? 'contra' : ''} ${e.i > U.seenI ? 'new' : ''}" data-i="${e.i}">${sealH(who)}<div class="bd"><div class="hd2">${hd}</div><div class="tx">${tx}</div></div></div>`;
+  const tag = e.v === 'a' ? `<span class="aitag" title="Claude 说的。脚本原句：${esc(e.text0 || '')}">Claude</span>` : '';
+  const body = e.v === 'p' ? '<span class="dots"><i></i><i></i><i></i></span>' : tx;
+  return `<div class="msg k-${e.k} ${mine ? 'mine' : ''} ${e.broke ? 'brk' : ''} ${e.k === 'contra' ? 'contra' : ''} ${e.i > U.seenI ? 'new' : ''}" data-i="${e.i}">${sealH(who)}<div class="bd"><div class="hd2">${hd}${tag}</div><div class="tx">${body}</div></div></div>`;
 }
 const logHTML = filter => '<div class="log" onclick="finishTyping()">' + G.log.filter(filter || (() => true)).map(msgHTML).join('') + '</div>';
 function gIntro() {
@@ -1968,8 +2260,9 @@ function gDisc() {
   const endLbl = U.endArm ? '再点一次结束' + (own ? `（还有 ${own} 条没公开）` : more ? '（AI 还有话没说）' : '') : '结束讨论';
   const btns = narrow() ? `<button onclick="UI.modal('acts')">🎬 行动</button>` : list.map(([k, n, ok, fn]) => `<button ${ok ? '' : 'disabled'} onclick="${fn}">${n}</button>`).join('');
   const rd = G.ready[r];
+  const free = G.ai ? `<div class="freebar"><input id="freeq" maxlength="120" autocomplete="off" placeholder="${t && t !== r ? '直接打字问' + esc(sc.roles[t].name) + '，或者说“把柴刀给他看”…' : '直接打字：问谁、问什么，或者出示什么…'}" onkeydown="if(event.key==='Enter')UI.free()"><button onclick="UI.free()">发送</button></div>` : '';
   return `<div class="seats">${seats}<button class="sm ghost logtg" onclick="UI.logAll()">${U.logAll ? '只看本轮' : '全部记录'}</button></div>
-  <div class="main">${logHTML(filt)}</div>
+  <div class="main">${logHTML(filt)}</div>${free}
   <div class="bar">${btns}
     <button onclick="UI.listen()" class="${more ? '' : 'ghost'}">${more ? '👂 听大家说' : '👂 大家在等你'}</button>
     <span class="sp"></span>${humanRoles(G).length > 1 ? `<span class="mut small">${humanRoles(G).filter(x => x !== r).map(x => (G.ready[x] ? '✓ ' : '… ') + esc(sc.roles[x].name)).join(' ')}</span>` : ''}
@@ -2035,7 +2328,7 @@ function modalHTML(k) {
   const sc = G ? S() : SCRIPTS.renchiren, r = G ? myRole() : null;
   if (k === 'rules') return dlg('玩法说明', `<div style="line-height:1.9">${sc.rules.map(x => '<p>· ' + esc(x) + '</p>').join('')}<p>· <b>当侦探</b>：四名嫌疑人都是 AI。向任何人提问、出示线索和证词；被戳中的人会改口说实话。点“听大家说”，AI 们会互相质问、提出推论。</p><p>· <b>🔗 指出关联</b>：自己把两条线索或证词放在一起。对了就得出推论或逼出实话，错了扣评级。</p><p>· <b>💡 提示</b>：告诉你下一步能做什么，按难度扣评级。</p><p>· <b>入局</b>：AI 也会来问你。你只能从你的剧本允许的说法里选——不是凶手就不能撒谎，只能回避。</p><p>· 顶栏 📖 剧本、📝 笔记、🗂 线索箱、🕒 时间线板随时可以看。</p></div>`);
   if (k === 'opts') return dlg('设置', [['anim', '动画（破防演出、淡入）'], ['typing', '台词逐字出现'], ['sound', '声音'], ['autoAI', 'AI 自动插话（每两次操作后）']].map(([o, n]) => `<label style="display:flex;align-items:center;gap:10px;padding:10px 0;font-size:17px"><input type="checkbox" ${OPT[o] ? 'checked' : ''} onchange="OPT['${o}']=this.checked;saveOpt();render()" style="width:22px;height:22px"> ${n}</label>`).join('') + `<button class="sm ghost" onclick="lsSet('tut',0);toast('下一局会重新显示新手引导')">重新显示新手引导</button>`);
-  if (k === 'menu') return dlg('菜单', `<div class="optl"><button onclick="UI.close();UI.modal('rules')">玩法说明</button><button onclick="UI.close();UI.modal('opts')">设置</button>
+  if (k === 'menu') return dlg('菜单', `<div class="optl"><button onclick="UI.close();UI.modal('rules')">玩法说明</button><button onclick="UI.close();UI.modal('opts')">设置</button><button onclick="UI.close();UI.modal('ai')">AI 玩家（Claude）${typeof AIKit !== 'undefined' && AIKit.available() ? ' · 已开启' : ''}</button>
     <button onclick="UI.toTitle(this)">回到标题（${NET.role ? '离开房间' : '进度已自动保存'}）</button>${HUB ? '<button onclick="UI.hub(this)">返回游戏厅</button>' : ''}</div>`);
   if (k === 'resumeNet') { const sv = loadSave('renchiren'); return dlg('继续上次联机', `<p>上次是联机局（房间 <b class="code">${esc(sv.room || '----')}</b>），你是房主。</p><div class="optl"><button onclick="UI.resumeNet(1)">重开同一个房间，等朋友回来<br><span class="mut small">朋友在“和朋友联机”里输入同一个房间码就能接回他的角色</span></button><button onclick="UI.resumeNet(0)">单机继续<br><span class="mut small">朋友的角色交给 AI，他手上没公开的线索会公开</span></button></div>`); }
   if (!G) return '';
@@ -2082,16 +2375,19 @@ function modalHTML(k) {
   if (k === 'say') {
     const d = sc.deck[r] || {}; const opts = [];
     for (const tp in d) deckFor(G, r, tp).forEach((e, i) => { if (e.vol && !G.saidV[saidKey(r, e)]) opts.push([tp, i, e]); });
-    return dlg('主动发言', `<p class="mut small">从你的剧本允许的说法里选。${r === sc.killer ? '你是凶手，可以说谎。' : '你不是凶手，不能说谎。'}</p>${opts.length ? '' : '<p class="mut">能主动说的都说过了。</p>'}<div class="optl">${opts.map(([tp, i, e]) => `<button onclick="UI.doSay('${tp}',${i})"><span class="k k-${e.kind}">${KIND[e.kind]}</span>${esc(e.say)}${e.tip ? ' <span class="mut small">（' + esc(e.tip) + '）</span>' : ''}</button>`).join('')}</div>`);
+    const fs = G.ai ? `<div class="freebox" style="margin:0 0 12px"><input id="frees" maxlength="120" autocomplete="off" placeholder="自己打字说一句…" onkeydown="if(event.key==='Enter')UI.freeSay()"><button onclick="UI.freeSay()">说</button></div>` : '';
+    return dlg('主动发言', `<p class="mut small">从你的剧本允许的说法里选${G.ai ? '，或者自己打字' : ''}。${r === sc.killer ? '你是凶手，可以说谎。' : '你不是凶手，不能说谎。'}</p>${fs}${opts.length ? '' : '<p class="mut">能主动说的都说过了。</p>'}<div class="optl">${opts.map(([tp, i, e]) => `<button onclick="UI.doSay('${tp}',${i})"><span class="k k-${e.kind}">${KIND[e.kind]}</span>${esc(e.say)}${e.tip ? ' <span class="mut small">（' + esc(e.tip) + '）</span>' : ''}</button>`).join('')}</div>`);
   }
   if (k === 'prompt') {
     const p = G.prompts.find(x => x.to === r); if (!p) return '';
     const list = deckFor(G, r, p.topic);
-    return dlg(esc(roleName(p.from)) + '问你', `<div class="msg">${sealH(p.from)}<div class="bd"><div class="tx">${p.clue ? '（出示了' + esc(itemTitle(sc, p.clue)) + '）' : ''}${esc(topicQ(sc, p.topic))}</div></div></div>
+    const fb = G.ai ? `<div class="freebox"><input id="freea" maxlength="120" autocomplete="off" placeholder="或者自己打字回答…" onkeydown="if(event.key==='Enter')UI.freeAns(${p.id})"><button onclick="UI.freeAns(${p.id})">回答</button></div><p class="mut small">${r === sc.killer ? '你是凶手，可以撒谎。' : '你不是凶手：和你剧本矛盾的话会被拒绝。'}</p>` : '';
+    return dlg(esc(roleName(p.from)) + '问你', `<div class="msg">${sealH(p.from)}<div class="bd"><div class="tx">${p.clue ? '（出示了' + esc(itemTitle(sc, p.clue)) + '）' : ''}${esc(p.q || topicQ(sc, p.topic))}</div></div></div>
       ${p.clue ? clueCard(p.clue) : ''}<h3 style="margin-top:12px">你怎么回答？</h3>
-      <div class="optl">${list.map((e, i) => `<button onclick="UI.doSay(null,${i},${p.id})"><span class="k k-${e.kind}">${KIND[e.kind]}</span>${esc(e.say)}${e.tip ? ' <span class="mut small">（' + esc(e.tip) + '）</span>' : ''}</button>`).join('')}</div>
+      <div class="optl">${list.map((e, i) => `<button onclick="UI.doSay(null,${i},${p.id})"><span class="k k-${e.kind}">${KIND[e.kind]}</span>${esc(e.say)}${e.tip ? ' <span class="mut small">（' + esc(e.tip) + '）</span>' : ''}</button>`).join('')}</div>${fb}
       ${G.prompts.filter(x => x.to === r).length > 1 ? `<p class="mut small">后面还有 ${G.prompts.filter(x => x.to === r).length - 1} 个问题。</p>` : ''}`);
   }
+  if (k === 'ai') return dlg('AI 玩家（Claude）', AIKit.panelHTML(G && NET.role === 'guest' ? '你是朋友那一方：AI 由房主那边的 Claude 扮演，你不用设置。' : 'Claude 只负责把 AI 玩家的台词说得自然、听懂你打的字；谁说实话、透露什么、谁破防，仍由游戏规则决定，所以不会剧透。'));
   if (k === 'hint') { const h = G.hintText[r]; return h ? dlg('💡 提示', `<p style="font-family:var(--serif);font-size:18px;line-height:1.8">${esc(h.text)}</p><p class="mut small">本局已用提示 ${G.hints[r] || 0} 次${dif().hintCost ? '，每次评级扣 ' + dif().hintCost + ' 分' : '（简单难度不扣分）'}。</p>`) : ''; }
   if (k === 'acts') { const { list, more } = discActions(); return dlg('行动', `<div class="optl">${list.map(([, n, ok, fn]) => `<button ${ok ? '' : 'disabled'} onclick="UI.close();${fn}">${n}${!ok ? ' <span class="mut small">（先点上面的人选中他）</span>' : ''}</button>`).join('')}<button onclick="UI.close();UI.listen()">${more ? '👂 听大家说' : '👂 大家在等你'}</button></div>`); }
   if (k === 'chat') return dlg('悄悄话', `<p class="mut small">只有你们两个真人看得到，AI 听不到。</p><div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">${(sc.quick || []).map((q, i) => `<button class="sm" onclick="UI.chat(S().quick[${i}])">${esc(q)}</button>`).join('')}</div><div style="display:flex;gap:8px"><input id="chattx" maxlength="120" style="flex:1;font-size:16px" placeholder="自己打一句…" onkeydown="if(event.key==='Enter')UI.chat(this.value)"><button onclick="UI.chat($('#chattx').value)">发送</button></div>`);
@@ -2127,6 +2423,9 @@ const UI = {
   listen() { if (!aiHasMore(G)) toast('AI 没有新的话了：去提问、出示证据、指出关联，或者用提示。', 3200); act({ t: 'listen' }); },
   endDisc() { if (humanRoles(G).length === 1 && !U.endArm) { U.endArm = 1; render(); setTimeout(() => { if (U.endArm) { U.endArm = 0; if (G && (G.phase === 'd1' || G.phase === 'd2')) render(); } }, 4000); return; } U.endArm = 0; act({ t: 'ready' }); },
   logAll() { U.logAll = !U.logAll; render(); },
+  free() { const i = $('#freeq'); const t = i && i.value.trim(); if (!t) return; i.value = ''; act({ t: 'freeText', text: t, to: U.target && U.target !== myRole() && U.target !== 'det' ? U.target : null }); toast('Claude 在理解你的话…', 1600); },
+  freeAns(pid) { const i = $('#freea'); const t = i && i.value.trim(); if (!t) return; UI.close(); act({ t: 'freeText', text: t, pid }); toast('Claude 在判断你的回答…', 1600); },
+  freeSay() { const i = $('#frees'); const t = i && i.value.trim(); if (!t) return; UI.close(); act({ t: 'freeText', text: t, say: 1 }); toast('Claude 在判断你这句话…', 1600); },
   toBottom() { const m = $('.main'); if (m) m.scrollTop = m.scrollHeight; U.unread = 0; $$('.newbtn').forEach(x => x.remove()); },
   chat(t) { t = String(t || '').trim(); if (!t) return; act({ t: 'chat', text: t }); const i = $('#chattx'); if (i) i.value = ''; UI.close(); },
   ans(i, j) { U.sheet[i] = j; render(); },
@@ -2143,6 +2442,7 @@ const UI = {
     closeMask(); const h = modalHTML(k); if (!h) { U.modalOpen = null; return; } U.modalOpen = k;
     document.body.insertAdjacentHTML('beforeend', h); $$('.mask canvas.cimg').forEach(c => drawImg(c));
     if (keep) { const d = $('.mask .db'); if (d) d.scrollTop = st; } else sfx('tick');
+    if (k === 'ai') { const box = $('.mask .ak'); if (box) AIKit.bind(box, () => { if (G) { aiAfter(); save(); netSend(); } UI.modal('ai', 1); render(); }); }
     sendStatus();
   },
   close() { U.modalOpen = null; closeMask(); sendStatus(); }
@@ -2367,7 +2667,7 @@ function hostRecv(d) {
     return;
   }
   if (d.t === 'pick' && !G) { const L = NET.lobby; if (L.roles[0] === d.role) return; if (L.mode === 'det' && d.role === 'det') return; L.roles[1] = d.role; netLobby(); return; }
-  if (d.t === 'act' && G) { apply(G, d.a, 1); afterApply(); }
+  if (d.t === 'act' && G && d.a && d.a.t !== 'free' && !d.a.fromFree) { apply(G, d.a, 1); afterApply(); }
 }
 function netLobby() { if (NET.conn && NET.conn.open) NET.conn.send({ t: 'lobby', lobby: NET.lobby, code: NET.code }); render(); }
 NET.pick = function (r) {
@@ -2395,7 +2695,7 @@ NET.join = async function (raw, quiet) {
         const hello = setInterval(() => { if (c.open && !got) c.send({ t: 'hello' }); }, 1500);
         c.on('open', () => { NET.conn = c; NET.role = 'guest'; NET.code = code; c.send({ t: 'hello' }); netSay('已连上房主，等待同步…'); });
         c.on('data', d => { got = 1; clearInterval(hello); guestRecv(d); });
-        c.on('close', () => { clearInterval(hello); if (NET.conn === c) { NET.conn = null; guestLost(code); } });
+        c.on('close', () => { clearInterval(hello); if (NET.conn === c && !NET.leaving) { NET.conn = null; guestLost(code); } });
         setTimeout(() => { if (!c.open && NET.tok === tok && !NET.conn) { clearInterval(hello); try { c.close(); } catch (e) { } if (Date.now() - t0 < (quiet ? 75000 : 45000)) { netSay('还没找到房间（房主可能还没开好），再敲一次门…'); knock(); } else if (quiet) { G = null; NET.role = null; U.scr = 'lobby'; netSay('房主一直没回来。'); render(); } else netSay('找不到房间 ' + code + '：检查房间码，或让房主重新开房间。'); } }, 10000);
       };
       knock();
@@ -2446,6 +2746,7 @@ const TK = TitleKit.create({
     { key: 'typing', label: '台词逐字出现', type: 'toggle', get: () => !!OPT.typing, set: v => { OPT.typing = v; saveOpt(); } },
     { group: '声音', key: 'sound', label: '声音', type: 'toggle', get: () => !!OPT.sound, set: v => { OPT.sound = v; saveOpt(); } },
     { group: 'AI', key: 'autoAI', label: 'AI 自动插话', sub: '每两次操作后', type: 'toggle', get: () => !!OPT.autoAI, set: v => { OPT.autoAI = v; saveOpt(); } },
+    { key: 'aikit', label: 'AI 玩家（Claude）', sub: '用你的 API 密钥让 Claude 扮演 AI 玩家', type: 'button', run: () => UI.modal('ai') },
     { key: 'tut', label: '重新显示新手引导', type: 'button', run: T => { lsSet('tut', 0); T.toast('下一局会重新显示新手引导'); } }
   ],
   howto: () => { const d = document.createElement('div'); d.innerHTML = modalHTML('rules') || ''; const b = d.querySelector('.db'); return b ? b.innerHTML : ''; },
@@ -2467,7 +2768,7 @@ function act(a) {
   if (NET.role === 'guest') { if (NET.conn && NET.conn.open) NET.conn.send({ t: 'act', a }); else toast('和房主的连接断了'); return; }
   apply(G, a, ME.seat); afterApply();
 }
-function afterApply() { save(); netSend(); render(); }
+function afterApply() { aiAfter(); save(); netSend(); render(); }
 document.addEventListener('visibilitychange', () => { if (!document.hidden && NET.role === 'host' && NET.peer && NET.peer.disconnected) try { NET.peer.reconnect(); } catch (e) { } });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') UI.close(); });
 document.addEventListener('gesturestart', e => e.preventDefault());

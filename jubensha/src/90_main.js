@@ -4,7 +4,7 @@ function act(a) {
   if (NET.role === 'guest') { if (NET.conn && NET.conn.open) NET.conn.send({ t: 'act', a }); else toast('和房主的连接断了'); return; }
   apply(G, a, ME.seat); afterApply();
 }
-function afterApply() { save(); netSend(); render(); }
+function afterApply() { aiAfter(); save(); netSend(); render(); }
 document.addEventListener('visibilitychange', () => { if (!document.hidden && NET.role === 'host' && NET.peer && NET.peer.disconnected) try { NET.peer.reconnect(); } catch (e) { } });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') UI.close(); });
 document.addEventListener('gesturestart', e => e.preventDefault());

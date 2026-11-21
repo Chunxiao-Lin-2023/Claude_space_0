@@ -38,6 +38,7 @@
 - 通用适配规范：[`IPHONE.md`](IPHONE.md)（iPhone 竖屏 / 横屏）。
 - 设计经验汇总：[`GAME_DESIGN_NOTES.md`](GAME_DESIGN_NOTES.md)（所有游戏的用户反馈、通用做法、踩过的坑和未完成事项；新游戏开工前先读「开工前速查」）；逐会话明细：[`GAME_DESIGN_NOTES_DETAILS.md`](GAME_DESIGN_NOTES_DETAILS.md)。
 - **统一的开始界面**：所有游戏（包括百戏茶馆里的每个游戏）都用 [`shared/titlekit`](shared/titlekit/README.md)：继续 / 新游戏 → 开局设置 / 同屏 / 联机（创建、加入、房间、邀请链接）/ 存档（读取、导出、删除、导入）/ 记录，顶栏 游戏厅 · 玩法 · 设置 · 声音。每个游戏只保留自己的背景、标题字和主色。组件放在 `shared/`，每个游戏在 `src/vendor/` 里有一份副本、构建时内联，运行时仍不引用别的文件夹；改了组件就跑 `python3 shared/titlekit/sync.py`，再重建用到它的游戏。新游戏也用它。
+- **Claude 当 AI 玩家**：[`shared/aikit`](shared/aikit/README.md)，用主人自己的 API 密钥（只存在浏览器 `localStorage['hub.ai']`，整个游戏厅共用一份，绝不进仓库/存档/网络消息），浏览器直连 Anthropic API，不需要 Cloudflare；联机只由房主调用，朋友不用密钥；在 claude.ai artifact 里用 `sample` 能力。硬性规则：引擎决定事实，Claude 只改说法或把玩家的话归到已有动作，每句都校验，失败退回脚本。同样是 `src/vendor/` 副本 + `python3 shared/aikit/sync.py`。已接入：剧本杀。
 
 ## 加一个新游戏或工具
 

@@ -6,7 +6,7 @@ const { chromium } = require('playwright'); const OUT = process.argv[2] || '/tmp
   const closeAll = p => p.evaluate(() => { document.querySelectorAll('.mask').forEach(m => m.remove()); __dbg.U.modalOpen = null; });
   /* A：第二局里 AI 问你时，弹窗还会自动弹出吗 */
   const P = await mk({ width: 1200, height: 800 });
-  const toD1 = async role => { await P.evaluate(r => { __dbg.U.setup = { sid: 'renchiren', mode: 'sus', role: r, diff: 'std' }; UI.start(); }, role); for (let i = 0; i < 3; i++) await P.evaluate(() => adv()); };
+  const toD1 = async role => { await P.evaluate(r => { __dbg.U.setup = { sid: 'renchiren', mode: 'sus', role: r, diff: 'std' }; UI.start(); TK.hide(); }, role); for (let i = 0; i < 3; i++) await P.evaluate(() => adv()); };
   const listenUntilPrompt = async () => { for (let i = 0; i < 12; i++) { await P.evaluate(() => act({ t: 'listen' })); if (await P.evaluate(() => __dbg.G.prompts.length)) return true; } return false; };
   await toD1('hu'); await listenUntilPrompt(); R.A1_firstGamePromptPopped = await P.evaluate(() => !!document.querySelector('.mask .optl'));
   await closeAll(P); await P.evaluate(() => UI.toTitle());
@@ -45,7 +45,7 @@ const { chromium } = require('playwright'); const OUT = process.argv[2] || '/tmp
       __dbg.apply(g, { t: 'ready' }, 0); __dbg.apply(g, { t: 'say', topic: 'final', i: 0 }, 0); __dbg.apply(g, { t: 'ready' }, 0); __dbg.apply(g, { t: 'answers', v: [s % 4, 0, 0, 2, 0, 1, 0, 0] }, 0); if (!g.verdict) tie++; } return tie + '/' + n + ' games ended with no verdict'; });
   /* I/K：手机上的平面图和答卷 */
   const M = await mk({ width: 360, height: 740 }, true);
-  await M.evaluate(() => { __dbg.U.setup = { sid: 'renchiren', mode: 'det', role: null, diff: 'std' }; UI.start(); adv(); adv(); });
+  await M.evaluate(() => { __dbg.U.setup = { sid: 'renchiren', mode: 'det', role: null, diff: 'std' }; UI.start(); TK.hide(); adv(); adv(); });
   await shot(M, 'I_phone_r1'); R.I_overflowX = await M.evaluate(() => document.documentElement.scrollWidth > innerWidth);
   R.I_hotOverlap = await M.evaluate(() => { const r = [...document.querySelectorAll('.hot')].map(h => h.getBoundingClientRect()); let n = 0; for (let i = 0; i < r.length; i++) for (let j = i + 1; j < r.length; j++) if (!(r[i].right < r[j].left || r[j].right < r[i].left || r[i].bottom < r[j].top || r[j].bottom < r[i].top)) n++; return n + ' overlapping hotspot pairs'; });
   await M.evaluate(() => { adv(); __dbg.U.target = 'li'; render(); }); await shot(M, 'K_phone_d1');

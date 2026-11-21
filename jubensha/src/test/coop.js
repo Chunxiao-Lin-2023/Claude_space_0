@@ -6,9 +6,9 @@ const { chromium } = require('playwright'); const PJ = require('fs').readFileSyn
     const pg = await ctx.newPage(); pg.on('pageerror', e => errs.push(name + ': ' + e.message)); pg.on('console', m => { if (m.type() === 'error') errs.push(name + ' console: ' + m.text()); });
     await pg.goto('http://localhost:8781/test.html?peerhost=127.0.0.1&peerport=9000'); await pg.evaluate(() => { localStorage.clear(); localStorage.setItem('jbs-tut', '3'); window.adv = () => { const g = __dbg.G, r = myRole(); if (g.phase === 'intro' && !g.introStyle[r]) act({ t: 'intro', i: 0 }); if (g.phase === 'final' && r !== 'det' && !g.finalSaid[r]) act({ t: 'say', topic: 'final', i: 0 }); act({ t: 'ready' }); }; }); return pg; };
   const H = await mk('host'), F = await mk('guest');
-  await H.click('text=和朋友联机'); await H.click('text=开一个房间'); await H.waitForFunction(() => __dbg.NET.role === 'host' && __dbg.NET.code, null, { timeout: 15000 });
+  await H.click('text=和朋友联机'); await H.click('.tk-box button:has-text("创建房间")'); await H.waitForFunction(() => __dbg.NET.role === 'host' && __dbg.NET.code, null, { timeout: 15000 });
   const code = await H.evaluate(() => __dbg.NET.code); console.log('room', code);
-  await F.click('text=和朋友联机'); await F.fill('#jcode', code); await F.click('button:has-text("加入")');
+  await F.click('text=和朋友联机'); await F.fill('.tk-code', code); await F.click('.tk-box button:has-text("加入")');
   await F.waitForFunction(() => __dbg.NET.role === 'guest' && __dbg.NET.lobby, null, { timeout: 20000 }); console.log('guest in lobby');
   await H.waitForFunction(() => !!__dbg.NET.conn); await H.evaluate(() => NET.pick('li')); await F.evaluate(() => NET.pick('hu'));
   await H.waitForFunction(() => __dbg.NET.lobby.roles[1] === 'hu', null, { timeout: 5000 }); await H.screenshot({ path: '/tmp/jbs/40_lobby.png' });
@@ -47,7 +47,7 @@ const { chromium } = require('playwright'); const PJ = require('fs').readFileSyn
   await F.evaluate(() => act({ t: 'search', id: 'c_zh_loan' })); await H.waitForTimeout(300);
   await H.evaluate(() => NET.leave()); await H.waitForTimeout(800);
   console.log('guest kept game while host gone:', await F.evaluate(() => !!__dbg.G && __dbg.U.scr === 'game'));
-  await H.reload(); await H.evaluate(() => localStorage.setItem('jbs-tut', '3')); console.log('host save after reload:', await H.evaluate(() => { const g = loadSave('renchiren'); return g ? g.mode + ' ' + JSON.stringify(g.seats) + ' ' + g.phase + ' room ' + g.room : 'none'; }), await H.evaluate(() => document.querySelector('.btns').innerText)); await H.evaluate(() => { window.adv = () => { const g = __dbg.G, r = myRole(); if (g.phase === 'intro' && !g.introStyle[r]) act({ t: 'intro', i: 0 }); if (g.phase === 'final' && r !== 'det' && !g.finalSaid[r]) act({ t: 'say', topic: 'final', i: 0 }); act({ t: 'ready' }); }; }); await H.click('text=继续上次联机'); await H.click('text=重开同一个房间');
+  await H.reload(); await H.evaluate(() => localStorage.setItem('jbs-tut', '3')); console.log('host save after reload:', await H.evaluate(() => { const g = loadSave('renchiren'); return g ? g.mode + ' ' + JSON.stringify(g.seats) + ' ' + g.phase + ' room ' + g.room : 'none'; }), await H.evaluate(() => document.querySelector('.tk-root, #tk, body').innerText.slice(0, 200).replace(/\s+/g, ' '))); await H.evaluate(() => { window.adv = () => { const g = __dbg.G, r = myRole(); if (g.phase === 'intro' && !g.introStyle[r]) act({ t: 'intro', i: 0 }); if (g.phase === 'final' && r !== 'det' && !g.finalSaid[r]) act({ t: 'say', topic: 'final', i: 0 }); act({ t: 'ready' }); }; }); await H.click('text=继续上次'); await H.click('text=重开同一个房间');
   await F.waitForFunction(() => __dbg.NET.conn && __dbg.NET.conn.open, null, { timeout: 60000 }); await H.waitForTimeout(800);
   console.log('guest auto-reconnected, seats', await H.evaluate(() => JSON.stringify(__dbg.G.seats)), 'loan public after leave?', await H.evaluate(() => __dbg.G.pub.includes('c_zh_loan')));
   await F.evaluate(() => act({ t: 'search', id: 'c_wang_tools' })); await H.waitForTimeout(300);

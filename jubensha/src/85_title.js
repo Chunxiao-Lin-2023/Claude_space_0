@@ -23,6 +23,7 @@ const TK = TitleKit.create({
     { key: 'typing', label: '台词逐字出现', type: 'toggle', get: () => !!OPT.typing, set: v => { OPT.typing = v; saveOpt(); } },
     { group: '声音', key: 'sound', label: '声音', type: 'toggle', get: () => !!OPT.sound, set: v => { OPT.sound = v; saveOpt(); } },
     { group: 'AI', key: 'autoAI', label: 'AI 自动插话', sub: '每两次操作后', type: 'toggle', get: () => !!OPT.autoAI, set: v => { OPT.autoAI = v; saveOpt(); } },
+    { key: 'aikit', label: 'AI 玩家（Claude）', sub: '用你的 API 密钥让 Claude 扮演 AI 玩家', type: 'button', run: () => UI.modal('ai') },
     { key: 'tut', label: '重新显示新手引导', type: 'button', run: T => { lsSet('tut', 0); T.toast('下一局会重新显示新手引导'); } }
   ],
   howto: () => { const d = document.createElement('div'); d.innerHTML = modalHTML('rules') || ''; const b = d.querySelector('.db'); return b ? b.innerHTML : ''; },

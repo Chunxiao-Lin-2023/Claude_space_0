@@ -108,6 +108,7 @@ function topBar() {
   return `<div class="top"><button class="ghost sm" onclick="UI.modal('menu')">≡</button>
     <span class="ph">${esc(p.name)}</span><span class="tm" id="ptm">${mins ? fmtT(phaseClock()) + ' / 建议 ' + mins + ' 分' : ''}</span>${partnerLine()}<span class="sp"></span>
     ${r ? sealH(r) + '<span class="nm small hide-n">' + esc(sc.roles[r].name) + '</span>' : ''}
+    ${G.ai ? `<button class="aichip" onclick="${NET.role === 'guest' ? "toast('房主开着 Claude：AI 玩家由 Claude 扮演')" : "UI.modal('ai')"}" title="AI 玩家由 Claude 扮演">✦ Claude</button>` : ''}
     <button class="sm ghost" onclick="UI.modal('book')" title="剧本">📖</button>
     <button class="sm ghost" onclick="UI.modal('notes')" title="笔记">📝</button>
     <button class="sm ghost" onclick="UI.modal('clues')" title="线索箱">🗂 ${G.pub.filter(i => sc.clues[i]).length + (G.own[r] || []).length}${unseen ? '<span class="dot"></span>' : ''}</button>
@@ -127,7 +128,9 @@ function renderGame() {
   const atBottom = m0 && (m0.scrollHeight - m0.scrollTop - m0.clientHeight < 60);
   const r = myRole(), fresh = G.log.filter(e => e.i > U.seenI);
   if (G.gid !== U.gid) { U.gid = G.gid; U.seenI = fresh.length > 8 ? G.log[G.log.length - 1].i : 0; U.unread = 0; U.sheet = null; U.tlShown = 0; U.linkSel = []; U.endArm = 0; U.hintSeen = (G.hintText[r] || {}).n || 0; }
+  const fq0 = $('#freeq'), fqv = fq0 ? fq0.value : '', fqf = fq0 && document.activeElement === fq0, fqs = fq0 ? fq0.selectionStart : 0;
   app().innerHTML = `<div class="scr" ${samePh ? 'style="animation:none"' : ''}>${topBar()}${f()}</div>`;
+  const fq1 = $('#freeq'); if (fq1 && fqv) { fq1.value = fqv; } if (fq1 && fqf) { fq1.focus(); try { fq1.setSelectionRange(fqs, fqs); } catch (e) { } }
   const m = $('.main'), chatty = ph === 'd1' || ph === 'd2' || ph === 'intro' || ph === 'final';
   if (m) {
     if (chatty) {
@@ -140,14 +143,18 @@ function renderGame() {
   }
   if (!samePh) { U._ph = ph; U.target = null; U.endArm = 0; sfx('page'); }
   if (fresh.length && U.seenI) { newLogSfx(fresh); fxFor(fresh); typeNew(fresh); }
+  const voicedNow = G.log.filter(e => e.v === 'a' && !AIJ.voiced[e.i]); voicedNow.forEach(e => AIJ.voiced[e.i] = 1);
+  if (voicedNow.length && U.seenI) typeNew(voicedNow);
   U.seenI = G.log.length ? G.log[G.log.length - 1].i : 0;
+  const fm = (G.freeMsg || {})[r]; if (fm && fm.n !== U.freeSeen) { U.freeSeen = fm.n; toast(fm.text, 4200); }
   $$('#app canvas.cimg').forEach(c => drawImg(c));
   if (ph === 'r1') drawPlan($('#plan'), 1);
   if (ph === 'r2') drawPlan($('#plan'), 2);
   const pkey = p => G.gid + ':' + p.id, np = G.prompts.find(p => p.to === r && !U.pSeen[pkey(p)]);
   if (np && !U.modalOpen && (ph === 'd1' || ph === 'd2')) { U.pSeen[pkey(np)] = 1; UI.modal('prompt'); }
   const h = G.hintText[r]; if (h && h.n !== U.hintSeen) { U.hintSeen = h.n; UI.modal('hint'); }
-  if (U.modalOpen && ['clues', 'tl', 'prompt', 'acts'].includes(U.modalOpen)) UI.modal(U.modalOpen, 1);
+  const typingInModal = document.activeElement && document.activeElement.closest && document.activeElement.closest('.mask') && /INPUT|TEXTAREA/.test(document.activeElement.tagName);
+  if (U.modalOpen && ['clues', 'tl', 'prompt', 'acts'].includes(U.modalOpen) && !typingInModal) UI.modal(U.modalOpen, 1);
   coach();
   if (G.restartReq && NET.role !== 'guest') { delete G.restartReq; UI.again(true); }
 }
@@ -194,7 +201,9 @@ function msgHTML(e) {
   const who = e.who, to = e.to, mine = who === r;
   const hd = esc(roleName(who)) + (to ? ' → ' + esc(roleName(to)) : '') + ({ pub: ' · 公开', show: ' · 出示', contra: ' · 指出矛盾', chat: ' · 悄悄话（AI 听不到）', final: ' · 最终陈述' }[e.k] || '');
   const tx = e.k === 'show' || e.k === 'pub' ? esc(e.text) + (e.ref && sc.clues[e.ref] ? `<div class="small mut" style="margin-top:4px">${esc(sc.clues[e.ref].text.slice(0, 80))}${sc.clues[e.ref].text.length > 80 ? '…' : ''}</div>` : '') : esc(e.text);
-  return `<div class="msg k-${e.k} ${mine ? 'mine' : ''} ${e.broke ? 'brk' : ''} ${e.k === 'contra' ? 'contra' : ''} ${e.i > U.seenI ? 'new' : ''}" data-i="${e.i}">${sealH(who)}<div class="bd"><div class="hd2">${hd}</div><div class="tx">${tx}</div></div></div>`;
+  const tag = e.v === 'a' ? `<span class="aitag" title="Claude 说的。脚本原句：${esc(e.text0 || '')}">Claude</span>` : '';
+  const body = e.v === 'p' ? '<span class="dots"><i></i><i></i><i></i></span>' : tx;
+  return `<div class="msg k-${e.k} ${mine ? 'mine' : ''} ${e.broke ? 'brk' : ''} ${e.k === 'contra' ? 'contra' : ''} ${e.i > U.seenI ? 'new' : ''}" data-i="${e.i}">${sealH(who)}<div class="bd"><div class="hd2">${hd}${tag}</div><div class="tx">${body}</div></div></div>`;
 }
 const logHTML = filter => '<div class="log" onclick="finishTyping()">' + G.log.filter(filter || (() => true)).map(msgHTML).join('') + '</div>';
 function gIntro() {
@@ -260,8 +269,9 @@ function gDisc() {
   const endLbl = U.endArm ? '再点一次结束' + (own ? `（还有 ${own} 条没公开）` : more ? '（AI 还有话没说）' : '') : '结束讨论';
   const btns = narrow() ? `<button onclick="UI.modal('acts')">🎬 行动</button>` : list.map(([k, n, ok, fn]) => `<button ${ok ? '' : 'disabled'} onclick="${fn}">${n}</button>`).join('');
   const rd = G.ready[r];
+  const free = G.ai ? `<div class="freebar"><input id="freeq" maxlength="120" autocomplete="off" placeholder="${t && t !== r ? '直接打字问' + esc(sc.roles[t].name) + '，或者说“把柴刀给他看”…' : '直接打字：问谁、问什么，或者出示什么…'}" onkeydown="if(event.key==='Enter')UI.free()"><button onclick="UI.free()">发送</button></div>` : '';
   return `<div class="seats">${seats}<button class="sm ghost logtg" onclick="UI.logAll()">${U.logAll ? '只看本轮' : '全部记录'}</button></div>
-  <div class="main">${logHTML(filt)}</div>
+  <div class="main">${logHTML(filt)}</div>${free}
   <div class="bar">${btns}
     <button onclick="UI.listen()" class="${more ? '' : 'ghost'}">${more ? '👂 听大家说' : '👂 大家在等你'}</button>
     <span class="sp"></span>${humanRoles(G).length > 1 ? `<span class="mut small">${humanRoles(G).filter(x => x !== r).map(x => (G.ready[x] ? '✓ ' : '… ') + esc(sc.roles[x].name)).join(' ')}</span>` : ''}
@@ -327,7 +337,7 @@ function modalHTML(k) {
   const sc = G ? S() : SCRIPTS.renchiren, r = G ? myRole() : null;
   if (k === 'rules') return dlg('玩法说明', `<div style="line-height:1.9">${sc.rules.map(x => '<p>· ' + esc(x) + '</p>').join('')}<p>· <b>当侦探</b>：四名嫌疑人都是 AI。向任何人提问、出示线索和证词；被戳中的人会改口说实话。点“听大家说”，AI 们会互相质问、提出推论。</p><p>· <b>🔗 指出关联</b>：自己把两条线索或证词放在一起。对了就得出推论或逼出实话，错了扣评级。</p><p>· <b>💡 提示</b>：告诉你下一步能做什么，按难度扣评级。</p><p>· <b>入局</b>：AI 也会来问你。你只能从你的剧本允许的说法里选——不是凶手就不能撒谎，只能回避。</p><p>· 顶栏 📖 剧本、📝 笔记、🗂 线索箱、🕒 时间线板随时可以看。</p></div>`);
   if (k === 'opts') return dlg('设置', [['anim', '动画（破防演出、淡入）'], ['typing', '台词逐字出现'], ['sound', '声音'], ['autoAI', 'AI 自动插话（每两次操作后）']].map(([o, n]) => `<label style="display:flex;align-items:center;gap:10px;padding:10px 0;font-size:17px"><input type="checkbox" ${OPT[o] ? 'checked' : ''} onchange="OPT['${o}']=this.checked;saveOpt();render()" style="width:22px;height:22px"> ${n}</label>`).join('') + `<button class="sm ghost" onclick="lsSet('tut',0);toast('下一局会重新显示新手引导')">重新显示新手引导</button>`);
-  if (k === 'menu') return dlg('菜单', `<div class="optl"><button onclick="UI.close();UI.modal('rules')">玩法说明</button><button onclick="UI.close();UI.modal('opts')">设置</button>
+  if (k === 'menu') return dlg('菜单', `<div class="optl"><button onclick="UI.close();UI.modal('rules')">玩法说明</button><button onclick="UI.close();UI.modal('opts')">设置</button><button onclick="UI.close();UI.modal('ai')">AI 玩家（Claude）${typeof AIKit !== 'undefined' && AIKit.available() ? ' · 已开启' : ''}</button>
     <button onclick="UI.toTitle(this)">回到标题（${NET.role ? '离开房间' : '进度已自动保存'}）</button>${HUB ? '<button onclick="UI.hub(this)">返回游戏厅</button>' : ''}</div>`);
   if (k === 'resumeNet') { const sv = loadSave('renchiren'); return dlg('继续上次联机', `<p>上次是联机局（房间 <b class="code">${esc(sv.room || '----')}</b>），你是房主。</p><div class="optl"><button onclick="UI.resumeNet(1)">重开同一个房间，等朋友回来<br><span class="mut small">朋友在“和朋友联机”里输入同一个房间码就能接回他的角色</span></button><button onclick="UI.resumeNet(0)">单机继续<br><span class="mut small">朋友的角色交给 AI，他手上没公开的线索会公开</span></button></div>`); }
   if (!G) return '';
@@ -374,16 +384,19 @@ function modalHTML(k) {
   if (k === 'say') {
     const d = sc.deck[r] || {}; const opts = [];
     for (const tp in d) deckFor(G, r, tp).forEach((e, i) => { if (e.vol && !G.saidV[saidKey(r, e)]) opts.push([tp, i, e]); });
-    return dlg('主动发言', `<p class="mut small">从你的剧本允许的说法里选。${r === sc.killer ? '你是凶手，可以说谎。' : '你不是凶手，不能说谎。'}</p>${opts.length ? '' : '<p class="mut">能主动说的都说过了。</p>'}<div class="optl">${opts.map(([tp, i, e]) => `<button onclick="UI.doSay('${tp}',${i})"><span class="k k-${e.kind}">${KIND[e.kind]}</span>${esc(e.say)}${e.tip ? ' <span class="mut small">（' + esc(e.tip) + '）</span>' : ''}</button>`).join('')}</div>`);
+    const fs = G.ai ? `<div class="freebox" style="margin:0 0 12px"><input id="frees" maxlength="120" autocomplete="off" placeholder="自己打字说一句…" onkeydown="if(event.key==='Enter')UI.freeSay()"><button onclick="UI.freeSay()">说</button></div>` : '';
+    return dlg('主动发言', `<p class="mut small">从你的剧本允许的说法里选${G.ai ? '，或者自己打字' : ''}。${r === sc.killer ? '你是凶手，可以说谎。' : '你不是凶手，不能说谎。'}</p>${fs}${opts.length ? '' : '<p class="mut">能主动说的都说过了。</p>'}<div class="optl">${opts.map(([tp, i, e]) => `<button onclick="UI.doSay('${tp}',${i})"><span class="k k-${e.kind}">${KIND[e.kind]}</span>${esc(e.say)}${e.tip ? ' <span class="mut small">（' + esc(e.tip) + '）</span>' : ''}</button>`).join('')}</div>`);
   }
   if (k === 'prompt') {
     const p = G.prompts.find(x => x.to === r); if (!p) return '';
     const list = deckFor(G, r, p.topic);
-    return dlg(esc(roleName(p.from)) + '问你', `<div class="msg">${sealH(p.from)}<div class="bd"><div class="tx">${p.clue ? '（出示了' + esc(itemTitle(sc, p.clue)) + '）' : ''}${esc(topicQ(sc, p.topic))}</div></div></div>
+    const fb = G.ai ? `<div class="freebox"><input id="freea" maxlength="120" autocomplete="off" placeholder="或者自己打字回答…" onkeydown="if(event.key==='Enter')UI.freeAns(${p.id})"><button onclick="UI.freeAns(${p.id})">回答</button></div><p class="mut small">${r === sc.killer ? '你是凶手，可以撒谎。' : '你不是凶手：和你剧本矛盾的话会被拒绝。'}</p>` : '';
+    return dlg(esc(roleName(p.from)) + '问你', `<div class="msg">${sealH(p.from)}<div class="bd"><div class="tx">${p.clue ? '（出示了' + esc(itemTitle(sc, p.clue)) + '）' : ''}${esc(p.q || topicQ(sc, p.topic))}</div></div></div>
       ${p.clue ? clueCard(p.clue) : ''}<h3 style="margin-top:12px">你怎么回答？</h3>
-      <div class="optl">${list.map((e, i) => `<button onclick="UI.doSay(null,${i},${p.id})"><span class="k k-${e.kind}">${KIND[e.kind]}</span>${esc(e.say)}${e.tip ? ' <span class="mut small">（' + esc(e.tip) + '）</span>' : ''}</button>`).join('')}</div>
+      <div class="optl">${list.map((e, i) => `<button onclick="UI.doSay(null,${i},${p.id})"><span class="k k-${e.kind}">${KIND[e.kind]}</span>${esc(e.say)}${e.tip ? ' <span class="mut small">（' + esc(e.tip) + '）</span>' : ''}</button>`).join('')}</div>${fb}
       ${G.prompts.filter(x => x.to === r).length > 1 ? `<p class="mut small">后面还有 ${G.prompts.filter(x => x.to === r).length - 1} 个问题。</p>` : ''}`);
   }
+  if (k === 'ai') return dlg('AI 玩家（Claude）', AIKit.panelHTML(G && NET.role === 'guest' ? '你是朋友那一方：AI 由房主那边的 Claude 扮演，你不用设置。' : 'Claude 只负责把 AI 玩家的台词说得自然、听懂你打的字；谁说实话、透露什么、谁破防，仍由游戏规则决定，所以不会剧透。'));
   if (k === 'hint') { const h = G.hintText[r]; return h ? dlg('💡 提示', `<p style="font-family:var(--serif);font-size:18px;line-height:1.8">${esc(h.text)}</p><p class="mut small">本局已用提示 ${G.hints[r] || 0} 次${dif().hintCost ? '，每次评级扣 ' + dif().hintCost + ' 分' : '（简单难度不扣分）'}。</p>`) : ''; }
   if (k === 'acts') { const { list, more } = discActions(); return dlg('行动', `<div class="optl">${list.map(([, n, ok, fn]) => `<button ${ok ? '' : 'disabled'} onclick="UI.close();${fn}">${n}${!ok ? ' <span class="mut small">（先点上面的人选中他）</span>' : ''}</button>`).join('')}<button onclick="UI.close();UI.listen()">${more ? '👂 听大家说' : '👂 大家在等你'}</button></div>`); }
   if (k === 'chat') return dlg('悄悄话', `<p class="mut small">只有你们两个真人看得到，AI 听不到。</p><div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">${(sc.quick || []).map((q, i) => `<button class="sm" onclick="UI.chat(S().quick[${i}])">${esc(q)}</button>`).join('')}</div><div style="display:flex;gap:8px"><input id="chattx" maxlength="120" style="flex:1;font-size:16px" placeholder="自己打一句…" onkeydown="if(event.key==='Enter')UI.chat(this.value)"><button onclick="UI.chat($('#chattx').value)">发送</button></div>`);
@@ -419,6 +432,9 @@ const UI = {
   listen() { if (!aiHasMore(G)) toast('AI 没有新的话了：去提问、出示证据、指出关联，或者用提示。', 3200); act({ t: 'listen' }); },
   endDisc() { if (humanRoles(G).length === 1 && !U.endArm) { U.endArm = 1; render(); setTimeout(() => { if (U.endArm) { U.endArm = 0; if (G && (G.phase === 'd1' || G.phase === 'd2')) render(); } }, 4000); return; } U.endArm = 0; act({ t: 'ready' }); },
   logAll() { U.logAll = !U.logAll; render(); },
+  free() { const i = $('#freeq'); const t = i && i.value.trim(); if (!t) return; i.value = ''; act({ t: 'freeText', text: t, to: U.target && U.target !== myRole() && U.target !== 'det' ? U.target : null }); toast('Claude 在理解你的话…', 1600); },
+  freeAns(pid) { const i = $('#freea'); const t = i && i.value.trim(); if (!t) return; UI.close(); act({ t: 'freeText', text: t, pid }); toast('Claude 在判断你的回答…', 1600); },
+  freeSay() { const i = $('#frees'); const t = i && i.value.trim(); if (!t) return; UI.close(); act({ t: 'freeText', text: t, say: 1 }); toast('Claude 在判断你这句话…', 1600); },
   toBottom() { const m = $('.main'); if (m) m.scrollTop = m.scrollHeight; U.unread = 0; $$('.newbtn').forEach(x => x.remove()); },
   chat(t) { t = String(t || '').trim(); if (!t) return; act({ t: 'chat', text: t }); const i = $('#chattx'); if (i) i.value = ''; UI.close(); },
   ans(i, j) { U.sheet[i] = j; render(); },
@@ -435,6 +451,7 @@ const UI = {
     closeMask(); const h = modalHTML(k); if (!h) { U.modalOpen = null; return; } U.modalOpen = k;
     document.body.insertAdjacentHTML('beforeend', h); $$('.mask canvas.cimg').forEach(c => drawImg(c));
     if (keep) { const d = $('.mask .db'); if (d) d.scrollTop = st; } else sfx('tick');
+    if (k === 'ai') { const box = $('.mask .ak'); if (box) AIKit.bind(box, () => { if (G) { aiAfter(); save(); netSend(); } UI.modal('ai', 1); render(); }); }
     sendStatus();
   },
   close() { U.modalOpen = null; closeMask(); sendStatus(); }

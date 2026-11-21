@@ -39,7 +39,7 @@ function hostRecv(d) {
     return;
   }
   if (d.t === 'pick' && !G) { const L = NET.lobby; if (L.roles[0] === d.role) return; if (L.mode === 'det' && d.role === 'det') return; L.roles[1] = d.role; netLobby(); return; }
-  if (d.t === 'act' && G) { apply(G, d.a, 1); afterApply(); }
+  if (d.t === 'act' && G && d.a && d.a.t !== 'free' && !d.a.fromFree) { apply(G, d.a, 1); afterApply(); }
 }
 function netLobby() { if (NET.conn && NET.conn.open) NET.conn.send({ t: 'lobby', lobby: NET.lobby, code: NET.code }); render(); }
 NET.pick = function (r) {
@@ -67,7 +67,7 @@ NET.join = async function (raw, quiet) {
         const hello = setInterval(() => { if (c.open && !got) c.send({ t: 'hello' }); }, 1500);
         c.on('open', () => { NET.conn = c; NET.role = 'guest'; NET.code = code; c.send({ t: 'hello' }); netSay('已连上房主，等待同步…'); });
         c.on('data', d => { got = 1; clearInterval(hello); guestRecv(d); });
-        c.on('close', () => { clearInterval(hello); if (NET.conn === c) { NET.conn = null; guestLost(code); } });
+        c.on('close', () => { clearInterval(hello); if (NET.conn === c && !NET.leaving) { NET.conn = null; guestLost(code); } });
         setTimeout(() => { if (!c.open && NET.tok === tok && !NET.conn) { clearInterval(hello); try { c.close(); } catch (e) { } if (Date.now() - t0 < (quiet ? 75000 : 45000)) { netSay('还没找到房间（房主可能还没开好），再敲一次门…'); knock(); } else if (quiet) { G = null; NET.role = null; U.scr = 'lobby'; netSay('房主一直没回来。'); render(); } else netSay('找不到房间 ' + code + '：检查房间码，或让房主重新开房间。'); } }, 10000);
       };
       knock();
