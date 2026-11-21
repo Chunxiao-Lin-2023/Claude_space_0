@@ -298,6 +298,13 @@ function pickBuild(sx, sy, me, demo) {
   if (slab) { cands.push(buildPick(sx, sy, front.L + 1), buildPick(sx, sy, me.L), buildPick(sx, sy, me.L + 1)); }
   else if (front.L < me.L) cands.push(buildPick(sx, sy, me.L));
   for (const c of cands) if (c && inMap(c.x, c.y) && c.L >= 0 && c.L < ML && !buildWhy(me, c.x, c.y, c.L)) return Object.assign(c, { ok: true, why: '' });
+  // (round 25) gear items snap to the nearest free tile around where you point (1–2 tiles), so a bush, a crate or a slope in the way doesn't stop you
+  if (B[me.sel].any && !slab) {
+    const hx = o[0] + d[0] * ((o[2] - front.L * FH) / -d[2] || 0), hy = o[1] + d[1] * ((o[2] - front.L * FH) / -d[2] || 0), best = [];
+    for (let r = 1; r <= 2; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) { if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue; const x = front.x + dx, y = front.y + dy; if (!inMap(x, y)) continue;
+      for (const L of [front.L, gAt(x, y)]) if (L >= 0 && L < ML && !buildWhy(me, x, y, L)) { best.push({ x, y, L, d: Math.hypot(x + 0.5 - hx, y + 0.5 - hy) }); break; } }
+    if (best.length) { best.sort((a, b) => a.d - b.d); const c = best[0]; return { x: c.x, y: c.y, L: c.L, ok: true, why: '', snap: 1 }; }
+  }
   return Object.assign(front, { ok: false, why: buildWhy(me, front.x, front.y, front.L) });
 }
 /* ---------- build plan: click / tap / drag makes a preview; confirm with the ✓ bar, Enter, or a second tap on it ---------- */

@@ -16,7 +16,7 @@ const UA = 'Mozilla/5.0 (iPad; CPU OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (
     // 1. gear outside the build zone
     let s = await p.evaluate(() => { const x = W.radio.x + 30, y = W.radio.y + 30, L = gAt(x, y); __clr(x, y, L, 2); const me = W.p[0]; me.x = x - 1.5; me.y = y + 0.5; me.L = L;
       const r = {}; for (const id of [1, 51, 52, 53, 12, 15, 10, 56]) r[id] = canPlace(x, y, L, id, 0) || 'OK'; return r; });
-    check('classic: mines, turret, cover, traps, lamp, pad go down outside the build zone; walls still do not', ['51', '52', '53', '12', '15', '10', '56'].every(k => s[k] === 'OK') && s[1] !== 'OK', JSON.stringify(s));
+    check('classic: mines, turret, cover, traps, pad go down outside the build zone; walls still do not (lamp left the bar in round 25)', ['51', '52', '53', '12', '15', '56'].every(k => s[k] === 'OK') && s[1] !== 'OK', JSON.stringify(s));
     // 2. shield is a melee weapon
     s = await p.evaluate(() => { const me = W.p[0]; me.x = W.radio.x + 0.5; me.y = W.radio.y + 2.5; me.L = gAt(W.radio.x, W.radio.y + 2); SET.shopTab = 'gun'; openCraft();
       const card = [...document.querySelectorAll('#clist .sc')].find(e => /防暴盾/.test(e.textContent)); card.querySelector('button').click(); closeCraft();

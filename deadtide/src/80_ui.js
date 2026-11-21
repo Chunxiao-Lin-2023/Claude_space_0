@@ -167,9 +167,10 @@ function hudTick(dt) {
   $('iNadeL').textContent = GREN[me.gt || 0].sn; $('iNade').textContent = gCount(me, me.gt || 0); $('iMed').textContent = me.meds; $('iKill').textContent = me.kills; $('iLife').textContent = me.lives != null ? me.lives : '-';
   uiKeys(me);
   const q = quickList(me), qk = q.join(','); if (UI.wbK !== qk) { UI.wbK = qk;
-    $('wbar').innerHTML = q.map((k, j) => `<button data-w="${k}"><span><kbd>${j + 1}</kbd>${WPN[k].name}</span><small id="wb${k}"></small></button>`).join('') + `<i class="wsep"></i><button id="wbMel" class="mel"><span><kbd>X</kbd><b>刀</b></span><small>右键 / V</small></button>` + GREN.map((g, t) => `<button data-g="${t}" class="gr"><span><kbd>${t + 5}</kbd>${g.sn}</span><small id="wg${t}"></small></button>`).join('') + `<button id="wbKit" class="kit"><span><kbd>I</kbd>装备</span><small>换快捷枪</small></button>`;
+    $('wbar').innerHTML = q.map((k, j) => `<button data-w="${k}"><span><kbd>${j + 1}</kbd>${WPN[k].name}</span><small id="wb${k}"></small></button>`).join('') + `<i class="wsep"></i><button id="wbMel" class="mel"><span><kbd>X</kbd><b>刀</b></span><small>右键 / V</small></button>` + GREN.map((g, t) => `<button data-g="${t}" class="gr"><span><kbd>${t + 5}</kbd>${g.sn}</span><small id="wg${t}"></small></button>`).join('') + `<button id="wbKit" class="kit"><span><kbd>I</kbd>装备</span><small>换快捷枪</small></button><button id="wbItem" class="kit item"><span><kbd>B</kbd>道具</span><small>墙 · 陷阱 · 跳板</small></button>`;
     $('wbar').querySelectorAll('button[data-w]').forEach(b => b.addEventListener('pointerdown', e => { e.stopPropagation(); if (inGame()) act('wpn', +b.dataset.w); }));
     $('wbKit').addEventListener('pointerdown', e => { e.stopPropagation(); openKit(); });
+    $('wbItem').addEventListener('pointerdown', e => { e.stopPropagation(); if (inGame()) toggleBuild(true); });
     $('wbMel').addEventListener('pointerdown', e => { e.stopPropagation(); if (inGame()) switchMelee(); });
     $('wbar').querySelectorAll('button[data-g]').forEach(b => b.addEventListener('pointerdown', e => { e.stopPropagation(); if (inGame()) setGren(+b.dataset.g); })); }
   { const mb = $('wbMel'), sh = me.melee === 1 && me.shield; mb.querySelector('b').textContent = sh ? '盾' : '刀'; mb.classList.toggle('dim', !me.shield); mb.lastElementChild.textContent = me.shield ? '右键 · X 换' + (sh ? '刀' : '盾') : '右键 / V';
@@ -293,8 +294,7 @@ function renderCraft() {
   } else if (tab === 'item') {
     const st = { nade: '带着 ' + me.nades + ' / ' + BAL.nadeCap, med: '带着 ' + me.meds + ' / ' + BAL.medCap }; for (let t = 1; t < 4; t++) st['g' + GREN[t].k] = '带着 ' + gCount(me, t) + ' / ' + BAL.gnCap;
     h = CRAFT.filter(c => c.cat === 'item').map(c => `<div class="sc"><div class="sh"><b>${c.name}</b><em>${st[c.id] || ''}</em></div><small>${c.desc}</small><div class="sb">${shopBtn(c, c.shield && me.shield > 0 ? '修满' : '买')}</div></div>`).join('');
-    h += `<div class="sgrp">放置类道具 · 不用先买：点「去放」，放一个扣一份材料（电脑按 B，触屏点「道具」）</div>`;
-    h += ITEMS.map((g, n) => `<div class="sc mini"><div class="sh"><b>${g.name}</b><em>${g.ids.map(id => B[id].name + (hasBP(id) ? '' : '🔒')).join(' / ')}</em></div><small>${B[g.ids[0]].tip}</small><div class="sb"><button class="sbtn go" data-g="${n}"><b>去放</b><span>${costText(B[g.ids.find(id => hasBP(id)) || g.ids[0]].cost)} 起</span></button></div></div>`).join('');
+    h += `<div class="sgrp">墙、陷阱、地雷、机枪塔、跳板这些<b>放置类道具不在商店里</b>：随时随地点「道具」（电脑按 B）拿出来放，放一个扣一份材料</div>`;
   } else if (tab === 'veh') {
     h = `<div class="sgrp">选一辆当默认：T（触屏点「载具」）就上这辆；Shift+T / 长按「载具」换车</div>`;
     h += CRAFT.filter(c => c.cat === 'veh').map(c => { const v = c.veh, own = (me.vehs || 0) >> v & 1, def = own && me.veh === v;

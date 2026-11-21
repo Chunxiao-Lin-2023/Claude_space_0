@@ -88,23 +88,21 @@ defB(53, { key: 'barricade', name: '木板路障', cost: { wood: 3 }, hp: 300, P
 defB(54, { key: 'ammobox', nat: 1, spot: 'ammobox' });
 defB(55, { key: 'bpcase', P: 1, Z: 1, B: 1, nat: 1, spot: 'bpcase', low: 0.7 });
 // (round 22) one-shot jump pad: step on it and it flings you ~5 tiles the way you're going, up onto a roof if there is one; placeable anywhere
-defB(56, { key: 'pad', name: '跳板', cost: { wood: 3, parts: 2 }, hp: 40, dep: 1, pad: 1, any: 1, col: '#d8a03a', tip: '踩上去把你弹出去约 5 格（朝你走的方向，前面有矮楼顶就弹上去），用一次就没；哪里都能放' });
+defB(56, { key: 'pad', name: '跳板', cost: { wood: 3, parts: 2 }, hp: 40, dep: 1, pad: 1, any: 1, col: '#d8a03a', tip: '踩上去把你弹出去约 9 格（朝你走的方向，前面有矮楼顶就弹上去），用一次就没；哪里都能放' });
 defB(42, { key: 'rail', P: 1, Z: 1, nat: 1, brk: 1, vault: 1, hp: 120, col: '#6a6f74' }); // balcony / roof / mezzanine railing: low, vaultable, bullets pass
 // (round 22) the placeables as items: one slot per kind; tap the slot again to switch material / variant. None of them care which way you face
+// (round 25) six slots: walls, floors and the door share one; the searchlight is gone from the bar (old ones still stand)
 const ITEMS = [
-  { k: 'wall', name: '墙', ids: [1, 2, 3] },
-  { k: 'floor', name: '地板', ids: [4, 5] },
+  { k: 'build', name: '墙·地板·门', ids: [1, 2, 3, 4, 5, 7] },
   { k: 'ladder', name: '梯子', ids: [6] },
-  { k: 'door', name: '门', ids: [7] },
   { k: 'cover', name: '掩体', ids: [53, 12, 14, 8] },
   { k: 'trap', name: '陷阱', ids: [15, 9, 13, 51] },
   { k: 'turret', name: '机枪塔', ids: [52] },
-  { k: 'lamp', name: '探照灯', ids: [10] },
   { k: 'pad', name: '跳板', ids: [56] },
 ];
 const PAL = ITEMS.flatMap(g => g.ids);
 // (round 23) the gear-type items (cover, traps, turret, lamp, jump pad) go down anywhere in every mode; walls / floors / ladders / doors stay in the build zone outside 尸城求生
-for (const g of ITEMS) if (!['wall', 'floor', 'ladder', 'door'].includes(g.k)) for (const id of g.ids) B[id].any = 1;
+for (const g of ITEMS) if (!['build', 'ladder'].includes(g.k)) for (const id of g.ids) B[id].any = 1;
 const itemOf = id => ITEMS.find(g => g.ids.includes(id)) || ITEMS[0];
 // vehicles (round 22: their own category; you pick a default and T gets on it). spd = walking speed multiplier, seats 2 = a pillion seat
 const VEH = [null,
@@ -125,7 +123,7 @@ const gCount = (p, t) => t ? ((p.gn || [])[t - 1] || 0) : p.nades;
 const gCap = t => t ? BAL.gnCap : BAL.nadeCap;
 // blueprints (尸城求生): what you can build / make from the start, and what has to be found first
 const BP_BASE = [1, 4, 6, 7, 12, 53, 56];
-const BP_LIST = [2, 3, 5, 8, 13, 14, 9, 15, 10, 51, 52, 'bike', 'moto', 'cargo', 'armor'];
+const BP_LIST = [2, 3, 5, 8, 13, 14, 9, 15, 51, 52, 'bike', 'moto', 'cargo', 'armor'];
 const bpName = k => typeof k === 'number' ? B[k].name : (VEH.find(v => v && v.k === k) || { name: k }).name;
 const SLAB_BRIDGE = 11; // slab id for the pre-built bridges (not buildable)
 defB(11, { key: 'bridge', slab: 1, nat: 1, col: '#7e5a36' });
@@ -264,7 +262,7 @@ const CRAFT = [
 const BAL = {
   nights: 15,
   dayLen: [300, 240],            // first day, later days (seconds)
-  pMaxHp: 100, pSpeed: 4.4, pReach: 6.5,
+  pMaxHp: 100, pSpeed: 4.4, pReach: 7.5, /* (round 25) 6.5 → 7.5 */
   stairHold: 0.18, ledgeHold: 0.45,  // seconds of pushing before you walk down stairs / jump off a ledge
   downTime: 30, reviveTime: 2.4, soloDownTime: 8, respawnHp: 0.5,
   respawnDay: 20, respawnNight: 20, respawnInv: 2.5, lives: { easy: 5, normal: 3, hard: 1 }, livesLong: 2, /* respawns each: by difficulty, +2 in the long modes (经典 15 夜 / 尸城求生 10 夜) */ /* (round 24) 20 s day or night (was 60 at night), back at the base, 2.5 s untouchable */ rezTime: 6, rezHp: 0.4, // (round 20) a dead teammate comes back by a living one after this long (or at dawn); a medkit at the body brings them back at once
@@ -273,7 +271,7 @@ const BAL = {
   chgWind: 0.85, chgSpd: 7.5, chgTime: 1.2, chgDmg: 34, chgKB: 10, chgWall: 400, chgStun: 1.4, chgCD: 6, chgMin: 3.2, chgMax: 10, // brute charge: red line on the ground, then a rush
   slamR: 2.6, slamWind: 0.55, slamDmg: 22, slamKB: 7, slamCD: 4,  // brute ground slam: red ring, then everything inside gets hit and thrown
   bashR: 2.4, bashCos: 0.34, bashKB: 20, bashStun: 1.0, bashDmg: 20, bashCD: 0.85, bashMax: 8, // shield bash: everything in front (up to 8) shoved ~3 tiles back and stunned
-  padDist: 5, padUp: 2,                                        // jump pad: how far / how many floors up it can throw you
+  padDist: 9, padUp: 2,  /* (round 25) 5 → 9 tiles */                                        // jump pad: how far / how many floors up it can throw you
   ramDmg: 30, ramCD: 0.7, ramSpd: 2.2,                         // armoured car: hitting a zombie at speed
   cargoSearch: 0.5, cargoLoot: 1.5, cargoReach: 2.3,           // cargo trike: search time x, loot x, reach from the seat
   knifeDmg: 55, knifeKB: 2.5, knifeCD: 0.5, knifeRange: 2.3, knifeLunge: 1.3, knifeBack: 2, // melee (was a shove: 18 dmg, KB 6, CD 0.55, 1.3 cone)

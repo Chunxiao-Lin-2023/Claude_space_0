@@ -413,6 +413,8 @@ function ladderDir(x, y, L, pref) {
   }
   return best;
 }
+// (round 25) clutter that gear items (traps, cover, turret, lamp, jump pad) may simply go on top of: bushes, and searched / empty loot spots lying on the floor
+function softCell(i) { const b = W.blk[i]; if (!b) return true; if (b === 41) return true; const Bb = B[b]; return !!(Bb.spot && !Bb.B && !Bb.top && W.srch && W.srch.has(i)); }
 function canPlace(x, y, L, id, dir) {
   if (!inMap(x, y) || !(modeDef().anyBuild || inZone(x, y) || (B[id] && B[id].any))) return '只能在营地周围的建造区（黄框）内建造';
   if (!hasBP(id)) return '还没有「' + B[id].name + '」的蓝图：去搜箱子、清理丧尸占着的楼';
@@ -427,7 +429,7 @@ function canPlace(x, y, L, id, dir) {
     if (L > 0 && B[blkAt(x, y, L - 1)].stairs) return '这是梯子口，留空才能上下';
   } else {
     if (water && !W.slab[i]) return '水面要先铺楼板';
-    if (W.blk[i]) return '这里已经有东西了';
+    if (W.blk[i] && !(Bi.any && softCell(i))) return '这里已经有东西了';
     if (Bi.stairs) {
       if (L + 1 >= ML) return '太高了'; if (W.slab[ci(x, y, L + 1)]) return '梯子上方有楼板，先拆掉';
       const [dx, dy] = DIRS[dir || 0], fb = blkAt(x + dx, y + dy, L);

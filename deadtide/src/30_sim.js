@@ -110,7 +110,7 @@ function stepMove(p, dt) {
   // a jump pad under your feet (round 22): fling yourself the way you're going; the host takes the pad away
   if ((p.padCD = Math.max(0, (p.padCD || 0) - dt)) <= 0 && !p.down && !p.ride && W.blk[ci(Math.floor(p.x), Math.floor(p.y), p.L)] === 56) {
     const t = padTarget(p), px = Math.floor(p.x), py = Math.floor(p.y), pl = p.L; p.padCD = 0.6;
-    if (t) { p.jmp = { t: 0, T: 0.55 + t.d * 0.05, x0: p.x, y0: p.y, x1: t.x, y1: t.y, L: t.L, h: 1.3 + Math.max(0, t.L - p.L) * 0.4, up: t.L - p.L, k: 4 }; emitLocal('jump'); if (typeof act === 'function' && p.i === ME) act('pad', { x: px, y: py, l: pl }); else doAct(p, 'pad', { x: px, y: py, l: pl }); }
+    if (t) { p.jmp = { t: 0, T: 0.5 + t.d * 0.06, x0: p.x, y0: p.y, x1: t.x, y1: t.y, L: t.L, h: 1.2 + t.d * 0.12 + Math.max(0, t.L - p.L) * 0.4, up: t.L - p.L, k: 4 }; emitLocal('jump'); if (typeof act === 'function' && p.i === ME) act('pad', { x: px, y: py, l: pl }); else doAct(p, 'pad', { x: px, y: py, l: pl }); }
   }
   const sp = Math.hypot(p.vx, p.vy);
   if (sp > 0.3) p.anim += dt * sp * 2.6; else p.anim = lerp(p.anim, Math.round(p.anim / Math.PI) * Math.PI, Math.min(1, dt * 8));
@@ -144,6 +144,7 @@ function padTarget(p) {
   let ax = p.inp.mx, ay = p.inp.my; if (Math.hypot(ax, ay) < 0.3) { ax = Math.cos(p.aim); ay = Math.sin(p.aim); }
   const m = Math.hypot(ax, ay) || 1; ax /= m; ay /= m;
   const roof = p.L + 1 < ML && !!W.slab[ci(Math.floor(p.x), Math.floor(p.y), p.L + 1)], upMax = roof ? 0 : BAL.padUp;
+  let best = null;
   for (let d = BAL.padDist; d >= 1.5; d -= 0.5) {
     const x = Math.floor(p.x + ax * d), y = Math.floor(p.y + ay * d); if (!inMap(x, y) || (x === Math.floor(p.x) && y === Math.floor(p.y))) continue;
     for (let l = Math.min(ML - 2, p.L + upMax); l >= Math.max(0, p.L - 2); l--) {
@@ -154,11 +155,11 @@ function padTarget(p) {
         if (roof) { if (!enterable(xx, yy, p.L, 'p')) clear = false; }
         else if (top < ML && (W.slab[ci(xx, yy, top)] || B[W.blk[ci(xx, yy, top)]].P)) clear = false;
       }
-      if (clear) return { x: x + 0.5, y: y + 0.5, L: l, d };
+      if (clear && (!best || l > best.L)) best = { x: x + 0.5, y: y + 0.5, L: l, d };   // (round 25) the farthest spot on the highest roof in reach
       break;
     }
   }
-  return null;
+  return best;
 }
 function emitLocal(name) { fxEvent({ k: 'sfx', n: name, local: 1 }); }
 
@@ -617,7 +618,7 @@ function doBuild(p, x, y, L, id, dir) {
   if (!affordable(W.res, Bi.cost)) return emit({ k: 'deny', p: p.i, why: '材料不足' });
   for (const k in Bi.cost) W.res[k] -= Bi.cost[k];
   if (Bi.slab) setCell(i, W.blk[i] === 23 ? 0 : W.blk[i], id, null, 'build');
-  else setCell(i, id, W.slab[i], Bi.stairs ? (dir & 3) : null, 'build');
+  else { if (W.blk[i] && W.srch) W.srch.delete(i); setCell(i, id, W.slab[i], Bi.stairs ? (dir & 3) : null, 'build'); } // (round 25) gear may replace a bush / searched spot
   W.stats.built++; taskAdd('build'); if (L >= 2) taskAdd('high');
   recomputeStab();
 }

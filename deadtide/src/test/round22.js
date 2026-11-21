@@ -21,7 +21,7 @@ const UA = 'Mozilla/5.0 (iPad; CPU OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (
     s = await p.evaluate(() => { SET.shopTab = 'gun'; renderCraft(); document.querySelector('#clist button[data-c="shield"]').click(); SET.shopTab = 'item'; renderCraft(); const n = document.querySelectorAll('#clist .sc.mini').length;
       SET.shopTab = 'veh'; renderCraft(); document.querySelector('#clist button[data-c="cargo"]').click(); document.querySelector('#clist button[data-c="armor"]').click(); renderCraft();
       const def = document.querySelector('#clist button.vdef'); if (def) def.click(); return { shield: W.p[0].shield, items: n, vehs: W.p[0].vehs, veh: W.p[0].veh }; });
-    check('gun tab: shield bought (round 23: a melee weapon); item tab lists placeables with a 去放 button', s.shield === 1 && s.items === 9, JSON.stringify(s));
+    check('gun tab: shield bought (round 23: a melee weapon); item tab no longer lists placeables (round 25)', s.shield === 1 && s.items === 0, JSON.stringify(s));
     check('vehicle tab: cargo + armour owned, default switchable', (s.vehs & 24) === 24 && s.veh >= 3, JSON.stringify(s));
     await p.evaluate(() => closeCraft());
     // kit / quick weapons
@@ -32,7 +32,7 @@ const UA = 'Mozilla/5.0 (iPad; CPU OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (
     // item bar
     await p.keyboard.press('b'); await p.keyboard.press('1'); let a = await p.evaluate(() => W.p[0].sel); await p.keyboard.press('1'); let b2 = await p.evaluate(() => W.p[0].sel); await p.keyboard.press('1'); let c3 = await p.evaluate(() => W.p[0].sel);
     s = await p.evaluate(() => ({ slots: document.querySelectorAll('#bbar button[data-g]').length, chips: document.querySelectorAll('#bvar button').length, varShown: !$('bvar').classList.contains('hidden'), rot: !!$('bRot') }));
-    check('item bar: 9 kinds; pressing the wall slot again goes wood -> brick -> steel; chips over the bar; no turn button', s.slots === 9 && a === 1 && b2 === 2 && c3 === 3 && s.chips === 3 && s.varShown && !s.rot, JSON.stringify([a, b2, c3, s]));
+    check('item bar: 6 kinds (round 25); pressing the wall slot again goes wood -> brick -> steel; chips over the bar; no turn button', s.slots === 6 && a === 1 && b2 === 2 && c3 === 3 && s.chips === 6 && s.varShown && !s.rot, JSON.stringify([a, b2, c3, s]));
     // ladder picks the wall it can climb
     s = await p.evaluate(() => { const me = W.p[0], x = Math.floor(me.x) + 3, y = Math.floor(me.y), L = me.L;
       for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) { W.blk[ci(x + dx, y + dy, L)] = 0; W.blk[ci(x + dx, y + dy, L + 1)] = 0; W.slab[ci(x + dx, y + dy, L + 1)] = 0; }
@@ -59,7 +59,7 @@ const UA = 'Mozilla/5.0 (iPad; CPU OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (
     check('net flags carry vehicle 4 and the pillion', s[0] === 4 && s[1] === 1 && s[2], JSON.stringify(s));
     // jump pad
     s = await p.evaluate(async () => { const me = W.p[0]; me.ride = false; me.build = false; W.zs.length = 0; const x = Math.floor(me.x), y = Math.floor(me.y), L = me.L;
-      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 8; dx++) { W.blk[ci(x + dx, y + dy, L)] = 0; W.blk[ci(x + dx, y + dy, L + 1)] = 0; W.slab[ci(x + dx, y + dy, L + 1)] = 0; W.blk[ci(x + dx, y + dy, L + 2)] = 0; W.slab[ci(x + dx, y + dy, L + 2)] = 0; W.slab[ci(x + dx, y + dy, L + 3)] = 0; W.blk[ci(x + dx, y + dy, L + 3)] = 0; } W.ver++;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 11; dx++) { W.blk[ci(x + dx, y + dy, L)] = 0; W.blk[ci(x + dx, y + dy, L + 1)] = 0; W.slab[ci(x + dx, y + dy, L + 1)] = 0; W.blk[ci(x + dx, y + dy, L + 2)] = 0; W.slab[ci(x + dx, y + dy, L + 2)] = 0; W.slab[ci(x + dx, y + dy, L + 3)] = 0; W.blk[ci(x + dx, y + dy, L + 3)] = 0; } W.ver++;
       W.blk[ci(x + 1, y, L)] = 56; W.blk[ci(x + 6, y, L)] = 2; W.ver++; recomputeStab(); // a one-floor brick block 5 tiles on: land on top of it
       const x0 = x + 0.5; window.__dbg.aimAt = () => ({ x: me.x + 5, y: me.y, z: me.z + 0.5 }); me.x = x + 1.5; me.y = y + 0.5; me.padCD = 0;
       await new Promise(r => { const t0 = W.t; const f = () => W.t - t0 > 2 ? r() : setTimeout(f, 16); f(); }); window.__dbg.aimAt = null;

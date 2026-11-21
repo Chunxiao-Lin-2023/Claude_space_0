@@ -209,7 +209,8 @@ body:not(.touch) .tch{display:none}
 .kw b{font-size:14px}.kw b i{font-style:normal;font-size:11px;color:#2a1e0e;background:var(--amber);border-radius:8px;padding:0 6px;margin-left:4px}.kw small{font-family:var(--num);font-size:12px;color:#ffe6c0}.kw span{font-size:11px;color:var(--sub);line-height:1.3}
 .kw.cur{border-color:rgba(125,200,140,.6)}.kw.no{opacity:.45}
 .kveh{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.kveh button{min-height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center}.kveh button.sel{border-color:var(--amber);color:var(--amber)}.kveh button.no{opacity:.4}.kveh small{font-size:11px;color:var(--sub)}
-#wbar .kit{min-width:64px;border-style:dashed}
+#wbar .kit{min-width:64px;border-style:dashed}#wbar .item{border-style:solid;border-color:rgba(255,179,71,.6)}
+#tBuild.item{border-color:rgba(255,179,71,.75);color:#ffd9a0;font-weight:700}
 #wbar .wsep{display:inline-block;width:1px;align-self:stretch;margin:4px 4px;background:var(--line)}#wbar .gr,#wbar .mel{min-width:58px}#wbar .gr.sel{border-color:#9fd0ff;background:rgba(80,140,200,.22)}#wbar .dim{opacity:.45}
 #bbar button .ic{display:block;width:26px;height:26px}#bbar button .ic canvas{width:26px;height:26px}
 #bbar button .vd{position:absolute;right:4px;top:2px;font-style:normal;font-size:8px;letter-spacing:-1px;color:var(--amber)}
@@ -540,7 +541,7 @@ body.aiming canvas#cv{cursor:none}body.touch #reticle b{left:-34px;top:-38px}
   </div>
   <div id="hTR">
     <div class="res hcard" id="resBox"></div>
-    <div class="tbtn"><button id="tCraft" class="ghost tch hidden" >商店</button><button id="tRide" class="ghost tch hidden" >载具</button><button id="tBuild" class="ghost tch" >道具</button><button id="vToggle" class="ghost tch" >视角</button><button id="tHelp" class="ghost tch">?</button><div id="gcard" class="tch"><b>右上角</b>商店：枪、弹药、盾、车 · 载具：点=上下车，长按=换车 · 道具：墙、陷阱、跳板… · 视角：缩放、转镜头<br><b>射击键</b>点=一发 · 按住=连射（按住再拖=边打边转）· 先拖再松手=只选目标<br><b>武器键</b>点=下一把 · 往上拖=一小圈武器，滑过去松手<br><b>刀 / 盾</b>点=近战 · 在键上滑一下=换刀 / 盾<br><b>手雷</b>点=自动扔向最大的尸堆 · 拖=放落点圈，松手扔（拖回中间取消）· 按住不动=一小圈手雷种类，滑过去松手<br><b>交互键</b>能搜 / 砍 / 扶时变亮 · 它左边的绿键=医疗包<br><b>走路</b>碰到矮障碍会自己翻过去，一格宽的空隙会自己跳过去<br><small>点任意处关闭 · 随时点「?」再看</small></div><button id="muteBtn" class="ghost ptr" title="静音">🔊</button><button id="pauseBtn" class="ghost" title="菜单 (Esc)">❚❚</button></div>
+    <div class="tbtn"><button id="tCraft" class="ghost tch hidden" >商店</button><button id="tRide" class="ghost tch hidden" >载具</button><button id="tBuild" class="ghost tch item">🧱 道具</button><button id="vToggle" class="ghost tch" >视角</button><button id="tHelp" class="ghost tch">?</button><div id="gcard" class="tch"><b>右上角</b>商店：枪、弹药、盾、车 · 载具：点=上下车，长按=换车 · 道具：墙、陷阱、跳板… · 视角：缩放、转镜头<br><b>射击键</b>点=一发 · 按住=连射（按住再拖=边打边转）· 先拖再松手=只选目标<br><b>武器键</b>点=下一把 · 往上拖=一小圈武器，滑过去松手<br><b>刀 / 盾</b>点=近战 · 在键上滑一下=换刀 / 盾<br><b>手雷</b>点=自动扔向最大的尸堆 · 拖=放落点圈，松手扔（拖回中间取消）· 按住不动=一小圈手雷种类，滑过去松手<br><b>交互键</b>能搜 / 砍 / 扶时变亮 · 它左边的绿键=医疗包<br><b>走路</b>碰到矮障碍会自己翻过去，一格宽的空隙会自己跳过去<br><small>点任意处关闭 · 随时点「?」再看</small></div><button id="muteBtn" class="ghost ptr" title="静音">🔊</button><button id="pauseBtn" class="ghost" title="菜单 (Esc)">❚❚</button></div>
     <canvas id="mini" width="128" height="128" class="hcard"></canvas>
     <div id="viewBox" class="hcard">
       <div class="vrow"><button id="vZin" title="放大 (滚轮 / +)">＋</button><button id="vZout" title="缩小 (滚轮 / −)">－</button><button id="vRl" title="向左转 (Q)">⟲</button><button id="vRr" title="向右转 (E)">⟳</button></div>
@@ -641,7 +642,7 @@ body.aiming canvas#cv{cursor:none}body.touch #reticle b{left:-34px;top:-38px}
       <details open><summary>目标</summary>标题页点「模式」选玩法和地图：<b>尸城求生</b>（默认）丧尸占了半座城——红色标记的楼里睡着尸群（头上「z」）：你在它视线里待久了它会察觉（「?」越变越大，背对你的察觉得慢），开枪会把附近的吵醒（隔着墙听得小一半，弩几乎没声），<b>用刀能悄悄一刀解决睡着的丧尸</b>；清掉一栋楼拿图纸箱和奖励，任何地方都能就地建造临时据点；箱子里能搜到<b>蓝图</b>，解锁砖墙、钢墙、拒马、铁丝网、捕兽夹、探照灯、地雷、机枪塔和四种载具（见「载具」）；搜刮收获翻倍，地上到处有弹药盒；每夜到点就天亮，撑过 10 夜获胜。<b>经典守夜</b>撑过 15 夜；<b>修车逃离</b>找齐 6 个零件修好卡车；<b>摧毁尸巢</b>炸掉 5 个尸巢和母巢；<b>信号塔</b>守住 4 座塔的校准再等直升机；<b>抢空投</b>集齐 6 个空投信标后守住撤离点；<b>尸王狩猎</b>击杀 4 只尸王。当前目标显示在屏幕上方，屏幕边的箭头和大地图（点小地图 / 按 M）指路。所有人同时倒下就失败。丧尸会一路追着离它最近的人，挡路的墙会被砸开。</details>
       <details><summary>丧尸</summary>游荡者、疾跑者、攀爬者（翻墙）、喷吐者（吐酸）、重锤（拆墙）、巨尸（血月），还有成群的尸犬、贴地的爬行尸、死了会炸开（连墙一起炸）的爆尸、会尖叫让周围丧尸发狂并引来更多丧尸的尖叫者、正面打不动的防暴尸（绕到侧面后面，或者用狙击枪、弩、火、炸药）。</details>
       <details><summary>武器和装备</summary>每把枪有自己的用处（切枪时会提示一句）：<b>手枪</b>子弹无限、准，伤害最低；<b>霰弹枪</b>近身清群；<b>步枪</b>持续火力；<b>狙击枪</b>打精英，穿 5 只；<b>弩</b>几乎没声音、钉住丧尸；<b>喷火器</b>堵门，火会传；<b>榴弹发射器</b>炸一片。<br><b>快捷武器</b>：在「装备」（电脑按 <kbd>I</kbd>，触屏拖武器键选「装备…」）里选 4 把放进快捷栏，电脑 <kbd>1</kbd>–<kbd>4</kbd> 切换、<kbd>Z</kbd> 切回上一把。<br><b>近战</b>：刀或<b>防暴盾</b>（商店 → 武器 里买，二选一，<kbd>X</kbd> / 触屏在「刀 / 盾」键上滑一下切换）。盾推：把前面一片丧尸（最多 8 只）推开约 3 格、晕 1 秒；拿着盾时正面挨打少受一半。<br><b>手雷</b>：电脑按住 <kbd>G</kbd> 会在光标处显示落点圈（爆炸范围），松开扔；触屏点一下自动扔向射程内最大的尸堆，拖动手雷键放落点圈，松手扔。</details>
-      <details><summary>商店</summary>在任何建筑里（或营地）按 <kbd>C</kbd> / 点「商店」。分四栏：<b>武器 · 弹药</b>（一把枪和它的子弹在同一张卡上）、<b>道具</b>（手雷、医疗包，还有放置类道具的入口）、<b>载具</b>、<b>强化</b>。材料全队共用，买到的东西归你。</details>
+      <details><summary>商店</summary>在任何建筑里（或营地）按 <kbd>C</kbd> / 点「商店」。分四栏：<b>武器 · 弹药</b>（一把枪和它的子弹在同一张卡上）、<b>道具</b>（四种手雷、医疗包）；放置类道具不在商店，见下面「道具」、<b>载具</b>、<b>强化</b>。材料全队共用，买到的东西归你。</details>
       <details><summary>道具（建造）</summary>按 <kbd>B</kbd> / 点「道具」拿出道具栏：<b>墙、地板、梯子、门、掩体、陷阱、机枪塔、探照灯、跳板</b>，同类的合在一格——<b>再点一次同一格（或点上面的小条）换材料</b>，比如木墙 → 砖墙 → 钢墙。放下去不分朝向：梯子会自己贴到能爬上去的那面墙。指哪放哪，按住拖动放一排；放一个扣一份材料，右键 / 「拆除」拆掉退一半。墙、地板、梯子、门只能在营地周围的黄框里放（尸城求生哪都能放）；<b>掩体、陷阱、地雷、机枪塔、探照灯、跳板哪都能放</b>（尸城求生里有些要先找到蓝图）。方块要有支撑，断了会连锁坍塌。楼上最外圈的墙是半人高的矮墙，能探身往下打。<br><b>跳板</b>：踩上去把你朝走的方向弹出约 5 格，前面有矮楼顶（最多高 2 层）就弹上去，用一次就没——被围住时的逃生道具。</details>
       <details><summary>载具</summary><b>自行车</b>快 60%；<b>摩托车</b>快 90%，后座带一个队友；<b>货运三轮</b>坐在车上就能搜东西（够得更远、时间减半、材料 +50%）；<b>装甲车</b>受到的伤害只剩 35%，撞开挡路的丧尸，后座带一个队友。在商店「载具」栏或「装备」里选一辆当默认：<kbd>T</kbd> / 点「载具」就上这辆，再按下车；<kbd>Shift</kbd>+<kbd>T</kbd> / 长按「载具」换车。车上也能开枪，只是射速慢（司机 40%、后座 70%），准度不变。</details>
       <details><summary>白天和每日任务</summary>出门砍树（木材）、采石（砖石），搜汽车、补给箱和废墟瓦砾（钢材、零件、弹药），离家越远收获越多；回来盖楼；在任何建筑里（或营地工作台）都能造枪、买弹药（按 C / 点「商店」）。河上只有两座桥，丧尸也只能从桥上过河。每 5 夜一次血月。<br>每天天亮刷新 3 个小任务（左上角），比如击杀、搜索、建造、今夜无人倒下。完成立刻发奖励：材料、全队弹药、医疗包、手雷或强化弹头。没完成的会在下一个天亮作废。</details>
@@ -4883,23 +4884,21 @@ defB(53, { key: 'barricade', name: '木板路障', cost: { wood: 3 }, hp: 300, P
 defB(54, { key: 'ammobox', nat: 1, spot: 'ammobox' });
 defB(55, { key: 'bpcase', P: 1, Z: 1, B: 1, nat: 1, spot: 'bpcase', low: 0.7 });
 // (round 22) one-shot jump pad: step on it and it flings you ~5 tiles the way you're going, up onto a roof if there is one; placeable anywhere
-defB(56, { key: 'pad', name: '跳板', cost: { wood: 3, parts: 2 }, hp: 40, dep: 1, pad: 1, any: 1, col: '#d8a03a', tip: '踩上去把你弹出去约 5 格（朝你走的方向，前面有矮楼顶就弹上去），用一次就没；哪里都能放' });
+defB(56, { key: 'pad', name: '跳板', cost: { wood: 3, parts: 2 }, hp: 40, dep: 1, pad: 1, any: 1, col: '#d8a03a', tip: '踩上去把你弹出去约 9 格（朝你走的方向，前面有矮楼顶就弹上去），用一次就没；哪里都能放' });
 defB(42, { key: 'rail', P: 1, Z: 1, nat: 1, brk: 1, vault: 1, hp: 120, col: '#6a6f74' }); // balcony / roof / mezzanine railing: low, vaultable, bullets pass
 // (round 22) the placeables as items: one slot per kind; tap the slot again to switch material / variant. None of them care which way you face
+// (round 25) six slots: walls, floors and the door share one; the searchlight is gone from the bar (old ones still stand)
 const ITEMS = [
-  { k: 'wall', name: '墙', ids: [1, 2, 3] },
-  { k: 'floor', name: '地板', ids: [4, 5] },
+  { k: 'build', name: '墙·地板·门', ids: [1, 2, 3, 4, 5, 7] },
   { k: 'ladder', name: '梯子', ids: [6] },
-  { k: 'door', name: '门', ids: [7] },
   { k: 'cover', name: '掩体', ids: [53, 12, 14, 8] },
   { k: 'trap', name: '陷阱', ids: [15, 9, 13, 51] },
   { k: 'turret', name: '机枪塔', ids: [52] },
-  { k: 'lamp', name: '探照灯', ids: [10] },
   { k: 'pad', name: '跳板', ids: [56] },
 ];
 const PAL = ITEMS.flatMap(g => g.ids);
 // (round 23) the gear-type items (cover, traps, turret, lamp, jump pad) go down anywhere in every mode; walls / floors / ladders / doors stay in the build zone outside 尸城求生
-for (const g of ITEMS) if (!['wall', 'floor', 'ladder', 'door'].includes(g.k)) for (const id of g.ids) B[id].any = 1;
+for (const g of ITEMS) if (!['build', 'ladder'].includes(g.k)) for (const id of g.ids) B[id].any = 1;
 const itemOf = id => ITEMS.find(g => g.ids.includes(id)) || ITEMS[0];
 // vehicles (round 22: their own category; you pick a default and T gets on it). spd = walking speed multiplier, seats 2 = a pillion seat
 const VEH = [null,
@@ -4920,7 +4919,7 @@ const gCount = (p, t) => t ? ((p.gn || [])[t - 1] || 0) : p.nades;
 const gCap = t => t ? BAL.gnCap : BAL.nadeCap;
 // blueprints (尸城求生): what you can build / make from the start, and what has to be found first
 const BP_BASE = [1, 4, 6, 7, 12, 53, 56];
-const BP_LIST = [2, 3, 5, 8, 13, 14, 9, 15, 10, 51, 52, 'bike', 'moto', 'cargo', 'armor'];
+const BP_LIST = [2, 3, 5, 8, 13, 14, 9, 15, 51, 52, 'bike', 'moto', 'cargo', 'armor'];
 const bpName = k => typeof k === 'number' ? B[k].name : (VEH.find(v => v && v.k === k) || { name: k }).name;
 const SLAB_BRIDGE = 11; // slab id for the pre-built bridges (not buildable)
 defB(11, { key: 'bridge', slab: 1, nat: 1, col: '#7e5a36' });
@@ -5059,7 +5058,7 @@ const CRAFT = [
 const BAL = {
   nights: 15,
   dayLen: [300, 240],            // first day, later days (seconds)
-  pMaxHp: 100, pSpeed: 4.4, pReach: 6.5,
+  pMaxHp: 100, pSpeed: 4.4, pReach: 7.5, /* (round 25) 6.5 → 7.5 */
   stairHold: 0.18, ledgeHold: 0.45,  // seconds of pushing before you walk down stairs / jump off a ledge
   downTime: 30, reviveTime: 2.4, soloDownTime: 8, respawnHp: 0.5,
   respawnDay: 20, respawnNight: 20, respawnInv: 2.5, lives: { easy: 5, normal: 3, hard: 1 }, livesLong: 2, /* respawns each: by difficulty, +2 in the long modes (经典 15 夜 / 尸城求生 10 夜) */ /* (round 24) 20 s day or night (was 60 at night), back at the base, 2.5 s untouchable */ rezTime: 6, rezHp: 0.4, // (round 20) a dead teammate comes back by a living one after this long (or at dawn); a medkit at the body brings them back at once
@@ -5068,7 +5067,7 @@ const BAL = {
   chgWind: 0.85, chgSpd: 7.5, chgTime: 1.2, chgDmg: 34, chgKB: 10, chgWall: 400, chgStun: 1.4, chgCD: 6, chgMin: 3.2, chgMax: 10, // brute charge: red line on the ground, then a rush
   slamR: 2.6, slamWind: 0.55, slamDmg: 22, slamKB: 7, slamCD: 4,  // brute ground slam: red ring, then everything inside gets hit and thrown
   bashR: 2.4, bashCos: 0.34, bashKB: 20, bashStun: 1.0, bashDmg: 20, bashCD: 0.85, bashMax: 8, // shield bash: everything in front (up to 8) shoved ~3 tiles back and stunned
-  padDist: 5, padUp: 2,                                        // jump pad: how far / how many floors up it can throw you
+  padDist: 9, padUp: 2,  /* (round 25) 5 → 9 tiles */                                        // jump pad: how far / how many floors up it can throw you
   ramDmg: 30, ramCD: 0.7, ramSpd: 2.2,                         // armoured car: hitting a zombie at speed
   cargoSearch: 0.5, cargoLoot: 1.5, cargoReach: 2.3,           // cargo trike: search time x, loot x, reach from the seat
   knifeDmg: 55, knifeKB: 2.5, knifeCD: 0.5, knifeRange: 2.3, knifeLunge: 1.3, knifeBack: 2, // melee (was a shove: 18 dmg, KB 6, CD 0.55, 1.3 cone)
@@ -5526,6 +5525,8 @@ function ladderDir(x, y, L, pref) {
   }
   return best;
 }
+// (round 25) clutter that gear items (traps, cover, turret, lamp, jump pad) may simply go on top of: bushes, and searched / empty loot spots lying on the floor
+function softCell(i) { const b = W.blk[i]; if (!b) return true; if (b === 41) return true; const Bb = B[b]; return !!(Bb.spot && !Bb.B && !Bb.top && W.srch && W.srch.has(i)); }
 function canPlace(x, y, L, id, dir) {
   if (!inMap(x, y) || !(modeDef().anyBuild || inZone(x, y) || (B[id] && B[id].any))) return '只能在营地周围的建造区（黄框）内建造';
   if (!hasBP(id)) return '还没有「' + B[id].name + '」的蓝图：去搜箱子、清理丧尸占着的楼';
@@ -5540,7 +5541,7 @@ function canPlace(x, y, L, id, dir) {
     if (L > 0 && B[blkAt(x, y, L - 1)].stairs) return '这是梯子口，留空才能上下';
   } else {
     if (water && !W.slab[i]) return '水面要先铺楼板';
-    if (W.blk[i]) return '这里已经有东西了';
+    if (W.blk[i] && !(Bi.any && softCell(i))) return '这里已经有东西了';
     if (Bi.stairs) {
       if (L + 1 >= ML) return '太高了'; if (W.slab[ci(x, y, L + 1)]) return '梯子上方有楼板，先拆掉';
       const [dx, dy] = DIRS[dir || 0], fb = blkAt(x + dx, y + dy, L);
@@ -6027,7 +6028,7 @@ function stepMove(p, dt) {
   // a jump pad under your feet (round 22): fling yourself the way you're going; the host takes the pad away
   if ((p.padCD = Math.max(0, (p.padCD || 0) - dt)) <= 0 && !p.down && !p.ride && W.blk[ci(Math.floor(p.x), Math.floor(p.y), p.L)] === 56) {
     const t = padTarget(p), px = Math.floor(p.x), py = Math.floor(p.y), pl = p.L; p.padCD = 0.6;
-    if (t) { p.jmp = { t: 0, T: 0.55 + t.d * 0.05, x0: p.x, y0: p.y, x1: t.x, y1: t.y, L: t.L, h: 1.3 + Math.max(0, t.L - p.L) * 0.4, up: t.L - p.L, k: 4 }; emitLocal('jump'); if (typeof act === 'function' && p.i === ME) act('pad', { x: px, y: py, l: pl }); else doAct(p, 'pad', { x: px, y: py, l: pl }); }
+    if (t) { p.jmp = { t: 0, T: 0.5 + t.d * 0.06, x0: p.x, y0: p.y, x1: t.x, y1: t.y, L: t.L, h: 1.2 + t.d * 0.12 + Math.max(0, t.L - p.L) * 0.4, up: t.L - p.L, k: 4 }; emitLocal('jump'); if (typeof act === 'function' && p.i === ME) act('pad', { x: px, y: py, l: pl }); else doAct(p, 'pad', { x: px, y: py, l: pl }); }
   }
   const sp = Math.hypot(p.vx, p.vy);
   if (sp > 0.3) p.anim += dt * sp * 2.6; else p.anim = lerp(p.anim, Math.round(p.anim / Math.PI) * Math.PI, Math.min(1, dt * 8));
@@ -6061,6 +6062,7 @@ function padTarget(p) {
   let ax = p.inp.mx, ay = p.inp.my; if (Math.hypot(ax, ay) < 0.3) { ax = Math.cos(p.aim); ay = Math.sin(p.aim); }
   const m = Math.hypot(ax, ay) || 1; ax /= m; ay /= m;
   const roof = p.L + 1 < ML && !!W.slab[ci(Math.floor(p.x), Math.floor(p.y), p.L + 1)], upMax = roof ? 0 : BAL.padUp;
+  let best = null;
   for (let d = BAL.padDist; d >= 1.5; d -= 0.5) {
     const x = Math.floor(p.x + ax * d), y = Math.floor(p.y + ay * d); if (!inMap(x, y) || (x === Math.floor(p.x) && y === Math.floor(p.y))) continue;
     for (let l = Math.min(ML - 2, p.L + upMax); l >= Math.max(0, p.L - 2); l--) {
@@ -6071,11 +6073,11 @@ function padTarget(p) {
         if (roof) { if (!enterable(xx, yy, p.L, 'p')) clear = false; }
         else if (top < ML && (W.slab[ci(xx, yy, top)] || B[W.blk[ci(xx, yy, top)]].P)) clear = false;
       }
-      if (clear) return { x: x + 0.5, y: y + 0.5, L: l, d };
+      if (clear && (!best || l > best.L)) best = { x: x + 0.5, y: y + 0.5, L: l, d };   // (round 25) the farthest spot on the highest roof in reach
       break;
     }
   }
-  return null;
+  return best;
 }
 function emitLocal(name) { fxEvent({ k: 'sfx', n: name, local: 1 }); }
 
@@ -6534,7 +6536,7 @@ function doBuild(p, x, y, L, id, dir) {
   if (!affordable(W.res, Bi.cost)) return emit({ k: 'deny', p: p.i, why: '材料不足' });
   for (const k in Bi.cost) W.res[k] -= Bi.cost[k];
   if (Bi.slab) setCell(i, W.blk[i] === 23 ? 0 : W.blk[i], id, null, 'build');
-  else setCell(i, id, W.slab[i], Bi.stairs ? (dir & 3) : null, 'build');
+  else { if (W.blk[i] && W.srch) W.srch.delete(i); setCell(i, id, W.slab[i], Bi.stairs ? (dir & 3) : null, 'build'); } // (round 25) gear may replace a bush / searched spot
   W.stats.built++; taskAdd('build'); if (L >= 2) taskAdd('high');
   recomputeStab();
 }
@@ -9404,6 +9406,13 @@ function pickBuild(sx, sy, me, demo) {
   if (slab) { cands.push(buildPick(sx, sy, front.L + 1), buildPick(sx, sy, me.L), buildPick(sx, sy, me.L + 1)); }
   else if (front.L < me.L) cands.push(buildPick(sx, sy, me.L));
   for (const c of cands) if (c && inMap(c.x, c.y) && c.L >= 0 && c.L < ML && !buildWhy(me, c.x, c.y, c.L)) return Object.assign(c, { ok: true, why: '' });
+  // (round 25) gear items snap to the nearest free tile around where you point (1–2 tiles), so a bush, a crate or a slope in the way doesn't stop you
+  if (B[me.sel].any && !slab) {
+    const hx = o[0] + d[0] * ((o[2] - front.L * FH) / -d[2] || 0), hy = o[1] + d[1] * ((o[2] - front.L * FH) / -d[2] || 0), best = [];
+    for (let r = 1; r <= 2; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) { if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue; const x = front.x + dx, y = front.y + dy; if (!inMap(x, y)) continue;
+      for (const L of [front.L, gAt(x, y)]) if (L >= 0 && L < ML && !buildWhy(me, x, y, L)) { best.push({ x, y, L, d: Math.hypot(x + 0.5 - hx, y + 0.5 - hy) }); break; } }
+    if (best.length) { best.sort((a, b) => a.d - b.d); const c = best[0]; return { x: c.x, y: c.y, L: c.L, ok: true, why: '', snap: 1 }; }
+  }
   return Object.assign(front, { ok: false, why: buildWhy(me, front.x, front.y, front.L) });
 }
 /* ---------- build plan: click / tap / drag makes a preview; confirm with the ✓ bar, Enter, or a second tap on it ---------- */
@@ -10065,9 +10074,10 @@ function hudTick(dt) {
   $('iNadeL').textContent = GREN[me.gt || 0].sn; $('iNade').textContent = gCount(me, me.gt || 0); $('iMed').textContent = me.meds; $('iKill').textContent = me.kills; $('iLife').textContent = me.lives != null ? me.lives : '-';
   uiKeys(me);
   const q = quickList(me), qk = q.join(','); if (UI.wbK !== qk) { UI.wbK = qk;
-    $('wbar').innerHTML = q.map((k, j) => `<button data-w="${k}"><span><kbd>${j + 1}</kbd>${WPN[k].name}</span><small id="wb${k}"></small></button>`).join('') + `<i class="wsep"></i><button id="wbMel" class="mel"><span><kbd>X</kbd><b>刀</b></span><small>右键 / V</small></button>` + GREN.map((g, t) => `<button data-g="${t}" class="gr"><span><kbd>${t + 5}</kbd>${g.sn}</span><small id="wg${t}"></small></button>`).join('') + `<button id="wbKit" class="kit"><span><kbd>I</kbd>装备</span><small>换快捷枪</small></button>`;
+    $('wbar').innerHTML = q.map((k, j) => `<button data-w="${k}"><span><kbd>${j + 1}</kbd>${WPN[k].name}</span><small id="wb${k}"></small></button>`).join('') + `<i class="wsep"></i><button id="wbMel" class="mel"><span><kbd>X</kbd><b>刀</b></span><small>右键 / V</small></button>` + GREN.map((g, t) => `<button data-g="${t}" class="gr"><span><kbd>${t + 5}</kbd>${g.sn}</span><small id="wg${t}"></small></button>`).join('') + `<button id="wbKit" class="kit"><span><kbd>I</kbd>装备</span><small>换快捷枪</small></button><button id="wbItem" class="kit item"><span><kbd>B</kbd>道具</span><small>墙 · 陷阱 · 跳板</small></button>`;
     $('wbar').querySelectorAll('button[data-w]').forEach(b => b.addEventListener('pointerdown', e => { e.stopPropagation(); if (inGame()) act('wpn', +b.dataset.w); }));
     $('wbKit').addEventListener('pointerdown', e => { e.stopPropagation(); openKit(); });
+    $('wbItem').addEventListener('pointerdown', e => { e.stopPropagation(); if (inGame()) toggleBuild(true); });
     $('wbMel').addEventListener('pointerdown', e => { e.stopPropagation(); if (inGame()) switchMelee(); });
     $('wbar').querySelectorAll('button[data-g]').forEach(b => b.addEventListener('pointerdown', e => { e.stopPropagation(); if (inGame()) setGren(+b.dataset.g); })); }
   { const mb = $('wbMel'), sh = me.melee === 1 && me.shield; mb.querySelector('b').textContent = sh ? '盾' : '刀'; mb.classList.toggle('dim', !me.shield); mb.lastElementChild.textContent = me.shield ? '右键 · X 换' + (sh ? '刀' : '盾') : '右键 / V';
@@ -10191,8 +10201,7 @@ function renderCraft() {
   } else if (tab === 'item') {
     const st = { nade: '带着 ' + me.nades + ' / ' + BAL.nadeCap, med: '带着 ' + me.meds + ' / ' + BAL.medCap }; for (let t = 1; t < 4; t++) st['g' + GREN[t].k] = '带着 ' + gCount(me, t) + ' / ' + BAL.gnCap;
     h = CRAFT.filter(c => c.cat === 'item').map(c => `<div class="sc"><div class="sh"><b>${c.name}</b><em>${st[c.id] || ''}</em></div><small>${c.desc}</small><div class="sb">${shopBtn(c, c.shield && me.shield > 0 ? '修满' : '买')}</div></div>`).join('');
-    h += `<div class="sgrp">放置类道具 · 不用先买：点「去放」，放一个扣一份材料（电脑按 B，触屏点「道具」）</div>`;
-    h += ITEMS.map((g, n) => `<div class="sc mini"><div class="sh"><b>${g.name}</b><em>${g.ids.map(id => B[id].name + (hasBP(id) ? '' : '🔒')).join(' / ')}</em></div><small>${B[g.ids[0]].tip}</small><div class="sb"><button class="sbtn go" data-g="${n}"><b>去放</b><span>${costText(B[g.ids.find(id => hasBP(id)) || g.ids[0]].cost)} 起</span></button></div></div>`).join('');
+    h += `<div class="sgrp">墙、陷阱、地雷、机枪塔、跳板这些<b>放置类道具不在商店里</b>：随时随地点「道具」（电脑按 B）拿出来放，放一个扣一份材料</div>`;
   } else if (tab === 'veh') {
     h = `<div class="sgrp">选一辆当默认：T（触屏点「载具」）就上这辆；Shift+T / 长按「载具」换车</div>`;
     h += CRAFT.filter(c => c.cat === 'veh').map(c => { const v = c.veh, own = (me.vehs || 0) >> v & 1, def = own && me.veh === v;
