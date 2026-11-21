@@ -215,7 +215,8 @@ function useTarget(p) {
     const i = ci(x, y, p.L), b = W.blk[i]; if (!b) continue;
     const d = d2(x + 0.5, y + 0.5, p.x, p.y);
     if (d > bd) continue;
-    if (B[b].obj || B[b].turret) { const t = modeUse(p, i, b); if (t) { bd = d; best = t; } }
+    if (B[b].turret) { const t = turretUse(p, i, b); if (t) { bd = d; best = t; } } // (round 28) every mode
+    else if (B[b].obj) { const t = modeUse(p, i, b); if (t) { bd = d; best = t; } }
     else if (B[b].spot) { const S = SPOTS[B[b].spot]; if (S && (S.vanish || !W.srch.has(i))) { bd = d; best = { k: 'spot', i, t: BAL.searchTime * tk, name: '搜索' + S.name }; } }
     else if (GATHER[b]) { bd = d; best = { k: 'gather', i, t: GATHER[b].t * tk, name: GATHER[b].name }; }
   }
@@ -224,6 +225,7 @@ function useTarget(p) {
 function completeUse(p, tgt) {
   if (tgt.k === 'rez') { const q = W.p[tgt.i]; if (!q.dead || p.meds <= 0) return; p.meds--; q.dead = false; q.down = false; q.hp = Math.round(q.maxHp * BAL.rezHp); q.medT = 0; q.selfRev = false; emit({ k: 'revive', p: q.i, by: p.i, rez: 1 }); return; }
   if (tgt.k === 'rev') { const q = W.p[tgt.i]; if (!q.down) return; q.down = false; q.hp = 35; q.medT = 0; q.selfRev = false; emit({ k: 'revive', p: q.i, by: p.i }); return; }
+  if (tgt.k === 'tur') { turretDone(p, tgt); return; }
   if (tgt.k === 'obj') { modeDone(p, tgt); return; }
   const i = tgt.i, x = cx_(i), y = cy_(i), L = cl_(i), wx = x + 0.5, wy = y + 0.5, wz = L * FH + 1;
   const m = (1 + Math.min(40, Math.max(0, radioDist(x, y) - 8)) / BAL.lootFar) * (isSiege() ? SIEGE.loot : 1) * (p.ride && VEH[p.veh] && VEH[p.veh].search ? BAL.cargoLoot : 1); // capped where the old 96-map edge was; 尸城求生 pays double
@@ -810,7 +812,7 @@ function simStep(dt) {
     stepZombies(dt);
     stepProj(dt);
     if (W.cz && W.cz.length) { for (const c of W.cz) c.t -= dt; W.cz = W.cz.filter(c => c.t > 0); }
-    modeTick(dt);
+    modeTick(dt); turretTick(dt);
     checkLose();
   }
 }

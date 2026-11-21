@@ -4840,8 +4840,8 @@ defB(8, { key: 'bars', name: '射击栅栏', cost: { steel: 3 }, hp: 300, cap: 6
 defB(12, { key: 'sandbag', name: '沙袋矮墙', cost: { stone: 3 }, hp: 260, P: 1, Z: 1, dep: 1, brk: 1, vault: 1, col: '#a8946a', tip: '半人高：人能翻过去、子弹能从上面打过去，丧尸只能砸' });
 defB(13, { key: 'spikes', name: '拒马', cost: { wood: 4, steel: 1 }, hp: 200, P: 1, Z: 1, dep: 1, brk: 1, vault: 1, thorns: 10, col: '#6a5038', tip: '丧尸砸它会被扎伤，人能翻过去' });
 defB(14, { key: 'cover', name: '铁皮掩体', cost: { steel: 3 }, hp: 420, P: 1, Z: 1, B: 1, dep: 1, brk: 1, vault: 1, col: '#7a8590', tip: '挡子弹的掩体，人能翻过去' });
-defB(15, { key: 'trap', name: '捕兽夹', cost: { steel: 1, parts: 2 }, hp: 40, dep: 1, trap: 1, col: '#5a5a55', tip: '丧尸踩上去被夹住 2.5 秒，用一次就坏' });
-defB(9, { key: 'wire', name: '铁丝网', cost: { steel: 2, parts: 1 }, hp: 110, dep: 1, wire: 1, brk: 0, col: '#9aa0a6', tip: '减速并割伤经过的丧尸，会磨损' });
+defB(15, { key: 'trap', name: '捕兽夹', cost: { steel: 1, parts: 2 }, hp: 60, dep: 1, trap: 1, col: '#5a5a55', tip: '周围一圈（空地上 3×3）都有夹子：踩进去被夹住 1.8 秒、松开后瘸 3 秒走得慢；能夹 3 次' });
+defB(9, { key: 'wire', name: '铁丝网', cost: { steel: 2, parts: 1 }, hp: 200, dep: 1, wire: 1, brk: 0, col: '#9aa0a6', tip: '铺开一片（空地上 3×3）：经过的丧尸走得慢一半、慢慢割伤，会磨损' });
 defB(10, { key: 'lamp', name: '探照灯', cost: { parts: 3, wood: 1 }, hp: 60, dep: 1, lamp: 1, col: '#ffe9a8', tip: '夜里照亮周围' });
 // natural / fixed
 defB(20, { key: 'dirt', P: 1, Z: 1, B: 1, top: 1, nat: 1 });
@@ -4878,8 +4878,12 @@ defB(48, { key: 'desk', P: 1, Z: 1, B: 1, nat: 1, brk: 1, vault: 1, hp: 150, low
 defB(49, { key: 'shelf', P: 1, Z: 1, B: 1, nat: 1, brk: 1, vault: 1, hp: 180, low: 0.62, col: '#8a9096' });
 defB(50, { key: 'halfwall', P: 1, Z: 1, B: 1, nat: 1, brk: 1, vault: 1, hp: 220, low: 0.62, col: '#c8b890' }); // waist-high plaster partition (ward fronts, office cubicles, counters)
 // 尸城求生 (round 19): builds you unlock with blueprints
-defB(51, { key: 'mine', name: '地雷', cost: { steel: 2, parts: 3 }, hp: 60, dep: 1, mine: 1, col: '#4a4a3a', tip: '丧尸踩上去就炸（半径 2.4），用一次就没；人踩不响' });
-defB(52, { key: 'turret', name: '机枪塔', cost: { steel: 8, parts: 10 }, hp: 450, P: 1, Z: 1, dep: 1, brk: 1, turret: 1, col: '#5a6670', tip: '自动打 9 格内看得见的丧尸，一次装 240 发；打空了走过去按 F 花 3 零件装满' });
+defB(51, { key: 'mine', name: '地雷', cost: { steel: 2, parts: 3 }, hp: 60, dep: 1, mine: 1, col: '#4a4a3a', tip: '丧尸走进周围一圈（空地上 3×3）就炸：半径 3.2，炸完留下一片黏地让丧尸慢 4 秒；用一次就没，人踩不响' });
+defB(52, { key: 'turret', name: '机枪塔', cost: { steel: 8, parts: 10 }, hp: 450, P: 1, Z: 1, dep: 1, brk: 1, turret: 1, col: '#5a6670', tip: '自动扫射 9 格内看得见的丧尸，一次装 240 发；打空了走过去按 F 花 3 零件装满' });
+// (round 28) more turrets: each fills a different job
+defB(57, { key: 'tshot', name: '霰弹塔', cost: { wood: 4, steel: 8, parts: 8 }, hp: 450, P: 1, Z: 1, dep: 1, brk: 1, turret: 1, col: '#7a5a3a', tip: '守门口：5 格内一轰一片、把丧尸往后推，一次装 60 发' });
+defB(58, { key: 'tfrost', name: '减速塔', cost: { steel: 6, parts: 10 }, hp: 380, P: 1, Z: 1, dep: 1, brk: 1, turret: 1, col: '#4a7a9a', tip: '往 6 格内丧尸最多的地方喷黏液，一团慢 2.5 秒，几乎没伤害；一次装 50 发' });
+defB(59, { key: 'tsnipe', name: '狙击塔', cost: { steel: 12, parts: 14 }, hp: 380, P: 1, Z: 1, dep: 1, brk: 1, turret: 1, col: '#5a6a4a', tip: '16 格内专挑血最厚的打（重锤、尸王、防暴尸），一枪 110，一次装 30 发' });
 defB(53, { key: 'barricade', name: '木板路障', cost: { wood: 3 }, hp: 300, P: 1, Z: 1, B: 1, dep: 1, brk: 1, low: 0.6, vault: 1, col: '#8a6a44', tip: '快速封门洞、窗洞：丧尸要砸，子弹能从上面打过去，人能翻过去' });
 defB(54, { key: 'ammobox', nat: 1, spot: 'ammobox' });
 defB(55, { key: 'bpcase', P: 1, Z: 1, B: 1, nat: 1, spot: 'bpcase', low: 0.7 });
@@ -4893,9 +4897,17 @@ const ITEMS = [
   { k: 'ladder', name: '梯子', ids: [6] },
   { k: 'cover', name: '掩体', ids: [53, 12, 14, 8] },
   { k: 'trap', name: '陷阱', ids: [15, 9, 13, 51] },
-  { k: 'turret', name: '机枪塔', ids: [52] },
+  { k: 'turret', name: '炮塔', ids: [52, 57, 58, 59] },  // (round 28) machine gun / shotgun / slow / sniper
   { k: 'pad', name: '跳板', ids: [56] },
 ];
+// (round 28) turrets (every mode): range, seconds between shots, damage, magazine, refill cost
+const TUR = {
+  52: { k: 'mg', range: 9, rate: 0.32, dmg: 11, ammo: 240, refill: { parts: 3 } },                         // damage 18 → 11
+  57: { k: 'shot', range: 5, rate: 1.2, dmg: 6, pellets: 6, cone: 0.42, kb: 3.5, ammo: 60, refill: { parts: 3 } },
+  58: { k: 'frost', range: 6, rate: 1.6, dmg: 4, ammo: 50, refill: { parts: 3 } },
+  59: { k: 'snipe', range: 16, rate: 2.4, dmg: 110, ammo: 30, refill: { parts: 4 } },
+};
+const TRAP_R = 1;                                       // (round 28) traps act on the open floor around them, up to 3×3
 const PAL = ITEMS.flatMap(g => g.ids);
 // (round 23) the gear-type items (cover, traps, turret, lamp, jump pad) go down anywhere in every mode; walls / floors / ladders / doors stay in the build zone outside 尸城求生
 for (const g of ITEMS) if (!['build', 'ladder'].includes(g.k)) for (const id of g.ids) B[id].any = 1;
@@ -4920,7 +4932,7 @@ const gCount = (p, t) => t ? ((p.gn || [])[t - 1] || 0) : p.nades;
 const gCap = t => t ? BAL.gnCap : BAL.nadeCap;
 // blueprints (尸城求生): what you can build / make from the start, and what has to be found first
 const BP_BASE = [1, 4, 6, 7, 12, 53, 56];
-const BP_LIST = [2, 3, 5, 8, 13, 14, 9, 15, 51, 52, 'bike', 'moto', 'cargo', 'armor'];
+const BP_LIST = [2, 3, 5, 8, 13, 14, 9, 15, 51, 52, 57, 58, 59, 'bike', 'moto', 'cargo', 'armor'];
 const bpName = k => typeof k === 'number' ? B[k].name : (VEH.find(v => v && v.k === k) || { name: k }).name;
 const SLAB_BRIDGE = 11; // slab id for the pre-built bridges (not buildable)
 defB(11, { key: 'bridge', slab: 1, nat: 1, col: '#7e5a36' });
@@ -5093,7 +5105,9 @@ const BAL = {
   burnSpread: 2.5, burnSpreadR: 1.15, // burning zombies set fire to others this close, about 2.5 times a second (was: same cell only, 1.2 / s)
   barrelR: 3.2, barrelDmg: 240, barrelBurn: 3, // red oil barrels go up when shot
   burnDps: 28, blastR: 2.3, blastDmgP: 32, blastDmgB: 160, screamR: 9, screamCD: 9, rageMul: 1.45,
-  lootFar: 30, wireDps: 14, wireSlow: 0.45, wireWear: 6,
+  lootFar: 30, wireDps: 8, wireSlow: 0.5, wireWear: 6,          // (round 28) wire covers a 3×3 patch: 14 → 8 / s, slow ×0.45 → ×0.5
+  trapStun: 1.8, trapDmg: 18, trapUses: 3, limpT: 3, limpMul: 0.6, // (round 28) bear traps: 3×3, stun 2.5 → 1.8 s, 30 → 18 damage, 1 → 3 catches, then a 3 s limp
+  mineR: 3.2, mineDmg: 120, mineSlowR: 2.6, mineSlowT: 4,       // (round 28) mines: set off anywhere in their 3×3, blast 2.4 → 3.2, 200 → 120 damage, leave a 4 s sticky patch
   aggro: 11,                     // (legacy) zombies now always hunt the nearest reachable player
   diff: { easy: { hp: 0.75, n: 0.75, dmg: 0.7 }, normal: { hp: 1, n: 1, dmg: 1 }, hard: { hp: 1.3, n: 1.3, dmg: 1.25 } },
 };
@@ -6134,7 +6148,8 @@ function useTarget(p) {
     const i = ci(x, y, p.L), b = W.blk[i]; if (!b) continue;
     const d = d2(x + 0.5, y + 0.5, p.x, p.y);
     if (d > bd) continue;
-    if (B[b].obj || B[b].turret) { const t = modeUse(p, i, b); if (t) { bd = d; best = t; } }
+    if (B[b].turret) { const t = turretUse(p, i, b); if (t) { bd = d; best = t; } } // (round 28) every mode
+    else if (B[b].obj) { const t = modeUse(p, i, b); if (t) { bd = d; best = t; } }
     else if (B[b].spot) { const S = SPOTS[B[b].spot]; if (S && (S.vanish || !W.srch.has(i))) { bd = d; best = { k: 'spot', i, t: BAL.searchTime * tk, name: '搜索' + S.name }; } }
     else if (GATHER[b]) { bd = d; best = { k: 'gather', i, t: GATHER[b].t * tk, name: GATHER[b].name }; }
   }
@@ -6143,6 +6158,7 @@ function useTarget(p) {
 function completeUse(p, tgt) {
   if (tgt.k === 'rez') { const q = W.p[tgt.i]; if (!q.dead || p.meds <= 0) return; p.meds--; q.dead = false; q.down = false; q.hp = Math.round(q.maxHp * BAL.rezHp); q.medT = 0; q.selfRev = false; emit({ k: 'revive', p: q.i, by: p.i, rez: 1 }); return; }
   if (tgt.k === 'rev') { const q = W.p[tgt.i]; if (!q.down) return; q.down = false; q.hp = 35; q.medT = 0; q.selfRev = false; emit({ k: 'revive', p: q.i, by: p.i }); return; }
+  if (tgt.k === 'tur') { turretDone(p, tgt); return; }
   if (tgt.k === 'obj') { modeDone(p, tgt); return; }
   const i = tgt.i, x = cx_(i), y = cy_(i), L = cl_(i), wx = x + 0.5, wy = y + 0.5, wz = L * FH + 1;
   const m = (1 + Math.min(40, Math.max(0, radioDist(x, y) - 8)) / BAL.lootFar) * (isSiege() ? SIEGE.loot : 1) * (p.ride && VEH[p.veh] && VEH[p.veh].search ? BAL.cargoLoot : 1); // capped where the old 96-map edge was; 尸城求生 pays double
@@ -6729,7 +6745,7 @@ function simStep(dt) {
     stepZombies(dt);
     stepProj(dt);
     if (W.cz && W.cz.length) { for (const c of W.cz) c.t -= dt; W.cz = W.cz.filter(c => c.t > 0); }
-    modeTick(dt);
+    modeTick(dt); turretTick(dt);
     checkLose();
   }
 }
@@ -6779,13 +6795,20 @@ function stepZombies(dt) {
     // barbed wire
     let slow = inMud(z.x, z.y, z.L) ? MUD_SLOW : 1;
     const cz = W.cz && W.cz.length ? cloudAt(z.x, z.y, z.z) : 0; if (cz & 1) slow *= BAL.slowMul; if (cz & 2) z.conf = BAL.smokeConf; else if (z.conf > 0) z.conf -= dt; // (round 24) slow field / smoke
-    if (B[W.blk[i]].mine) { setCell(i, 0, W.slab[i], null, 'mine'); explode(cx + 0.5, cy + 0.5, z.L * FH + 0.3, null, SIEGE.mineR, SIEGE.mineDmg); if (z.hp <= 0) continue; }
-    if (B[W.blk[i]].trap) { z.stun = 2.5; hurtZombie(z, 30, null); setCell(i, 0, W.slab[i], null, 'trap'); if (z.hp <= 0) continue; }
+    // (round 28) traps act on the open floor around them (W.trapAt), not just their own cell
+    if (z.limp > 0) { z.limp -= dt; slow *= BAL.limpMul; } if (z.trapCD > 0) z.trapCD -= dt;
+    scanCells(); const ti = W.trapAt[i], tb = ti >= 0 ? W.blk[ti] : 0;
+    if (tb && B[tb].mine) { const mx = cx_(ti) + 0.5, my = cy_(ti) + 0.5, mz = cl_(ti) * FH; setCell(ti, 0, W.slab[ti], null, 'mine'); explode(mx, my, mz + 0.3, null, BAL.mineR, BAL.mineDmg); (W.cz = W.cz || []).push({ k: 1, x: mx, y: my, z: mz, r: BAL.mineSlowR, t: BAL.mineSlowT }); for (const q of W.zs) if (q.hp > 0 && Math.hypot(q.x - mx, q.y - my) < BAL.mineR) q.limp = Math.max(q.limp || 0, BAL.limpT); if (z.hp <= 0) continue; }
+    else if (tb && B[tb].trap && !(z.trapCD > 0)) {
+      z.stun = BAL.trapStun; z.limp = BAL.limpT; z.trapCD = 6; hurtZombie(z, BAL.trapDmg, null); emit({ k: 'sfx', n: 'brk', x: z.x, y: z.y });
+      W.bhp[ti] -= B[tb].hp / BAL.trapUses; W.dirty.add(ti); if (W.bhp[ti] <= 0.5) setCell(ti, 0, W.slab[ti], null, 'trap');
+      if (z.hp <= 0) continue;
+    }
     if (B[W.blk[i]].stairs && !B[W.blk[i]].nat) slow = climbT ? 0.75 : 0.38; // ladders are slow going for zombies
-    if (B[W.blk[i]].wire) {
-      slow = BAL.wireSlow; hurtZombie(z, BAL.wireDps * dt, null);
-      W.bhp[i] -= BAL.wireWear * dt * (z.k === 'brute' || z.k === 'boss' ? 4 : 1); W.dirty.add(i);
-      if (W.bhp[i] <= 0) destroyBlk(i);
+    if (tb && B[tb].wire) {
+      slow = Math.min(slow, BAL.wireSlow); hurtZombie(z, BAL.wireDps * dt, null);
+      W.bhp[ti] -= BAL.wireWear * dt * (z.k === 'brute' || z.k === 'boss' ? 4 : 1); W.dirty.add(ti);
+      if (W.bhp[ti] <= 0) destroyBlk(ti);
       if (z.hp <= 0) continue;
     }
     const rf = climbT ? F.rc : F.rw, pf = climbT ? F.pc : F.pw;
@@ -7296,25 +7319,8 @@ Object.assign(MODES.siege, {
       if (q.left !== alive[k]) { q.left = alive[k]; objChanged(); }
       if (!q.c && alive[k] === 0) { q.c = 1; for (const r in SIEGE.clearRw) W.res[r] += SIEGE.clearRw[r]; objChanged(); modeSay((q.out ? '野外尸群清掉了' : '清理完：' + q.name + '，现在是你们的据点了') + '（+' + SIEGE.clearRw.parts + ' 零件 +' + SIEGE.clearRw.steel + ' 钢材）', '#8fe39a', true); }
     });
-    // turrets
-    if (W.turV !== W.ver) { W.turV = W.ver; W.tur = []; for (let i = 0; i < NC; i++) if (W.blk[i] === 52) W.tur.push(i); }
-    W.tcd = W.tcd || {};
-    for (const i of W.tur) {
-      if (W.blk[i] !== 52) continue;
-      if (O.tam[i] == null) O.tam[i] = SIEGE.tAmmo;
-      if ((W.tcd[i] = (W.tcd[i] || 0) - dt) > 0 || O.tam[i] <= 0) continue;
-      const x = cx_(i) + 0.5, y = cy_(i) + 0.5, z0 = cl_(i) * FH + 0.95;
-      let best = null, bd = SIEGE.tRange;
-      for (const z of W.zs) { if (z.hp <= 0 || z.hidden || Math.abs(z.L - cl_(i)) > 1) continue; const d = Math.hypot(z.x - x, z.y - y); if (d < bd && los(x, y, z0, z.x, z.y, z.z + z.h * 0.6)) { bd = d; best = z; } }
-      if (!best) { W.tcd[i] = 0.25; continue; }
-      W.tcd[i] = SIEGE.tRate; O.tam[i]--; if (O.tam[i] === 0 || O.tam[i] % 40 === 0) objChanged();
-      KSRC = 'turret'; hurtZombie(best, SIEGE.tDmg * (1 + 0.12 * W.upg), null, (best.x - x) / (bd || 1) * 0.6, (best.y - y) / (bd || 1) * 0.6); KSRC = '';
-      emit({ k: 'tshot', i, x: r2(x), y: r2(y), z: r2(z0), tx: r2(best.x), ty: r2(best.y), tz: r2(best.z + best.h * 0.6) });
-      noiseAt(x, y, 7, z0 - 0.95);
-    }
+    // (round 28) turrets moved to turretTick (every mode); refilling is turretUse / turretDone
   },
-  use(p, i, b) { if (b !== 52) return null; const a = W.obj.tam[i] == null ? SIEGE.tAmmo : W.obj.tam[i]; return a < SIEGE.tAmmo * 0.5 ? { k: 'obj', i, t: 1, name: '给机枪塔装弹（' + a + '/' + SIEGE.tAmmo + '，3 零件）' } : null; },
-  done(p, tgt) { if (W.blk[tgt.i] !== 52) return; if (!affordable(W.res, SIEGE.tRefill)) return emit({ k: 'deny', p: p.i, why: '零件不够（要 3 个）' }); for (const r in SIEGE.tRefill) W.res[r] -= SIEGE.tRefill[r]; W.obj.tam[tgt.i] = SIEGE.tAmmo; objChanged(); emit({ k: 'sfx', n: 'reload', x: p.x, y: p.y }); },
   night(n) { modeSay('第 ' + n + ' 夜：尸潮冲你们来了，撑到天亮（' + fmtT(BAL.nightMin(n)) + '）', '#ff9a6a', true); },
   // the sun comes up on time: whatever is still far from you wanders off, the rest stay (and stop counting for the next dawn)
   dawn() { for (const z of W.zs) { if (z.hp <= 0 || z.mz) continue; if (!nearPl(z.x, z.y, 14)) z.hp = 0; else z.mz = 1; } W.zs = W.zs.filter(z => z.hp > 0); if (W.night >= SIEGE.nights) { endGame('win', '撑过了 ' + SIEGE.nights + ' 夜，救援车队开进了城'); return true; } return false; },
@@ -7351,6 +7357,63 @@ function siegeEdges() {
   const ap = alivePl(); if (!ap.length) return edgeSpawns();
   const cx = Math.round(ap.reduce((s, p) => s + p.x, 0) / ap.length), cy = Math.round(ap.reduce((s, p) => s + p.y, 0) / ap.length);
   const e = edgeSpawns(cx, cy, SIEGE.spawnR, true); return [0, 1, 2, 3].some(s => e[s].length) ? e : edgeSpawns();
+}
+
+/* ---------- (round 28) turrets and trap patches, in every mode ---------- */
+// turret cells, trap cells, and which trap acts on each floor cell (W.trapAt: trap cell index or -1), redone when the world changes
+function scanCells() {
+  if (W.scanV === W.ver && W.trapAt) return; W.scanV = W.ver; W.tur = []; W.traps = [];
+  for (let i = 0; i < NC; i++) { const b = W.blk[i]; if (!b) continue; if (TUR[b]) W.tur.push(i); else if (B[b].trap || B[b].wire || B[b].mine) W.traps.push(i); }
+  const A = W.trapAt && W.trapAt.length === NC ? W.trapAt : (W.trapAt = new Int32Array(NC)); A.fill(-1); W.trapCells = [];
+  for (const t of W.traps) {
+    const x0 = cx_(t), y0 = cy_(t), L = cl_(t);
+    const open = (x, y) => { if (!inMap(x, y)) return false; const j = ci(x, y, L), b = W.blk[j]; if (j !== t && b && (B[b].Z || B[b].P || B[b].B || TUR[b] || B[b].trap || B[b].wire || B[b].mine || B[b].stairs)) return false; return support(x, y, L); };
+    for (let dy = -TRAP_R; dy <= TRAP_R; dy++) for (let dx = -TRAP_R; dx <= TRAP_R; dx++) {
+      const x = x0 + dx, y = y0 + dy; if (!inMap(x, y)) continue; const j = ci(x, y, L);
+      if (j !== t && (A[j] >= 0 || !open(x, y) || (dx && dy && !open(x0 + dx, y0) && !open(x0, y0 + dy)))) continue; // only open floor next to it, never through a wall corner: a tight spot just gets a smaller patch
+      A[j] = t; W.trapCells.push(j);
+    }
+  }
+}
+function turretTick(dt) {
+  scanCells(); const O = W.obj || (W.obj = {}); O.tam = O.tam || {}; W.tcd = W.tcd || {};
+  for (const i of W.tur) {
+    const b = W.blk[i], T = TUR[b]; if (!T) continue;
+    O.tamB = O.tamB || {}; if (O.tam[i] == null || O.tamB[i] !== b) { O.tamB[i] = b; O.tam[i] = T.ammo; W.tcd[i] = 0; } // a new turret on this cell starts full
+    if ((W.tcd[i] = (W.tcd[i] || 0) - dt) > 0 || O.tam[i] <= 0) continue;
+    const x = cx_(i) + 0.5, y = cy_(i) + 0.5, L = cl_(i), z0 = L * FH + 0.95;
+    let best = null, bs = -1e9;
+    for (const z of W.zs) {
+      if (z.hp <= 0 || z.hidden || z.sleep || Math.abs(z.L - L) > 1) continue; const d = Math.hypot(z.x - x, z.y - y); if (d > T.range) continue;
+      let sc = -d;
+      if (T.k === 'snipe') sc = z.hp + (ZT[z.k].boss ? 1e4 : 0) - d;                                   // the toughest thing in range
+      if (T.k === 'frost') { sc = -d * 0.1 - (cloudAt(z.x, z.y, z.z) & 1 ? 4 : 0); for (const q of W.zs) if (q !== z && q.hp > 0 && Math.abs(q.x - z.x) < 1.8 && Math.abs(q.y - z.y) < 1.8) sc++; } // the thickest knot not already slowed
+      if (sc <= bs || !los(x, y, z0, z.x, z.y, z.z + z.h * 0.6)) continue; bs = sc; best = z;
+    }
+    if (!best) { W.tcd[i] = 0.25; continue; }
+    W.tcd[i] = T.rate; O.tam[i]--; if (O.tam[i] === 0 || O.tam[i] % (T.ammo >= 100 ? 40 : 10) === 0) objChanged();
+    const bd = Math.hypot(best.x - x, best.y - y) || 1, ux = (best.x - x) / bd, uy = (best.y - y) / bd, mul = 1 + 0.12 * W.upg, yaw = Math.atan2(uy, ux);
+    KSRC = 'turret';
+    if (T.k === 'shot') { // a cone: everything in it close by gets the full load and is pushed back
+      let n = 0;
+      for (const z of W.zs) {
+        if (n >= 8 || z.hp <= 0 || z.hidden || Math.abs(z.L - L) > 1) continue; const dx = z.x - x, dy = z.y - y, d = Math.hypot(dx, dy) || 0.1;
+        if (d > T.range + z.r || Math.abs(angDiff(yaw, Math.atan2(dy, dx))) > T.cone + z.r / Math.max(d, 0.5) || !los(x, y, z0, z.x, z.y, z.z + z.h * 0.5)) continue;
+        const f = d < 2 ? 1 : Math.max(0.4, 1 - (d - 2) / (T.range - 2) * 0.6), heavy = ZT[z.k].boss ? 6 : z.k === 'brute' ? 3 : z.k === 'armored' ? 2 : 1;
+        hurtZombie(z, T.dmg * T.pellets * f * mul, null, dx / d * T.kb * f / heavy, dy / d * T.kb * f / heavy); n++;
+      }
+    } else if (T.k === 'frost') { (W.cz = W.cz || []).push({ k: 1, x: r2(best.x), y: r2(best.y), z: r2(Math.max(0, best.z - 0.2)), r: 1.8, t: 2.5 }); hurtZombie(best, T.dmg * mul, null, 0, 0); }
+    else { const kb = T.k === 'snipe' ? 2.5 : 0.6; hurtZombie(best, T.dmg * mul, null, ux * kb, uy * kb); }
+    KSRC = '';
+    emit({ k: 'tshot', i, w: T.k, x: r2(x), y: r2(y), z: r2(z0), tx: r2(best.x), ty: r2(best.y), tz: r2(best.z + best.h * 0.6) });
+    noiseAt(x, y, T.k === 'frost' ? 3 : T.k === 'snipe' ? 12 : 7, z0 - 0.95);
+  }
+}
+function turretUse(p, i, b) { const T = TUR[b]; if (!T) return null; const a = W.obj && W.obj.tam && W.obj.tam[i] != null ? W.obj.tam[i] : T.ammo; return a < T.ammo * 0.5 ? { k: 'tur', i, t: 1, name: '给' + B[b].name + '装弹（' + a + '/' + T.ammo + '，' + T.refill.parts + ' 零件）' } : null; }
+function turretDone(p, tgt) {
+  const b = W.blk[tgt.i], T = TUR[b]; if (!T) return;
+  if (!affordable(W.res, T.refill)) return emit({ k: 'deny', p: p.i, why: '零件不够（要 ' + T.refill.parts + ' 个）' });
+  for (const r in T.refill) W.res[r] -= T.refill[r]; (W.obj.tam = W.obj.tam || {})[tgt.i] = T.ammo; objChanged(); emit({ k: 'sfx', n: 'reload', x: p.x, y: p.y });
 }
 
 /* ---- 50_render.js ---- */
@@ -7815,6 +7878,17 @@ function drawNadeMark() {
   const z = pt.z != null ? pt.z : surfZ(pt.x, pt.y, gAt(Math.floor(pt.x), Math.floor(pt.y))); M.position.set(pt.x, z + 0.06, pt.y);
 }
 // (round 24) grenade clouds: a bluish sticky puddle (slow) or a grey smoke ball (smoke)
+// (round 28) the patch each trap covers, tinted on the floor (wire grey, bear traps amber, mines red)
+const TRAPCOL = { 9: '#c8ced4', 15: '#e09a4a', 51: '#e0583a' };
+function drawTrapAreas(vl) {
+  if (!OBJ.trapA) { OBJ.trapA = inst(boxG(0.9, 0.012, 0.9), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.22, depthWrite: false }), 900, false); OBJ.trapA.receiveShadow = false; }
+  const T = OBJ.trapA; let n = 0; scanCells();
+  for (const j of W.trapCells || []) {
+    if (n >= 900) break; const t = W.trapAt[j]; if (t < 0) continue; const L = cl_(j); if (L > vl) continue;
+    const x = cx_(j) + 0.5, y = cy_(j) + 0.5; setInst(T, n++, x, surfZ(x, y, L) + 0.02, y, 0, 1, 1, 1, TRAPCOL[W.blk[t]] || '#ffffff');
+  }
+  T.count = n; T.instanceMatrix.needsUpdate = true; if (T.instanceColor) T.instanceColor.needsUpdate = true;
+}
 function drawClouds() {
   let C = OBJ.clouds;
   if (!C) {
@@ -7864,7 +7938,7 @@ function draw(dt) {
   if (key !== CUT_KEY) { CUT_KEY = key; rebuildCells(); }
   if (STATE.mode === 'play' && !W.demo) qualTick(dt);
   applyTime(darkness()); archFrame();
-  drawZombies(vl, dt); drawPlayers(vl, dt); drawFx(); drawGhost(me); drawPlan(); drawNadeMark(); drawTells(); drawClouds();
+  drawZombies(vl, dt); drawPlayers(vl, dt); drawFx(); drawGhost(me); drawPlan(); drawNadeMark(); drawTells(); drawClouds(); drawTrapAreas(vl);
   OBJ.zone.visible = (!W.demo && W.phase === 'day' || !!(me && me.build)) && !modeDef().anyBuild;
   RENDER.render(SCN, CAMO);
   drawOverlay();
@@ -7949,7 +8023,13 @@ function fxEvent(e) {
   const guest = NETROLE === 'guest';
   switch (e.k) {
     case 'shot': if (guest && e.o === ME) break; shotFx(e.o, e.w, e.e); break;
-    case 'tshot': if (e.i != null) (RND.taim = RND.taim || {})[e.i] = Math.atan2(e.ty - e.y, e.tx - e.x); RND.tracers.push({ x: e.x, y: e.y, z: e.z, x2: e.tx, y2: e.ty, z2: e.tz, t: 0, life: 0.08, w: 0.03, col: [1, 0.85, 0.45] }); RND.flashes.push({ x: e.x, y: e.y, z: e.z, t: 0, life: 0.05 }); if (thr('tur', 0.09)) sfx('rifle', e.x, e.y); break;
+    case 'tshot': { if (e.i != null) (RND.taim = RND.taim || {})[e.i] = Math.atan2(e.ty - e.y, e.tx - e.x);
+      const a = Math.atan2(e.ty - e.y, e.tx - e.x), d = Math.hypot(e.tx - e.x, e.ty - e.y);
+      if (e.w === 'shot') { for (let k = 0; k < 6; k++) { const q = a + (k / 5 - 0.5) * 0.8, L = Math.min(5, d + 0.6); RND.tracers.push({ x: e.x, y: e.y, z: e.z, x2: e.x + Math.cos(q) * L, y2: e.y + Math.sin(q) * L, z2: e.tz, t: 0, life: 0.07, w: 0.03, col: [1, 0.75, 0.4] }); } sfx('shotgun', e.x, e.y); }
+      else if (e.w === 'frost') { RND.tracers.push({ x: e.x, y: e.y, z: e.z, x2: e.tx, y2: e.ty, z2: e.tz, t: 0, life: 0.25, w: 0.07, col: [0.45, 0.8, 1] }); sfx('acid', e.x, e.y); }
+      else if (e.w === 'snipe') { RND.tracers.push({ x: e.x, y: e.y, z: e.z, x2: e.tx, y2: e.ty, z2: e.tz, t: 0, life: 0.2, w: 0.06, col: [1, 0.45, 0.3] }); sfx('sniper', e.x, e.y); }
+      else { RND.tracers.push({ x: e.x, y: e.y, z: e.z, x2: e.tx, y2: e.ty, z2: e.tz, t: 0, life: 0.08, w: 0.03, col: [1, 0.85, 0.45] }); if (thr('tur', 0.09)) sfx('rifle', e.x, e.y); }
+      if (e.w !== 'frost') RND.flashes.push({ x: e.x, y: e.y, z: e.z, t: 0, life: 0.05 }); break; }
     case 'hit': if (e.a) { for (let k = 0; k < 6; k++) addP({ x: e.x, y: e.y, z: e.z, vx: frnd(-3, 3), vy: frnd(-3, 3), vz: frnd(0.5, 3), col: k % 2 ? '#ffe9a0' : '#ffffff', s: 0.035, life: 0.25, floor: e.z - 1 }); if (thr('clank', 0.06)) sfx('clank', e.x, e.y); break; }
       bloodFx(e.x, e.y, e.z, e.h ? 9 : 5, e.g); if (Math.random() < 0.45) addDecal(e.x + frnd(-0.3, 0.3), e.y + frnd(-0.3, 0.3), e.z - 0.6, frnd(0.08, 0.16), e.g ? '#3c5a14' : null); if (thr('flesh', 0.05)) sfx(e.h ? 'head' : 'flesh', e.x, e.y); break;
     case 'zdie':
@@ -9214,11 +9294,18 @@ function propScene() {
   G[51] = M([cyl(0.22, 0.25, 0.06, 10, 0, 0.03, 0), cyl(0.05, 0.05, 0.05, 6, 0, 0.08, 0)]);
   G[52] = M([boxG(0.56, 0.08, 0.56, 0, 0.04, 0), cyl(0.06, 0.07, 0.5, 6, 0, 0.32, 0), boxG(0.44, 0.26, 0.34, 0, 0.66, 0), boxG(0.06, 0.2, 0.36, -0.2, 0.72, 0),
     new THREE.CylinderGeometry(0.035, 0.035, 0.56, 6).rotateZ(Math.PI / 2).translate(0.46, 0.7, 0.06), new THREE.CylinderGeometry(0.035, 0.035, 0.56, 6).rotateZ(Math.PI / 2).translate(0.46, 0.7, -0.06), boxG(0.12, 0.14, 0.12, 0.05, 0.86, 0.12)]);
+  // (round 28) shotgun turret (short fat twin barrels, drum), slow turret (tank + nozzle), sniper turret (tripod, long barrel, scope)
+  G[57] = M([boxG(0.56, 0.08, 0.56, 0, 0.04, 0), cyl(0.07, 0.08, 0.46, 6, 0, 0.3, 0), boxG(0.4, 0.3, 0.42, 0, 0.66, 0), cyl(0.12, 0.12, 0.16, 10, -0.06, 0.66, 0.27).rotateX(0),
+    new THREE.CylinderGeometry(0.06, 0.07, 0.36, 8).rotateZ(Math.PI / 2).translate(0.36, 0.7, 0.08), new THREE.CylinderGeometry(0.06, 0.07, 0.36, 8).rotateZ(Math.PI / 2).translate(0.36, 0.7, -0.08), boxG(0.06, 0.2, 0.34, 0.53, 0.7, 0)]);
+  G[58] = M([boxG(0.56, 0.08, 0.56, 0, 0.04, 0), cyl(0.06, 0.07, 0.4, 6, 0, 0.26, 0), cyl(0.17, 0.17, 0.42, 10, -0.06, 0.62, 0), cyl(0.18, 0.18, 0.04, 10, -0.06, 0.85, 0), cyl(0.18, 0.18, 0.04, 10, -0.06, 0.4, 0),
+    new THREE.CylinderGeometry(0.04, 0.07, 0.34, 8).rotateZ(Math.PI / 2).translate(0.26, 0.62, 0), boxG(0.08, 0.08, 0.08, 0.45, 0.62, 0), cyl(0.03, 0.03, 0.18, 6, -0.06, 0.95, 0)]);
+  G[59] = M([cyl(0.025, 0.03, 0.62, 5, 0.18, 0.28, 0).rotateZ(0.0), cyl(0.025, 0.03, 0.62, 5, -0.1, 0.28, 0.16), cyl(0.025, 0.03, 0.62, 5, -0.1, 0.28, -0.16), boxG(0.3, 0.16, 0.2, 0, 0.62, 0),
+    new THREE.CylinderGeometry(0.025, 0.03, 0.9, 6).rotateZ(Math.PI / 2).translate(0.56, 0.66, 0), cyl(0.045, 0.045, 0.28, 8, 0.06, 0.78, 0).rotateZ(0), boxG(0.2, 0.06, 0.06, 0.06, 0.78, 0), boxG(0.08, 0.08, 0.08, 1.0, 0.66, 0), boxG(0.16, 0.1, 0.16, -0.18, 0.6, 0)]);
   G[53] = M([boxG(0.1, 0.62, 0.1, 0, 0.31, -0.42), boxG(0.1, 0.62, 0.1, 0, 0.31, 0.42), boxG(0.07, 0.13, 1.0, 0.04, 0.22, 0), boxG(0.07, 0.13, 1.0, 0.04, 0.5, 0), boxG(0.06, 0.12, 1.08, -0.04, 0.36, 0).rotateX(0.38)]);
   G[54] = M([boxG(0.44, 0.24, 0.3, 0, 0.12, 0), boxG(0.46, 0.04, 0.32, 0, 0.2, 0), boxG(0.1, 0.05, 0.05, 0, 0.27, 0)]);
   G[56] = M([boxG(0.66, 0.06, 0.66, 0, 0.03, 0), cyl(0.08, 0.08, 0.14, 6, -0.2, 0.12, -0.2), cyl(0.08, 0.08, 0.14, 6, 0.2, 0.12, -0.2), cyl(0.08, 0.08, 0.14, 6, -0.2, 0.12, 0.2), cyl(0.08, 0.08, 0.14, 6, 0.2, 0.12, 0.2), boxG(0.6, 0.05, 0.6, 0, 0.21, 0), boxG(0.3, 0.02, 0.08, 0, 0.245, 0), boxG(0.08, 0.02, 0.3, 0, 0.245, 0)]); // jump pad
   G[55] = M([boxG(0.62, 0.64, 0.46, 0, 0.32, 0), boxG(0.52, 0.06, 0.02, 0, 0.52, 0.24), boxG(0.52, 0.06, 0.02, 0, 0.3, 0.24), boxG(0.66, 0.04, 0.5, 0, 0.66, 0)]);
-  const C = { 56: '#d8a03a', 51: '#4a4a3a', 52: '#5a6670', 53: '#8a6a44', 54: '#4f6a3a', 55: '#2f5f9a', 48: '#7a5a3c', 49: '#8a9096', 43: '#e8b93a', 44: '#6a1f2a', 45: '#7a868f', 46: '#2f5f9a', 47: '#5a6a3a', 42: '#7a8088', 32: '#3f5a3a', 33: '#5a4a2e', 34: '#6a4a30', 35: '#a8322a', 36: '#4f5a32', 37: '#9a3a2a', 38: '#b8333a', 39: '#7a5a44', 40: '#6a4a2c', 41: '#3e5f2e', 12: '#a8946a', 13: '#6a5038', 14: '#7a8590', 15: '#5a5a55', 6: '#8a6440' };
+  const C = { 57: '#7a5a3a', 58: '#4a7a9a', 59: '#5a6a4a', 56: '#d8a03a', 51: '#4a4a3a', 52: '#5a6670', 53: '#8a6a44', 54: '#4f6a3a', 55: '#2f5f9a', 48: '#7a5a3c', 49: '#8a9096', 43: '#e8b93a', 44: '#6a1f2a', 45: '#7a868f', 46: '#2f5f9a', 47: '#5a6a3a', 42: '#7a8088', 32: '#3f5a3a', 33: '#5a4a2e', 34: '#6a4a30', 35: '#a8322a', 36: '#4f5a32', 37: '#9a3a2a', 38: '#b8333a', 39: '#7a5a44', 40: '#6a4a2c', 41: '#3e5f2e', 12: '#a8946a', 13: '#6a5038', 14: '#7a8590', 15: '#5a5a55', 6: '#8a6440' };
   const cap = { 48: 700, 49: 900, 42: 2500, 41: 3000, 40: 600, 39: 600, 12: 1500, 13: 800, 14: 800, 15: 400, 6: 400, 32: 400, 34: 400 };
   for (const id in G) { const m = inst(G[id], lam('#ffffff'), cap[id] || 300); m.castShadow = id == 38 || id == 34; PROP[id] = { m, n: 0, col: C[id], al: id == 12 || id == 13 || id == 14 || id == 53 }; }
   // build-plan ghosts and the x-ray ring that shows survivors through walls
@@ -9245,7 +9332,7 @@ function propPut(b, i, x, y, L, X, Y, Z, h) {
   if (b === 38 && W.srch.has(i)) col = '#5a2a2c';
   if (b === 41) sc = 0.8 + h * 0.5;
   if (b === 47) rot = -W.bdir[i] * Math.PI / 2;
-  if (b === 52) { rot = -((RND.taim && RND.taim[i]) || h * 6.28); if (W.obj && W.obj.tam && W.obj.tam[i] === 0) col = '#3a3e42'; }
+  if (TUR[b]) { rot = -((RND.taim && RND.taim[i]) || h * 6.28); if (W.obj && W.obj.tam && W.obj.tam[i] === 0) col = '#3a3e42'; } // (round 28) every turret turns to its last target; grey when empty
   if (b === 51 && W.t % 1 < 0.5) col = '#5a3a32';
   if (b === 48 || b === 49) { const s = (xx, yy) => { const q = blkAt(xx, yy, L); return q === 48 || q === 49; }; rot = s(x - 1, y) || s(x + 1, y) ? 0 : s(x, y - 1) || s(x, y + 1) ? Math.PI / 2 : Math.floor(h * 4) * Math.PI / 2; if (b === 49) col = ['#8a9096', '#7d8a7a', '#9a8a78'][Math.floor(h * 3)]; }
   if (b === 44) { sc = W.mode === 'nests' && W.obj.mother && W.obj.mother.ci === i ? 1.9 : 1.15; col = dmgTint('#7a2030', 0.45 + 0.55 * W.bhp[i] / Math.max(1, (W.obj.mother && W.obj.mother.ci === i ? W.obj.mother.max : W.obj.nests ? W.obj.nests[0].max : 1500))); }
@@ -9556,8 +9643,8 @@ CV.addEventListener('mousemove', e => { INP.mx = e.clientX; INP.my = e.clientY; 
 CV.addEventListener('mousedown', e => {
   audioInit(); INP.mx = e.clientX; INP.my = e.clientY; INP.mouseT = performance.now();
   if (performance.now() - INP.lastTouch < 800) return;
-  if (e.button === 0) INP.mL = true; if (e.button === 2) INP.mR = true; INP.bldLast = '';
-});
+  if (e.button === 0) { INP.mL = true; INP.clickT = performance.now(); INP.clickMag = null; } if (e.button === 2) INP.mR = true; INP.bldLast = '';
+}); // (round 27b) a click is remembered until its shot goes out: a quick tap (trackpad, fast click) used to go down and up between two frames and fire nothing
 addEventListener('mouseup', e => { if (e.button === 0) INP.mL = false; if (e.button === 2) INP.mR = false; });
 CV.addEventListener('contextmenu', e => e.preventDefault());
 CV.addEventListener('wheel', e => { if (STATE.mode !== 'play') return; e.preventDefault(); if (INP.nadeAim && INP.nadeAim.pc) { const n = Date.now(); if (n - (UI.whT || 0) > 120) { UI.whT = n; cycleGren(e.deltaY > 0 ? 1 : -1); } return; } camZoom(e.deltaY > 0 ? 1.1 : 1 / 1.1); }, { passive: false }); // holding G: the wheel picks the grenade
@@ -9985,7 +10072,9 @@ function readInput(dt) {
     me.aimPt = pt; me.aim = Math.atan2(pt.y - me.y, pt.x - me.x);
     drawReticle(me, pt, !blocked && !me.build && !me.dead);
     CAM.lookX = lerp(CAM.lookX || 0, clamp((pt.x - me.x) * 0.18, -3, 3), Math.min(1, dt * 3)); CAM.lookY = lerp(CAM.lookY || 0, clamp((pt.y - me.y) * 0.18, -3, 3), Math.min(1, dt * 3));
-    I.fire = !blocked && INP.mL && !me.build ? 1 : 0;
+    const mg = me.mag[me.down ? 0 : me.wpn]; if (INP.clickT && INP.clickMag == null) INP.clickMag = mg;
+    if (INP.clickT && (performance.now() - INP.clickT > 400 || mg !== INP.clickMag)) INP.clickT = 0; /* the buffered click is spent once the magazine count changes (shot or reload) */
+    I.fire = !blocked && (INP.mL || INP.clickT) && !me.build ? 1 : 0;
     if (me.build && !blocked) {
       const down = INP.mL || INP.mR, demo = INP.mR || me.demo;
       if (down) paintBuild(INP.mx, INP.my, !INP.bDown, demo);

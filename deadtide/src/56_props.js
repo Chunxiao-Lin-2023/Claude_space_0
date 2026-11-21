@@ -36,11 +36,18 @@ function propScene() {
   G[51] = M([cyl(0.22, 0.25, 0.06, 10, 0, 0.03, 0), cyl(0.05, 0.05, 0.05, 6, 0, 0.08, 0)]);
   G[52] = M([boxG(0.56, 0.08, 0.56, 0, 0.04, 0), cyl(0.06, 0.07, 0.5, 6, 0, 0.32, 0), boxG(0.44, 0.26, 0.34, 0, 0.66, 0), boxG(0.06, 0.2, 0.36, -0.2, 0.72, 0),
     new THREE.CylinderGeometry(0.035, 0.035, 0.56, 6).rotateZ(Math.PI / 2).translate(0.46, 0.7, 0.06), new THREE.CylinderGeometry(0.035, 0.035, 0.56, 6).rotateZ(Math.PI / 2).translate(0.46, 0.7, -0.06), boxG(0.12, 0.14, 0.12, 0.05, 0.86, 0.12)]);
+  // (round 28) shotgun turret (short fat twin barrels, drum), slow turret (tank + nozzle), sniper turret (tripod, long barrel, scope)
+  G[57] = M([boxG(0.56, 0.08, 0.56, 0, 0.04, 0), cyl(0.07, 0.08, 0.46, 6, 0, 0.3, 0), boxG(0.4, 0.3, 0.42, 0, 0.66, 0), cyl(0.12, 0.12, 0.16, 10, -0.06, 0.66, 0.27).rotateX(0),
+    new THREE.CylinderGeometry(0.06, 0.07, 0.36, 8).rotateZ(Math.PI / 2).translate(0.36, 0.7, 0.08), new THREE.CylinderGeometry(0.06, 0.07, 0.36, 8).rotateZ(Math.PI / 2).translate(0.36, 0.7, -0.08), boxG(0.06, 0.2, 0.34, 0.53, 0.7, 0)]);
+  G[58] = M([boxG(0.56, 0.08, 0.56, 0, 0.04, 0), cyl(0.06, 0.07, 0.4, 6, 0, 0.26, 0), cyl(0.17, 0.17, 0.42, 10, -0.06, 0.62, 0), cyl(0.18, 0.18, 0.04, 10, -0.06, 0.85, 0), cyl(0.18, 0.18, 0.04, 10, -0.06, 0.4, 0),
+    new THREE.CylinderGeometry(0.04, 0.07, 0.34, 8).rotateZ(Math.PI / 2).translate(0.26, 0.62, 0), boxG(0.08, 0.08, 0.08, 0.45, 0.62, 0), cyl(0.03, 0.03, 0.18, 6, -0.06, 0.95, 0)]);
+  G[59] = M([cyl(0.025, 0.03, 0.62, 5, 0.18, 0.28, 0).rotateZ(0.0), cyl(0.025, 0.03, 0.62, 5, -0.1, 0.28, 0.16), cyl(0.025, 0.03, 0.62, 5, -0.1, 0.28, -0.16), boxG(0.3, 0.16, 0.2, 0, 0.62, 0),
+    new THREE.CylinderGeometry(0.025, 0.03, 0.9, 6).rotateZ(Math.PI / 2).translate(0.56, 0.66, 0), cyl(0.045, 0.045, 0.28, 8, 0.06, 0.78, 0).rotateZ(0), boxG(0.2, 0.06, 0.06, 0.06, 0.78, 0), boxG(0.08, 0.08, 0.08, 1.0, 0.66, 0), boxG(0.16, 0.1, 0.16, -0.18, 0.6, 0)]);
   G[53] = M([boxG(0.1, 0.62, 0.1, 0, 0.31, -0.42), boxG(0.1, 0.62, 0.1, 0, 0.31, 0.42), boxG(0.07, 0.13, 1.0, 0.04, 0.22, 0), boxG(0.07, 0.13, 1.0, 0.04, 0.5, 0), boxG(0.06, 0.12, 1.08, -0.04, 0.36, 0).rotateX(0.38)]);
   G[54] = M([boxG(0.44, 0.24, 0.3, 0, 0.12, 0), boxG(0.46, 0.04, 0.32, 0, 0.2, 0), boxG(0.1, 0.05, 0.05, 0, 0.27, 0)]);
   G[56] = M([boxG(0.66, 0.06, 0.66, 0, 0.03, 0), cyl(0.08, 0.08, 0.14, 6, -0.2, 0.12, -0.2), cyl(0.08, 0.08, 0.14, 6, 0.2, 0.12, -0.2), cyl(0.08, 0.08, 0.14, 6, -0.2, 0.12, 0.2), cyl(0.08, 0.08, 0.14, 6, 0.2, 0.12, 0.2), boxG(0.6, 0.05, 0.6, 0, 0.21, 0), boxG(0.3, 0.02, 0.08, 0, 0.245, 0), boxG(0.08, 0.02, 0.3, 0, 0.245, 0)]); // jump pad
   G[55] = M([boxG(0.62, 0.64, 0.46, 0, 0.32, 0), boxG(0.52, 0.06, 0.02, 0, 0.52, 0.24), boxG(0.52, 0.06, 0.02, 0, 0.3, 0.24), boxG(0.66, 0.04, 0.5, 0, 0.66, 0)]);
-  const C = { 56: '#d8a03a', 51: '#4a4a3a', 52: '#5a6670', 53: '#8a6a44', 54: '#4f6a3a', 55: '#2f5f9a', 48: '#7a5a3c', 49: '#8a9096', 43: '#e8b93a', 44: '#6a1f2a', 45: '#7a868f', 46: '#2f5f9a', 47: '#5a6a3a', 42: '#7a8088', 32: '#3f5a3a', 33: '#5a4a2e', 34: '#6a4a30', 35: '#a8322a', 36: '#4f5a32', 37: '#9a3a2a', 38: '#b8333a', 39: '#7a5a44', 40: '#6a4a2c', 41: '#3e5f2e', 12: '#a8946a', 13: '#6a5038', 14: '#7a8590', 15: '#5a5a55', 6: '#8a6440' };
+  const C = { 57: '#7a5a3a', 58: '#4a7a9a', 59: '#5a6a4a', 56: '#d8a03a', 51: '#4a4a3a', 52: '#5a6670', 53: '#8a6a44', 54: '#4f6a3a', 55: '#2f5f9a', 48: '#7a5a3c', 49: '#8a9096', 43: '#e8b93a', 44: '#6a1f2a', 45: '#7a868f', 46: '#2f5f9a', 47: '#5a6a3a', 42: '#7a8088', 32: '#3f5a3a', 33: '#5a4a2e', 34: '#6a4a30', 35: '#a8322a', 36: '#4f5a32', 37: '#9a3a2a', 38: '#b8333a', 39: '#7a5a44', 40: '#6a4a2c', 41: '#3e5f2e', 12: '#a8946a', 13: '#6a5038', 14: '#7a8590', 15: '#5a5a55', 6: '#8a6440' };
   const cap = { 48: 700, 49: 900, 42: 2500, 41: 3000, 40: 600, 39: 600, 12: 1500, 13: 800, 14: 800, 15: 400, 6: 400, 32: 400, 34: 400 };
   for (const id in G) { const m = inst(G[id], lam('#ffffff'), cap[id] || 300); m.castShadow = id == 38 || id == 34; PROP[id] = { m, n: 0, col: C[id], al: id == 12 || id == 13 || id == 14 || id == 53 }; }
   // build-plan ghosts and the x-ray ring that shows survivors through walls
@@ -67,7 +74,7 @@ function propPut(b, i, x, y, L, X, Y, Z, h) {
   if (b === 38 && W.srch.has(i)) col = '#5a2a2c';
   if (b === 41) sc = 0.8 + h * 0.5;
   if (b === 47) rot = -W.bdir[i] * Math.PI / 2;
-  if (b === 52) { rot = -((RND.taim && RND.taim[i]) || h * 6.28); if (W.obj && W.obj.tam && W.obj.tam[i] === 0) col = '#3a3e42'; }
+  if (TUR[b]) { rot = -((RND.taim && RND.taim[i]) || h * 6.28); if (W.obj && W.obj.tam && W.obj.tam[i] === 0) col = '#3a3e42'; } // (round 28) every turret turns to its last target; grey when empty
   if (b === 51 && W.t % 1 < 0.5) col = '#5a3a32';
   if (b === 48 || b === 49) { const s = (xx, yy) => { const q = blkAt(xx, yy, L); return q === 48 || q === 49; }; rot = s(x - 1, y) || s(x + 1, y) ? 0 : s(x, y - 1) || s(x, y + 1) ? Math.PI / 2 : Math.floor(h * 4) * Math.PI / 2; if (b === 49) col = ['#8a9096', '#7d8a7a', '#9a8a78'][Math.floor(h * 3)]; }
   if (b === 44) { sc = W.mode === 'nests' && W.obj.mother && W.obj.mother.ci === i ? 1.9 : 1.15; col = dmgTint('#7a2030', 0.45 + 0.55 * W.bhp[i] / Math.max(1, (W.obj.mother && W.obj.mother.ci === i ? W.obj.mother.max : W.obj.nests ? W.obj.nests[0].max : 1500))); }

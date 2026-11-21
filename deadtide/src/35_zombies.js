@@ -42,13 +42,20 @@ function stepZombies(dt) {
     // barbed wire
     let slow = inMud(z.x, z.y, z.L) ? MUD_SLOW : 1;
     const cz = W.cz && W.cz.length ? cloudAt(z.x, z.y, z.z) : 0; if (cz & 1) slow *= BAL.slowMul; if (cz & 2) z.conf = BAL.smokeConf; else if (z.conf > 0) z.conf -= dt; // (round 24) slow field / smoke
-    if (B[W.blk[i]].mine) { setCell(i, 0, W.slab[i], null, 'mine'); explode(cx + 0.5, cy + 0.5, z.L * FH + 0.3, null, SIEGE.mineR, SIEGE.mineDmg); if (z.hp <= 0) continue; }
-    if (B[W.blk[i]].trap) { z.stun = 2.5; hurtZombie(z, 30, null); setCell(i, 0, W.slab[i], null, 'trap'); if (z.hp <= 0) continue; }
+    // (round 28) traps act on the open floor around them (W.trapAt), not just their own cell
+    if (z.limp > 0) { z.limp -= dt; slow *= BAL.limpMul; } if (z.trapCD > 0) z.trapCD -= dt;
+    scanCells(); const ti = W.trapAt[i], tb = ti >= 0 ? W.blk[ti] : 0;
+    if (tb && B[tb].mine) { const mx = cx_(ti) + 0.5, my = cy_(ti) + 0.5, mz = cl_(ti) * FH; setCell(ti, 0, W.slab[ti], null, 'mine'); explode(mx, my, mz + 0.3, null, BAL.mineR, BAL.mineDmg); (W.cz = W.cz || []).push({ k: 1, x: mx, y: my, z: mz, r: BAL.mineSlowR, t: BAL.mineSlowT }); for (const q of W.zs) if (q.hp > 0 && Math.hypot(q.x - mx, q.y - my) < BAL.mineR) q.limp = Math.max(q.limp || 0, BAL.limpT); if (z.hp <= 0) continue; }
+    else if (tb && B[tb].trap && !(z.trapCD > 0)) {
+      z.stun = BAL.trapStun; z.limp = BAL.limpT; z.trapCD = 6; hurtZombie(z, BAL.trapDmg, null); emit({ k: 'sfx', n: 'brk', x: z.x, y: z.y });
+      W.bhp[ti] -= B[tb].hp / BAL.trapUses; W.dirty.add(ti); if (W.bhp[ti] <= 0.5) setCell(ti, 0, W.slab[ti], null, 'trap');
+      if (z.hp <= 0) continue;
+    }
     if (B[W.blk[i]].stairs && !B[W.blk[i]].nat) slow = climbT ? 0.75 : 0.38; // ladders are slow going for zombies
-    if (B[W.blk[i]].wire) {
-      slow = BAL.wireSlow; hurtZombie(z, BAL.wireDps * dt, null);
-      W.bhp[i] -= BAL.wireWear * dt * (z.k === 'brute' || z.k === 'boss' ? 4 : 1); W.dirty.add(i);
-      if (W.bhp[i] <= 0) destroyBlk(i);
+    if (tb && B[tb].wire) {
+      slow = Math.min(slow, BAL.wireSlow); hurtZombie(z, BAL.wireDps * dt, null);
+      W.bhp[ti] -= BAL.wireWear * dt * (z.k === 'brute' || z.k === 'boss' ? 4 : 1); W.dirty.add(ti);
+      if (W.bhp[ti] <= 0) destroyBlk(ti);
       if (z.hp <= 0) continue;
     }
     const rf = climbT ? F.rc : F.rw, pf = climbT ? F.pc : F.pw;

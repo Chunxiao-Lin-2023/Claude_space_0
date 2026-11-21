@@ -148,8 +148,8 @@ CV.addEventListener('mousemove', e => { INP.mx = e.clientX; INP.my = e.clientY; 
 CV.addEventListener('mousedown', e => {
   audioInit(); INP.mx = e.clientX; INP.my = e.clientY; INP.mouseT = performance.now();
   if (performance.now() - INP.lastTouch < 800) return;
-  if (e.button === 0) INP.mL = true; if (e.button === 2) INP.mR = true; INP.bldLast = '';
-});
+  if (e.button === 0) { INP.mL = true; INP.clickT = performance.now(); INP.clickMag = null; } if (e.button === 2) INP.mR = true; INP.bldLast = '';
+}); // (round 27b) a click is remembered until its shot goes out: a quick tap (trackpad, fast click) used to go down and up between two frames and fire nothing
 addEventListener('mouseup', e => { if (e.button === 0) INP.mL = false; if (e.button === 2) INP.mR = false; });
 CV.addEventListener('contextmenu', e => e.preventDefault());
 CV.addEventListener('wheel', e => { if (STATE.mode !== 'play') return; e.preventDefault(); if (INP.nadeAim && INP.nadeAim.pc) { const n = Date.now(); if (n - (UI.whT || 0) > 120) { UI.whT = n; cycleGren(e.deltaY > 0 ? 1 : -1); } return; } camZoom(e.deltaY > 0 ? 1.1 : 1 / 1.1); }, { passive: false }); // holding G: the wheel picks the grenade
@@ -577,7 +577,9 @@ function readInput(dt) {
     me.aimPt = pt; me.aim = Math.atan2(pt.y - me.y, pt.x - me.x);
     drawReticle(me, pt, !blocked && !me.build && !me.dead);
     CAM.lookX = lerp(CAM.lookX || 0, clamp((pt.x - me.x) * 0.18, -3, 3), Math.min(1, dt * 3)); CAM.lookY = lerp(CAM.lookY || 0, clamp((pt.y - me.y) * 0.18, -3, 3), Math.min(1, dt * 3));
-    I.fire = !blocked && INP.mL && !me.build ? 1 : 0;
+    const mg = me.mag[me.down ? 0 : me.wpn]; if (INP.clickT && INP.clickMag == null) INP.clickMag = mg;
+    if (INP.clickT && (performance.now() - INP.clickT > 400 || mg !== INP.clickMag)) INP.clickT = 0; /* the buffered click is spent once the magazine count changes (shot or reload) */
+    I.fire = !blocked && (INP.mL || INP.clickT) && !me.build ? 1 : 0;
     if (me.build && !blocked) {
       const down = INP.mL || INP.mR, demo = INP.mR || me.demo;
       if (down) paintBuild(INP.mx, INP.my, !INP.bDown, demo);

@@ -44,8 +44,8 @@ defB(8, { key: 'bars', name: '射击栅栏', cost: { steel: 3 }, hp: 300, cap: 6
 defB(12, { key: 'sandbag', name: '沙袋矮墙', cost: { stone: 3 }, hp: 260, P: 1, Z: 1, dep: 1, brk: 1, vault: 1, col: '#a8946a', tip: '半人高：人能翻过去、子弹能从上面打过去，丧尸只能砸' });
 defB(13, { key: 'spikes', name: '拒马', cost: { wood: 4, steel: 1 }, hp: 200, P: 1, Z: 1, dep: 1, brk: 1, vault: 1, thorns: 10, col: '#6a5038', tip: '丧尸砸它会被扎伤，人能翻过去' });
 defB(14, { key: 'cover', name: '铁皮掩体', cost: { steel: 3 }, hp: 420, P: 1, Z: 1, B: 1, dep: 1, brk: 1, vault: 1, col: '#7a8590', tip: '挡子弹的掩体，人能翻过去' });
-defB(15, { key: 'trap', name: '捕兽夹', cost: { steel: 1, parts: 2 }, hp: 40, dep: 1, trap: 1, col: '#5a5a55', tip: '丧尸踩上去被夹住 2.5 秒，用一次就坏' });
-defB(9, { key: 'wire', name: '铁丝网', cost: { steel: 2, parts: 1 }, hp: 110, dep: 1, wire: 1, brk: 0, col: '#9aa0a6', tip: '减速并割伤经过的丧尸，会磨损' });
+defB(15, { key: 'trap', name: '捕兽夹', cost: { steel: 1, parts: 2 }, hp: 60, dep: 1, trap: 1, col: '#5a5a55', tip: '周围一圈（空地上 3×3）都有夹子：踩进去被夹住 1.8 秒、松开后瘸 3 秒走得慢；能夹 3 次' });
+defB(9, { key: 'wire', name: '铁丝网', cost: { steel: 2, parts: 1 }, hp: 200, dep: 1, wire: 1, brk: 0, col: '#9aa0a6', tip: '铺开一片（空地上 3×3）：经过的丧尸走得慢一半、慢慢割伤，会磨损' });
 defB(10, { key: 'lamp', name: '探照灯', cost: { parts: 3, wood: 1 }, hp: 60, dep: 1, lamp: 1, col: '#ffe9a8', tip: '夜里照亮周围' });
 // natural / fixed
 defB(20, { key: 'dirt', P: 1, Z: 1, B: 1, top: 1, nat: 1 });
@@ -82,8 +82,12 @@ defB(48, { key: 'desk', P: 1, Z: 1, B: 1, nat: 1, brk: 1, vault: 1, hp: 150, low
 defB(49, { key: 'shelf', P: 1, Z: 1, B: 1, nat: 1, brk: 1, vault: 1, hp: 180, low: 0.62, col: '#8a9096' });
 defB(50, { key: 'halfwall', P: 1, Z: 1, B: 1, nat: 1, brk: 1, vault: 1, hp: 220, low: 0.62, col: '#c8b890' }); // waist-high plaster partition (ward fronts, office cubicles, counters)
 // 尸城求生 (round 19): builds you unlock with blueprints
-defB(51, { key: 'mine', name: '地雷', cost: { steel: 2, parts: 3 }, hp: 60, dep: 1, mine: 1, col: '#4a4a3a', tip: '丧尸踩上去就炸（半径 2.4），用一次就没；人踩不响' });
-defB(52, { key: 'turret', name: '机枪塔', cost: { steel: 8, parts: 10 }, hp: 450, P: 1, Z: 1, dep: 1, brk: 1, turret: 1, col: '#5a6670', tip: '自动打 9 格内看得见的丧尸，一次装 240 发；打空了走过去按 F 花 3 零件装满' });
+defB(51, { key: 'mine', name: '地雷', cost: { steel: 2, parts: 3 }, hp: 60, dep: 1, mine: 1, col: '#4a4a3a', tip: '丧尸走进周围一圈（空地上 3×3）就炸：半径 3.2，炸完留下一片黏地让丧尸慢 4 秒；用一次就没，人踩不响' });
+defB(52, { key: 'turret', name: '机枪塔', cost: { steel: 8, parts: 10 }, hp: 450, P: 1, Z: 1, dep: 1, brk: 1, turret: 1, col: '#5a6670', tip: '自动扫射 9 格内看得见的丧尸，一次装 240 发；打空了走过去按 F 花 3 零件装满' });
+// (round 28) more turrets: each fills a different job
+defB(57, { key: 'tshot', name: '霰弹塔', cost: { wood: 4, steel: 8, parts: 8 }, hp: 450, P: 1, Z: 1, dep: 1, brk: 1, turret: 1, col: '#7a5a3a', tip: '守门口：5 格内一轰一片、把丧尸往后推，一次装 60 发' });
+defB(58, { key: 'tfrost', name: '减速塔', cost: { steel: 6, parts: 10 }, hp: 380, P: 1, Z: 1, dep: 1, brk: 1, turret: 1, col: '#4a7a9a', tip: '往 6 格内丧尸最多的地方喷黏液，一团慢 2.5 秒，几乎没伤害；一次装 50 发' });
+defB(59, { key: 'tsnipe', name: '狙击塔', cost: { steel: 12, parts: 14 }, hp: 380, P: 1, Z: 1, dep: 1, brk: 1, turret: 1, col: '#5a6a4a', tip: '16 格内专挑血最厚的打（重锤、尸王、防暴尸），一枪 110，一次装 30 发' });
 defB(53, { key: 'barricade', name: '木板路障', cost: { wood: 3 }, hp: 300, P: 1, Z: 1, B: 1, dep: 1, brk: 1, low: 0.6, vault: 1, col: '#8a6a44', tip: '快速封门洞、窗洞：丧尸要砸，子弹能从上面打过去，人能翻过去' });
 defB(54, { key: 'ammobox', nat: 1, spot: 'ammobox' });
 defB(55, { key: 'bpcase', P: 1, Z: 1, B: 1, nat: 1, spot: 'bpcase', low: 0.7 });
@@ -97,9 +101,17 @@ const ITEMS = [
   { k: 'ladder', name: '梯子', ids: [6] },
   { k: 'cover', name: '掩体', ids: [53, 12, 14, 8] },
   { k: 'trap', name: '陷阱', ids: [15, 9, 13, 51] },
-  { k: 'turret', name: '机枪塔', ids: [52] },
+  { k: 'turret', name: '炮塔', ids: [52, 57, 58, 59] },  // (round 28) machine gun / shotgun / slow / sniper
   { k: 'pad', name: '跳板', ids: [56] },
 ];
+// (round 28) turrets (every mode): range, seconds between shots, damage, magazine, refill cost
+const TUR = {
+  52: { k: 'mg', range: 9, rate: 0.32, dmg: 11, ammo: 240, refill: { parts: 3 } },                         // damage 18 → 11
+  57: { k: 'shot', range: 5, rate: 1.2, dmg: 6, pellets: 6, cone: 0.42, kb: 3.5, ammo: 60, refill: { parts: 3 } },
+  58: { k: 'frost', range: 6, rate: 1.6, dmg: 4, ammo: 50, refill: { parts: 3 } },
+  59: { k: 'snipe', range: 16, rate: 2.4, dmg: 110, ammo: 30, refill: { parts: 4 } },
+};
+const TRAP_R = 1;                                       // (round 28) traps act on the open floor around them, up to 3×3
 const PAL = ITEMS.flatMap(g => g.ids);
 // (round 23) the gear-type items (cover, traps, turret, lamp, jump pad) go down anywhere in every mode; walls / floors / ladders / doors stay in the build zone outside 尸城求生
 for (const g of ITEMS) if (!['build', 'ladder'].includes(g.k)) for (const id of g.ids) B[id].any = 1;
@@ -124,7 +136,7 @@ const gCount = (p, t) => t ? ((p.gn || [])[t - 1] || 0) : p.nades;
 const gCap = t => t ? BAL.gnCap : BAL.nadeCap;
 // blueprints (尸城求生): what you can build / make from the start, and what has to be found first
 const BP_BASE = [1, 4, 6, 7, 12, 53, 56];
-const BP_LIST = [2, 3, 5, 8, 13, 14, 9, 15, 51, 52, 'bike', 'moto', 'cargo', 'armor'];
+const BP_LIST = [2, 3, 5, 8, 13, 14, 9, 15, 51, 52, 57, 58, 59, 'bike', 'moto', 'cargo', 'armor'];
 const bpName = k => typeof k === 'number' ? B[k].name : (VEH.find(v => v && v.k === k) || { name: k }).name;
 const SLAB_BRIDGE = 11; // slab id for the pre-built bridges (not buildable)
 defB(11, { key: 'bridge', slab: 1, nat: 1, col: '#7e5a36' });
@@ -297,7 +309,9 @@ const BAL = {
   burnSpread: 2.5, burnSpreadR: 1.15, // burning zombies set fire to others this close, about 2.5 times a second (was: same cell only, 1.2 / s)
   barrelR: 3.2, barrelDmg: 240, barrelBurn: 3, // red oil barrels go up when shot
   burnDps: 28, blastR: 2.3, blastDmgP: 32, blastDmgB: 160, screamR: 9, screamCD: 9, rageMul: 1.45,
-  lootFar: 30, wireDps: 14, wireSlow: 0.45, wireWear: 6,
+  lootFar: 30, wireDps: 8, wireSlow: 0.5, wireWear: 6,          // (round 28) wire covers a 3×3 patch: 14 → 8 / s, slow ×0.45 → ×0.5
+  trapStun: 1.8, trapDmg: 18, trapUses: 3, limpT: 3, limpMul: 0.6, // (round 28) bear traps: 3×3, stun 2.5 → 1.8 s, 30 → 18 damage, 1 → 3 catches, then a 3 s limp
+  mineR: 3.2, mineDmg: 120, mineSlowR: 2.6, mineSlowT: 4,       // (round 28) mines: set off anywhere in their 3×3, blast 2.4 → 3.2, 200 → 120 damage, leave a 4 s sticky patch
   aggro: 11,                     // (legacy) zombies now always hunt the nearest reachable player
   diff: { easy: { hp: 0.75, n: 0.75, dmg: 0.7 }, normal: { hp: 1, n: 1, dmg: 1 }, hard: { hp: 1.3, n: 1.3, dmg: 1.25 } },
 };

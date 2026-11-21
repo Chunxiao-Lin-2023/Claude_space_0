@@ -63,7 +63,7 @@ const { chromium } = require('playwright');
   check('a blueprint case always gives a blueprint', r.got.length === 1, JSON.stringify(r.got));
   check('with the blueprint the mine can go down', r.now === '', r.now);
   // mine: a zombie walking over it sets it off
-  s = await p.evaluate(({ spot }) => { const [x, y] = spot; doBuild(W.p[0], x + 3, y, 0, 51); const z = putZombie('walker', x + 3, y, 0); z.hp = z.max = 150; z.sleep = 0; z.mz = 1; return { placed: W.blk[ci(x + 3, y, 0)] }; }, r);
+  s = await p.evaluate(({ spot }) => { const [x, y] = spot; doBuild(W.p[0], x + 3, y, 0, 51); const z = putZombie('walker', x + 3, y, 0); z.hp = z.max = 100; z.sleep = 0; z.mz = 1; return { placed: W.blk[ci(x + 3, y, 0)] }; }, r);
   await simWait(0.4);
   let s2 = await p.evaluate(({ spot }) => ({ mine: W.blk[ci(spot[0] + 3, spot[1], 0)], zDead: !W.zs.some(z => Math.abs(z.x - spot[0] - 3.5) < 1 && Math.abs(z.y - spot[1] - 0.5) < 1 && z.hp > 0) }), r);
   check('a zombie on a mine sets it off', s.placed === 51 && s2.mine === 0 && s2.zDead, JSON.stringify([s, s2]));

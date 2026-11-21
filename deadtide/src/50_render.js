@@ -459,6 +459,17 @@ function drawNadeMark() {
   const z = pt.z != null ? pt.z : surfZ(pt.x, pt.y, gAt(Math.floor(pt.x), Math.floor(pt.y))); M.position.set(pt.x, z + 0.06, pt.y);
 }
 // (round 24) grenade clouds: a bluish sticky puddle (slow) or a grey smoke ball (smoke)
+// (round 28) the patch each trap covers, tinted on the floor (wire grey, bear traps amber, mines red)
+const TRAPCOL = { 9: '#c8ced4', 15: '#e09a4a', 51: '#e0583a' };
+function drawTrapAreas(vl) {
+  if (!OBJ.trapA) { OBJ.trapA = inst(boxG(0.9, 0.012, 0.9), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.22, depthWrite: false }), 900, false); OBJ.trapA.receiveShadow = false; }
+  const T = OBJ.trapA; let n = 0; scanCells();
+  for (const j of W.trapCells || []) {
+    if (n >= 900) break; const t = W.trapAt[j]; if (t < 0) continue; const L = cl_(j); if (L > vl) continue;
+    const x = cx_(j) + 0.5, y = cy_(j) + 0.5; setInst(T, n++, x, surfZ(x, y, L) + 0.02, y, 0, 1, 1, 1, TRAPCOL[W.blk[t]] || '#ffffff');
+  }
+  T.count = n; T.instanceMatrix.needsUpdate = true; if (T.instanceColor) T.instanceColor.needsUpdate = true;
+}
 function drawClouds() {
   let C = OBJ.clouds;
   if (!C) {
@@ -508,7 +519,7 @@ function draw(dt) {
   if (key !== CUT_KEY) { CUT_KEY = key; rebuildCells(); }
   if (STATE.mode === 'play' && !W.demo) qualTick(dt);
   applyTime(darkness()); archFrame();
-  drawZombies(vl, dt); drawPlayers(vl, dt); drawFx(); drawGhost(me); drawPlan(); drawNadeMark(); drawTells(); drawClouds();
+  drawZombies(vl, dt); drawPlayers(vl, dt); drawFx(); drawGhost(me); drawPlan(); drawNadeMark(); drawTells(); drawClouds(); drawTrapAreas(vl);
   OBJ.zone.visible = (!W.demo && W.phase === 'day' || !!(me && me.build)) && !modeDef().anyBuild;
   RENDER.render(SCN, CAMO);
   drawOverlay();
@@ -593,7 +604,13 @@ function fxEvent(e) {
   const guest = NETROLE === 'guest';
   switch (e.k) {
     case 'shot': if (guest && e.o === ME) break; shotFx(e.o, e.w, e.e); break;
-    case 'tshot': if (e.i != null) (RND.taim = RND.taim || {})[e.i] = Math.atan2(e.ty - e.y, e.tx - e.x); RND.tracers.push({ x: e.x, y: e.y, z: e.z, x2: e.tx, y2: e.ty, z2: e.tz, t: 0, life: 0.08, w: 0.03, col: [1, 0.85, 0.45] }); RND.flashes.push({ x: e.x, y: e.y, z: e.z, t: 0, life: 0.05 }); if (thr('tur', 0.09)) sfx('rifle', e.x, e.y); break;
+    case 'tshot': { if (e.i != null) (RND.taim = RND.taim || {})[e.i] = Math.atan2(e.ty - e.y, e.tx - e.x);
+      const a = Math.atan2(e.ty - e.y, e.tx - e.x), d = Math.hypot(e.tx - e.x, e.ty - e.y);
+      if (e.w === 'shot') { for (let k = 0; k < 6; k++) { const q = a + (k / 5 - 0.5) * 0.8, L = Math.min(5, d + 0.6); RND.tracers.push({ x: e.x, y: e.y, z: e.z, x2: e.x + Math.cos(q) * L, y2: e.y + Math.sin(q) * L, z2: e.tz, t: 0, life: 0.07, w: 0.03, col: [1, 0.75, 0.4] }); } sfx('shotgun', e.x, e.y); }
+      else if (e.w === 'frost') { RND.tracers.push({ x: e.x, y: e.y, z: e.z, x2: e.tx, y2: e.ty, z2: e.tz, t: 0, life: 0.25, w: 0.07, col: [0.45, 0.8, 1] }); sfx('acid', e.x, e.y); }
+      else if (e.w === 'snipe') { RND.tracers.push({ x: e.x, y: e.y, z: e.z, x2: e.tx, y2: e.ty, z2: e.tz, t: 0, life: 0.2, w: 0.06, col: [1, 0.45, 0.3] }); sfx('sniper', e.x, e.y); }
+      else { RND.tracers.push({ x: e.x, y: e.y, z: e.z, x2: e.tx, y2: e.ty, z2: e.tz, t: 0, life: 0.08, w: 0.03, col: [1, 0.85, 0.45] }); if (thr('tur', 0.09)) sfx('rifle', e.x, e.y); }
+      if (e.w !== 'frost') RND.flashes.push({ x: e.x, y: e.y, z: e.z, t: 0, life: 0.05 }); break; }
     case 'hit': if (e.a) { for (let k = 0; k < 6; k++) addP({ x: e.x, y: e.y, z: e.z, vx: frnd(-3, 3), vy: frnd(-3, 3), vz: frnd(0.5, 3), col: k % 2 ? '#ffe9a0' : '#ffffff', s: 0.035, life: 0.25, floor: e.z - 1 }); if (thr('clank', 0.06)) sfx('clank', e.x, e.y); break; }
       bloodFx(e.x, e.y, e.z, e.h ? 9 : 5, e.g); if (Math.random() < 0.45) addDecal(e.x + frnd(-0.3, 0.3), e.y + frnd(-0.3, 0.3), e.z - 0.6, frnd(0.08, 0.16), e.g ? '#3c5a14' : null); if (thr('flesh', 0.05)) sfx(e.h ? 'head' : 'flesh', e.x, e.y); break;
     case 'zdie':

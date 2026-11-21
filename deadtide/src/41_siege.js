@@ -77,25 +77,8 @@ Object.assign(MODES.siege, {
       if (q.left !== alive[k]) { q.left = alive[k]; objChanged(); }
       if (!q.c && alive[k] === 0) { q.c = 1; for (const r in SIEGE.clearRw) W.res[r] += SIEGE.clearRw[r]; objChanged(); modeSay((q.out ? '野外尸群清掉了' : '清理完：' + q.name + '，现在是你们的据点了') + '（+' + SIEGE.clearRw.parts + ' 零件 +' + SIEGE.clearRw.steel + ' 钢材）', '#8fe39a', true); }
     });
-    // turrets
-    if (W.turV !== W.ver) { W.turV = W.ver; W.tur = []; for (let i = 0; i < NC; i++) if (W.blk[i] === 52) W.tur.push(i); }
-    W.tcd = W.tcd || {};
-    for (const i of W.tur) {
-      if (W.blk[i] !== 52) continue;
-      if (O.tam[i] == null) O.tam[i] = SIEGE.tAmmo;
-      if ((W.tcd[i] = (W.tcd[i] || 0) - dt) > 0 || O.tam[i] <= 0) continue;
-      const x = cx_(i) + 0.5, y = cy_(i) + 0.5, z0 = cl_(i) * FH + 0.95;
-      let best = null, bd = SIEGE.tRange;
-      for (const z of W.zs) { if (z.hp <= 0 || z.hidden || Math.abs(z.L - cl_(i)) > 1) continue; const d = Math.hypot(z.x - x, z.y - y); if (d < bd && los(x, y, z0, z.x, z.y, z.z + z.h * 0.6)) { bd = d; best = z; } }
-      if (!best) { W.tcd[i] = 0.25; continue; }
-      W.tcd[i] = SIEGE.tRate; O.tam[i]--; if (O.tam[i] === 0 || O.tam[i] % 40 === 0) objChanged();
-      KSRC = 'turret'; hurtZombie(best, SIEGE.tDmg * (1 + 0.12 * W.upg), null, (best.x - x) / (bd || 1) * 0.6, (best.y - y) / (bd || 1) * 0.6); KSRC = '';
-      emit({ k: 'tshot', i, x: r2(x), y: r2(y), z: r2(z0), tx: r2(best.x), ty: r2(best.y), tz: r2(best.z + best.h * 0.6) });
-      noiseAt(x, y, 7, z0 - 0.95);
-    }
+    // (round 28) turrets moved to turretTick (every mode); refilling is turretUse / turretDone
   },
-  use(p, i, b) { if (b !== 52) return null; const a = W.obj.tam[i] == null ? SIEGE.tAmmo : W.obj.tam[i]; return a < SIEGE.tAmmo * 0.5 ? { k: 'obj', i, t: 1, name: '给机枪塔装弹（' + a + '/' + SIEGE.tAmmo + '，3 零件）' } : null; },
-  done(p, tgt) { if (W.blk[tgt.i] !== 52) return; if (!affordable(W.res, SIEGE.tRefill)) return emit({ k: 'deny', p: p.i, why: '零件不够（要 3 个）' }); for (const r in SIEGE.tRefill) W.res[r] -= SIEGE.tRefill[r]; W.obj.tam[tgt.i] = SIEGE.tAmmo; objChanged(); emit({ k: 'sfx', n: 'reload', x: p.x, y: p.y }); },
   night(n) { modeSay('第 ' + n + ' 夜：尸潮冲你们来了，撑到天亮（' + fmtT(BAL.nightMin(n)) + '）', '#ff9a6a', true); },
   // the sun comes up on time: whatever is still far from you wanders off, the rest stay (and stop counting for the next dawn)
   dawn() { for (const z of W.zs) { if (z.hp <= 0 || z.mz) continue; if (!nearPl(z.x, z.y, 14)) z.hp = 0; else z.mz = 1; } W.zs = W.zs.filter(z => z.hp > 0); if (W.night >= SIEGE.nights) { endGame('win', '撑过了 ' + SIEGE.nights + ' 夜，救援车队开进了城'); return true; } return false; },
@@ -132,4 +115,61 @@ function siegeEdges() {
   const ap = alivePl(); if (!ap.length) return edgeSpawns();
   const cx = Math.round(ap.reduce((s, p) => s + p.x, 0) / ap.length), cy = Math.round(ap.reduce((s, p) => s + p.y, 0) / ap.length);
   const e = edgeSpawns(cx, cy, SIEGE.spawnR, true); return [0, 1, 2, 3].some(s => e[s].length) ? e : edgeSpawns();
+}
+
+/* ---------- (round 28) turrets and trap patches, in every mode ---------- */
+// turret cells, trap cells, and which trap acts on each floor cell (W.trapAt: trap cell index or -1), redone when the world changes
+function scanCells() {
+  if (W.scanV === W.ver && W.trapAt) return; W.scanV = W.ver; W.tur = []; W.traps = [];
+  for (let i = 0; i < NC; i++) { const b = W.blk[i]; if (!b) continue; if (TUR[b]) W.tur.push(i); else if (B[b].trap || B[b].wire || B[b].mine) W.traps.push(i); }
+  const A = W.trapAt && W.trapAt.length === NC ? W.trapAt : (W.trapAt = new Int32Array(NC)); A.fill(-1); W.trapCells = [];
+  for (const t of W.traps) {
+    const x0 = cx_(t), y0 = cy_(t), L = cl_(t);
+    const open = (x, y) => { if (!inMap(x, y)) return false; const j = ci(x, y, L), b = W.blk[j]; if (j !== t && b && (B[b].Z || B[b].P || B[b].B || TUR[b] || B[b].trap || B[b].wire || B[b].mine || B[b].stairs)) return false; return support(x, y, L); };
+    for (let dy = -TRAP_R; dy <= TRAP_R; dy++) for (let dx = -TRAP_R; dx <= TRAP_R; dx++) {
+      const x = x0 + dx, y = y0 + dy; if (!inMap(x, y)) continue; const j = ci(x, y, L);
+      if (j !== t && (A[j] >= 0 || !open(x, y) || (dx && dy && !open(x0 + dx, y0) && !open(x0, y0 + dy)))) continue; // only open floor next to it, never through a wall corner: a tight spot just gets a smaller patch
+      A[j] = t; W.trapCells.push(j);
+    }
+  }
+}
+function turretTick(dt) {
+  scanCells(); const O = W.obj || (W.obj = {}); O.tam = O.tam || {}; W.tcd = W.tcd || {};
+  for (const i of W.tur) {
+    const b = W.blk[i], T = TUR[b]; if (!T) continue;
+    O.tamB = O.tamB || {}; if (O.tam[i] == null || O.tamB[i] !== b) { O.tamB[i] = b; O.tam[i] = T.ammo; W.tcd[i] = 0; } // a new turret on this cell starts full
+    if ((W.tcd[i] = (W.tcd[i] || 0) - dt) > 0 || O.tam[i] <= 0) continue;
+    const x = cx_(i) + 0.5, y = cy_(i) + 0.5, L = cl_(i), z0 = L * FH + 0.95;
+    let best = null, bs = -1e9;
+    for (const z of W.zs) {
+      if (z.hp <= 0 || z.hidden || z.sleep || Math.abs(z.L - L) > 1) continue; const d = Math.hypot(z.x - x, z.y - y); if (d > T.range) continue;
+      let sc = -d;
+      if (T.k === 'snipe') sc = z.hp + (ZT[z.k].boss ? 1e4 : 0) - d;                                   // the toughest thing in range
+      if (T.k === 'frost') { sc = -d * 0.1 - (cloudAt(z.x, z.y, z.z) & 1 ? 4 : 0); for (const q of W.zs) if (q !== z && q.hp > 0 && Math.abs(q.x - z.x) < 1.8 && Math.abs(q.y - z.y) < 1.8) sc++; } // the thickest knot not already slowed
+      if (sc <= bs || !los(x, y, z0, z.x, z.y, z.z + z.h * 0.6)) continue; bs = sc; best = z;
+    }
+    if (!best) { W.tcd[i] = 0.25; continue; }
+    W.tcd[i] = T.rate; O.tam[i]--; if (O.tam[i] === 0 || O.tam[i] % (T.ammo >= 100 ? 40 : 10) === 0) objChanged();
+    const bd = Math.hypot(best.x - x, best.y - y) || 1, ux = (best.x - x) / bd, uy = (best.y - y) / bd, mul = 1 + 0.12 * W.upg, yaw = Math.atan2(uy, ux);
+    KSRC = 'turret';
+    if (T.k === 'shot') { // a cone: everything in it close by gets the full load and is pushed back
+      let n = 0;
+      for (const z of W.zs) {
+        if (n >= 8 || z.hp <= 0 || z.hidden || Math.abs(z.L - L) > 1) continue; const dx = z.x - x, dy = z.y - y, d = Math.hypot(dx, dy) || 0.1;
+        if (d > T.range + z.r || Math.abs(angDiff(yaw, Math.atan2(dy, dx))) > T.cone + z.r / Math.max(d, 0.5) || !los(x, y, z0, z.x, z.y, z.z + z.h * 0.5)) continue;
+        const f = d < 2 ? 1 : Math.max(0.4, 1 - (d - 2) / (T.range - 2) * 0.6), heavy = ZT[z.k].boss ? 6 : z.k === 'brute' ? 3 : z.k === 'armored' ? 2 : 1;
+        hurtZombie(z, T.dmg * T.pellets * f * mul, null, dx / d * T.kb * f / heavy, dy / d * T.kb * f / heavy); n++;
+      }
+    } else if (T.k === 'frost') { (W.cz = W.cz || []).push({ k: 1, x: r2(best.x), y: r2(best.y), z: r2(Math.max(0, best.z - 0.2)), r: 1.8, t: 2.5 }); hurtZombie(best, T.dmg * mul, null, 0, 0); }
+    else { const kb = T.k === 'snipe' ? 2.5 : 0.6; hurtZombie(best, T.dmg * mul, null, ux * kb, uy * kb); }
+    KSRC = '';
+    emit({ k: 'tshot', i, w: T.k, x: r2(x), y: r2(y), z: r2(z0), tx: r2(best.x), ty: r2(best.y), tz: r2(best.z + best.h * 0.6) });
+    noiseAt(x, y, T.k === 'frost' ? 3 : T.k === 'snipe' ? 12 : 7, z0 - 0.95);
+  }
+}
+function turretUse(p, i, b) { const T = TUR[b]; if (!T) return null; const a = W.obj && W.obj.tam && W.obj.tam[i] != null ? W.obj.tam[i] : T.ammo; return a < T.ammo * 0.5 ? { k: 'tur', i, t: 1, name: '给' + B[b].name + '装弹（' + a + '/' + T.ammo + '，' + T.refill.parts + ' 零件）' } : null; }
+function turretDone(p, tgt) {
+  const b = W.blk[tgt.i], T = TUR[b]; if (!T) return;
+  if (!affordable(W.res, T.refill)) return emit({ k: 'deny', p: p.i, why: '零件不够（要 ' + T.refill.parts + ' 个）' });
+  for (const r in T.refill) W.res[r] -= T.refill[r]; (W.obj.tam = W.obj.tam || {})[tgt.i] = T.ammo; objChanged(); emit({ k: 'sfx', n: 'reload', x: p.x, y: p.y });
 }
