@@ -17,10 +17,15 @@ const AIKit = (() => {
   const isArtifact = () => !!window.__ARTIFACT__;
   function cfg() { return Object.assign({ key: '', on: true, tier: 'bal' }, get(CFG, {})); }
   function setCfg(p) { put(CFG, Object.assign(cfg(), p)); }
-  async function loadSample() {
-    if (sampleTried) return sample; sampleTried = true;
-    try { if (window.claude && window.claude.use) sample = await window.claude.use('sample'); } catch (e) { sample = null; }
-    return sample;
+  /* window.claude shows up after the page's first script run, so wait for it (up to ~12 s) instead of looking once */
+  let samplePromise = null;
+  function loadSample() {
+    if (sampleTried) return Promise.resolve(sample);
+    return samplePromise || (samplePromise = (async () => {
+      for (let i = 0; i < 60 && !(window.claude && window.claude.use); i++) await new Promise(r => setTimeout(r, 200));
+      try { if (window.claude && window.claude.use) sample = await window.claude.use('sample'); } catch (e) { sample = null; }
+      sampleTried = true; return sample;
+    })());
   }
   if (isArtifact()) setTimeout(loadSample, 0);
   function available() { const c = cfg(); if (!c.on) return false; return isArtifact() ? !!sample : !!c.key; }
