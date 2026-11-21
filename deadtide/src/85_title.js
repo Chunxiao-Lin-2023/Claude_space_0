@@ -21,18 +21,19 @@ const TK = TitleKit.create({
   online: { label: '双人联机', sub: '创建房间 · 用房间码加入', hostText: '你当房主，难度、模式和地图由你决定。把 4 位房间码或邀请链接发给队友。' },
   setup: { fields: () => tkFields(), start: '开始守夜', wide: true },
   saves: {
-    label: '存档', slots: 1, export: true, remove: true, import: true,
-    note: '存档会在每个天亮、暂停菜单里点「存档」、以及关掉页面时自动写入（单人或房主）。只有一个存档位：新开一局会覆盖它。',
-    list: () => { const s = loadSave(); return [s ? { slot: 1, title: saveLabel(s), detail: (s.p && s.p[0] ? s.p[0].name : ''), time: s.at } : { slot: 1, empty: true, title: '还没有存档', detail: '玩到第一个天亮就会自动存档' }]; },
-    load: () => continueGame(),
-    remove: () => clearSave(),
-    export: () => { try { const raw = localStorage.getItem(SKEY + 'save'); return raw ? 'DTS1' + btoa(unescape(encodeURIComponent(raw))) : ''; } catch (e) { return ''; } },
+    label: '存档', slots: 3, export: true, remove: true, import: true,
+    note: '一共 3 个存档位。新开一局会用一个空位，不会覆盖别的存档；3 个都满了才会提示覆盖最早的那个。每个天亮、暂停菜单里点「存档」、以及关掉页面时自动写入（单人或房主）。',
+    list: () => { const l = []; for (let n = 1; n <= NSLOT; n++) { const s = loadSlot(n); l.push(s ? { slot: n, title: saveLabel(s), detail: (s.p && s.p[0] ? s.p[0].name : '') + (s.p && s.p.length > 1 ? ' · 双人' : ''), time: s.at } : { slot: n, empty: true, title: '空位', detail: '新开一局会存到这里' }); } return l; },
+    load: n => continueGame(+n),
+    remove: n => clearSave(+n),
+    export: n => { try { const raw = localStorage.getItem(SKEY + slotKey(+n)); return raw ? 'DTS1' + btoa(unescape(encodeURIComponent(raw))) : ''; } catch (e) { return ''; } },
     import: code => {
       try {
         code = code.replace(/\s+/g, ''); if (!code.startsWith('DTS1')) return '存档码应以 DTS1 开头';
         const raw = decodeURIComponent(escape(atob(code.slice(4)))), S = JSON.parse(raw);
         if (!S || S.v !== SAVE_V || S.mw !== MW || !S.g) return '这个存档码来自旧版本，读不了';
-        localStorage.setItem(SKEY + 'save', raw); return { ok: true, msg: '已导入：' + saveLabel(S) };
+        const n = freeSlot(); if (!n) return '3 个存档位都满了，先删掉一个再导入';
+        localStorage.setItem(SKEY + slotKey(n), raw); return { ok: true, msg: '已导入到存档 ' + n + '：' + saveLabel(S) };
       } catch (e) { return '存档码无法识别'; }
     }
   },
@@ -51,8 +52,8 @@ const TK = TitleKit.create({
   recordsSub: () => { const b = lsGet('best', 0); return b ? '最佳：撑过 ' + b + ' 夜' : '还没有记录'; },
   foot: '',
   start: ({ setup }) => {
-    if (loadSave() && !tkArm) { tkArm = 1; TK.toast('已经有一个存档了：再点一次「开始守夜」会覆盖它（想接着玩就回去点「继续上次」）', 4200); setTimeout(() => { tkArm = 0; }, 4200); return; }
-    tkArm = 0; Object.assign(SET, { diff: setup.diff, mode: setup.mode, map: setup.map }); saveSet();
+    const n = newRunSlot(t => TK.toast(t, 4500)); if (!n) return; SLOT = n; // (round 27) an empty slot; never overwrites without asking
+    Object.assign(SET, { diff: setup.diff, mode: setup.mode, map: setup.map }); saveSet();
     audioInit(); netLeave(); NETROLE = 'solo'; startGame((Math.random() * 1e9) | 0, [SET.name || '幸存者'], SET.diff, 0, SET.mode, SET.map);
   },
   host: ({ setup }) => { Object.assign(SET, { diff: setup.diff, mode: setup.mode, map: setup.map }); saveSet(); audioInit(); netHost(); },

@@ -1,5 +1,6 @@
 /* ================= save / continue =================
-   One save slot in localStorage. Written automatically every dawn, from the pause menu, and when the page is hidden or
+   (round 27) Three save slots in localStorage (deadtide.save, deadtide.save2, deadtide.save3); a new game takes an empty slot, so it never
+   silently overwrites an old run. Written automatically every dawn, from the pause menu, and when the page is hidden or
    closed (solo / host only). The map itself is regenerated from the seed; what changed (blocks, floors, hp, facing) is
    stored as run-length-encoded byte arrays, plus resources, players, the clock, tasks and any zombies on the field. */
 const SAVE_V = 2; // bump when the map size or layout changes: older saves are ignored
@@ -32,21 +33,35 @@ function saveGame(quiet) {
     q: W.spawnQ.slice(0, 500).map(s => [+s.t.toFixed(1), s.k, s.side, s.at == null ? -1 : s.at, s.f ? +s.f.toFixed(2) : 0, s.g || 0]), gid: W.gid || 0,
     g: [rleEnc(W.blk), rleEnc(W.slab), rleEnc(W.bdir), rleEnc(hpPack(W.bhp)), rleEnc(hpPack(W.shp))].map(b64e),
   };
-  try { localStorage.setItem(SKEY + 'save', JSON.stringify(S)); }
+  if (!SLOT) SLOT = freeSlot() || oldestSlot();
+  try { localStorage.setItem(SKEY + slotKey(SLOT), JSON.stringify(S)); }
   catch (e) { if (!quiet) toast('存档失败：浏览器存储空间不够', '#ff8a7a'); return false; }
-  if (!quiet) toast('已存档 · ' + saveLabel(S), '#7dff8a');
+  if (!quiet) toast('已存档（存档 ' + SLOT + '）· ' + saveLabel(S), '#7dff8a');
   return true;
 }
-function loadSave() { const s = lsGet('save', null); return s && s.v === SAVE_V && s.g && s.mw === MW ? s : null; }
-function clearSave() { try { localStorage.removeItem(SKEY + 'save'); } catch (e) { } }
+const NSLOT = 3; let SLOT = 0;                                   // the slot this run saves into (0 = not chosen yet)
+const slotKey = n => n > 1 ? 'save' + n : 'save';
+function loadSlot(n) { const s = lsGet(slotKey(n), null); return s && s.v === SAVE_V && s.g && s.mw === MW ? s : null; }
+function latestSlot() { let b = 0, t = -1; for (let n = 1; n <= NSLOT; n++) { const s = loadSlot(n); if (s && (s.at || 0) > t) { t = s.at || 0; b = n; } } return b; }
+function freeSlot() { for (let n = 1; n <= NSLOT; n++) if (!loadSlot(n)) return n; return 0; }
+function oldestSlot() { let b = 1, t = Infinity; for (let n = 1; n <= NSLOT; n++) { const s = loadSlot(n); const a = s ? s.at || 0 : -1; if (a < t) { t = a; b = n; } } return b; }
+function loadSave(n) { n = n || latestSlot(); return n ? loadSlot(n) : null; }   // no slot given: the most recent run
+function clearSave(n) { n = n || SLOT; if (!n) return; try { localStorage.removeItem(SKEY + slotKey(n)); } catch (e) { } } // no slot yet: nothing of this run was saved
+// pick the slot for a new run: an empty one; all full → the oldest, but only after a second press (returns 0 on the first)
+let slotArm = 0;
+function newRunSlot(warn) {
+  const f = freeSlot(); if (f) { slotArm = 0; return f; }
+  const o = oldestSlot(); if (slotArm && Date.now() - slotArm < 4500) { slotArm = 0; return o; }
+  slotArm = Date.now(); warn('3 个存档位都满了：再点一次会覆盖最早的存档（存档 ' + o + '：' + saveLabel(loadSlot(o)) + '）。不想覆盖就先去「存档」里删掉一个'); return 0;
+}
 function saveLabel(s) { return (MODES[s.mode] && s.mode !== 'classic' ? MODES[s.mode].name + ' · ' : '') + (MAPS[s.map] ? MAPS[s.map].name + ' · ' : '') + (s.phase === 'night' ? '第 ' + s.night + ' 夜' : '第 ' + (s.night + 1) + ' 天') + ' · ' + ({ easy: '简单', normal: '普通', hard: '困难' }[s.diff] || ''); }
-function continueGame() {
-  const S = loadSave(); if (!S) return;
-  audioInit(); netLeave(); NETROLE = 'solo';
+function continueGame(n) {
+  n = n || latestSlot(); const S = n && loadSlot(n); if (!S) return;
+  audioInit(); netLeave(); NETROLE = 'solo'; SLOT = n;
   startGame(S.seed, [S.p[0] ? S.p[0].name : SET.name || '幸存者'], S.diff, 0, S.mode || 'classic', S.map || 'town');
   try { applySave(S); } catch (e) { console.error(e); toast('存档读取失败，已开始新的一局', '#ff8a7a'); return; }
   TIPS.forEach(clearTimeout); TIPS = [];
-  banner('继续', saveLabel(S), '#ffe7b0');
+  banner('继续 · 存档 ' + n, saveLabel(S), '#ffe7b0');
 }
 function applySave(S) {
   const g = S.g.map(b64d);

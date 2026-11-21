@@ -8,7 +8,7 @@ const { chromium } = require('playwright'); const OUT = process.env.OUT || '/tmp
   const mk = async (name) => { const c = await b.newContext({ viewport: { width: 900, height: 560 } }); await c.route(/unpkg\.com|jsdelivr\.net/, r => r.fulfill({ status: 200, contentType: 'application/javascript', body: PJ })); await c.route(/fonts\.(googleapis|gstatic)/, r => r.abort()); const p = await c.newPage(); p.setDefaultTimeout(150000); p.errs = []; p.on('pageerror', e => p.errs.push(e.message)); await p.goto(U); await p.waitForFunction(() => window.__ready, null, { timeout: 120000 }); await p.evaluate(([i, v]) => { const e = document.querySelector(i); e.value = v; e.dispatchEvent(new Event('input')); }, ['#nameIn', name]); return p; };
   const H = await mk('阿橙'), G = await mk('小青');
   const simWait = (p, s) => p.evaluate(s => new Promise(r => { const t0 = W.t; const f = () => W.t - t0 >= s ? r() : setTimeout(f, 30); f(); }), s);
-  await H.evaluate(() => document.querySelector('#hostBtn').click()); await H.waitForFunction(() => NET.peer && NET.peer.open, null, { timeout: 30000 });
+  await H.evaluate(() => document.querySelector('#hostBtn').click()); await H.waitForFunction(() => NET.peer && NET.peer.open, null, { timeout: 90000, polling: 250 });
   const code = await H.evaluate(() => NET.code);
   await G.evaluate(v => { const e = document.querySelector('#codeIn'); e.value = v; e.dispatchEvent(new Event('input')); }, code); await G.evaluate(() => document.querySelector('#joinBtn').click());
   await H.waitForFunction(() => NET.guestName === '小青', null, { timeout: 30000 });

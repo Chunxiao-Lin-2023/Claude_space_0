@@ -434,8 +434,8 @@ function initUI() {
   markDiff();
   $('soloBtn').onclick = () => {
     const b = $('soloBtn');
-    if (loadSave() && !b.dataset.sure) { b.dataset.sure = 1; b.textContent = '再点一次：新开一局会覆盖存档'; setTimeout(() => { delete b.dataset.sure; renderBest(); }, 3000); return; }
-    delete b.dataset.sure; audioInit(); netLeave(); NETROLE = 'solo'; startGame((Math.random() * 1e9) | 0, [SET.name || '幸存者'], SET.diff, 0, SET.mode, SET.map);
+    const n = newRunSlot(t => titleStatus(t)); if (!n) return; SLOT = n; // (round 27) an empty slot; never overwrites without asking
+    audioInit(); netLeave(); NETROLE = 'solo'; startGame((Math.random() * 1e9) | 0, [SET.name || '幸存者'], SET.diff, 0, SET.mode, SET.map);
   };
   $('hostBtn').onclick = () => { audioInit(); netHost(); };
   $('joinBtn').onclick = () => { audioInit(); netJoin($('codeIn').value); };
@@ -462,7 +462,7 @@ function initUI() {
   $('pQual').onclick = () => { const o = ['auto', 0, 1, 2], i = o.indexOf(SET.q == null ? 'auto' : SET.q); SET.q = o[(i + 1) % 4]; if (SET.q === 'auto') SET.qa = 0; saveSet(); applyQual(); $('pQual').textContent = qualLabel(); sfx('click'); };
   $('readyBtn').onclick = () => inGame() && toggleReady();
   $('tasks').addEventListener('pointerdown', e => { e.stopPropagation(); UI.tkPin = !UI.tkPin; UI.tkOpenT = 0; sfx('click'); });
-  $('oAgain').onclick = () => { $('over').classList.add('hidden'); if (NETROLE === 'host') { if (!NET.gctl || !NET.gctl.open) { NETROLE = 'solo'; startGame((Math.random() * 1e9) | 0, [SET.name || '幸存者'], SET.diff, 0, W ? W.mode : SET.mode, W ? W.map : SET.map); } else hostStart(); } else startGame((Math.random() * 1e9) | 0, [SET.name || '幸存者'], SET.diff, 0, W ? W.mode : SET.mode, W ? W.map : SET.map); };
+  $('oAgain').onclick = () => { $('over').classList.add('hidden'); SLOT = freeSlot() || SLOT; /* (round 27) the run that just ended keeps its slot unless there's a free one */ if (NETROLE === 'host') { if (!NET.gctl || !NET.gctl.open) { NETROLE = 'solo'; startGame((Math.random() * 1e9) | 0, [SET.name || '幸存者'], SET.diff, 0, W ? W.mode : SET.mode, W ? W.map : SET.map); } else hostStart(); } else startGame((Math.random() * 1e9) | 0, [SET.name || '幸存者'], SET.diff, 0, W ? W.mode : SET.mode, W ? W.map : SET.map); };
   $('oLobby').onclick = () => { netSendCtl({ t: 'toLobby' }); backToLobby(); };
   $('oEndless').onclick = () => { $('over').classList.add('hidden'); W.endless = true; W.over = null; W.phase = 'night'; dawn(); };
   $('oTitle').onclick = () => { netLeave(); W = null; showScreen('title'); };

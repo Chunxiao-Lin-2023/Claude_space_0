@@ -380,28 +380,10 @@ const _gv = new THREE.Vector3(), _gl = new THREE.Vector3();
 // world position of a survivor's muzzle (from last frame's pose), so shots leave the barrel you see
 function muzzleW(i, wi) { const m = OBJ.pl && OBJ.pl[i], p = W.p[i]; if (!m || !m.g.visible || !m.guns[wi] || !m.guns[wi].visible || (p && p._rdy != null && p._rdy < 0.7)) return null; _gv.set(MUZ[wi][0], MUZ[wi][1], MUZ[wi][2]).applyMatrix4(m.guns[wi].matrixWorld); return [_gv.x, _gv.z, _gv.y]; }
 const GRIP = [[0.2, -0.04, 0.05, 0.19, -0.06, -0.02], [0.2, -0.04, 0.06, 0.42, -0.02, 0.0], [0.2, -0.04, 0.06, 0.4, -0.02, 0.0], [0.2, -0.04, 0.06, 0.46, -0.0, 0.0], [0.2, -0.04, 0.06, 0.34, -0.02, 0.0], [0.2, -0.04, 0.06, 0.3, -0.08, 0.0], [0.2, -0.04, 0.06, 0.36, -0.06, 0.0]];
-// bicycle / motorbike under a rider (尸城求生 vehicles); the forward axis is local +x
-function mkVehicles() {
-  const g = new THREE.Group(), wheel = (r, w, x) => new THREE.Mesh(new THREE.CylinderGeometry(r, r, w, 12).rotateX(Math.PI / 2).translate(x, r, 0), lam('#1c1c1c'));
-  const bike = new THREE.Group(); bike.add(wheel(0.22, 0.05, 0.38), wheel(0.22, 0.05, -0.38));
-  const fm = lam('#c0392b'); bike.add(new THREE.Mesh(boxG(0.7, 0.05, 0.05, 0, 0.42, 0).rotateZ(0.08), fm), new THREE.Mesh(boxG(0.05, 0.36, 0.05, -0.12, 0.3, 0).rotateZ(0.35), fm), new THREE.Mesh(boxG(0.18, 0.04, 0.1, -0.16, 0.52, 0), lam('#222')), new THREE.Mesh(boxG(0.05, 0.05, 0.42, 0.36, 0.62, 0), lam('#888')));
-  const moto = new THREE.Group(); moto.add(wheel(0.26, 0.12, 0.5), wheel(0.26, 0.12, -0.5));
-  const bm = lam('#2c3e50'); moto.add(new THREE.Mesh(boxG(0.8, 0.22, 0.26, 0, 0.42, 0), bm), new THREE.Mesh(boxG(0.36, 0.08, 0.28, -0.14, 0.56, 0), lam('#151515')), new THREE.Mesh(boxG(0.22, 0.2, 0.24, 0.32, 0.6, 0), lam('#c0392b')), new THREE.Mesh(boxG(0.05, 0.05, 0.5, 0.42, 0.76, 0), lam('#999')), new THREE.Mesh(boxG(0.3, 0.06, 0.08, -0.3, 0.34, 0.16), lam('#777')),
-    new THREE.Mesh(boxG(0.3, 0.07, 0.26, -0.46, 0.57, 0), lam('#1e1e1e')), new THREE.Mesh(boxG(0.24, 0.16, 0.22, -0.46, 0.45, 0), bm), new THREE.Mesh(boxG(0.04, 0.04, 0.3, -0.6, 0.64, 0), lam('#999'))); // (round 26) pillion seat over the back wheel
-  // (round 22) cargo trike: one wheel in front, a box on two wheels behind; armoured car: an open-topped steel tub with a push bar
-  const cargo = new THREE.Group(), cm = lam('#3f7a5a'); cargo.add(wheel(0.2, 0.08, 0.5));
-  for (const z of [-0.3, 0.3]) { const w = wheel(0.2, 0.08, -0.42); w.position.z = z; cargo.add(w); }
-  cargo.add(new THREE.Mesh(boxG(0.62, 0.05, 0.06, 0.22, 0.4, 0), cm), new THREE.Mesh(boxG(0.2, 0.06, 0.24, 0.0, 0.5, 0), lam('#222')), new THREE.Mesh(boxG(0.05, 0.3, 0.05, 0.46, 0.55, 0).rotateZ(-0.2), cm),
-    new THREE.Mesh(boxG(0.04, 0.04, 0.4, 0.5, 0.72, 0), lam('#222')), new THREE.Mesh(boxG(0.56, 0.06, 0.7, -0.42, 0.36, 0), cm), new THREE.Mesh(boxG(0.56, 0.24, 0.04, -0.42, 0.5, 0.34), cm), new THREE.Mesh(boxG(0.56, 0.24, 0.04, -0.42, 0.5, -0.34), cm),
-    new THREE.Mesh(boxG(0.04, 0.24, 0.7, -0.7, 0.5, 0), cm), new THREE.Mesh(boxG(0.3, 0.16, 0.28, -0.46, 0.48, 0.1), lam('#8a6a44')), new THREE.Mesh(boxG(0.22, 0.12, 0.22, -0.38, 0.46, -0.16), lam('#6a7a86')));
-  const armor = new THREE.Group(), am = lam('#55603a'), ad = lam('#3a4228');
-  for (const x of [0.48, -0.48]) for (const z of [-0.38, 0.38]) { const w = wheel(0.22, 0.14, x); w.position.z = z; armor.add(w); }
-  armor.add(new THREE.Mesh(boxG(1.34, 0.26, 0.74, 0, 0.36, 0), am), new THREE.Mesh(boxG(0.36, 0.3, 0.72, 0.5, 0.62, 0).rotateZ(0.35), am), new THREE.Mesh(boxG(1.0, 0.34, 0.05, -0.12, 0.66, 0.36), am), new THREE.Mesh(boxG(1.0, 0.34, 0.05, -0.12, 0.66, -0.36), am),
-    new THREE.Mesh(boxG(0.05, 0.34, 0.72, -0.64, 0.66, 0), am), new THREE.Mesh(boxG(0.08, 0.12, 0.84, 0.74, 0.3, 0), ad), new THREE.Mesh(boxG(0.06, 0.3, 0.06, 0.74, 0.4, 0.3), ad), new THREE.Mesh(boxG(0.06, 0.3, 0.06, 0.74, 0.4, -0.3), ad),
-    new THREE.Mesh(boxG(0.04, 0.12, 0.5, 0.42, 0.86, 0), lam('#9fc4d8')));
-  g.add(bike, moto, cargo, armor); g.userData = { bike, moto, cargo, armor, all: [null, bike, moto, cargo, armor] }; return g;
-}
+// (round 27) vehicle models, riding poses and vehicle animation live in 55_vehicles.js
+let DKN = 0;
 function drawPlayers(vl, dt) {
+  DKN = darkness();
   while (OBJ.pl.length < W.p.length) OBJ.pl.push(mkPlayerModel(OBJ.pl.length));
   OBJ.pl.forEach((m, i) => { const p = W.p[i]; m.g.visible = !!p && !p.gone && p.L <= vl; });
   W.p.forEach((p, i) => {
@@ -411,7 +393,9 @@ function drawPlayers(vl, dt) {
     // (round 26) the back-seat rider is drawn glued to the driver as drawn on this screen (their own reported position lags behind over the network)
     const drv = p.pass != null && p.pass >= 0 && !p.down && !p.dead ? W.p[p.pass] : null;
     if (drv && drv.ride && !drv.gone && drv._ly != null) { gx = drv.x - Math.cos(drv._ly) * PILLION; gy = drv.y - Math.sin(drv._ly) * PILLION; zv = (drv.zv != null ? drv.zv : drv.z) + (drv.jz || 0); }
-    m.g.position.set(gx, zv, gy); m.g.rotation.x = p.dead ? -1.45 : 0; // a dead player lies flat until respawn / rescue
+    m.g.position.set(gx, zv, gy);
+    const vr = drv && drv.ride ? drv : p.ride && !p.down && !p.dead ? p : null; // (round 27) whose vehicle this player is on
+    if (p.dead) m.g.rotation.set(-1.45, 0, 0); else if (vr && vr._ly != null && vr._roll) rideBank(m, vr._ly, vr._roll); else m.g.rotation.set(0, 0, 0); // a dead player lies flat until respawn / rescue
     // smoothing state
     if (p._uy == null) { p._uy = p.aim; p._ly = p.aim; p._ph = 0; p._kick = 0; p._spd = 0; p._px = p.x; p._py = p.y; p._st = 0; }
     const sp = dt > 0 ? Math.min(8, Math.hypot(p.x - p._px, p.y - p._py) / dt) : 0, mvx = p.x - p._px, mvy = p.y - p._py; p._px = p.x; p._py = p.y;
@@ -420,12 +404,13 @@ function drawPlayers(vl, dt) {
     p._uy = angLerp(p._uy, p.aim, Math.min(1, dt * 22));
     let back = false;
     if (moving) {
-      const md = Math.atan2(mvy, mvx); back = Math.cos(angDiff(md, p._uy)) < -0.35;
-      p._ly = angLerp(p._ly, back ? md + Math.PI : md, Math.min(1, dt * 12));
-    } else p._ly = angLerp(p._ly, p._uy, Math.min(1, dt * 5));
+      const md = Math.atan2(mvy, mvx); back = !p.ride && Math.cos(angDiff(md, p._uy)) < -0.35;
+      p._ly = angLerp(p._ly, back ? md + Math.PI : md, Math.min(1, dt * (p.ride ? 8 : 12)));
+    } else if (!p.ride) p._ly = angLerp(p._ly, p._uy, Math.min(1, dt * 5));
     if (drv && drv.ride && drv._ly != null) { p._ly = drv._ly; back = false; }                 // sit facing the way the bike goes
     // keep the hips within ~100 degrees of the chest
-    const tw = angDiff(p._uy, p._ly); if (Math.abs(tw) > 1.75) p._ly = p._uy - Math.sign(tw) * 1.75;
+    const tw = angDiff(p._uy, p._ly); if (!vr && Math.abs(tw) > 1.75) p._ly = p._uy - Math.sign(tw) * 1.75; // (round 27) not on a vehicle: the vehicle sets the hips
+    if (p.ride && !p.down && !p.dead) rideState(p, dt); else { p._roll = 0; p._stopK = 0; p._lyP = null; }
     p._ph += dt * p._spd * 2.1 * (back ? -1 : 1);
     p._kick = Math.max(0, p._kick - dt * 9);
     m.lower.rotation.y = -p._ly; m.upper.rotation.y = -p._uy;
@@ -438,21 +423,25 @@ function drawPlayers(vl, dt) {
     p._kn = lerp(p._kn || 0, SK.kneel && !moving && !p.build && !(p.medT > 0) && !(p.jz > 0.05) && !down ? 1 : 0, Math.min(1, dt * 7));
     if (p._kn > 0.01) { const q = p._kn; aL = lerp(aL, 1.45, q); kL = lerp(kL, 1.45, q); aR = lerp(aR, -0.05, q); kR = lerp(kR, 1.62, q); } // right knee down, left foot forward
     const pil = p.pass != null && p.pass >= 0 && !down, ride = (!!p.ride || pil) && !down; m.veh.visible = !!p.ride && !down; if (ride) { m.veh.userData.all.forEach((q, k) => { if (q) q.visible = k === (p.veh || 1); }); m.veh.rotation.y = -p._ly; aL = aR = 1.15; kL = kR = 1.35; }
+    if (m.veh.visible) vehTick(p, m, dt, DKN);
+    const vk = pil ? (W.p[p.pass] && W.p[p.pass].veh) || 2 : p.veh || 1, RP = ride ? VPOSE[vk] || VPOSE[1] : null, rH = RP ? (pil ? RP.pH || RP.H : RP.H) : 0;
     if (m.shield) m.shield.visible = !!p.shield && p.melee === 1 && !down && !p.dead && !p.ride; // (round 23) shown when it's your melee weapon
     const legH = (a, k) => 0.23 * Math.cos(a) + 0.22 * Math.cos(a - k) + 0.03;
     const hipY = down ? 0.2 : Math.max(legH(aL, kL), legH(aR, kR));
-    const seat = ride ? (pil ? (p.pass >= 0 && W.p[p.pass] && W.p[p.pass].veh === 4 ? 0.34 : 0.4) : p.veh === 2 ? 0.42 : p.veh === 4 ? 0.3 : 0.36) : 0; m.hips.position.y = hipY + seat; m.upper.position.y = hipY + seat;
+    const sk = RP && !pil && RP.foot ? p._stopK || 0 : 0, rX = sk * (RP && RP.slide || 0), rZ = sk * 0.09, rY = RP ? rH - sk * (RP.drop || 0) : hipY; // (round 27) hips on the saddle; stopped: slid off it toward the foot that's down
+    m.hips.position.set(rX, rY, rZ); m.upper.position.set(rX * Math.cos(p._ly) - rZ * Math.sin(p._ly), rY, rX * Math.sin(p._ly) + rZ * Math.cos(p._ly));
     m.legs[0].th.rotation.z = aL; m.legs[0].kn.rotation.z = -kL; m.legs[0].ft.rotation.z = kL - aL;
     m.legs[1].th.rotation.z = aR; m.legs[1].kn.rotation.z = -kR; m.legs[1].ft.rotation.z = kR - aR;
-    if (down) { m.legs[1].th.rotation.x = 0.6; } else m.legs[1].th.rotation.x = 0;
+    m.legs[0].th.rotation.x = 0; if (down) { m.legs[1].th.rotation.x = 0.6; } else m.legs[1].th.rotation.x = 0;
+    if (RP) rideLegs(m, RP, pil, rY, pil ? W.p[p.pass] : p, rX, rZ);
     // footsteps: a puff of dust when a foot lands while running
-    const st = Math.sign(Math.sin(ph)); if (amp > 0.55 && st !== p._st && !down) addP({ x: p.x - Math.cos(p._ly) * 0.1, y: p.y - Math.sin(p._ly) * 0.1, z: zv + 0.03, vx: frnd(-0.3, 0.3), vy: frnd(-0.3, 0.3), vz: 0.25, g: -0.2, col: '#8a7e6a', s: 0.07, life: 0.45, smoke: 1 }); p._st = st;
+    const st = Math.sign(Math.sin(ph)); if (amp > 0.55 && st !== p._st && !down && !ride) addP({ x: p.x - Math.cos(p._ly) * 0.1, y: p.y - Math.sin(p._ly) * 0.1, z: zv + 0.03, vx: frnd(-0.3, 0.3), vy: frnd(-0.3, 0.3), vz: 0.25, g: -0.2, col: '#8a7e6a', s: 0.07, life: 0.45, smoke: 1 }); p._st = st;
     // torso: lean into the run, breathe when idle, flinch when hit, slump when down
     const breath = Math.sin(W.t * 2.2 + i) * 0.012;
     const hurt = p.hurtT > 0 ? p.hurtT / 0.3 : 0;
     m.torso.rotation.z = -0.1 * amp + hurt * 0.35 + (down ? -0.45 : 0) + (p.medT > 0 ? -0.2 : 0) + (down || p.build || p.medT > 0 ? 0 : SK.lean * (1 - amp * 0.5) * (p._rdy == null ? 1 : p._rdy));
-    m.torso.rotation.x = Math.sin(ph) * 0.05 * amp;
-    m.torso.position.y = breath + Math.abs(Math.sin(ph)) * 0.012 * amp;
+    m.torso.rotation.x = ride ? 0 : Math.sin(ph) * 0.05 * amp;
+    m.torso.position.y = breath + (ride ? Math.abs(Math.sin(W.t * 13 + i)) * 0.008 * clamp(p._spd / 3, 0, 1) * (vk === 1 || vk === 3 ? 0.4 : 1) : Math.abs(Math.sin(ph)) * 0.012 * amp);
     m.head.rotation.z = (down ? 0.35 : 0) + (p.medT > 0 ? -0.35 : 0) - m.torso.rotation.z * 0.4;
     m.head.rotation.y = moving ? 0 : Math.sin(W.t * 0.5 + i * 2) * 0.25 * (p._kick > 0.05 ? 0 : 1);
     if (m.head.userData.tail) m.head.userData.tail.rotation.z = 0.25 + Math.sin(ph * 2) * 0.25 * amp + (moving ? 0.25 : 0);
@@ -467,7 +456,9 @@ function drawPlayers(vl, dt) {
     // what's in hand + arm IK
     const reload = p.reloadT > 0 && !p.build, med = p.medT > 0, thr = p._throwT > 0, build = !!p.build;
     const bashing = p.melee === 1 && p.shield, kn = p.knT > 0 && !build && !med && !p.down ? clamp(1 - p.knT / (bashing ? 0.3 : 0.28), 0, 1) : -1;
-    m.guns.forEach((gm, k) => gm.visible = !build && !med && !thr && kn < 0 && k === wi); m.knife.visible = kn >= 0 && !bashing; m.hammer.visible = build; m.medkit.visible = med; m.nade.visible = thr;
+    const fired0 = W.t - (p._lastShot || -9) < 1.4, busy = reload || med || thr || build || kn >= 0 || fired0 || !!(p.inp && p.inp.fire);
+    p._grip = lerp(p._grip || 0, RP && !busy ? 1 : 0, Math.min(1, dt * 7)); const grip = RP ? p._grip : 0; // (round 27) riding and not shooting: hands on the bars
+    m.guns.forEach((gm, k) => gm.visible = !build && !med && !thr && kn < 0 && k === wi && grip < 0.5); m.knife.visible = kn >= 0 && !bashing; m.hammer.visible = build; m.medkit.visible = med; m.nade.visible = thr;
     // stance: shouldered up when shooting or standing, low ready (muzzle down, butt still in the shoulder) when on the move
     const S = STANCE[wi], fired = W.t - (p._lastShot || -9) < 1.4, plain = down || build || med || thr;
     p._rdy = lerp(p._rdy == null ? 1 : p._rdy, plain || !moving || fired || (p.inp && p.inp.fire) ? 1 : 0, Math.min(1, dt * 8));
@@ -499,6 +490,23 @@ function drawPlayers(vl, dt) {
       m.aim.position.x += Math.sin(b * Math.PI) * 0.08;
     }
     if (m.shield) { const t = kn >= 0 && bashing ? Math.sin(Math.min(1, kn * 1.6) * Math.PI) : 0; m.shield.position.x = 0.17 + t * 0.3; m.torso.rotation.y += t * -0.25; if (t) { lx = 0.2 + t * 0.25; ly = 0.12; lz = -0.17; } } // shield bash: shove it forward
+    if (RP) {
+      const lean = pil ? RP.pLean : RP.lean;
+      const oz = m.torso.rotation.z; m.torso.rotation.z = lean * (0.45 + 0.55 * grip) + hurt * 0.35; m.aim.rotation.z -= (m.torso.rotation.z - oz) * 0.8; // keep the gun on target while leaning over the bars
+      if (grip > 0.01) {
+        m.upper.rotation.y = -angLerp(p._uy, p._ly, grip); m.torso.rotation.y *= 1 - grip;
+        m.aim.rotation.z = lerp(m.aim.rotation.z, -m.torso.rotation.z * 0.3, grip); m.aim.position.x *= 1 - grip;
+        m.head.rotation.y = lerp(m.head.rotation.y, clamp(-angDiff(p._ly, p._uy), -1.2, 1.2), grip); m.head.rotation.x *= 1 - grip;
+        m.head.rotation.z = lerp(m.head.rotation.z, -m.torso.rotation.z * 0.6 + (pil && vk === 2 ? 0.14 : 0), grip); // the back-seat rider peeks past the driver
+        m.g.updateMatrixWorld(true);
+        const V = !pil && m.veh.userData.all[vk], gr = V && V.userData.S.grip, hd = pil && RP.hold;
+        for (let s = 0; s < 2; s++) {
+          if (gr) gr[s].getWorldPosition(_v1); else if (hd) m.lower.localToWorld(_v1.set(hd[0], hd[1], (s ? 1 : -1) * hd[2])); else continue;
+          m.aim.worldToLocal(_v1);
+          if (s) { rx = lerp(rx, _v1.x, grip); ry = lerp(ry, _v1.y, grip); rz = lerp(rz, _v1.z, grip); } else { lx = lerp(lx, _v1.x, grip); ly = lerp(ly, _v1.y, grip); lz = lerp(lz, _v1.z, grip); }
+        }
+      }
+    }
     ikArm(m.arms[1], rx, ry, rz, 1); ikArm(m.arms[0], lx, ly, lz, -1);
   });
   for (const p of W.p) { if (p._throwT > 0) p._throwT -= dt; if (p._swingT > 0) p._swingT -= dt; }

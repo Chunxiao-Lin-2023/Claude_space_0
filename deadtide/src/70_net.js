@@ -61,6 +61,7 @@ function guestGone() {
 function sendLobby() { netSendCtl({ t: 'lobby', ready: NET.ready, host: SET.name || '房主', code: NET.code, diff: SET.diff, mode: SET.mode || 'classic', map: SET.map || '' }); }
 function hostStart() {
   if (!NET.gctl || !NET.gctl.open) return;
+  const n = newRunSlot(t => (typeof TK !== 'undefined' ? TK.toast(t, 4500) : titleStatus(t))); if (!n) return; SLOT = n; // (round 27) the host saves into an empty slot
   const seed = (Math.random() * 1e9) | 0, names = [SET.name || '房主', NET.guestName || '队友'];
   const mode = MODES[SET.mode] ? SET.mode : 'classic', map = MAPS[SET.map] ? SET.map : MODES[mode].map;
   netSendCtl({ t: 'start', seed, names, diff: SET.diff, mode, map });
