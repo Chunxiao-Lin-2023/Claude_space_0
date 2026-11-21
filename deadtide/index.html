@@ -529,7 +529,7 @@ body.aiming canvas#cv{cursor:none}body.touch #reticle b{left:-34px;top:-38px}
     <div class="hcard">
       <div class="wpn ptr"><b id="wName">手枪</b><span class="am" id="wMag">12</span><span class="rs" id="wRes">/ ∞</span></div>
       <div class="rl ptr"><i id="wRl"></i></div>
-      <div class="items"><div><span id="iNadeL">手雷</span> <span id="iNade">1</span></div><div>医疗包 <span id="iMed">1</span></div><div>击杀 <span id="iKill">0</span></div><div>复活 <span id="iLife">3</span></div><div id="iFuelW" class="hidden">油 <span id="iFuel">60</span></div></div>
+      <div class="items"><div><span id="iNadeL">手雷</span> <span id="iNade">1</span></div><div>医疗包 <span id="iMed">1</span></div><div>击杀 <span id="iKill">0</span></div><div>复活 <span id="iLife">3</span></div><div id="iShlW" class="hidden">炮弹 <span id="iShl">0</span></div><div id="iFuelW" class="hidden">油 <span id="iFuel">60</span></div></div>
     </div>
     <div class="hcard ptr" id="keys"></div>
   </div>
@@ -644,7 +644,7 @@ body.aiming canvas#cv{cursor:none}body.touch #reticle b{left:-34px;top:-38px}
       <details><summary>武器和装备</summary>每把枪有自己的用处（切枪时会提示一句）：<b>手枪</b>子弹无限、准，伤害最低；<b>霰弹枪</b>近身清群；<b>步枪</b>持续火力；<b>狙击枪</b>打精英，穿 5 只；<b>弩</b>几乎没声音、钉住丧尸；<b>喷火器</b>堵门，火会传；<b>榴弹发射器</b>炸一片。<br><b>快捷武器</b>：在「装备」（电脑按 <kbd>I</kbd>，触屏拖武器键选「装备…」）里选 4 把放进快捷栏，电脑 <kbd>1</kbd>–<kbd>4</kbd> 切换、<kbd>Z</kbd> 切回上一把。<br><b>近战</b>：刀或<b>防暴盾</b>（商店 → 武器 里买，二选一，<kbd>X</kbd> / 触屏在「刀 / 盾」键上滑一下切换）。盾推：把前面一片丧尸（最多 8 只）推开约 3 格、晕 1 秒；拿着盾时正面挨打少受一半。<br><b>手雷</b>：电脑按住 <kbd>G</kbd> 会在光标处显示落点圈（爆炸范围），松开扔；触屏点一下自动扔向射程内最大的尸堆，拖动手雷键放落点圈，松手扔。</details>
       <details><summary>商店</summary>在任何建筑里（或营地）按 <kbd>C</kbd> / 点「商店」。分四栏：<b>武器 · 弹药</b>（一把枪和它的子弹在同一张卡上）、<b>道具</b>（四种手雷、医疗包）；放置类道具不在商店，见下面「道具」、<b>载具</b>、<b>强化</b>。材料全队共用，买到的东西归你。</details>
       <details><summary>道具（建造）</summary>按 <kbd>B</kbd> / 点「道具」拿出道具栏：<b>墙、地板、梯子、门、掩体、陷阱、机枪塔、探照灯、跳板</b>，同类的合在一格——<b>再点一次同一格（或点上面的小条）换材料</b>，比如木墙 → 砖墙 → 钢墙。放下去不分朝向：梯子会自己贴到能爬上去的那面墙。指哪放哪，按住拖动放一排；放一个扣一份材料，右键 / 「拆除」拆掉退一半。墙、地板、梯子、门只能在营地周围的黄框里放（尸城求生哪都能放）；<b>掩体、陷阱、地雷、机枪塔、探照灯、跳板哪都能放</b>（尸城求生里有些要先找到蓝图）。方块要有支撑，断了会连锁坍塌。楼上最外圈的墙是半人高的矮墙，能探身往下打。<br><b>跳板</b>：踩上去把你朝走的方向弹出约 5 格，前面有矮楼顶（最多高 2 层）就弹上去，用一次就没——被围住时的逃生道具。</details>
-      <details><summary>载具</summary><b>自行车</b>快 60%；<b>摩托车</b>快 90%，后座带一个队友；<b>货运三轮</b>坐在车上就能搜东西（够得更远、时间减半、材料 +50%）；<b>装甲车</b>受到的伤害只剩 35%，撞开挡路的丧尸，后座带一个队友；<b>旋翼机</b>会飞，越过屋顶和尸群（丧尸咬不到，喷吐者还能打到），只能在地面或楼顶起飞（头顶不能有屋顶），一箱油飞 60 秒，没满随时能加（商店「载具」栏一键加满，或在有屋顶的房间里按 <kbd>F</kbd>），飞着用机头下的机枪打（机上自己的子弹，商店「武器 · 弹药」里买，最多存 240 发），手里的枪不能用，手雷能扔；后座能带一个队友（上去后旋翼空转约 1 秒，队友这时按 <kbd>T</kbd> 上来），后座的人能开枪；再按 <kbd>T</kbd> 降落，没油会自己降落。在商店「载具」栏或「装备」里选一辆当默认：<kbd>T</kbd> / 点「载具」就上这辆，再按下车；<kbd>Shift</kbd>+<kbd>T</kbd> / 长按「载具」换车。车上也能开枪，只是射速慢（司机 40%、后座 70%），准度不变。</details>
+      <details><summary>载具</summary><b>自行车</b>快 60%；<b>摩托车</b>快 90%，后座带一个队友；<b>货运三轮</b>坐在车上就能搜东西（够得更远、时间减半、材料 +50%）；<b>装甲车</b>受到的伤害只剩 35%，撞开挡路的丧尸，后座带一个队友；<b>旋翼机</b>会飞，越过屋顶和尸群（丧尸咬不到，喷吐者还能打到），只能在地面或楼顶起飞（头顶不能有屋顶），一箱油飞 60 秒，没满随时能加（商店「载具」栏一键加满，或在有屋顶的房间里按 <kbd>F</kbd>），飞着用机头下的机枪打（机上自己的子弹，商店「武器 · 弹药」里买，最多存 240 发），手里的枪不能用，手雷能扔；后座能带一个队友（上去后旋翼空转约 1 秒，队友这时按 <kbd>T</kbd> 上来），后座的人能开枪；再按 <kbd>T</kbd> 降落，没油会自己降落；<b>坦克</b>自带炮塔，开火打炮弹（打到哪炸到哪，150 伤害、半径 2.6，1.6 秒一发；炮弹在商店「武器 · 弹药」栏买，车里最多 30 发），受到的伤害只剩 20%，撞开丧尸，但慢、太大进不了楼（有屋顶的地方开不进去）。在商店「载具」栏或「装备」里选一辆当默认：<kbd>T</kbd> / 点「载具」就上这辆，再按下车；<kbd>Shift</kbd>+<kbd>T</kbd> / 长按「载具」换车。车上也能开枪，只是射速慢（司机 40%、后座 70%），准度不变。</details>
       <details><summary>白天和每日任务</summary>出门砍树（木材）、采石（砖石），搜汽车、补给箱和废墟瓦砾（钢材、零件、弹药），离家越远收获越多；回来盖楼；在任何建筑里（或营地工作台）都能造枪、买弹药（按 C / 点「商店」）。河上只有两座桥，丧尸也只能从桥上过河。每 5 夜一次血月。<br>每天天亮刷新 3 个小任务（左上角），比如击杀、搜索、建造、今夜无人倒下。完成立刻发奖励：材料、全队弹药、医疗包、手雷或强化弹头。没完成的会在下一个天亮作废。</details>
       <details><summary>爬梯和翻越</summary>朝梯子走就爬上去，往下要继续推一下；丧尸爬梯子很慢（攀爬者除外）。没有跳键：走路碰到沙袋、拒马、掩体、栅栏、瓦砾和一人高的墙会自己翻过去，朝一格宽的空隙走会自己跳过去；丧尸不会翻，只能砸。</details>
       <details><summary>视角</summary>滚轮或 ＋/－ 缩放，Q / E 或 ⟲⟳ 转镜头。楼层视图默认跟随你所在的层，上面的楼层会自动隐藏；▲▼ 手动看别的层，「跟随我所在的层」恢复。</details>
@@ -4918,7 +4918,8 @@ const VEH = [null,
   { k: 'moto', name: '摩托车', spd: 1.9, seats: 2, tag: '最快：走得快 90%，后座能带一个队友' },
   { k: 'cargo', name: '货运三轮', spd: 1.45, search: 1, tag: '搜刮用：坐在车上就能搜（够得更远、时间减半），搜到的材料 +50%' },
   { k: 'armor', name: '装甲车', spd: 1.3, seats: 2, armor: 0.35, ram: 1, tag: '保护用：受到的伤害只剩 35%，撞开挡路的丧尸，后座能带一个队友' },
-  { k: 'gyro', name: '旋翼机', spd: 1.9, fly: 1, fuel: 60, seats: 2, tag: '会飞：越过屋顶和尸群。只能从地面或楼顶起飞（头顶不能有屋顶）；一箱油飞 60 秒，没满就能加：商店「载具」栏一键加满，或在有屋顶的房间里按 F；飞着用机头下的机枪打（机上自己的子弹，商店里买），手里的枪不能用；后座能带一个队友，队友能开枪' }, // (round 29)
+  { k: 'gyro', name: '旋翼机', spd: 1.9, fly: 1, fuel: 60, seats: 2, gun: 'chin', tag: '会飞：越过屋顶和尸群。只能从地面或楼顶起飞（头顶不能有屋顶）；一箱油飞 60 秒，没满就能加：商店「载具」栏一键加满，或在有屋顶的房间里按 F；飞着用机头下的机枪打（机上自己的子弹，商店里买），手里的枪不能用；后座能带一个队友，队友能开枪' }, // (round 29)
+  { k: 'tank', name: '坦克', spd: 1.0, armor: 0.2, ram: 1, gun: 'cannon', outdoor: 1, tag: '自带炮塔：开火打炮弹（落点爆炸 150，半径 2.6），炮弹商店里买；受到的伤害只剩 20%，撞开丧尸；慢，太大进不了楼' }, // (round 31)
 ];
 const NVEH = VEH.length - 1;
 const PILLION = 0.38;                                   // how far behind the driver the back-seat rider sits
@@ -4933,7 +4934,7 @@ const gCount = (p, t) => t ? ((p.gn || [])[t - 1] || 0) : p.nades;
 const gCap = t => t ? BAL.gnCap : BAL.nadeCap;
 // blueprints (尸城求生): what you can build / make from the start, and what has to be found first
 const BP_BASE = [1, 4, 6, 7, 12, 53, 56];
-const BP_LIST = [2, 3, 5, 8, 13, 14, 9, 15, 51, 52, 57, 58, 59, 'bike', 'moto', 'cargo', 'armor', 'gyro'];
+const BP_LIST = [2, 3, 5, 8, 13, 14, 9, 15, 51, 52, 57, 58, 59, 'bike', 'moto', 'cargo', 'armor', 'gyro', 'tank'];
 const bpName = k => typeof k === 'number' ? B[k].name : (VEH.find(v => v && v.k === k) || { name: k }).name;
 const SLAB_BRIDGE = 11; // slab id for the pre-built bridges (not buildable)
 defB(11, { key: 'bridge', slab: 1, nat: 1, col: '#7e5a36' });
@@ -5001,7 +5002,23 @@ const SPOTS = {
   ammobox: { name: '弹药盒', loot: {}, ammo: 1.4, allAmmo: 1, vanish: 1, n: 40 },              // bullets lying about: for every gun, owned or not yet
   bpcase: { name: '图纸箱', loot: { parts: [3, 6] }, ammo: 1, bp: 1, vanish: 1 },               // in a building zombies hold: always a blueprint
 };
-/* ---------- daily tasks: three are rolled every dawn (and at the start) and last until the next dawn ---------- */
+/* ---------- (round 32) permanent tasks: counters that build up over the whole run; each tier reached gives the team a permanent upgrade ---------- */
+const PERM = [
+  { k: 'kill', name: '击杀丧尸', need: [60, 200, 500, 1200, 2500], perk: 'hp' },
+  { k: 'search', name: '搜刮', need: [25, 80, 200, 450], perk: 'bag' },
+  { k: 'build', name: '建造 / 放置', need: [40, 150, 400], perk: 'med' },
+  { k: 'nade', name: '用手雷炸死丧尸', need: [15, 60, 160], perk: 'nade' },
+  { k: 'clean', name: '整夜没有人倒下', need: [2, 5, 9], perk: 'life' },
+  { k: 'elite', name: '击杀精英（重锤、防暴尸、尸王）', need: [5, 20, 50], perk: 'hp' },
+  { k: 'shove', name: '刀 / 盾命中', need: [50, 200, 500], perk: 'bag' },
+  { k: 'gather', name: '砍树、采石', need: [30, 100, 250], perk: 'med' },
+];
+const PERK = { hp: ['生命上限 +10', 10], bag: ['背包：弹药上限 +25%', 0.25], med: ['医疗包上限 +2', 2], nade: ['手雷上限 +3（特殊手雷各 +2）', 3], life: ['复活次数 +1', 1] };
+const perkLv = k => (typeof W !== 'undefined' && W && W.perk && W.perk[k]) || 0;
+// carry limits grow with the upgrades (read through getters so every place that checks a cap sees the current one)
+// (round 32) ammo you can carry for a gun: 12 pickups' worth, +25% per backpack upgrade
+const ammoCap = wi => Math.round((WPN[wi].loot || WPN[wi].mag) * 12 * (1 + PERK.bag[1] * perkLv('bag')));
+/* ---------- daily tasks (before round 32): three are rolled every dawn (and at the start) and last until the next dawn ---------- */
 // need(d, W) -> target count for upcoming night d; min = first night it can appear; rw = reward pool keys
 const TASKS = {
   kill: { t: n => '击杀 ' + n + ' 只丧尸', need: d => Math.round(BAL.nightSpawn(d) * 0.6), w: 3, rw: ['parts', 'ammo', 'steel'] },
@@ -5049,6 +5066,7 @@ const CRAFT = [
   { id: 'shells', cat: 'gun', name: '霰弹 ×12', desc: '', cost: { parts: 2 }, ammo: [1, 12] },
   { id: 'rounds', cat: 'gun', name: '步枪弹 ×60', desc: '', cost: { parts: 3 }, ammo: [2, 60] },
   { id: 'slugs', cat: 'gun', name: '狙击弹 ×10', desc: '', cost: { parts: 3 }, ammo: [3, 10] },
+  { id: 'tshell', cat: 'gun', name: '坦克炮弹 ×10', desc: '坦克主炮用的炮弹，车里最多放 30 发；造坦克时送 10 发', cost: { parts: 4, steel: 3 }, shl: 10 }, // (round 31)
   { id: 'gfuel', cat: 'fuel', name: '给旋翼机加满油', desc: '', cost: {}, fuel: 1 }, // (round 30) refuel from the shop too (free, instant; F in a roofed room still works)
   { id: 'gammo', cat: 'gun', name: '旋翼机机枪弹 ×60', desc: '旋翼机机头下的机枪用的子弹（飞的时候按开火），机上最多存 240 发；造旋翼机时送 60 发', cost: { parts: 3, steel: 2 }, gam: 60 }, // (round 30)
   { id: 'crossbow', cat: 'gun', name: '弩', desc: '几乎没声音：一箭 110 穿 3 只，钉住 1 秒，偷偷清楼用', cost: { parts: 12, wood: 12 }, wpn: 4 },
@@ -5068,6 +5086,7 @@ const CRAFT = [
   { id: 'cargo', cat: 'veh', name: '货运三轮', desc: VEH[3].tag, cost: { wood: 8, steel: 10, parts: 8 }, veh: 3, bp: 'cargo' },
   { id: 'armor', cat: 'veh', name: '装甲车', desc: VEH[4].tag, cost: { steel: 24, parts: 16 }, veh: 4, bp: 'armor' },
   { id: 'gyro', cat: 'veh', name: '旋翼机', desc: VEH[5].tag, cost: { steel: 20, parts: 24 }, veh: 5, bp: 'gyro' },
+  { id: 'tank', cat: 'veh', name: '坦克', desc: VEH[6].tag, cost: { steel: 40, parts: 30 }, veh: 6, bp: 'tank' },
   { id: 'upg', cat: 'upg', name: '强化弹头', desc: '全队伤害 +12%（最多 5 级）', cost: { parts: 8 }, upg: 1 },
 ];
 
@@ -5092,6 +5111,7 @@ const BAL = {
   slowR: 3.6, slowT: 8, slowMul: 0.3,                           // slow grenade: a sticky field, zombies inside crawl at 30%
   smokeR: 3.8, smokeT: 10, smokeConf: 1.2,                      // smoke: zombies in the cloud lose you, wander and don't bite (and for 1.2 s after leaving)
   blastR: 4.4, blastDmg: 70, blastKB: 24, blastStun: 1.6,       // blast: little damage, throws everything out of the way (clears a path)
+  tankDmg: 150, tankR: 2.6, tankRate: 1.6, tankRange: 20, tankCap: 30, tankStart: 10, // (round 31) tank cannon: a shell that bursts where it hits
   gyroDmg: 12, gyroRate: 0.12, gyroSpread: 0.06, gyroRange: 22, gyroCap: 240, gyroStart: 60, // (round 30) gyrocopter chin gun: its own ammo, bought in the shop
   flyHover: 2.2, flyClimb: 0.8, flyDrop: 0.6, fuelLow: 10, refuelT: 4, // (round 29) gyrocopter: cruise 2.2 floors over whatever is below, climb / descend rate (of the take-off curve per second), warn at 10 s of fuel, 4 s to refuel indoors
   nadeRange: 12, nadeDmg: 286, nadeR: 3.4, nadeFuse: 1.6, nadeLand: 0.35, nadeMin: 0.5, // (round 18: radius 2.8 -> 3.4, damage at the edge 35% -> 50%, goes off 0.35 s after landing where you aimed)
@@ -5102,6 +5122,8 @@ const BAL = {
   nightSpawn: n => Math.round(30 + n * 12),     // (round 18: was 22 + 9n)
   bloodMul: 1.5,
   hpMul: n => 1 + 0.15 * (n - 1),               // (was 0.13 per night)
+  nightLv: n => Math.max(1, Math.ceil(n / 2)),   // (round 31) the horde goes up a level every two nights
+  lvN: n => 2 * Math.max(1, Math.ceil(n / 2)) - 0.5, // the night number the numbers are worked out from: nights 1–2 → 1.5, 3–4 → 3.5 … (same average as before, in steps)
   spdMul: n => 1 + 0.03 * (n - 1),              // (was 0.02 per night)
   spawnDur: n => 35 + n * 4,      // the horde trickles in over this long (was 50 + 4n)
   zCap: () => TOUCHY ? 95 : 140,  // most zombies alive at once; the rest of the horde waits its turn
@@ -5129,6 +5151,8 @@ const saveSet = () => lsSet('set', SET);
 let W = null, ME = 0, NETROLE = null;
 const STATE = { mode: 'title', paused: false };
 const HUB = /\/deadtide\/(index\.html)?$/.test(location.pathname);
+// (round 32) carry limits grow with the permanent upgrades: read through getters, so every place that checks a cap sees the current one
+for (const [k, base, per, perk] of [['pMaxHp', 100, 10, 'hp'], ['medCap', 8, 2, 'med'], ['nadeCap', 15, 3, 'nade'], ['gnCap', 8, 2, 'nade']]) Object.defineProperty(BAL, k, { get: () => base + per * perkLv(perk), configurable: true });
 
 /* ---- 10_world.js ---- */
 /* ================= world: layered grid, terrain generation, cell rules, structural support ================= */
@@ -5943,7 +5967,7 @@ function mkPlayer(i, name) {
     i, name, x: RADIO_XY[0] - 0.5 + i * 2, y: RADIO_XY[1] + 0.5 + i, L: 0, z: 0, r: 0.28, h: 1.0, vx: 0, vy: 0, kbx: 0, kby: 0, aim: -Math.PI / 2, aimPt: null,
     hp: BAL.pMaxHp, maxHp: BAL.pMaxHp, down: false, downT: 0, dead: false, gone: false,
     wpn: 1, owned: WPN.map((w, k) => k < 2 ? 1 : 0), mag: WPN.map((w, k) => k === 0 ? 12 : k === 1 ? 6 : 0), ammo: WPN.map((w, k) => k === 1 ? w.start : 0), bloom: 0, reloadT: 0, reloadW: 0, fireCD: 0, shoveCD: 0, shoveT: 0,
-    nades: 2, meds: 2, gn: [1, 1, 1], gt: 0, lives: 3, fuel: 60, land: false, gam: 0, gcd: 0, medT: 0, selfRev: false, useT: 0, useK: '', build: false, sel: 1, demo: false, sdir: 3, veh: 0, vehs: 0, shield: 0, melee: 0,
+    nades: 2, meds: 2, gn: [1, 1, 1], gt: 0, lives: 3, fuel: 60, land: false, gam: 0, gcd: 0, shl: 0, medT: 0, selfRev: false, useT: 0, useK: '', build: false, sel: 1, demo: false, sdir: 3, veh: 0, vehs: 0, shield: 0, melee: 0,
     inp: { mx: 0, my: 0, fire: 0, use: 0 }, kills: 0, hurtT: 0, anim: 0, emptyT: 0, ready: false, recoilT: 0,
   };
 }
@@ -6024,11 +6048,35 @@ function gyroFire(p) {
   noiseAt(p.x, p.y, 11, p.z);
   emit({ k: 'gshot', o: p.i, x: r2(sx), y: r2(sy), z: r2(sz), e: [r2(sx + dx * bd), r2(sy + dy * bd), r2(sz + dz * bd)], h: best ? 1 : 0 });
 }
+const vehGun = p => p && p.ride && VEH[p.veh] && VEH[p.veh].gun || null;
+// (round 31) tank cannon: a shell flies flat from the muzzle to the first thing in the way (or where you aim) and bursts there
+function tankFire(p) {
+  if (p.gcd > 0) return;
+  if (!(p.shl > 0)) { if (!(p.emptyT > 0)) { p.emptyT = 1.5; emit({ k: 'deny', p: p.i, why: '坦克没炮弹了：商店「武器 · 弹药」里买' }); } return; }
+  p.gcd = BAL.tankRate; p.shl--;
+  const a = p.aim, z0 = pZ(p) + 0.82, sx = p.x + Math.cos(a) * 1.4, sy = p.y + Math.sin(a) * 1.4;
+  const T = p.aimPt || { x: sx + Math.cos(a) * 10, y: sy + Math.sin(a) * 10, z: z0 - 0.5 };
+  let dx = T.x - sx, dy = T.y - sy, dz = T.z - z0; const hl = Math.hypot(dx, dy) || 1; dz = clamp(dz / hl, -0.3, 0.6) * hl; const n = Math.hypot(dx, dy, dz) || 1; dx /= n; dy /= n; dz /= n;
+  const want = Math.min(BAL.tankRange, Math.hypot(T.x - sx, T.y - sy, T.z - z0) + 0.2), wall = rayWorld(sx, sy, z0, dx, dy, dz, BAL.tankRange, { lean: LEAN }); let bd = Math.min(wall.d, p.aimPt ? want : BAL.tankRange);
+  for (const z of W.zs) { if (z.hp <= 0) continue; const d = rayBox(sx, sy, z0, dx, dy, dz, z.x - z.r, z.y - z.r, z.z, z.r * 2, z.r * 2, z.h, bd); if (d >= 0 && d < bd) bd = d; }
+  const ex = sx + dx * bd, ey = sy + dy * bd, ez = Math.max(z0 + dz * bd, 0);
+  emit({ k: 'cshot', o: p.i, x: r2(sx), y: r2(sy), z: r2(z0), e: [r2(ex), r2(ey), r2(ez)] });
+  explode(ex, ey, ez, p, BAL.tankR, BAL.tankDmg); noiseAt(p.x, p.y, SIEGE.boomR, p.z);
+}
 function skyTop(x, y) {
   x = Math.floor(x); y = Math.floor(y); if (!inMap(x, y)) return 0;
   for (let L = ML - 1; L >= 0; L--) { const i = ci(x, y, L), b = W.blk[i]; if (b && B[b].P) return Math.min(ML - 1, L + 1); if (L > 0 && W.slab[i]) return L; }
   return 0;
 }
+// (round 32) getting off a back seat: if the seat was over something you can't stand in (a railing, a crate), step onto the driver's spot or the nearest free one
+function offSeat(p, d) {
+  const fx = Math.floor(p.x), fy = Math.floor(p.y); if (p.L <= skyTop(p.x, p.y) && standable(fx, fy, p.L, 'p')) return;
+  if (d && !d.gone && standable(Math.floor(d.x), Math.floor(d.y), d.L, 'p') && !airborne(d)) { p.x = d.x; p.y = d.y; p.L = d.L; }
+  else { const t = landSpot(p.x, p.y); if (t) { p.x = t[0]; p.y = t[1]; p.L = skyTop(t[0], t[1]); } }
+  p.z = pZ(p); p.zv = p.z;
+}
+const landOK = (x, y) => { x = Math.floor(x); y = Math.floor(y); return inMap(x, y) && standable(x, y, skyTop(x, y), 'p'); };
+function landSpot(x, y) { let best = null, bd = 1e9; for (let dy = -4; dy <= 4; dy++) for (let dx = -4; dx <= 4; dx++) { const cx = Math.floor(x) + dx, cy = Math.floor(y) + dy, d = dx * dx + dy * dy; if (d < bd && landOK(cx, cy)) { bd = d; best = [cx + 0.5, cy + 0.5]; } } return best; }
 // take off only from the ground or a roof: nothing overhead, and some fuel
 function flyOK(p) {
   if (skyTop(p.x, p.y) > p.L) { emit({ k: 'deny', p: p.i, why: '旋翼机只能在地面或楼顶起飞：头顶不能有屋顶' }); return false; }
@@ -6039,9 +6087,11 @@ function flyOK(p) {
 function flyStep(p, dt) {
   const I = p.inp, m = Math.hypot(I.mx, I.my), k = m > 1 ? 1 / m : 1, V = VEH[p.veh];
   p.spool = (p.spool || 0) + dt; // (round 30) 1.2 s of rotor spin-up on the ground first: time for a teammate to hop in the back
-  p.alt = clamp((p.alt || 0) + (p.land ? -BAL.flyDrop : p.spool > 1.2 ? BAL.flyClimb : 0) * dt, 0, 1);
+  let lx = I.mx * k, ly = I.my * k, hold = false;
+  if (p.land && !landOK(p.x, p.y)) { const t = landSpot(p.x, p.y); if (t) { const dx = t[0] - p.x, dy = t[1] - p.y, d = Math.hypot(dx, dy) || 1; lx = dx / d; ly = dy / d; } hold = p.alt < 0.35; } // (round 31) never set down on a car, a crate or a fence: slide to the nearest spot you can stand on
+  p.alt = clamp((p.alt || 0) + (p.land ? (hold ? 0 : -BAL.flyDrop) : p.spool > 1.2 ? BAL.flyClimb : 0) * dt, 0, 1);
   const spd = BAL.pSpeed * V.spd * (0.3 + 0.7 * p.alt) * (p.land ? 0.7 : 1), a = Math.min(1, dt * 3.5);
-  p.vx = lerp(p.vx, I.mx * k * spd, a); p.vy = lerp(p.vy, I.my * k * spd, a);
+  p.vx = lerp(p.vx, lx * spd, a); p.vy = lerp(p.vy, ly * spd, a);
   const nx = clamp(p.x + p.vx * dt, 1.5, MW - 1.5), ny = clamp(p.y + p.vy * dt, 1.5, MH - 1.5);
   if (skyTop(nx, ny) * FH <= p.z + 0.25) { p.x = nx; p.y = ny; } else { p.vx *= 0.3; p.vy *= 0.3; }  // low down, a wall still stops you
   let top = 0; const ax = p.x + p.vx * 0.7, ay = p.y + p.vy * 0.7;
@@ -6057,10 +6107,11 @@ function flyStep(p, dt) {
 function stepMove(p, dt) {
   if (p.dead || p.gone) return;
   p.hurtT = Math.max(0, p.hurtT - dt);
+  if (p._wasPass != null && p._wasPass >= 0 && !(p.pass >= 0)) offSeat(p, W.p[p._wasPass]); p._wasPass = p.pass; // (round 32) however the back seat ended (landing, the driver went down, synced from the host), step off onto free ground
   // riding pillion on a teammate's motorbike: sit just behind the driver
   if (p.pass != null && p.pass >= 0) {
     const d = W.p[p.pass];
-    if (!d || !d.ride || !vehSeats(d) || d.dead || d.down || d.gone) p.pass = -1;
+    if (!d || !d.ride || !vehSeats(d) || d.dead || d.down || d.gone) { p.pass = -1; offSeat(p, d); }
     else { const a = d._ly != null ? d._ly : Math.atan2(d.vy || 0, d.vx || 1); p.x = d.x - Math.cos(a) * PILLION; p.y = d.y - Math.sin(a) * PILLION; /* (round 26) was -d._ly: the pillion sat mirrored, off the bike */ p.L = d.L; p.z = d.z; p.zv = d.zv; p.vx = d.vx; p.vy = d.vy; p._ly = d._ly; return; }
   }
   if (airborne(p)) { flyStep(p, dt); return; } // (round 29)
@@ -6074,12 +6125,14 @@ function stepMove(p, dt) {
     p.z = pZ(p); return;
   }
   if (p.dash) { const D = p.dash, f = Math.min(dt, D.T - D.t) / D.T; moveEnt(p, D.dx * f, D.dy * f, 'p', true); D.t += dt; if (D.t >= D.T) p.dash = null; p.z = pZ(p); p.anim += dt * 8; return; }
+  if (p.L > 0 && p.L > skyTop(p.x, p.y)) { p.L = skyTop(p.x, p.y); p.z = pZ(p); } // (round 31) knocked down mid-air, or a save made in flight: fall to what is below
   const spd = BAL.pSpeed * (p.down ? 0.22 : 1) * (p.medT > 0 ? 0.45 : 1) * (p.build ? 0.9 : 1) * (inMud(p.x, p.y, p.L) ? MUD_SLOW : 1) * (p.ride && VEH[p.veh] ? VEH[p.veh].spd : 1);
   const tx = I.mx * k * spd, ty = I.my * k * spd, a = Math.min(1, dt * 14);
   p.vx = lerp(p.vx, tx, a); p.vy = lerp(p.vy, ty, a);
   p.kbx *= Math.max(0, 1 - dt * 6); p.kby *= Math.max(0, 1 - dt * 6);
   p.dropped = 0; p.edgeWant = 0;
-  moveEnt(p, (p.vx + p.kbx) * dt, (p.vy + p.kby) * dt, 'p', true);
+  const ox = p.x, oy = p.y, oL = p.L; moveEnt(p, (p.vx + p.kbx) * dt, (p.vy + p.kby) * dt, 'p', true);
+  if (p.ride && VEH[p.veh] && VEH[p.veh].outdoor && skyTop(p.x, p.y) > p.L) { p.x = ox; p.y = oy; p.L = oL; p.vx *= 0.2; p.vy *= 0.2; } // (round 31) the tank doesn't fit under a roof
   p.edgeK = p.edgeWant; p.edgeT = p.edgeWant && m > 0.3 ? (p.edgeT || 0) + dt : 0;
   // keep pushing into a low obstacle (or a wall) to vault over it
   let vk = 0;
@@ -6158,12 +6211,13 @@ function stepActions(p, dt) {
   if (p.gone) return;
   const I = p.inp;
   p.fireCD -= dt; p.shoveCD -= dt; p.emptyT -= dt; if (p.bloom) p.bloom = Math.max(0, p.bloom - dt * 2.2);
+  for (let wi = 1; wi < NW; wi++) if (!WPN[wi].inf && p.ammo[wi] > ammoCap(wi)) p.ammo[wi] = ammoCap(wi); // (round 32) backpack: ammo you carry is capped (grows with the upgrade)
   // (round 29) gyrocopter: burns fuel while you're in it; empty → it comes down by itself; touching down gets you out
   if (airborne(p)) {
     p.fuel = Math.max(0, (p.fuel != null ? p.fuel : VEH[p.veh].fuel) - dt);
     if (p.fuel < BAL.fuelLow && !p._lowF) { p._lowF = 1; emit({ k: 'deny', p: p.i, why: '旋翼机油快没了（还剩 ' + Math.ceil(p.fuel) + ' 秒），没油会自己降落' }); }
     if (p.fuel <= 0 && !p.land) { p.land = true; emit({ k: 'deny', p: p.i, why: '旋翼机没油了，正在降落：进楼里按 F 加油' }); }
-    const g = skyTop(p.x, p.y); if (p.land && p.z - surfZ(p.x, p.y, g) < 0.08) { p.ride = false; p.land = false; p.L = g; p.z = surfZ(p.x, p.y, g); p.alt = 0; emit({ k: 'sfx', n: 'land', x: p.x, y: p.y, o: p.i }); }
+    const g = skyTop(p.x, p.y); if (p.land && p.z - surfZ(p.x, p.y, g) < 0.08 && landOK(p.x, p.y)) { p.ride = false; p.land = false; p.L = g; p.z = surfZ(p.x, p.y, g); p.alt = 0; emit({ k: 'sfx', n: 'land', x: p.x, y: p.y, o: p.i }); }
   } else { p._lowF = p.fuel < BAL.fuelLow ? p._lowF : 0; if (p.land) p.land = false; }
   // each gun has its own fire cooldown, and a reload keeps going in the holster (round 18: was one shared timer, swapping cancelled the reload)
   if (!p.cdW) p.cdW = WPN.map(() => 0); if (!p.rlBg) p.rlBg = WPN.map(() => 0);
@@ -6185,8 +6239,8 @@ function stepActions(p, dt) {
   }
   if (p.down) { p.downT -= dt; if (p.downT <= 0) { p.down = false; p.dead = true; p.reloadT = 0; p.medT = 0; p.ride = false; p.downT = W.phase === 'night' ? BAL.respawnNight : BAL.respawnDay; emit({ k: 'dead', p: p.i, t: p.lives > 0 ? Math.round(p.downT) : -1, n: p.lives || 0 }); checkLose(); return; } }
   const wi = p.down ? 0 : p.wpn, w = WPN[wi];
-  p.gcd = (p.gcd || 0) - dt; if (I.fire && airborne(p)) gyroFire(p); // (round 30) in the air the chin gun fires instead
-  if (I.fire && !p.build && !airborne(p) && p.fireCD <= 0 && p.cdW[wi] <= 0 && p.reloadT <= 0 && p.medT <= 0) {
+  p.gcd = (p.gcd || 0) - dt; if (I.fire && vehGun(p)) (vehGun(p) === 'cannon' ? tankFire(p) : gyroFire(p)); // (round 30 / 31) the aircraft's chin gun or the tank's cannon fires instead of your gun
+  if (I.fire && !p.build && !vehGun(p) && p.fireCD <= 0 && p.cdW[wi] <= 0 && p.reloadT <= 0 && p.medT <= 0) {
     if (p.mag[wi] > 0) fireWeapon(p, wi);
     else if (w.inf || p.ammo[wi] > 0) startReload(p);
     else if (p.emptyT <= 0) { p.emptyT = 0.5; emit({ k: 'sfx', n: 'empty', x: p.x, y: p.y, o: p.i }); }
@@ -6250,24 +6304,29 @@ function completeUse(p, tgt) {
   if (!got.length) got.push('什么也没有');
   emit({ k: 'loot', p: p.i, x: wx, y: wy, z: wz, text: got.join('  ') });
 }
-/* ---------- daily tasks ---------- */
+/* ---------- (round 32) permanent tasks: the counters build up over the whole run, every tier reached is a permanent team upgrade ---------- */
+// W.perm[k] = { got, tier }, W.perk[upgrade] = level; W.tasks is just what the panel shows (same shape as the old daily tasks, so the sync and save code stay)
 function rollTasks() {
-  const d = W.night + 1, pool = [];
-  for (const k in TASKS) { const T = TASKS[k]; if ((T.min || 1) <= d) pool.push(k); }
-  const pick = [];
-  while (pick.length < 3 && pool.length) {
-    let tot = 0; for (const k of pool) tot += TASKS[k].w;
-    let r = rand() * tot, j = 0;
-    for (; j < pool.length - 1; j++) { r -= TASKS[pool[j]].w; if (r <= 0) break; }
-    pick.push(pool.splice(j, 1)[0]);
-  }
-  W.tasks = pick.map(k => {
-    const T = TASKS[k], need = Math.max(1, T.need(d)), rk = T.rw[Math.floor(rand() * T.rw.length)], rw = TASK_RW[rk](d);
-    return { k, need, got: 0, done: 0, rw, txt: T.t(need), rt: taskRewardText(rw) };
-  });
-  W.tkv++;
+  W.perm = W.perm || {}; W.perk = W.perk || { hp: 0, bag: 0, med: 0, nade: 0, life: 0 };
+  const rows = [];
+  for (const P of PERM) { const q = W.perm[P.k] || (W.perm[P.k] = { got: 0, tier: 0 }); if (q.tier >= P.need.length) continue; const need = P.need[q.tier]; rows.push({ k: P.k, need, got: Math.min(q.got, need), done: 0, txt: P.name + ' ' + need + (P.need.length > 1 ? '（' + (q.tier + 1) + '/' + P.need.length + '）' : ''), rt: PERK[P.perk][0], f: q.got / need }); }
+  rows.sort((x, y) => y.f - x.f); W.tasks = rows.slice(0, 4); W.tkv++; // the four closest to done: a taller panel pushed the 准备入夜 button into the middle of the screen
+}
+function grantPerk(k) {
+  W.perk[k] = (W.perk[k] || 0) + 1;
+  for (const p of W.p) { if (p.gone) continue;
+    if (k === 'hp') { p.maxHp = BAL.pMaxHp; if (!p.dead && !p.down) p.hp = Math.min(p.maxHp, p.hp + PERK.hp[1]); }
+    if (k === 'life') p.lives = (p.lives || 0) + 1; }
+  modeSay('永久提升：' + PERK[k][0], '#9fe0ff', true);
 }
 function taskAdd(k, n = 1) {
+  if (!W || W.demo || W.over || NETROLE === 'guest' || !W.perm) return;
+  const P = PERM.find(q => q.k === k); if (!P) return; const q = W.perm[k] || (W.perm[k] = { got: 0, tier: 0 });
+  q.got += n; let up = false;
+  while (q.tier < P.need.length && q.got >= P.need[q.tier]) { q.tier++; grantPerk(P.perk); up = true; }
+  if (up || (W.tkN = (W.tkN || 0) + 1) % 3 === 0) rollTasks(); else { const r = W.tasks.find(t => t.k === k); if (r) { r.got = Math.min(q.got, r.need); W.tkv++; } }
+}
+function oldDailyTaskAdd(k, n = 1) { /* (before round 32) */
   if (!W || W.demo || W.over || NETROLE === 'guest') return;
   for (const t of W.tasks) {
     if (t.k !== k || t.done) continue;
@@ -6422,7 +6481,7 @@ function hurtZombie(z, dmg, p, kx, ky, quiet) {
 let KSRC = '';
 function killZombie(z, p) {
   z.hp = 0; W.kills++; if (p) p.kills++;
-  taskAdd('kill'); if (TASKS[z.k]) taskAdd(z.k); if (KSRC === 'nade') taskAdd('nade');
+  taskAdd('kill'); if (ZT[z.k].boss || z.k === 'brute' || z.k === 'armored') taskAdd('elite'); if (KSRC === 'nade') taskAdd('nade'); // (round 32) permanent task counters
   if (ZT[z.k].blast) zBlast(z.x, z.y, z.z + 0.5);
   emit({ k: 'zdie', x: r2(z.x), y: r2(z.y), z: r2(z.z), t: z.k, f: r2(z.face), id: z.id });
   if (rand() < (z.k === 'boss' ? 1 : z.k === 'brute' ? 0.6 : 0.07)) { const n = z.k === 'boss' ? 15 : z.k === 'brute' ? 3 : 1; W.res.parts += n; emit({ k: 'loot', p: -1, x: z.x, y: z.y, z: z.z + z.h, text: '+' + n + ' 零件' }); }
@@ -6476,13 +6535,14 @@ function doAct(p, a, v) {
   if (!W || W.over || p.gone || p.dead) return;
   switch (a) {
     case 'ride': if (!p.down && !p.dead) {
-      if (p.pass != null && p.pass >= 0) { const d = W.p[p.pass]; if (airborne(d) && d.z - surfZ(d.x, d.y, skyTop(d.x, d.y)) > 0.5) { emit({ k: 'deny', p: p.i, why: '在天上不能跳下去：等驾驶员降落（落地后自动下来）' }); break; } p.pass = -1; emit({ k: 'sfx', n: 'swap', x: p.x, y: p.y, o: p.i }); break; }     // hop off the back
+      if (p.pass != null && p.pass >= 0) { const d = W.p[p.pass]; if (airborne(d) && d.z - surfZ(d.x, d.y, skyTop(d.x, d.y)) > 0.5) { emit({ k: 'deny', p: p.i, why: '在天上不能跳下去：等驾驶员降落（落地后自动下来）' }); break; } p.pass = -1; offSeat(p, d); emit({ k: 'sfx', n: 'swap', x: p.x, y: p.y, o: p.i }); break; }     // hop off the back
       if (airborne(p)) { if (!p.land) { p.land = true; emit({ k: 'sfx', n: 'swap', x: p.x, y: p.y, o: p.i }); } break; } // (round 29) in the air: T / F brings it down, you get out on touchdown
-      if (v >= 1 && ownsVeh(p, v)) { if (VEH[v].fly && !flyOK(p)) break; p.land = false; p.veh = v; p.ride = true; p.build = false; if (!vehSeats(p)) for (const q of W.p) if (q.pass === p.i) q.pass = -1; emit({ k: 'sfx', n: 'swap', x: p.x, y: p.y, o: p.i }); break; }
+      if (v >= 1 && ownsVeh(p, v)) { if (VEH[v].fly && !flyOK(p)) break; if (VEH[v].outdoor && skyTop(p.x, p.y) > p.L) { emit({ k: 'deny', p: p.i, why: VEH[v].name + '太大，只能在室外开' }); break; } p.land = false; p.veh = v; p.ride = true; p.build = false; if (!vehSeats(p)) for (const q of W.p) if (q.pass === p.i) q.pass = -1; emit({ k: 'sfx', n: 'swap', x: p.x, y: p.y, o: p.i }); break; }
       const d = pillionFor(p);
       if (d && !p.ride) { p.pass = d.i; p.build = false; emit({ k: 'sfx', n: 'swap', x: p.x, y: p.y, o: p.i }); emit({ k: 'pillion', p: p.i, d: d.i }); break; } // get on behind a teammate
       if (!ownsVeh(p, p.veh)) p.veh = [4, 2, 3, 1, 5].find(k => ownsVeh(p, k)) || 0;
       if (p.veh && !p.ride && VEH[p.veh].fly && !flyOK(p)) break;
+      if (p.veh && !p.ride && VEH[p.veh].outdoor && skyTop(p.x, p.y) > p.L) { emit({ k: 'deny', p: p.i, why: VEH[p.veh].name + '太大，只能在室外开' }); break; }
       if (p.veh) { p.land = false; p.ride = !p.ride; if (p.ride) p.build = false; else for (const q of W.p) if (q.pass === p.i) q.pass = -1; emit({ k: 'sfx', n: 'swap', x: p.x, y: p.y, o: p.i }); }
     } break;
     case 'reload': if (!p.down) startReload(p); else if (p.mag[0] < WPN[0].mag) { p.reloadT = WPN[0].reload; p.reloadW = 0; } break;
@@ -6504,7 +6564,7 @@ function doAct(p, a, v) {
     case 'craft': doCraft(p, v); break;
     case 'build': doBuild(p, v.x, v.y, v.l, v.b, v.d); break;
     case 'demo': doDemolish(p, v.x, v.y, v.l); break;
-    case 'vdef': if (v >= 1 && ownsVeh(p, v) && p.ride && (airborne(p) || VEH[v].fly) && v !== p.veh) { emit({ k: 'deny', p: p.i, why: airborne(p) ? '先落地再换车' : '先下车，再坐旋翼机起飞' }); break; } if (v >= 1 && ownsVeh(p, v)) { p.veh = v; if (p.ride && !vehSeats(p)) for (const q of W.p) if (q.pass === p.i) q.pass = -1; } break; // pick the default vehicle (switches the one you're on too)
+    case 'vdef': if (v >= 1 && ownsVeh(p, v) && p.ride && VEH[v].outdoor && v !== p.veh && skyTop(p.x, p.y) > p.L) { emit({ k: 'deny', p: p.i, why: VEH[v].name + '太大，只能在室外开' }); break; } if (v >= 1 && ownsVeh(p, v) && p.ride && (airborne(p) || VEH[v].fly) && v !== p.veh) { emit({ k: 'deny', p: p.i, why: airborne(p) ? '先落地再换车' : '先下车，再坐旋翼机起飞' }); break; } if (v >= 1 && ownsVeh(p, v)) { p.veh = v; if (p.ride && !vehSeats(p)) for (const q of W.p) if (q.pass === p.i) q.pass = -1; } break; // pick the default vehicle (switches the one you're on too)
     case 'pad': if (v && inMap(v.x, v.y) && v.l >= 0 && v.l < ML) { const i = ci(v.x, v.y, v.l); if (W.blk[i] === 56) { setCell(i, 0, W.slab[i], null, 'demo'); emit({ k: 'sfx', n: 'jump', x: v.x + 0.5, y: v.y + 0.5 }); } } break;
     case 'mode': p.build = !!v; break;
   }
@@ -6583,7 +6643,10 @@ function craftBlocked(p, c) {
   if (c.shield && p.shield) return '已拥有';
   if (c.wpn && p.owned[c.wpn]) return '已拥有';
   if (c.ammo && !p.owned[c.ammo[0]]) return '没有这把枪';
+  if (c.ammo && p.ammo[c.ammo[0]] >= ammoCap(c.ammo[0])) return '背包满了'; // (round 32)
   if ((c.gam || c.fuel) && !ownsVeh(p, 5)) return '没有旋翼机';
+  if (c.shl && !ownsVeh(p, 6)) return '没有坦克';
+  if (c.shl && (p.shl || 0) >= BAL.tankCap) return '已满';
   if (c.fuel && airborne(p)) return '先落地';
   if (c.fuel && (p.fuel || 0) >= VEH[5].fuel - 0.5) return '油是满的';
   if (c.gam && (p.gam || 0) >= BAL.gyroCap) return '已满';
@@ -6603,7 +6666,8 @@ function doCraft(p, id) {
   if (c.upg) W.upg++;
   if (c.gam) p.gam = Math.min(BAL.gyroCap, (p.gam || 0) + c.gam);
   if (c.fuel) p.fuel = VEH[5].fuel;
-  if (c.veh) { p.vehs = (p.vehs || 0) | 1 << c.veh; p.veh = c.veh; if (VEH[c.veh].fly) p.gam = Math.max(p.gam || 0, BAL.gyroStart); }                  // (round 22) it becomes your default: T gets on
+  if (c.shl) p.shl = Math.min(BAL.tankCap, (p.shl || 0) + c.shl);
+  if (c.veh) { p.vehs = (p.vehs || 0) | 1 << c.veh; p.veh = c.veh; if (VEH[c.veh].fly) p.gam = Math.max(p.gam || 0, BAL.gyroStart); if (VEH[c.veh].gun === 'cannon') p.shl = Math.max(p.shl || 0, BAL.tankStart); }                  // (round 22) it becomes your default: T gets on
   if (c.shield) { p.shield = 1; p.melee = 1; }
   emit({ k: 'craft', p: p.i, id, name: c.name });
 }
@@ -6628,7 +6692,7 @@ function doBuild(p, x, y, L, id, dir) {
   for (const k in Bi.cost) W.res[k] -= Bi.cost[k];
   if (Bi.slab) setCell(i, W.blk[i] === 23 ? 0 : W.blk[i], id, null, 'build');
   else { if (W.blk[i] && W.srch) W.srch.delete(i); setCell(i, id, W.slab[i], Bi.stairs ? (dir & 3) : null, 'build'); } // (round 25) gear may replace a bush / searched spot
-  W.stats.built++; taskAdd('build'); if (L >= 2) taskAdd('high');
+  W.stats.built++; taskAdd('build'); if (L >= 2) taskAdd('high'); (W.mine = W.mine || new Set()).add(i); // (round 32) cells players built on (for the dawn re-occupation)
   recomputeStab();
 }
 function doDemolish(p, x, y, L) {
@@ -6657,7 +6721,7 @@ function startNight() {
   if (modeDef().ring) { updateFields(0, true); W.edges = siegeEdges(); }
   W.p.forEach(p => p.ready = false);
   const n = W.night, blood = isBlood(n), D = W.D;
-  const count = Math.round(BAL.nightSpawn(n) * D.n * (blood ? BAL.bloodMul : 1));
+  const count = Math.round(BAL.nightSpawn(BAL.lvN(n)) * D.n * (blood ? BAL.bloodMul : 1)); // (round 31) by level: steps every two nights
   // (round 18: every kind arrives 1-2 nights earlier; night 1 already has runners)
   // (round 21) every kind can turn up from night 1-2, rarely at first and more each night
   const wts = { walker: 10, crawler: 1.4, runner: 1 + n * 0.4, dog: 0.35 + n * 0.1, bloater: 0.4 + n * 0.08, climber: 0.35 + n * 0.18,
@@ -6688,7 +6752,7 @@ function startNight() {
   W.spawnQ = q;
   const names = ['东', '南', '西', '北'];
   modeNight(n);
-  emit({ k: 'night', n, blood: blood ? 1 : 0, count: q.length, from: front.map(s => names[s]).join('、') });
+  emit({ k: 'night', n, lv: BAL.nightLv(n), up: n > 1 && BAL.nightLv(n) > BAL.nightLv(n - 1) ? 1 : 0, blood: blood ? 1 : 0, count: q.length, from: front.map(s => names[s]).join('、') });
 }
 function dawn() {
   if (W.clean && W.night > 0) taskAdd('clean');
@@ -6710,8 +6774,8 @@ function spawnZombie(k, side, at, f, g) {
   const list = W.edges[side] && W.edges[side].length ? W.edges[side] : W.edges[0];
   let [x, y, L] = list[at != null && at >= 0 && at < list.length ? at : Math.floor(rand() * list.length)];
   if (g) { const o = Math.round(rand() * 4 - 2), nx = x + Math.sign(W.radio.x - x) * o, ny = y + Math.sign(W.radio.y - y) * o, nL = inMap(nx, ny) ? gAt(nx, ny) : -1; if (nL >= 0 && standable(nx, ny, nL, 'z') && W.ff.rw[ci(nx, ny, nL)] < Infinity) { x = nx; y = ny; L = nL; } } // a herd is a crowd, not a queue
-  const hpM = BAL.hpMul(n) * D.hp * (k === 'boss' ? 1 + n / 10 : 1) * (activeP().length > 1 ? 1.15 : 1);
-  const z = { id: W.zid++, k, x: x + 0.5, y: y + 0.5, L, z: L * FH, r: Z.r, h: Z.h, hp: Z.hp * hpM, max: Z.hp * hpM, spd: Z.spd * BAL.spdMul(n) * (f || (0.85 + rand() * 0.3)), face: 0, cd: rand(), st: 'walk', stun: 0, kbx: 0, kby: 0, hitT: 0, atk: 0, anim: rand() * 6, seed: (rand() * 1e6) | 0, spitT: 1 + rand() * 2, climbT: 0 };
+  const hpM = BAL.hpMul(BAL.lvN(n)) * D.hp * (k === 'boss' ? 1 + n / 10 : 1) * (activeP().length > 1 ? 1.15 : 1);
+  const z = { id: W.zid++, k, x: x + 0.5, y: y + 0.5, L, z: L * FH, r: Z.r, h: Z.h, hp: Z.hp * hpM, max: Z.hp * hpM, spd: Z.spd * BAL.spdMul(BAL.lvN(n)) * (f || (0.85 + rand() * 0.3)), face: 0, cd: rand(), st: 'walk', stun: 0, kbx: 0, kby: 0, hitT: 0, atk: 0, anim: rand() * 6, seed: (rand() * 1e6) | 0, spitT: 1 + rand() * 2, climbT: 0 };
   W.zs.push(z);
   return z;
 }
@@ -7326,6 +7390,7 @@ const SIEGE = {
   tRange: 9, tRate: 0.32, tDmg: 18, tAmmo: 240, tRefill: { parts: 3 },  // turret
   loot: 2, mineR: 2.4, mineDmg: 200, spawnR: 24, vSpd: VEH.map(v => v ? v.spd : 1),    // search yield multiplier, mines, horde ring radius, vehicle speed (motorbike 2.3 -> 1.9 in round 20)
   occFrac: 0.55, clearRw: { parts: 6, steel: 4 },
+  reocc: 0.6, reoccHeld: 0.2, heldN: 6, reoccFrac: 0.6, reoccWear: [0.45, 0.75],   // (round 32) at dawn a cleared building is taken back 60% of the time (20% if you built 6+ things in it, never while you're inside), 60% as many sleepers, your things in it left at 45–75% hp
   bpOdds: { milcrate: 0.5, toolbox: 0.3, backpack: 0.18, cabinet: 0.14, crate: 0.14, car: 0.1, ammobox: 0.08 },
 };
 MODE_IDS.unshift('siege');
@@ -7397,7 +7462,7 @@ Object.assign(MODES.siege, {
   },
   night(n) { modeSay('第 ' + n + ' 夜：尸潮冲你们来了，撑到天亮（' + fmtT(BAL.nightMin(n)) + '）', '#ff9a6a', true); },
   // the sun comes up on time: whatever is still far from you wanders off, the rest stay (and stop counting for the next dawn)
-  dawn() { for (const z of W.zs) { if (z.hp <= 0 || z.mz) continue; if (!nearPl(z.x, z.y, 14)) z.hp = 0; else z.mz = 1; } W.zs = W.zs.filter(z => z.hp > 0); if (W.night >= SIEGE.nights) { endGame('win', '撑过了 ' + SIEGE.nights + ' 夜，救援车队开进了城'); return true; } return false; },
+  dawn() { for (const z of W.zs) { if (z.hp <= 0 || z.mz) continue; if (!nearPl(z.x, z.y, 14)) z.hp = 0; else z.mz = 1; } W.zs = W.zs.filter(z => z.hp > 0); if (W.night >= SIEGE.nights) { endGame('win', '撑过了 ' + SIEGE.nights + ' 夜，救援车队开进了城'); return true; } siegeReoccupy(); return false; },
   hud() {
     const O = W.obj, c = O.occ.filter(q => q.c).length;
     if (W.phase === 'night') { const L = BAL.nightMin(W.night); return { t: '第 ' + W.night + ' 夜 · 天亮还有 ' + fmtT(L - W.nightT), s: '躲进清理过的楼，封门封窗、埋雷、架机枪塔，撑到天亮', p: W.nightT / L }; }
@@ -7488,6 +7553,28 @@ function turretDone(p, tgt) {
   const b = W.blk[tgt.i], T = TUR[b]; if (!T) return;
   if (!affordable(W.res, T.refill)) return emit({ k: 'deny', p: p.i, why: '零件不够（要 ' + T.refill.parts + ' 个）' });
   for (const r in T.refill) W.res[r] -= T.refill[r]; (W.obj.tam = W.obj.tam || {})[tgt.i] = T.ammo; objChanged(); emit({ k: 'sfx', n: 'reload', x: p.x, y: p.y });
+}
+
+// (round 32) dawn: cleared buildings don't stay yours for good. Each may be taken back by sleepers (fewer than before); one you've fortified
+// (6+ things built in it) only rarely, one you're standing in never. Searched spots in it fill up again; what you built stays but gets knocked about.
+function siegeReoccupy() {
+  const O = W.obj; if (!O || !O.occ) return; const taken = [];
+  O.occ.forEach((q, id) => {
+    if (!q.c || q.out || q.h == null || !TOWN_HOUSES[q.h]) return;
+    const [x0, y0, x1, y1, st] = TOWN_HOUSES[q.h], inside = (x, y) => x >= x0 && x <= x1 && y >= y0 && y <= y1;
+    if (W.p.some(p => !p.gone && !p.dead && inside(Math.floor(p.x), Math.floor(p.y)))) return;
+    const mine = W.mine ? [...W.mine].filter(i => (W.blk[i] || W.slab[i]) && inside(cx_(i), cy_(i))) : [];
+    if (rand() > (mine.length >= SIEGE.heldN ? SIEGE.reoccHeld : SIEGE.reocc)) return;
+    const cells = [];
+    for (let L = 0; L < Math.max(1, st); L++) for (let y = y0 + 1; y < y1; y++) for (let x = x0 + 1; x < x1; x++) if (standable(x, y, L, 'z') && (L === 0 || W.slab[ci(x, y, L)])) cells.push([x, y, L]);
+    if (cells.length < 6) return;
+    const n = Math.max(4, Math.round(q.n * SIEGE.reoccFrac));
+    for (let j = 0; j < n; j++) { const [x, y, L] = cells[Math.floor(rand() * cells.length)]; const z = putZombie(sleeperKind(), x, y, L); z.sleep = 1; z.mz = 1; z.occ = id; z.face = rand() * 6.28; }
+    for (const i of mine) if (W.blk[i] && B[W.blk[i]].brk) { W.bhp[i] = Math.max(1, W.bhp[i] * (SIEGE.reoccWear[0] + rand() * (SIEGE.reoccWear[1] - SIEGE.reoccWear[0]))); W.dirty.add(i); }
+    for (const i of [...W.srch]) if (inside(cx_(i), cy_(i))) W.srch.delete(i);
+    q.c = 0; q.left = n; taken.push(q.name);
+  });
+  if (taken.length) { objChanged(); W.tkv++; modeSay('天亮了：' + taken.length + ' 栋清过的楼又被丧尸占了（' + taken.slice(0, 4).join('、') + (taken.length > 4 ? '…' : '') + '），里面的东西也重新刷了', '#ff9a6a', true); }
 }
 
 /* ---- 50_render.js ---- */
@@ -8064,6 +8151,18 @@ function drawOverlay() {
 }
 
 /* ---------- minimap ---------- */
+// (round 31) a player marker you can spot at a glance: an arrow pointing where they aim, thick dark + white outline, your own with a pulsing white halo;
+// teammates in their colour; a fallen teammate is a grey cross
+function playerMark(g, x, y, ang, p, mine, k) {
+  const s = (mine ? 7 : 6.2) * k, col = PCOL[p.i % 2].j;
+  if (p.dead) { g.strokeStyle = 'rgba(0,0,0,.85)'; g.lineWidth = 4 * k; g.beginPath(); g.moveTo(x - s, y - s); g.lineTo(x + s, y + s); g.moveTo(x + s, y - s); g.lineTo(x - s, y + s); g.stroke(); g.strokeStyle = '#c8ccd0'; g.lineWidth = 2 * k; g.stroke(); return; }
+  if (mine) { const pu = 0.5 + 0.5 * Math.sin(performance.now() / 260); g.fillStyle = 'rgba(255,255,255,' + (0.18 + 0.2 * pu) + ')'; g.beginPath(); g.arc(x, y, s * (1.9 + 0.5 * pu), 0, 7); g.fill(); }
+  g.save(); g.translate(x, y); g.rotate(ang);
+  g.beginPath(); g.moveTo(s * 1.45, 0); g.lineTo(-s * 0.85, s * 0.95); g.lineTo(-s * 0.35, 0); g.lineTo(-s * 0.85, -s * 0.95); g.closePath();
+  g.lineJoin = 'round'; g.strokeStyle = 'rgba(0,0,0,.9)'; g.lineWidth = 4 * k; g.stroke(); g.strokeStyle = '#fff'; g.lineWidth = 2 * k; g.stroke(); g.fillStyle = mine ? '#ffffff' : col; g.fill();
+  if (mine) { g.fillStyle = col; g.beginPath(); g.arc(0, 0, s * 0.42, 0, 7); g.fill(); }
+  g.restore();
+}
 const MM = { base: null, t: 0 };
 function buildMinimapBase() {
   const c = document.createElement('canvas'); c.width = MW; c.height = MH; const g = c.getContext('2d');
@@ -8082,10 +8181,12 @@ function drawMinimap(dt) {
   g.fillStyle = 'rgba(30,30,34,.85)';
   for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) { for (let L = gAt(x, y); L < Math.min(ML, gAt(x, y) + 3); L++) { const b = W.blk[ci(x, y, L)]; if ((b && B[b].cost) || b === 24 || b === 50) { g.fillRect(x * S, y * S, S, S); break; } if (b === 22) { g.fillStyle = '#25381f'; g.fillRect(x * S, y * S, S, S); g.fillStyle = 'rgba(30,30,34,.85)'; break; } } }
   if (!modeDef().anyBuild) g.strokeStyle = 'rgba(255,207,107,.6)', g.lineWidth = 1, g.strokeRect((W.radio.x - BUILD_R) * S, (W.radio.y - BUILD_R) * S, (BUILD_R * 2 + 1) * S, (BUILD_R * 2 + 1) * S);
-  g.fillStyle = '#ff3b2f'; for (const z of W.zs) g.fillRect(z.x * S - 1.5, z.y * S - 1.5, 3, 3);
+  g.fillStyle = '#a8261f'; for (const z of W.zs) g.fillRect(z.x * S - 1, z.y * S - 1, 2, 2); // (round 31) zombies smaller and darker, so the players stand out
   g.fillStyle = '#7fd36b'; g.fillRect(W.radio.x * S - 1, W.radio.y * S - 1, S + 2, S + 2);
-  for (const p of W.p) { if (p.gone || p.dead) continue; g.fillStyle = PCOL[p.i % 2].j; g.beginPath(); g.arc(p.x * S, p.y * S, 3.2, 0, 7); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 1; g.stroke(); }
   g.restore();
+  const R = CAM.yaw, cx = cv.width / 2, cy = cv.height / 2, rot = (x, y) => { const dx = x * S - cx, dy = y * S - cy; return [cx + dx * Math.cos(R) - dy * Math.sin(R), cy + dx * Math.sin(R) + dy * Math.cos(R)]; };
+  for (const p of W.p) if (p.i !== ME && !p.gone) { const [px, py] = rot(p.x, p.y); playerMark(g, px, py, p.aim + R, p, false, 0.75); }
+  const me = W.p[ME]; if (me && !me.gone) { const [px, py] = rot(me.x, me.y); playerMark(g, px, py, me.aim + R, me, true, 0.75); }
 }
 
 /* ---------- events -> effects (+ guest-side state application) ---------- */
@@ -8097,6 +8198,7 @@ function fxEvent(e) {
   const guest = NETROLE === 'guest';
   switch (e.k) {
     case 'shot': if (guest && e.o === ME) break; shotFx(e.o, e.w, e.e); break;
+    case 'cshot': { RND.tracers.push({ x: e.x, y: e.y, z: e.z, x2: e.e[0], y2: e.e[1], z2: e.e[2], t: 0, life: 0.12, w: 0.09, col: [1, 0.7, 0.35] }); RND.flashes.push({ x: e.x, y: e.y, z: e.z, t: 0, life: 0.08 }); sfx('sniper', e.x, e.y); const q = W.p[e.o]; if (q) q._crec = 1; for (let k = 0; k < 6; k++) addP({ x: e.x, y: e.y, z: e.z, vx: frnd(-0.6, 0.6), vy: frnd(-0.6, 0.6), vz: frnd(0.2, 0.8), g: -0.3, col: '#8d8a84', s: 0.1, life: 0.8, smoke: 1 }); break; } // (round 31) tank cannon
     case 'gshot': RND.tracers.push({ x: e.x, y: e.y, z: e.z, x2: e.e[0], y2: e.e[1], z2: e.e[2], t: 0, life: 0.07, w: 0.03, col: [1, 0.8, 0.4] }); RND.flashes.push({ x: e.x, y: e.y, z: e.z, t: 0, life: 0.04 }); if (thr('gyro', 0.1)) sfx('rifle', e.x, e.y); if (e.h) addP({ x: e.e[0], y: e.e[1], z: e.e[2], vx: frnd(-1, 1), vy: frnd(-1, 1), vz: 1, col: '#7a1010', s: 0.06, life: 0.4 }); break; // (round 30) gyrocopter chin gun
     case 'tshot': { if (e.i != null) (RND.taim = RND.taim || {})[e.i] = Math.atan2(e.ty - e.y, e.tx - e.x);
       const a = Math.atan2(e.ty - e.y, e.tx - e.x), d = Math.hypot(e.tx - e.x, e.ty - e.y);
@@ -8142,7 +8244,7 @@ function fxEvent(e) {
     case 'task': sfx('craft'); uiMsg('任务完成：' + e.txt + '  奖励 ' + e.rt, '#ffd76a'); toast('任务完成 · ' + e.rt, '#ffd76a'); break;
     case 'tp': if (guest && e.p === ME) { const p = W.p[ME]; p.x = e.x; p.y = e.y; p.L = e.l; p.vx = p.vy = 0; } break;
     case 'kb': if (guest && e.p === ME) { const p = W.p[ME]; p.kbx += e.x; p.kby += e.y; } break;
-    case 'night': sfx(e.blood ? 'blood' : 'night'); banner(e.blood ? '第 ' + e.n + ' 夜 · 血月' : '第 ' + e.n + ' 夜', (e.blood ? '尸潮从四面八方涌来，巨尸出没' : '尸潮从' + e.from + '边来了') + '，守住堡垒', e.blood ? '#ff5a4a' : '#ffd27a'); break;
+    case 'night': sfx(e.blood ? 'blood' : 'night'); banner((e.blood ? '第 ' + e.n + ' 夜 · 血月' : '第 ' + e.n + ' 夜') + (e.lv ? ' · Lv ' + e.lv : ''), (e.up ? '尸潮升到 Lv ' + e.lv + '：更多、更硬、更快 · ' : '') + (e.blood ? '尸潮从四面八方涌来，巨尸出没' : '尸潮从' + e.from + '边来了') + '，守住堡垒', e.blood ? '#ff5a4a' : e.up ? '#ff9a5a' : '#ffd27a'); break; // (round 31) level every two nights
     case 'dawn': document.getElementById('over').classList.add('hidden'); sfx('dawn'); banner('天亮了', '撑过了第 ' + e.n + ' 夜 · 新的任务已刷新（点上方「今日任务」展开）', '#ffe7b0'); break;
     case 'say': uiMsg(e.text, e.col); break;
     case 'mbanner': banner(e.t, '', e.c); sfx('ready'); break;
@@ -8995,9 +9097,9 @@ function drawPlayers(vl, dt) {
       const lean = pil ? RP.pLean : RP.lean;
       const oz = m.torso.rotation.z; m.torso.rotation.z = lean * (0.45 + 0.55 * grip) + hurt * 0.35; m.aim.rotation.z -= (m.torso.rotation.z - oz) * 0.8; // keep the gun on target while leaning over the bars
       if (grip > 0.01) {
-        m.upper.rotation.y = -angLerp(p._uy, p._ly, grip); m.torso.rotation.y *= 1 - grip;
+        if (!RP.turret) m.upper.rotation.y = -angLerp(p._uy, p._ly, grip); m.torso.rotation.y *= 1 - grip; // (round 31) a tank commander turns with the turret (= the aim)
         m.aim.rotation.z = lerp(m.aim.rotation.z, -m.torso.rotation.z * 0.3, grip); m.aim.position.x *= 1 - grip;
-        m.head.rotation.y = lerp(m.head.rotation.y, clamp(-angDiff(p._ly, p._uy), -1.2, 1.2), grip); m.head.rotation.x *= 1 - grip;
+        m.head.rotation.y = lerp(m.head.rotation.y, RP.turret ? 0 : clamp(-angDiff(p._ly, p._uy), -1.2, 1.2), grip); m.head.rotation.x *= 1 - grip;
         m.head.rotation.z = lerp(m.head.rotation.z, -m.torso.rotation.z * 0.6 + (pil && vk === 2 ? 0.14 : 0), grip); // the back-seat rider peeks past the driver
         m.g.updateMatrixWorld(true);
         const V = !pil && m.veh.userData.all[vk], gr = V && V.userData.S.grip, hd = pil && RP.hold;
@@ -9300,10 +9402,42 @@ function mkGyro() {
   S.dust = [-0.3, 0.02, 0.34]; v.userData.S = S; return v;
 }
 
+// (round 31) tank: tracked hull with road wheels (spin), sloped glacis, skirts, engine deck; a turret (turns to the aim) with a recoiling gun, the commander stands in the hatch
+function mkTank() {
+  const v = new THREE.Group(), S = { spin: [], steer: [] }, ol = lam('#5a6b3a'), od = lam('#3e4a2a'), tr = lam('#1d1d1f'), st = lam('#7b8087'), dk = lam('#1b1b1b');
+  for (const z of [-0.5, 0.5]) {
+    vBox(v, tr, 1.7, 0.08, 0.22, 0, 0.36, z); vBox(v, tr, 1.6, 0.08, 0.22, 0, 0.04, z);                                      // track runs
+    vCyl(v, tr, 0.17, 0.17, 0.22, 0.8, 0.2, z, 'z', 10); vCyl(v, tr, 0.17, 0.17, 0.22, -0.8, 0.2, z, 'z', 10);                 // track around the ends
+    for (let k = 0; k < 5; k++) S.spin.push(vWheel(v, -0.56 + k * 0.28, z, 0.14, 0.1, 'armor'));                              // road wheels
+    for (let k = 0; k < 12; k++) vBox(v, lam('#2a2a2c'), 0.05, 0.03, 0.23, -0.75 + k * 0.137, 0.405, z);                      // track links on top
+    vBox(v, od, 1.5, 0.16, 0.04, 0.0, 0.36, z * 1.24); for (let k = 0; k < 6; k++) vBox(v, lam('#8a9070'), 0.02, 0.02, 0.012, -0.6 + k * 0.24, 0.4, z * 1.26); // skirt + rivets
+  }
+  vBox(v, ol, 1.5, 0.3, 0.8, -0.02, 0.4, 0); vBox(v, ol, 0.42, 0.06, 0.8, 0.74, 0.46, 0, -0.55); vBox(v, od, 1.0, 0.04, 0.82, -0.1, 0.565, 0); // hull, glacis, deck plate
+  for (let k = 0; k < 5; k++) vBox(v, lam('#2c3420'), 0.03, 0.012, 0.6, -0.52 - k * 0.06, 0.59, 0);                                 // engine grille
+  vBox(v, st, 0.06, 0.06, 0.6, 0.9, 0.3, 0); for (const z of [-0.3, 0.3]) vRod(v, st, [0.92, 0.3, z], [0.82, 0.5, z], 0.018);           // tow bar
+  const hl = vLit('#fff4cf', '#ffe08a', 0.6); for (const z of [-0.32, 0.32]) { vCyl(v, dk, 0.04, 0.04, 0.05, 0.84, 0.52, z, 'x', 8); vCyl(v, hl, 0.034, 0.034, 0.008, 0.865, 0.52, z, 'x', 8); }
+  const tl = vLit('#c0201a', '#ff2010', 0.35); for (const z of [-0.36, 0.36]) vBox(v, tl, 0.02, 0.04, 0.05, -0.78, 0.5, z);
+  for (const z of [-0.26, 0.26]) vCyl(v, dk, 0.035, 0.035, 0.1, -0.74, 0.62, z, 'y', 8); S.exh = vMark(v, -0.74, 0.68, 0.26);
+  vBox(v, lam('#4a6a3a'), 0.08, 0.2, 0.14, -0.6, 0.66, 0.3); vBox(v, lam('#6a4a2e'), 0.3, 0.1, 0.12, -0.45, 0.62, -0.32);        // jerry can, log
+  // turret (turns with the aim): body, mantlet, gun (recoils), hatch ring, open lid, roof MG, smoke dischargers, antenna, star
+  const tu = new THREE.Group(); tu.position.set(0, 0.6, 0); v.add(tu); S.turret = tu;
+  vCyl(tu, od, 0.38, 0.4, 0.06, 0, 0.03, 0, 'y', 14); vBox(tu, ol, 0.72, 0.26, 0.62, -0.02, 0.19, 0); vBox(tu, ol, 0.2, 0.22, 0.5, 0.36, 0.17, 0, -0.35); vBox(tu, ol, 0.22, 0.18, 0.56, -0.44, 0.17, 0, 0.3);
+  const br = new THREE.Group(); br.position.set(0.44, 0.2, 0); tu.add(br); S.barrel = br;
+  vBox(br, od, 0.14, 0.16, 0.2, 0.02, 0, 0); vCyl(br, ol, 0.05, 0.055, 1.0, 0.55, 0, 0, 'x', 10); vCyl(br, od, 0.07, 0.07, 0.16, 0.4, 0, 0, 'x', 10); vBox(br, dk, 0.1, 0.09, 0.12, 1.07, 0, 0); S.muz = vMark(br, 1.12, 0, 0);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.03, 5, 14), od); ring.rotation.x = Math.PI / 2; ring.position.set(-0.08, 0.33, 0); tu.add(ring);
+  vBox(tu, ol, 0.3, 0.03, 0.3, -0.3, 0.46, 0, 1.1);                                                                                 // open hatch lid
+  vRod(tu, dk, [0.05, 0.36, -0.2], [0.35, 0.4, -0.2], 0.014); vBox(tu, dk, 0.1, 0.06, 0.05, 0.05, 0.37, -0.2);                    // roof MG
+  for (const s of [-1, 1]) for (let k = 0; k < 3; k++) vCyl(tu, dk, 0.025, 0.025, 0.08, 0.2 - k * 0.05, 0.3, s * 0.32, 'z', 6);
+  vRod(tu, dk, [-0.36, 0.32, 0.22], [-0.4, 1.0, 0.22], 0.006); vBox(tu, lam('#eae4d0'), 0.005, 0.1, 0.1, 0.0, 0.2, 0.312, 0.785); vBox(tu, lam('#eae4d0'), 0.005, 0.1, 0.1, 0.0, 0.2, -0.312, 0.785);
+  S.grip = [vMark(tu, 0.04, 0.37, -0.14), vMark(tu, 0.04, 0.37, 0.14)];
+  vLights(S, v, [hl], [tl], [0.86, 0.52, 0]);
+  S.dust = [-0.7, 0.02, 0.5]; v.userData.S = S; return v;
+}
+
 function mkVehicles() {
-  const g = new THREE.Group(), bike = mkBike(), moto = mkMoto(), cargo = mkCargo(), armor = mkArmor(), gyro = mkGyro();
-  for (const q of [bike, moto, cargo, armor, gyro]) q.traverse(o => { if (o.isMesh && !o.material.transparent) { o.castShadow = true; } });
-  g.add(bike, moto, cargo, armor, gyro); g.userData = { bike, moto, cargo, armor, gyro, all: [null, bike, moto, cargo, armor, gyro] }; return g;
+  const g = new THREE.Group(), bike = mkBike(), moto = mkMoto(), cargo = mkCargo(), armor = mkArmor(), gyro = mkGyro(), tank = mkTank();
+  for (const q of [bike, moto, cargo, armor, gyro, tank]) q.traverse(o => { if (o.isMesh && !o.material.transparent) { o.castShadow = true; } });
+  g.add(bike, moto, cargo, armor, gyro, tank); g.userData = { bike, moto, cargo, armor, gyro, tank, all: [null, bike, moto, cargo, armor, gyro, tank] }; return g;
 }
 
 // how a rider sits on each vehicle: H = hip height, lean = torso pitch (negative = forward), pedal = [x, y, crank radius] or peg = [x, y, half-width],
@@ -9314,7 +9448,8 @@ const VPOSE = [null,
   { H: 0.7, lean: -0.22, peg: [0.06, 0.3, 0.15], pH: 0.77, pLean: -0.26, pPeg: [-0.31, 0.38, 0.16], hold: [0.3, 0.83, 0.16], roll: 1.3, foot: 1, drop: 0.1, slide: 0 },
   { H: 0.66, lean: -0.22, pedal: [0.12, 0.27, 0.1], roll: 0.12 },
   { H: 0.55, lean: -0.06, peg: [0.3, 0.41, 0.1], pH: 0.55, pLean: -0.02, pPeg: [-0.08, 0.41, 0.11], hold: [0.06, 0.78, 0.34], roll: -0.15 },
-  { H: 0.58, lean: -0.08, peg: [0.42, 0.36, 0.1], pH: 0.67, pLean: -0.04, pPeg: [-0.12, 0.43, 0.13], hold: [0.12, 0.64, 0.25], roll: 0.9, fly: 1 },                                          // (round 29) gyrocopter: banks and noses down in flight
+  { H: 0.58, lean: -0.08, peg: [0.42, 0.36, 0.1], pH: 0.67, pLean: -0.04, pPeg: [-0.12, 0.43, 0.13], hold: [0.12, 0.64, 0.25], roll: 0.9, fly: 1 },
+  { H: 0.9, lean: 0, peg: [0.0, 0.55, 0.1], roll: -0.06, turret: 1 },                                                    // (round 31) tank: the commander stands in the turret hatch, turns with it                                          // (round 29) gyrocopter: banks and noses down in flight
 ];
 // two-bone leg IK: put the ankle of leg L at (tx, ty, tz) in the lower-body frame, hip pivot at (hx, hy, hz); the thigh abducts (rotation.x) for sideways targets
 function legIK(L, hx, hy, hz, tx, ty, tz, toe) {
@@ -9356,6 +9491,7 @@ function vehTick(p, m, dt, dk) {
   if (S.crank) { S.crank.rotation.z = -(p._crank || 0); for (const q of S.pedals) q.rotation.z = p._crank || 0; }
   for (const s of S.steer) s.rotation.y = p._steer || 0;
   if (S.wheel) S.wheel.rotation.x = -(p._steer || 0) * 3;
+  if (S.turret) { S.turret.rotation.y = -angDiff(p._ly, p.aim); const ap = p.aimPt, hd = ap ? Math.hypot(ap.x - p.x, ap.y - p.y) : 8; S.barrel.rotation.z = lerp(S.barrel.rotation.z, ap ? clamp(Math.atan2(ap.z - (p.z + 0.8), Math.max(1, hd)), -0.15, 0.4) : 0, Math.min(1, dt * 8)); p._crec = Math.max(0, (p._crec || 0) - dt * 2.5); S.barrel.position.x = 0.44 - 0.16 * p._crec; } // turret to the aim, gun recoils
   if (S.gun) { S.gun.rotation.y = -angDiff(p._ly, p.aim); const ap = p.aimPt, hd = ap ? Math.hypot(ap.x - p.x, ap.y - p.y) : 6; S.gun.rotation.z = lerp(S.gun.rotation.z, ap ? clamp(Math.atan2(ap.z - (p.z + 0.25), Math.max(0.5, hd)), -1.3, 0.3) : -0.3, Math.min(1, dt * 10)); }
   if (S.rotor) { const air = p.z - surfZ(p.x, p.y, skyTop(p.x, p.y)); p._rot = lerp(p._rot || 0, p.land && air < 0.15 ? 6 : 30, Math.min(1, dt * 1.5)); S.rotor.rotation.y += p._rot * dt; S.prop.rotation.x += p._rot * 1.4 * dt;
     if (air < 3.5 && air > 0.05 && FXR() < dt * 30) { const a = FXR() * 6.28, r = 0.6 + FXR() * 0.8, gz = p.z - air; addP({ x: p.x + Math.cos(a) * r, y: p.y + Math.sin(a) * r, z: gz + 0.05, vx: Math.cos(a) * 2.2, vy: Math.sin(a) * 2.2, vz: 0.15, g: -0.1, col: '#8a7e6a', s: 0.08, life: 0.5, smoke: 1 }); } } // rotor + prop spin; downwash kicks up dust close to the ground
@@ -9658,7 +9794,7 @@ function nextQuick(d) { const me = W.p[ME], q = quickList(me); if (q.length < 2)
 function swapLast() { const me = W.p[ME]; if (UI.prevW != null && me.owned[UI.prevW] && UI.prevW !== me.wpn) { if (me.build) toggleBuild(false); act('wpn', UI.prevW); } else nextQuick(1); }
 // vehicles: T gets on your default one; Shift+T / a long press on 载具 picks another you own (and gets on it)
 function rideKey(pick) {
-  const me = W.p[ME], own = [1, 2, 3, 4, 5].filter(v => (me.vehs || 0) >> v & 1);
+  const me = W.p[ME], own = [1, 2, 3, 4, 5, 6].filter(v => (me.vehs || 0) >> v & 1);
   // (round 26) next to a teammate who is riding: their back seat comes first (T on PC, 载具 on touch); say so when their vehicle has none
   if (!me.ride && !(me.pass >= 0) && !pick) {
     if (pillionFor(me)) { act('ride'); return; }
@@ -10303,20 +10439,35 @@ function guestGone() {
 function sendLobby() { netSendCtl({ t: 'lobby', ready: NET.ready, host: SET.name || '房主', code: NET.code, diff: SET.diff, mode: SET.mode || 'classic', map: SET.map || '' }); }
 function hostStart() {
   if (!NET.gctl || !NET.gctl.open) return;
+  const S = SET.hostFrom ? loadSlot(SET.hostFrom) : null; // (round 32) open the room from a save
+  if (S) return hostFromSave(S, SET.hostFrom);
   const n = newRunSlot(t => (typeof TK !== 'undefined' ? TK.toast(t, 4500) : titleStatus(t))); if (!n) return; SLOT = n; // (round 27) the host saves into an empty slot
   const seed = (Math.random() * 1e9) | 0, names = [SET.name || '房主', NET.guestName || '队友'];
   const mode = MODES[SET.mode] ? SET.mode : 'classic', map = MAPS[SET.map] ? SET.map : MODES[mode].map;
   netSendCtl({ t: 'start', seed, names, diff: SET.diff, mode, map });
   startGame(seed, names, SET.diff, 0, mode, map);
 }
+// (round 32) co-op from a save: same seed / mode / map / difficulty, the host loads it, the teammate gets the built world and their saved gear back (or starts fresh next to the host)
+function hostFromSave(S, n) {
+  const names = [SET.name || '房主', NET.guestName || '队友'], mode = S.mode || 'classic', map = S.map || 'town';
+  netSendCtl({ t: 'start', seed: S.seed, names, diff: S.diff, mode, map });
+  startGame(S.seed, names, S.diff, 0, mode, map); SLOT = n;
+  try { applySave(S); } catch (e) { console.error(e); toast('存档读取失败', '#ff8a7a'); return; }
+  const g = W.p[1], P = S.p && S.p[1], h = W.p[0];
+  if (g) { if (P) Object.assign(g, { hp: P.dead ? BAL.pMaxHp * 0.5 : P.hp, wpn: P.wpn, owned: P.owned, mag: P.mag, ammo: P.ammo, meds: P.meds, nades: P.nades, kills: P.kills, veh: P.veh || 0, vehs: P.vehs || 0, shield: P.shield ? 1 : 0, melee: P.shield ? P.melee || 0 : 0, gn: P.gn || [0, 0, 0], lives: P.lives != null ? P.lives : livesFor(W.diff, W.mode), fuel: P.fuel != null ? P.fuel : 60, gam: P.gam || 0, shl: P.shl || 0 });
+    for (const k of ['owned', 'mag', 'ammo']) while (g[k].length < NW) g[k].push(0);
+    const at = P && P.L <= skyTop(P.x, P.y) ? [P.x, P.y, P.L] : [h.x + 1, h.y + 0.5, h.L]; g.x = at[0]; g.y = at[1]; g.L = at[2]; g.z = surfZ(g.x, g.y, g.L); g.maxHp = BAL.pMaxHp; }
+  netSendCtl({ t: 'wsync', g: S.g, srch: [...W.srch], me: g ? [g.x, g.y, g.L] : null, label: saveLabel(S) });
+  banner('继续 · 存档 ' + n, saveLabel(S) + ' · 双人', '#ffe7b0');
+}
 const ZI = ZKEYS;
 function pFlags(p) { return (p.down ? 1 : 0) | (p.dead ? 2 : 0) | (p.gone ? 4 : 0) | (p.build ? 32 : 0) | (p.ready ? 64 : 0) | (p.selfRev ? 128 : 0) | (p.ride ? 256 : 0) | ((p.veh || 0) << 9) | ((p.pass != null && p.pass >= 0 ? p.pass + 1 : 0) << 12) | (p.land ? 1 << 15 : 0); } // (round 29) bit 15: the gyrocopter is coming down // veh: 3 bits (round 22: four vehicles)
 function makeSnap() {
-  const P = p => [r2(p.x), r2(p.y), p.L, r2(p.vx), r2(p.vy), r2(p.aim), Math.ceil(p.hp), pFlags(p), Math.round(p.downT * 10) / 10, p.wpn, p.mag.join(','), p.ammo.join(','), p.owned.join(''), p.nades, p.meds, Math.round(p.useT * 100), Math.round(p.medT * 10) / 10, Math.round(p.reloadT * 10) / 10, p.kills, Math.round(p.anim * 10) / 10, p.sel, p.aimPt ? [r2(p.aimPt.x), r2(p.aimPt.y), r2(p.aimPt.z)] : 0, p.vehs || 0, p.shield ? 1 : 0, p.melee || 0, p.gn || [0, 0, 0], p.lives || 0, Math.round((p.fuel || 0) * 10) / 10, airborne(p) ? r2(p.z) : 0, p.gam || 0];
+  const P = p => [r2(p.x), r2(p.y), p.L, r2(p.vx), r2(p.vy), r2(p.aim), Math.ceil(p.hp), pFlags(p), Math.round(p.downT * 10) / 10, p.wpn, p.mag.join(','), p.ammo.join(','), p.owned.join(''), p.nades, p.meds, Math.round(p.useT * 100), Math.round(p.medT * 10) / 10, Math.round(p.reloadT * 10) / 10, p.kills, Math.round(p.anim * 10) / 10, p.sel, p.aimPt ? [r2(p.aimPt.x), r2(p.aimPt.y), r2(p.aimPt.z)] : 0, p.vehs || 0, p.shield ? 1 : 0, p.melee || 0, p.gn || [0, 0, 0], p.lives || 0, Math.round((p.fuel || 0) * 10) / 10, airborne(p) ? r2(p.z) : 0, p.gam || 0, p.shl || 0];
   const z = []; for (const q of W.zs) z.push(q.id, ZI.indexOf(q.k), Math.round(q.x * 100), Math.round(q.y * 100), q.L, Math.round(q.z * 100), Math.round(q.face * 100), Math.ceil(q.hp / q.max * 100), (q.climbing ? 1 : 0) | (q.atk > 0 ? 2 : 0) | (q.hitT > 0 ? 4 : 0) | (q.moving ? 8 : 0) | (q.burn > 0 ? 16 : 0) | (q.scr > 0 ? 32 : 0) | (q.rage > 0 ? 64 : 0) | (q.hidden ? 128 : 0) | (q.sleep ? 256 : 0) | ((q.aw || 0) > 0.15 ? 512 : 0) | ((q.tl || 0) << 10)); // tl (round 23): brute tells, 2 bits
   const pr = []; for (const b of W.proj) pr.push(b.k === 'nade' ? (b.gt ? 2 + b.gt : 0) : b.k === 'gl' ? 2 : 1, r2(b.x), r2(b.y), r2(b.z), r2(b.vx), r2(b.vy), r2(b.vz));
   const d = []; for (const i of W.dirty) d.push(i, Math.round(W.bhp[i]), Math.round(W.shp[i])); W.dirty.clear();
-  return { t: 's', T: r2(W.t), ph: W.phase, cl: Math.round(W.clock * 10) / 10, dl: W.dayLen, n: W.night, nt: Math.round(W.nightT), tk: NET.tkv === W.tkv && (NET.tkN = (NET.tkN || 0) + 1) % 12 ? 0 : (NET.tkv = W.tkv, W.tasks.map(t => [t.k, t.need, t.got, t.done, t.txt, t.rt])), res: RES.map(r => W.res[r.k]), u: W.upg, k: W.kills, p: W.p.map(P), z, pr, d, sl: W.spawnQ.length, cz: (W.cz || []).map(c => [c.k, c.x, c.y, c.z, c.r, r2(c.t)]), ob: NET.obv === W.obv ? 0 : (NET.obv = W.obv, W.obj) };
+  return { t: 's', T: r2(W.t), ph: W.phase, cl: Math.round(W.clock * 10) / 10, dl: W.dayLen, n: W.night, nt: Math.round(W.nightT), tk: NET.tkv === W.tkv && (NET.tkN = (NET.tkN || 0) + 1) % 12 ? 0 : (NET.tkv = W.tkv, W.tasks.map(t => [t.k, t.need, t.got, t.done, t.txt, t.rt])), res: RES.map(r => W.res[r.k]), u: W.upg, k: W.kills, p: W.p.map(P), z, pr, d, sl: W.spawnQ.length, cz: (W.cz || []).map(c => [c.k, c.x, c.y, c.z, c.r, r2(c.t)]), ob: NET.obv === W.obv ? 0 : (NET.obv = W.obv, W.obj), pk: W.perk || 0 }; // (round 32) permanent upgrades (the caps read them)
 }
 function hostNetTick(dt) {
   if (!NET.gctl || !NET.gctl.open) return;
@@ -10352,6 +10503,7 @@ function guestRecv(m) {
     case 'bye': hostGone(); return;
     case 'lobby': NET.ready = m.ready; NET.hostName = m.host; NET.diff = m.diff; NET.mode = m.mode; NET.map = m.map; lobbyUI(); return;
     case 'start': startGame(m.seed, m.names, m.diff, 1, m.mode, m.map); return;
+    case 'wsync': if (W) { applyWorld(m.g); W.srch = new Set(m.srch || []); const me = W.p[ME]; if (me && m.me) { me.x = m.me[0]; me.y = m.me[1]; me.L = m.me[2]; me.z = surfZ(me.x, me.y, me.L); me.zv = me.z; CAM.tx = me.x; CAM.ty = me.y; } banner('继续存档', m.label || '', '#ffe7b0'); } return; // (round 32) the host opened the room from a save
     case 'toLobby': backToLobby(); return;
     case 'ev': if (W && m.e.q > (W.rq || 0)) { W.rq = m.e.q; fxEvent(m.e); } return; // own counter: local emits on the guest never swallow host events
     case 's': if (W && STATE.mode === 'play') applySnap(m); return;
@@ -10362,13 +10514,14 @@ function applySnap(s) {
   W.t = s.T; W.phase = s.ph; W.clock = s.cl; W.dayLen = s.dl; W.night = s.n; W.upg = s.u; W.kills = s.k;
   W.nightT = s.nt || 0;
   if (s.ob) { W.obj = s.ob; W.obv = (W.obv || 0) + 1; }
+  if (s.pk) W.perk = s.pk;
   if (s.tk) { W.tasks = s.tk.map(a => ({ k: a[0], need: a[1], got: a[2], done: a[3], txt: a[4], rt: a[5] })); W.tkv++; }
   RES.forEach((r, i) => W.res[r.k] = s.res[i]); W.spawnLeft = s.sl;
   s.p.forEach((a, i) => {
     const p = W.p[i]; if (!p) return;
-    const [x, y, L, vx, vy, aim, hp, fl, downT, wpn, mag, ammo, owned, nades, meds, useT, medT, reloadT, kills, anim, sel, ap, vehs, shield, melee, gn, lives, fuel, fz, gam] = a;
+    const [x, y, L, vx, vy, aim, hp, fl, downT, wpn, mag, ammo, owned, nades, meds, useT, medT, reloadT, kills, anim, sel, ap, vehs, shield, melee, gn, lives, fuel, fz, gam, shl] = a;
     const mine = i === ME;
-    p.hp = hp; p.down = !!(fl & 1); p.dead = !!(fl & 2); p.gone = !!(fl & 4); p.downT = downT; p.selfRev = !!(fl & 128); p.ride = !!(fl & 256); p.veh = (fl >> 9) & 7; p.pass = ((fl >> 12) & 7) - 1; p.land = !!(fl & 32768); p.fuel = fuel || 0; p.fz = fz || 0; p.gam = gam || 0;
+    p.hp = hp; p.down = !!(fl & 1); p.dead = !!(fl & 2); p.gone = !!(fl & 4); p.downT = downT; p.selfRev = !!(fl & 128); p.ride = !!(fl & 256); p.veh = (fl >> 9) & 7; p.pass = ((fl >> 12) & 7) - 1; p.land = !!(fl & 32768); p.fuel = fuel || 0; p.fz = fz || 0; p.gam = gam || 0; p.shl = shl || 0;
     p.mag = mag.split(',').map(Number); p.ammo = ammo.split(',').map(Number); p.owned = owned.split('').map(Number);
     p.nades = nades; p.meds = meds; p.vehs = vehs || 0; p.shield = shield ? 1 : 0; p.gn = gn || [0, 0, 0]; p.lives = lives || 0; if (p.i !== ME || !(UI.meleeT > performance.now())) p.melee = melee || 0; p.useT = useT / 100; p.medT = medT; p.reloadT = reloadT; p.kills = kills; p.ready = !!(fl & 64);
     if (!mine) { p.tx = x; p.ty = y; p.L = L; p.vx = vx; p.vy = vy; p.aim = aim; p.build = !!(fl & 32); p.wpn = wpn; p.anim = anim; p.sel = sel; p.aimPt = ap ? { x: ap[0], y: ap[1], z: ap[2] } : null; if (p.x == null || d2(p.x, p.y, x, y) > 4) { p.x = x; p.y = y; } }
@@ -10589,6 +10742,7 @@ function hudTick(dt) {
   const rl = me.reloadT > 0 ? 1 - me.reloadT / WPN[me.reloadW != null ? me.reloadW : wi].reload : me.reloadVis > 0 ? 1 - me.reloadVis / w.reload : me.medT > 0 ? 1 - me.medT / (me.selfRev ? 3 : BAL.healTime) : 0;
   $('wRl').style.width = (rl * 100) + '%';
   $('iNadeL').textContent = GREN[me.gt || 0].sn; $('iNade').textContent = gCount(me, me.gt || 0); $('iMed').textContent = me.meds; $('iKill').textContent = me.kills; $('iLife').textContent = me.lives != null ? me.lives : '-';
+  { const sw = $('iShlW'), ht = ownsVeh(me, 6); sw.classList.toggle('hidden', !ht); if (ht) $('iShl').textContent = me.shl || 0; } // (round 31) tank shells
   { const fw = $('iFuelW'), has = ownsVeh(me, 5); fw.classList.toggle('hidden', !has); if (has) { const f = Math.ceil(me.fuel || 0); $('iFuel').textContent = f + ' 秒 · 弹 ' + (me.gam || 0); fw.style.color = f < BAL.fuelLow ? '#ff7a6a' : airborne(me) ? '#9fe0ff' : ''; } } // (round 29) gyrocopter fuel
   uiKeys(me);
   const q = quickList(me), qk = q.join(','); if (UI.wbK !== qk) { UI.wbK = qk;
@@ -10606,12 +10760,13 @@ function hudTick(dt) {
   const ph = $('phase');
   if (W.phase === 'day') {
     const m = Math.max(0, Math.ceil(W.clock)); ph.className = '';
-    ph.innerHTML = (W.night ? '第 ' + (W.night + 1) + ' 夜前' : '第一个白天') + `<span class="sub">${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')} 后入夜</span>`;
+    const nl = BAL.nightLv(W.night + 1), up = W.night > 0 && nl > BAL.nightLv(W.night); /* (round 31) the next night's level */
+    ph.innerHTML = (W.night ? '第 ' + (W.night + 1) + ' 夜前' : '第一个白天') + `<span class="sub">${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')} 后入夜 · 今夜 Lv ${nl}${up ? '（升级）' : ''}</span>`;
   } else if (W.phase === 'night') {
     const left = W.zs.length + (NETROLE === 'guest' ? (W.spawnLeft || 0) : W.spawnQ.length);
     ph.className = isBlood(W.night) ? 'blood' : 'night';
     const rest = Math.max(0, Math.ceil(BAL.nightMin(W.night) - W.nightT));
-    ph.innerHTML = '第 ' + W.night + ' 夜' + (isBlood(W.night) ? ' · 血月' : '') + `<span class="sub">剩余 ${left} 只${rest > 0 ? ' · 天亮还要 ' + Math.floor(rest / 60) + ':' + String(rest % 60).padStart(2, '0') : ''} · ${W.night}/${BAL.nights}</span>`;
+    ph.innerHTML = '第 ' + W.night + ' 夜 · Lv ' + BAL.nightLv(W.night) + (isBlood(W.night) ? ' · 血月' : '') + `<span class="sub">剩余 ${left} 只${rest > 0 ? ' · 天亮还要 ' + Math.floor(rest / 60) + ':' + String(rest % 60).padStart(2, '0') : ''} · ${W.night}/${BAL.nights}</span>`;
   } else ph.textContent = W.phase === 'win' ? '获救' : '失守';
   // tasks: a one-line summary that opens on tap, and pops open for a few seconds when something changes
   if (UI.tkv !== W.tkv) {
@@ -10619,7 +10774,8 @@ function hudTick(dt) {
     if ((UI.tkv === -1 || changed) && !INP.touch) UI.tkOpenT = 5; // on phones it stays folded unless tapped
     UI.tkv = W.tkv; UI.tkDone = W.tasks.some(t => t.done);
     const nd = W.tasks.filter(t => t.done).length;
-    $('tasks').innerHTML = `<div class="tksum">今日任务 ${nd}/${W.tasks.length} <span>▾</span></div>` + W.tasks.map(t => `<div class="tk${t.done ? ' done' : ''}"><i>${t.done ? '✔' : ''}</i><span class="tt">${t.txt}</span><b>${t.done ? '完成' : t.got + '/' + t.need}</b><span class="tr">${t.rt}</span></div>`).join('');
+    const pk = W.perk ? Object.values(W.perk).reduce((a, b) => a + b, 0) : 0; /* (round 32) permanent tasks */
+    $('tasks').innerHTML = `<div class="tksum">永久任务 · 已拿 ${pk} 项提升 <span>▾</span></div>` + W.tasks.map(t => `<div class="tk${t.done ? ' done' : ''}"><i>${t.done ? '✔' : ''}</i><span class="tt">${t.txt}</span><b>${t.done ? '完成' : t.got + '/' + t.need}</b><span class="tr">${t.rt}</span></div>`).join('');
   }
   UI.tkOpenT = Math.max(0, (UI.tkOpenT || 0) - dt);
   $('tasks').classList.toggle('open', !!UI.tkPin || UI.tkOpenT > 0);
@@ -10707,11 +10863,12 @@ function renderCraft() {
   if (tab === 'gun') {
     h = WPN.map((w, k) => {
       const buy = CRAFT.find(c => c.wpn === k), am = CRAFT.find(c => c.ammo && c.ammo[0] === k), own = me.owned[k];
-      const st = own ? (w.inf ? '已有 · 子弹无限' : '已有 · ' + me.mag[k] + ' / ' + me.ammo[k]) : '没有';
+      const st = own ? (w.inf ? '已有 · 子弹无限' : '已有 · ' + me.mag[k] + ' / ' + me.ammo[k] + '（最多 ' + ammoCap(k) + '）') : '没有'; // (round 32) backpack cap
       const btns = !own && buy ? shopBtn(buy, '造这把枪') : own && am ? shopBtn(am, '买' + am.name) : own && w.inf ? '<span class="sfree">不用买子弹</span>' : '';
       return `<div class="sc${own ? ' own' : ''}"><div class="sh"><b>${w.name}</b><em>${st}</em></div><small>${w.tag || ''}</small><div class="sb">${btns}</div></div>`;
     }).join('');
     { const g = CRAFT.find(c => c.gam), own = ownsVeh(me, 5); h += `<div class="sc${own ? ' own' : ''}"><div class="sh"><b>旋翼机机枪</b><em>${own ? '机上 ' + (me.gam || 0) + ' / ' + BAL.gyroCap : '要先有旋翼机'}</em></div><small>飞的时候按开火：一发 ${BAL.gyroDmg}，射速快，打你瞄的地方；子弹存在飞机上</small><div class="sb">${own ? shopBtn(g, '买' + g.name) : '<span class="sfree">「载具」栏造</span>'}</div></div>`; } // (round 30)
+    { const g = CRAFT.find(c => c.shl), own = ownsVeh(me, 6); h += `<div class="sc${own ? ' own' : ''}"><div class="sh"><b>坦克炮</b><em>${own ? '车里 ' + (me.shl || 0) + ' / ' + BAL.tankCap : '要先有坦克'}</em></div><small>开坦克时按开火：炮弹打到哪炸到哪（${BAL.tankDmg}，半径 ${BAL.tankR}），${BAL.tankRate} 秒一发</small><div class="sb">${own ? shopBtn(g, '买' + g.name) : '<span class="sfree">「载具」栏造</span>'}</div></div>`; } // (round 31)
     // (round 23) melee: knife or riot shield, one at a time
     const sc = CRAFT.find(c => c.shield), useBtn = m => `<button class="sbtn mel" data-m="${m}"><b>${m ? '用盾' : '用刀'}</b><span>换成近战武器</span></button>`;
     h += `<div class="sgrp">近战 · 右键 / V（触屏「刀 / 盾」键）；X 或武器菜单里切换</div>`;
@@ -10743,7 +10900,7 @@ function renderKit() {
   $('kslots').innerHTML = [0, 1, 2, 3].map(j => `<button data-s="${j}" class="${j === sl ? 'sel' : ''}"><kbd>${j + 1}</kbd><b>${q[j] != null ? WPN[q[j]].name : '空'}</b></button>`).join('');
   $('kwpn').innerHTML = WPN.map((w, k) => { const own = me.owned[k], j = q.indexOf(k);
     return `<button data-w="${k}" class="kw${own ? '' : ' no'}${k === me.wpn ? ' cur' : ''}" ${own ? '' : 'disabled'}><b>${w.name}${j >= 0 ? ' <i>' + (j + 1) + '</i>' : ''}</b><small>${own ? (w.inf ? '∞' : me.mag[k] + ' / ' + me.ammo[k]) : '商店里造'}</small><span>${w.tag || ''}</span></button>`; }).join('');
-  $('kveh').innerHTML = [1, 2, 3, 4, 5].map(v => { const own = (me.vehs || 0) >> v & 1;
+  $('kveh').innerHTML = [1, 2, 3, 4, 5, 6].map(v => { const own = (me.vehs || 0) >> v & 1;
     return `<button data-v="${v}" class="${own ? '' : 'no'}${own && me.veh === v ? ' sel' : ''}" ${own ? '' : 'disabled'}><b>${VEH[v].name}</b><small>${own ? (me.veh === v ? '默认 ✓' : '设为默认') : '商店里造'}</small></button>`; }).join('');
   $('kshield').innerHTML = [0, 1].map(m => { const own = !m || me.shield, on = (me.melee === 1 && me.shield ? 1 : 0) === m; return `<button data-m="${m}" class="${on ? 'sel' : ''}${own ? '' : ' no'}" ${own ? '' : 'disabled'}><b>${m ? '防暴盾' : '刀'}</b><small>${!own ? '商店 → 武器 里买' : on ? '在用 ✓' : '换成它'}</small></button>`; }).join('');
   $('kshield').querySelectorAll('button[data-m]').forEach(b => b.onclick = () => { switchMelee(+b.dataset.m); renderKit(); });
@@ -10798,7 +10955,11 @@ function drawBigMap() {
     else { g.beginPath(); g.arc(px, py, 7, 0, 7); g.fill(); g.stroke(); if (m.ring) { g.beginPath(); g.arc(px, py, m.ring * S, 0, 7); g.strokeStyle = m.c; g.stroke(); } }
     g.font = '700 12px ' + getComputedStyle(document.body).fontFamily; g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.85)'; g.strokeText(m.n, px, py - 14); g.fillStyle = m.c; g.fillText(m.n, px, py - 14); }
   { const [px, py] = rot(W.radio.x + 0.5, W.radio.y + 0.5); g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.75)'; g.strokeText('营地', px, py); g.fillStyle = '#d8ffcc'; g.fillText('营地', px, py); }
-  for (const p of W.p) { if (p.gone || p.dead) continue; const [px, py] = rot(p.x, p.y); g.fillStyle = PCOL[p.i % 2].j; g.beginPath(); g.arc(px, py, 6, 0, 7); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 2; g.stroke(); g.fillStyle = '#fff'; g.font = '600 12px ' + getComputedStyle(document.body).fontFamily; g.strokeStyle = 'rgba(0,0,0,.8)'; g.lineWidth = 3; g.strokeText(p.name, px, py - 14); g.fillText(p.name, px, py - 14); }
+  // (round 31) players: big arrows (you: white with a halo), name tags in a dark pill; a fallen teammate shows as a grey cross
+  const ff = getComputedStyle(document.body).fontFamily, order = W.p.filter(p => !p.gone).sort((a, b) => (a.i === ME) - (b.i === ME));
+  for (const p of order) { const [px, py] = rot(p.x, p.y), mine = p.i === ME; playerMark(g, px, py, p.aim + R, p, mine, 1.6);
+    const lab = mine ? '你' : p.name + (p.dead ? ' ✝' : ''); g.font = '700 13px ' + ff; const w = g.measureText(lab).width + 12; g.fillStyle = 'rgba(0,0,0,.72)'; g.beginPath(); g.roundRect ? g.roundRect(px - w / 2, py - 34, w, 19, 9) : g.rect(px - w / 2, py - 34, w, 19); g.fill();
+    g.fillStyle = mine ? '#fff' : PCOL[p.i % 2].j; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(lab, px, py - 24.5); }
 }
 /* ---------- modes and maps: picker (title / lobby), objective panel ---------- */
 const curMode = () => MODES[SET.mode] ? SET.mode : 'siege';
@@ -10907,6 +11068,7 @@ const TK_DIFFS = [{ v: 'easy', label: '简单', sub: '丧尸少，资源多' }, 
 const tkModes = () => MODE_IDS.map(k => ({ v: k, icon: MODES[k].icon, label: MODES[k].name, sub: MODES[k].desc }));
 const tkMaps = (mode) => MAP_IDS.map(k => ({ v: k, label: MAPS[k].name + (MODES[mode] && MODES[mode].map === k ? ' · 推荐' : ''), sub: MAPS[k].desc }));
 const tkFields = (vals, host) => [
+  { key: 'from', label: '从哪开始', hint: '可以用存档开房间：队友进来后接着这个存档玩（存档里有队友的装备就还给他）', type: 'cards', modes: ['host'], options: () => [{ v: 0, label: '新开一局', sub: '用下面的难度、模式和地图' }].concat([1, 2, 3, 4, 5].map(n => { const s = loadSlot(n); return s ? { v: n, label: '存档 ' + n, sub: saveLabel(s) + (s.p && s.p.length > 1 ? ' · 双人' : '') } : null; }).filter(Boolean)), def: () => 0, change: v => { SET.hostFrom = +v || 0; } }, // (round 32)
   { key: 'diff', label: '难度', type: 'seg', options: TK_DIFFS, def: () => SET.diff, change: v => { SET.diff = v; saveSet(); markDiff(); } },
   { key: 'mode', label: '模式', type: 'cards', options: tkModes, def: () => curMode(), change: (v, o) => { SET.mode = v; SET.map = o.map = MODES[v].map; saveSet(); uiModeLbl(); tkDemo(); } },
   { key: 'map', label: '地图', hint: '每种模式在哪张图上都能玩', type: 'cards', options: () => tkMaps((vals || TK.setup).mode || curMode()), def: () => curMap(), change: v => { SET.map = v; saveSet(); uiModeLbl(); tkDemo(); } }
@@ -10957,7 +11119,7 @@ const TK = TitleKit.create({
     Object.assign(SET, { diff: setup.diff, mode: setup.mode, map: setup.map }); saveSet();
     audioInit(); netLeave(); NETROLE = 'solo'; startGame((Math.random() * 1e9) | 0, [SET.name || '幸存者'], SET.diff, 0, SET.mode, SET.map);
   },
-  host: ({ setup }) => { Object.assign(SET, { diff: setup.diff, mode: setup.mode, map: setup.map }); saveSet(); audioInit(); netHost(); },
+  host: ({ setup }) => { Object.assign(SET, { diff: setup.diff, mode: setup.mode, map: setup.map }); SET.hostFrom = +setup.from || 0; saveSet(); audioInit(); netHost(); }, // (round 32) from: 0 = a new run, n = save slot n
   join: ({ code }) => { audioInit(); netJoin(code); },
   leaveRoom: () => { netLeave(); STATE.mode = 'title'; },
   roomReady: () => $('lReady').click(),
@@ -11096,10 +11258,11 @@ function saveGame(quiet) {
   const S = {
     v: SAVE_V, mw: MW, at: Date.now(), mode: W.mode, map: W.map, obj: W.obj, seed: W.seed, diff: W.diff, night: W.night, phase: W.phase, clock: W.clock, dayLen: W.dayLen, nightT: W.nightT,
     res: W.res, upg: W.upg, kills: W.kills, stats: W.stats, endless: W.endless, clean: W.clean, tasks: W.tasks, srch: [...W.srch], spotN: W.spotN, t: W.t,
-    p: W.p.filter(p => !p.gone).map(p => ({ name: p.name, x: p.x, y: p.y, L: p.L, hp: p.hp, dead: p.dead, wpn: p.wpn, owned: p.owned, mag: p.mag, ammo: p.ammo, meds: p.meds, nades: p.nades, kills: p.kills, veh: p.veh || 0, vehs: p.vehs || 0, shield: p.shield ? 1 : 0, melee: p.melee || 0, gn: p.gn || [0, 0, 0], lives: p.lives || 0, fuel: p.fuel != null ? +p.fuel.toFixed(1) : 60, gam: p.gam || 0 })),
+    p: W.p.filter(p => !p.gone).map(p => ({ name: p.name, x: p.x, y: p.y, L: inAirZ(p) != null ? skyTop(p.x, p.y) : p.L, /* (round 31) saved in flight: put them on what is below */ hp: p.hp, dead: p.dead, wpn: p.wpn, owned: p.owned, mag: p.mag, ammo: p.ammo, meds: p.meds, nades: p.nades, kills: p.kills, veh: p.veh || 0, vehs: p.vehs || 0, shield: p.shield ? 1 : 0, melee: p.melee || 0, gn: p.gn || [0, 0, 0], lives: p.lives || 0, fuel: p.fuel != null ? +p.fuel.toFixed(1) : 60, gam: p.gam || 0, shl: p.shl || 0 })),
     zs: W.zs.filter(z => z.hp > 0).slice(0, 300).map(z => [z.k, +z.x.toFixed(2), +z.y.toFixed(2), z.L, Math.round(z.hp), Math.round(z.max), z.mz ? 1 : 0, z.g || 0, z.sleep ? 1 : 0, z.occ == null ? -1 : z.occ]),
     q: W.spawnQ.slice(0, 500).map(s => [+s.t.toFixed(1), s.k, s.side, s.at == null ? -1 : s.at, s.f ? +s.f.toFixed(2) : 0, s.g || 0]), gid: W.gid || 0,
     g: [rleEnc(W.blk), rleEnc(W.slab), rleEnc(W.bdir), rleEnc(hpPack(W.bhp)), rleEnc(hpPack(W.shp))].map(b64e),
+    perm: W.perm || null, perk: W.perk || null, mine: W.mine ? [...W.mine].filter(i => W.blk[i] || W.slab[i]) : [], // (round 32)
   };
   if (!SLOT) SLOT = freeSlot() || oldestSlot();
   try { localStorage.setItem(SKEY + slotKey(SLOT), JSON.stringify(S)); }
@@ -11131,14 +11294,15 @@ function continueGame(n) {
   TIPS.forEach(clearTimeout); TIPS = [];
   banner('继续 · 存档 ' + n, saveLabel(S), '#ffe7b0');
 }
+// (round 32) the world part of a save: blocks, floors, facing, hp (also sent to a teammate when the host opens a room from a save)
+function applyWorld(gs) { const g = gs.map(b64d); W.blk.set(rleDec(g[0], NC)); W.slab.set(rleDec(g[1], NC)); W.bdir.set(rleDec(g[2], NC)); hpUnpack(rleDec(g[3], NC * 2), W.bhp); hpUnpack(rleDec(g[4], NC * 2), W.shp); recomputeStab(); W.navDirty = true; W.ver++; W.dirty = new Set(); }
 function applySave(S) {
-  const g = S.g.map(b64d);
-  W.blk.set(rleDec(g[0], NC)); W.slab.set(rleDec(g[1], NC)); W.bdir.set(rleDec(g[2], NC));
-  hpUnpack(rleDec(g[3], NC * 2), W.bhp); hpUnpack(rleDec(g[4], NC * 2), W.shp);
+  applyWorld(S.g);
+  W.perm = S.perm || null; W.perk = S.perk || null; W.mine = new Set(S.mine || []);
   Object.assign(W, { night: S.night, phase: S.phase, clock: S.clock, dayLen: S.dayLen, nightT: S.nightT || 0, res: S.res, upg: S.upg, kills: S.kills, stats: S.stats, endless: !!S.endless, clean: S.clean !== false, tasks: S.tasks || [], t: S.t || 0 });
   W.srch = new Set(S.srch || []); W.spotN = S.spotN || null; if (!W.spotN) { W.spotN = spotCount(); for (const k in W.spotN) W.spotN[k] = Math.round(W.spotN[k] * 2); } W.tkv++; W.rng = mulberry((S.seed ^ (S.night * 7919) ^ (S.at & 0xffff)) >>> 0);
   const p = W.p[0], P = S.p[0];
-  if (P) { Object.assign(p, { x: P.x, y: P.y, L: P.L, hp: P.dead ? BAL.pMaxHp * 0.5 : P.hp, wpn: P.wpn, owned: P.owned, mag: P.mag, ammo: P.ammo, meds: P.meds, nades: P.nades, kills: P.kills, veh: P.veh || 0, vehs: P.vehs != null ? P.vehs : (P.veh ? 1 << P.veh : 0), shield: P.shield ? 1 : 0, melee: P.shield ? P.melee || 0 : 0, gn: P.gn || [0, 0, 0], lives: P.lives != null ? P.lives : livesFor(W.diff, W.mode), fuel: P.fuel != null ? P.fuel : 60, gam: P.gam || 0 }); p.dead = false; p.down = false; } // (round 22) vehs = owned bitmask; older saves only knew the best one
+  if (P) { Object.assign(p, { x: P.x, y: P.y, L: P.L, hp: P.dead ? BAL.pMaxHp * 0.5 : P.hp, wpn: P.wpn, owned: P.owned, mag: P.mag, ammo: P.ammo, meds: P.meds, nades: P.nades, kills: P.kills, veh: P.veh || 0, vehs: P.vehs != null ? P.vehs : (P.veh ? 1 << P.veh : 0), shield: P.shield ? 1 : 0, melee: P.shield ? P.melee || 0 : 0, gn: P.gn || [0, 0, 0], lives: P.lives != null ? P.lives : livesFor(W.diff, W.mode), fuel: P.fuel != null ? P.fuel : 60, gam: P.gam || 0, shl: P.shl || 0 }); p.dead = false; p.down = false; } // (round 22) vehs = owned bitmask; older saves only knew the best one
   // older saves may have fewer weapons
   for (const k of ['owned', 'mag', 'ammo']) while (p[k].length < NW) p[k].push(0);
   p.z = pZ(p); p.zv = p.z; CAM.tx = p.x; CAM.ty = p.y;
@@ -11146,6 +11310,7 @@ function applySave(S) {
   W.zs = []; for (const [k, x, y, L, hp, max, mz, g, sl, occ] of S.zs || []) { if (!ZT[k]) continue; const z = spawnZombie(k, 0); Object.assign(z, { x, y, L, hp, max }); if (g) z.g = g; if (sl) z.sleep = 1; if (occ != null && occ >= 0) z.occ = occ; z.z = surfZ(x, y, L); if (mz || ZT[k].boss) z.mz = 1; if (ZT[k].boss && W.obj && W.obj.curK === k) W.obj.cur = z.id; }
   W.spawnQ = (S.q || []).map(([t, k, side, at, f, g]) => ({ t, k, side, at: at == null ? -1 : at, f: f || 0, g: g || 0 })); W.gid = S.gid || 0;
   recomputeStab(); W.navDirty = true; W.ver++; W.dirty = new Set(); updateFields(0, true); W.edges = edgeSpawns();
+  rollTasks(); for (const q of W.p) q.maxHp = BAL.pMaxHp; // (round 32) permanent tasks / upgrades carry on
 }
 // autosave when the page goes away (tab switch, app switch, closing)
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveGame(true); });

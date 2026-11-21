@@ -122,7 +122,8 @@ const VEH = [null,
   { k: 'moto', name: '摩托车', spd: 1.9, seats: 2, tag: '最快：走得快 90%，后座能带一个队友' },
   { k: 'cargo', name: '货运三轮', spd: 1.45, search: 1, tag: '搜刮用：坐在车上就能搜（够得更远、时间减半），搜到的材料 +50%' },
   { k: 'armor', name: '装甲车', spd: 1.3, seats: 2, armor: 0.35, ram: 1, tag: '保护用：受到的伤害只剩 35%，撞开挡路的丧尸，后座能带一个队友' },
-  { k: 'gyro', name: '旋翼机', spd: 1.9, fly: 1, fuel: 60, seats: 2, tag: '会飞：越过屋顶和尸群。只能从地面或楼顶起飞（头顶不能有屋顶）；一箱油飞 60 秒，没满就能加：商店「载具」栏一键加满，或在有屋顶的房间里按 F；飞着用机头下的机枪打（机上自己的子弹，商店里买），手里的枪不能用；后座能带一个队友，队友能开枪' }, // (round 29)
+  { k: 'gyro', name: '旋翼机', spd: 1.9, fly: 1, fuel: 60, seats: 2, gun: 'chin', tag: '会飞：越过屋顶和尸群。只能从地面或楼顶起飞（头顶不能有屋顶）；一箱油飞 60 秒，没满就能加：商店「载具」栏一键加满，或在有屋顶的房间里按 F；飞着用机头下的机枪打（机上自己的子弹，商店里买），手里的枪不能用；后座能带一个队友，队友能开枪' }, // (round 29)
+  { k: 'tank', name: '坦克', spd: 1.0, armor: 0.2, ram: 1, gun: 'cannon', outdoor: 1, tag: '自带炮塔：开火打炮弹（落点爆炸 150，半径 2.6），炮弹商店里买；受到的伤害只剩 20%，撞开丧尸；慢，太大进不了楼' }, // (round 31)
 ];
 const NVEH = VEH.length - 1;
 const PILLION = 0.38;                                   // how far behind the driver the back-seat rider sits
@@ -137,7 +138,7 @@ const gCount = (p, t) => t ? ((p.gn || [])[t - 1] || 0) : p.nades;
 const gCap = t => t ? BAL.gnCap : BAL.nadeCap;
 // blueprints (尸城求生): what you can build / make from the start, and what has to be found first
 const BP_BASE = [1, 4, 6, 7, 12, 53, 56];
-const BP_LIST = [2, 3, 5, 8, 13, 14, 9, 15, 51, 52, 57, 58, 59, 'bike', 'moto', 'cargo', 'armor', 'gyro'];
+const BP_LIST = [2, 3, 5, 8, 13, 14, 9, 15, 51, 52, 57, 58, 59, 'bike', 'moto', 'cargo', 'armor', 'gyro', 'tank'];
 const bpName = k => typeof k === 'number' ? B[k].name : (VEH.find(v => v && v.k === k) || { name: k }).name;
 const SLAB_BRIDGE = 11; // slab id for the pre-built bridges (not buildable)
 defB(11, { key: 'bridge', slab: 1, nat: 1, col: '#7e5a36' });
@@ -205,7 +206,23 @@ const SPOTS = {
   ammobox: { name: '弹药盒', loot: {}, ammo: 1.4, allAmmo: 1, vanish: 1, n: 40 },              // bullets lying about: for every gun, owned or not yet
   bpcase: { name: '图纸箱', loot: { parts: [3, 6] }, ammo: 1, bp: 1, vanish: 1 },               // in a building zombies hold: always a blueprint
 };
-/* ---------- daily tasks: three are rolled every dawn (and at the start) and last until the next dawn ---------- */
+/* ---------- (round 32) permanent tasks: counters that build up over the whole run; each tier reached gives the team a permanent upgrade ---------- */
+const PERM = [
+  { k: 'kill', name: '击杀丧尸', need: [60, 200, 500, 1200, 2500], perk: 'hp' },
+  { k: 'search', name: '搜刮', need: [25, 80, 200, 450], perk: 'bag' },
+  { k: 'build', name: '建造 / 放置', need: [40, 150, 400], perk: 'med' },
+  { k: 'nade', name: '用手雷炸死丧尸', need: [15, 60, 160], perk: 'nade' },
+  { k: 'clean', name: '整夜没有人倒下', need: [2, 5, 9], perk: 'life' },
+  { k: 'elite', name: '击杀精英（重锤、防暴尸、尸王）', need: [5, 20, 50], perk: 'hp' },
+  { k: 'shove', name: '刀 / 盾命中', need: [50, 200, 500], perk: 'bag' },
+  { k: 'gather', name: '砍树、采石', need: [30, 100, 250], perk: 'med' },
+];
+const PERK = { hp: ['生命上限 +10', 10], bag: ['背包：弹药上限 +25%', 0.25], med: ['医疗包上限 +2', 2], nade: ['手雷上限 +3（特殊手雷各 +2）', 3], life: ['复活次数 +1', 1] };
+const perkLv = k => (typeof W !== 'undefined' && W && W.perk && W.perk[k]) || 0;
+// carry limits grow with the upgrades (read through getters so every place that checks a cap sees the current one)
+// (round 32) ammo you can carry for a gun: 12 pickups' worth, +25% per backpack upgrade
+const ammoCap = wi => Math.round((WPN[wi].loot || WPN[wi].mag) * 12 * (1 + PERK.bag[1] * perkLv('bag')));
+/* ---------- daily tasks (before round 32): three are rolled every dawn (and at the start) and last until the next dawn ---------- */
 // need(d, W) -> target count for upcoming night d; min = first night it can appear; rw = reward pool keys
 const TASKS = {
   kill: { t: n => '击杀 ' + n + ' 只丧尸', need: d => Math.round(BAL.nightSpawn(d) * 0.6), w: 3, rw: ['parts', 'ammo', 'steel'] },
@@ -253,6 +270,7 @@ const CRAFT = [
   { id: 'shells', cat: 'gun', name: '霰弹 ×12', desc: '', cost: { parts: 2 }, ammo: [1, 12] },
   { id: 'rounds', cat: 'gun', name: '步枪弹 ×60', desc: '', cost: { parts: 3 }, ammo: [2, 60] },
   { id: 'slugs', cat: 'gun', name: '狙击弹 ×10', desc: '', cost: { parts: 3 }, ammo: [3, 10] },
+  { id: 'tshell', cat: 'gun', name: '坦克炮弹 ×10', desc: '坦克主炮用的炮弹，车里最多放 30 发；造坦克时送 10 发', cost: { parts: 4, steel: 3 }, shl: 10 }, // (round 31)
   { id: 'gfuel', cat: 'fuel', name: '给旋翼机加满油', desc: '', cost: {}, fuel: 1 }, // (round 30) refuel from the shop too (free, instant; F in a roofed room still works)
   { id: 'gammo', cat: 'gun', name: '旋翼机机枪弹 ×60', desc: '旋翼机机头下的机枪用的子弹（飞的时候按开火），机上最多存 240 发；造旋翼机时送 60 发', cost: { parts: 3, steel: 2 }, gam: 60 }, // (round 30)
   { id: 'crossbow', cat: 'gun', name: '弩', desc: '几乎没声音：一箭 110 穿 3 只，钉住 1 秒，偷偷清楼用', cost: { parts: 12, wood: 12 }, wpn: 4 },
@@ -272,6 +290,7 @@ const CRAFT = [
   { id: 'cargo', cat: 'veh', name: '货运三轮', desc: VEH[3].tag, cost: { wood: 8, steel: 10, parts: 8 }, veh: 3, bp: 'cargo' },
   { id: 'armor', cat: 'veh', name: '装甲车', desc: VEH[4].tag, cost: { steel: 24, parts: 16 }, veh: 4, bp: 'armor' },
   { id: 'gyro', cat: 'veh', name: '旋翼机', desc: VEH[5].tag, cost: { steel: 20, parts: 24 }, veh: 5, bp: 'gyro' },
+  { id: 'tank', cat: 'veh', name: '坦克', desc: VEH[6].tag, cost: { steel: 40, parts: 30 }, veh: 6, bp: 'tank' },
   { id: 'upg', cat: 'upg', name: '强化弹头', desc: '全队伤害 +12%（最多 5 级）', cost: { parts: 8 }, upg: 1 },
 ];
 
@@ -296,6 +315,7 @@ const BAL = {
   slowR: 3.6, slowT: 8, slowMul: 0.3,                           // slow grenade: a sticky field, zombies inside crawl at 30%
   smokeR: 3.8, smokeT: 10, smokeConf: 1.2,                      // smoke: zombies in the cloud lose you, wander and don't bite (and for 1.2 s after leaving)
   blastR: 4.4, blastDmg: 70, blastKB: 24, blastStun: 1.6,       // blast: little damage, throws everything out of the way (clears a path)
+  tankDmg: 150, tankR: 2.6, tankRate: 1.6, tankRange: 20, tankCap: 30, tankStart: 10, // (round 31) tank cannon: a shell that bursts where it hits
   gyroDmg: 12, gyroRate: 0.12, gyroSpread: 0.06, gyroRange: 22, gyroCap: 240, gyroStart: 60, // (round 30) gyrocopter chin gun: its own ammo, bought in the shop
   flyHover: 2.2, flyClimb: 0.8, flyDrop: 0.6, fuelLow: 10, refuelT: 4, // (round 29) gyrocopter: cruise 2.2 floors over whatever is below, climb / descend rate (of the take-off curve per second), warn at 10 s of fuel, 4 s to refuel indoors
   nadeRange: 12, nadeDmg: 286, nadeR: 3.4, nadeFuse: 1.6, nadeLand: 0.35, nadeMin: 0.5, // (round 18: radius 2.8 -> 3.4, damage at the edge 35% -> 50%, goes off 0.35 s after landing where you aimed)
@@ -306,6 +326,8 @@ const BAL = {
   nightSpawn: n => Math.round(30 + n * 12),     // (round 18: was 22 + 9n)
   bloodMul: 1.5,
   hpMul: n => 1 + 0.15 * (n - 1),               // (was 0.13 per night)
+  nightLv: n => Math.max(1, Math.ceil(n / 2)),   // (round 31) the horde goes up a level every two nights
+  lvN: n => 2 * Math.max(1, Math.ceil(n / 2)) - 0.5, // the night number the numbers are worked out from: nights 1–2 → 1.5, 3–4 → 3.5 … (same average as before, in steps)
   spdMul: n => 1 + 0.03 * (n - 1),              // (was 0.02 per night)
   spawnDur: n => 35 + n * 4,      // the horde trickles in over this long (was 50 + 4n)
   zCap: () => TOUCHY ? 95 : 140,  // most zombies alive at once; the rest of the horde waits its turn
@@ -333,3 +355,5 @@ const saveSet = () => lsSet('set', SET);
 let W = null, ME = 0, NETROLE = null;
 const STATE = { mode: 'title', paused: false };
 const HUB = /\/deadtide\/(index\.html)?$/.test(location.pathname);
+// (round 32) carry limits grow with the permanent upgrades: read through getters, so every place that checks a cap sees the current one
+for (const [k, base, per, perk] of [['pMaxHp', 100, 10, 'hp'], ['medCap', 8, 2, 'med'], ['nadeCap', 15, 3, 'nade'], ['gnCap', 8, 2, 'nade']]) Object.defineProperty(BAL, k, { get: () => base + per * perkLv(perk), configurable: true });

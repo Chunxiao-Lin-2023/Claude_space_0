@@ -15,13 +15,11 @@ const UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/6
     const simWait = s => p.evaluate(s => new Promise(r => { const t0 = W.t; const f = () => W.t - t0 >= s ? r() : setTimeout(f, 30); f(); }), s);
     // tasks
     const tk = await p.evaluate(() => W.tasks.map(t => t.k + ':' + t.need + ':' + t.rt));
-    ok('three tasks rolled', tk.length === 3, tk.join(' | '));
-    ok('task panel rendered', await p.evaluate(() => document.querySelectorAll('#tasks .tk').length === 3));
+    ok('permanent tasks: the four closest to done are shown (round 32)', tk.length === 4, tk.join(' | '));
+    ok('task panel rendered', await p.evaluate(() => document.querySelectorAll('#tasks .tk').length === 4));
     ok('no radio left', await p.evaluate(() => !W.blk.some(b => b === 30) && !CRAFT.some(c => c.id === 'radio')));
-    const pay = await p.evaluate(() => { W.tasks = [{ k: 'build', need: 2, got: 0, done: 0, rw: { res: { parts: 7 } }, txt: 't', rt: 'r' }]; W.tkv++; const p0 = W.res.parts; taskAdd('build'); taskAdd('build'); return [W.tasks[0].done, W.res.parts - p0]; });
-    ok('task completes and pays', pay[0] === 1 && pay[1] === 7, pay.join(','));
-    const roll = await p.evaluate(() => { const s = new Set(); for (let n = 0; n < 14; n++) { W.night = n; rollTasks(); W.tasks.forEach(t => s.add(t.k)); } W.night = 0; rollTasks(); return [...s].join(','); });
-    ok('task variety over nights', roll.split(',').length >= 9, roll);
+    const pay = await p.evaluate(() => { const h0 = W.p[0].maxHp; taskAdd('kill', 60); return [W.perk.hp, W.p[0].maxHp - h0, W.tasks.find(t => t.k === 'kill').need]; });
+    ok('a permanent task tier gives its upgrade and moves on to the next tier', pay[0] === 1 && pay[1] === 10 && pay[2] === 200, pay.join(','));
     // zombies hunt players, not the camp
     const hunt = await p.evaluate(() => { const me = W.p[0]; me.x = W.radio.x + 0.5; me.y = W.radio.y + 14.5; me.L = gAt(Math.floor(me.x), Math.floor(me.y)); updateFields(0, true); const z = spawnZombie('walker', 0); z.x = W.radio.x + 9.5; z.y = W.radio.y + 14.5; z.L = gAt(Math.floor(z.x), Math.floor(z.y)); z.z = surfZ(z.x, z.y, z.L); const d0 = Math.hypot(z.x - me.x, z.y - me.y); return d0; });
     await simWait(2);

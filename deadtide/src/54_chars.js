@@ -494,9 +494,9 @@ function drawPlayers(vl, dt) {
       const lean = pil ? RP.pLean : RP.lean;
       const oz = m.torso.rotation.z; m.torso.rotation.z = lean * (0.45 + 0.55 * grip) + hurt * 0.35; m.aim.rotation.z -= (m.torso.rotation.z - oz) * 0.8; // keep the gun on target while leaning over the bars
       if (grip > 0.01) {
-        m.upper.rotation.y = -angLerp(p._uy, p._ly, grip); m.torso.rotation.y *= 1 - grip;
+        if (!RP.turret) m.upper.rotation.y = -angLerp(p._uy, p._ly, grip); m.torso.rotation.y *= 1 - grip; // (round 31) a tank commander turns with the turret (= the aim)
         m.aim.rotation.z = lerp(m.aim.rotation.z, -m.torso.rotation.z * 0.3, grip); m.aim.position.x *= 1 - grip;
-        m.head.rotation.y = lerp(m.head.rotation.y, clamp(-angDiff(p._ly, p._uy), -1.2, 1.2), grip); m.head.rotation.x *= 1 - grip;
+        m.head.rotation.y = lerp(m.head.rotation.y, RP.turret ? 0 : clamp(-angDiff(p._ly, p._uy), -1.2, 1.2), grip); m.head.rotation.x *= 1 - grip;
         m.head.rotation.z = lerp(m.head.rotation.z, -m.torso.rotation.z * 0.6 + (pil && vk === 2 ? 0.14 : 0), grip); // the back-seat rider peeks past the driver
         m.g.updateMatrixWorld(true);
         const V = !pil && m.veh.userData.all[vk], gr = V && V.userData.S.grip, hd = pil && RP.hold;

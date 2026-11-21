@@ -61,20 +61,35 @@ function guestGone() {
 function sendLobby() { netSendCtl({ t: 'lobby', ready: NET.ready, host: SET.name || '房主', code: NET.code, diff: SET.diff, mode: SET.mode || 'classic', map: SET.map || '' }); }
 function hostStart() {
   if (!NET.gctl || !NET.gctl.open) return;
+  const S = SET.hostFrom ? loadSlot(SET.hostFrom) : null; // (round 32) open the room from a save
+  if (S) return hostFromSave(S, SET.hostFrom);
   const n = newRunSlot(t => (typeof TK !== 'undefined' ? TK.toast(t, 4500) : titleStatus(t))); if (!n) return; SLOT = n; // (round 27) the host saves into an empty slot
   const seed = (Math.random() * 1e9) | 0, names = [SET.name || '房主', NET.guestName || '队友'];
   const mode = MODES[SET.mode] ? SET.mode : 'classic', map = MAPS[SET.map] ? SET.map : MODES[mode].map;
   netSendCtl({ t: 'start', seed, names, diff: SET.diff, mode, map });
   startGame(seed, names, SET.diff, 0, mode, map);
 }
+// (round 32) co-op from a save: same seed / mode / map / difficulty, the host loads it, the teammate gets the built world and their saved gear back (or starts fresh next to the host)
+function hostFromSave(S, n) {
+  const names = [SET.name || '房主', NET.guestName || '队友'], mode = S.mode || 'classic', map = S.map || 'town';
+  netSendCtl({ t: 'start', seed: S.seed, names, diff: S.diff, mode, map });
+  startGame(S.seed, names, S.diff, 0, mode, map); SLOT = n;
+  try { applySave(S); } catch (e) { console.error(e); toast('存档读取失败', '#ff8a7a'); return; }
+  const g = W.p[1], P = S.p && S.p[1], h = W.p[0];
+  if (g) { if (P) Object.assign(g, { hp: P.dead ? BAL.pMaxHp * 0.5 : P.hp, wpn: P.wpn, owned: P.owned, mag: P.mag, ammo: P.ammo, meds: P.meds, nades: P.nades, kills: P.kills, veh: P.veh || 0, vehs: P.vehs || 0, shield: P.shield ? 1 : 0, melee: P.shield ? P.melee || 0 : 0, gn: P.gn || [0, 0, 0], lives: P.lives != null ? P.lives : livesFor(W.diff, W.mode), fuel: P.fuel != null ? P.fuel : 60, gam: P.gam || 0, shl: P.shl || 0 });
+    for (const k of ['owned', 'mag', 'ammo']) while (g[k].length < NW) g[k].push(0);
+    const at = P && P.L <= skyTop(P.x, P.y) ? [P.x, P.y, P.L] : [h.x + 1, h.y + 0.5, h.L]; g.x = at[0]; g.y = at[1]; g.L = at[2]; g.z = surfZ(g.x, g.y, g.L); g.maxHp = BAL.pMaxHp; }
+  netSendCtl({ t: 'wsync', g: S.g, srch: [...W.srch], me: g ? [g.x, g.y, g.L] : null, label: saveLabel(S) });
+  banner('继续 · 存档 ' + n, saveLabel(S) + ' · 双人', '#ffe7b0');
+}
 const ZI = ZKEYS;
 function pFlags(p) { return (p.down ? 1 : 0) | (p.dead ? 2 : 0) | (p.gone ? 4 : 0) | (p.build ? 32 : 0) | (p.ready ? 64 : 0) | (p.selfRev ? 128 : 0) | (p.ride ? 256 : 0) | ((p.veh || 0) << 9) | ((p.pass != null && p.pass >= 0 ? p.pass + 1 : 0) << 12) | (p.land ? 1 << 15 : 0); } // (round 29) bit 15: the gyrocopter is coming down // veh: 3 bits (round 22: four vehicles)
 function makeSnap() {
-  const P = p => [r2(p.x), r2(p.y), p.L, r2(p.vx), r2(p.vy), r2(p.aim), Math.ceil(p.hp), pFlags(p), Math.round(p.downT * 10) / 10, p.wpn, p.mag.join(','), p.ammo.join(','), p.owned.join(''), p.nades, p.meds, Math.round(p.useT * 100), Math.round(p.medT * 10) / 10, Math.round(p.reloadT * 10) / 10, p.kills, Math.round(p.anim * 10) / 10, p.sel, p.aimPt ? [r2(p.aimPt.x), r2(p.aimPt.y), r2(p.aimPt.z)] : 0, p.vehs || 0, p.shield ? 1 : 0, p.melee || 0, p.gn || [0, 0, 0], p.lives || 0, Math.round((p.fuel || 0) * 10) / 10, airborne(p) ? r2(p.z) : 0, p.gam || 0];
+  const P = p => [r2(p.x), r2(p.y), p.L, r2(p.vx), r2(p.vy), r2(p.aim), Math.ceil(p.hp), pFlags(p), Math.round(p.downT * 10) / 10, p.wpn, p.mag.join(','), p.ammo.join(','), p.owned.join(''), p.nades, p.meds, Math.round(p.useT * 100), Math.round(p.medT * 10) / 10, Math.round(p.reloadT * 10) / 10, p.kills, Math.round(p.anim * 10) / 10, p.sel, p.aimPt ? [r2(p.aimPt.x), r2(p.aimPt.y), r2(p.aimPt.z)] : 0, p.vehs || 0, p.shield ? 1 : 0, p.melee || 0, p.gn || [0, 0, 0], p.lives || 0, Math.round((p.fuel || 0) * 10) / 10, airborne(p) ? r2(p.z) : 0, p.gam || 0, p.shl || 0];
   const z = []; for (const q of W.zs) z.push(q.id, ZI.indexOf(q.k), Math.round(q.x * 100), Math.round(q.y * 100), q.L, Math.round(q.z * 100), Math.round(q.face * 100), Math.ceil(q.hp / q.max * 100), (q.climbing ? 1 : 0) | (q.atk > 0 ? 2 : 0) | (q.hitT > 0 ? 4 : 0) | (q.moving ? 8 : 0) | (q.burn > 0 ? 16 : 0) | (q.scr > 0 ? 32 : 0) | (q.rage > 0 ? 64 : 0) | (q.hidden ? 128 : 0) | (q.sleep ? 256 : 0) | ((q.aw || 0) > 0.15 ? 512 : 0) | ((q.tl || 0) << 10)); // tl (round 23): brute tells, 2 bits
   const pr = []; for (const b of W.proj) pr.push(b.k === 'nade' ? (b.gt ? 2 + b.gt : 0) : b.k === 'gl' ? 2 : 1, r2(b.x), r2(b.y), r2(b.z), r2(b.vx), r2(b.vy), r2(b.vz));
   const d = []; for (const i of W.dirty) d.push(i, Math.round(W.bhp[i]), Math.round(W.shp[i])); W.dirty.clear();
-  return { t: 's', T: r2(W.t), ph: W.phase, cl: Math.round(W.clock * 10) / 10, dl: W.dayLen, n: W.night, nt: Math.round(W.nightT), tk: NET.tkv === W.tkv && (NET.tkN = (NET.tkN || 0) + 1) % 12 ? 0 : (NET.tkv = W.tkv, W.tasks.map(t => [t.k, t.need, t.got, t.done, t.txt, t.rt])), res: RES.map(r => W.res[r.k]), u: W.upg, k: W.kills, p: W.p.map(P), z, pr, d, sl: W.spawnQ.length, cz: (W.cz || []).map(c => [c.k, c.x, c.y, c.z, c.r, r2(c.t)]), ob: NET.obv === W.obv ? 0 : (NET.obv = W.obv, W.obj) };
+  return { t: 's', T: r2(W.t), ph: W.phase, cl: Math.round(W.clock * 10) / 10, dl: W.dayLen, n: W.night, nt: Math.round(W.nightT), tk: NET.tkv === W.tkv && (NET.tkN = (NET.tkN || 0) + 1) % 12 ? 0 : (NET.tkv = W.tkv, W.tasks.map(t => [t.k, t.need, t.got, t.done, t.txt, t.rt])), res: RES.map(r => W.res[r.k]), u: W.upg, k: W.kills, p: W.p.map(P), z, pr, d, sl: W.spawnQ.length, cz: (W.cz || []).map(c => [c.k, c.x, c.y, c.z, c.r, r2(c.t)]), ob: NET.obv === W.obv ? 0 : (NET.obv = W.obv, W.obj), pk: W.perk || 0 }; // (round 32) permanent upgrades (the caps read them)
 }
 function hostNetTick(dt) {
   if (!NET.gctl || !NET.gctl.open) return;
@@ -110,6 +125,7 @@ function guestRecv(m) {
     case 'bye': hostGone(); return;
     case 'lobby': NET.ready = m.ready; NET.hostName = m.host; NET.diff = m.diff; NET.mode = m.mode; NET.map = m.map; lobbyUI(); return;
     case 'start': startGame(m.seed, m.names, m.diff, 1, m.mode, m.map); return;
+    case 'wsync': if (W) { applyWorld(m.g); W.srch = new Set(m.srch || []); const me = W.p[ME]; if (me && m.me) { me.x = m.me[0]; me.y = m.me[1]; me.L = m.me[2]; me.z = surfZ(me.x, me.y, me.L); me.zv = me.z; CAM.tx = me.x; CAM.ty = me.y; } banner('继续存档', m.label || '', '#ffe7b0'); } return; // (round 32) the host opened the room from a save
     case 'toLobby': backToLobby(); return;
     case 'ev': if (W && m.e.q > (W.rq || 0)) { W.rq = m.e.q; fxEvent(m.e); } return; // own counter: local emits on the guest never swallow host events
     case 's': if (W && STATE.mode === 'play') applySnap(m); return;
@@ -120,13 +136,14 @@ function applySnap(s) {
   W.t = s.T; W.phase = s.ph; W.clock = s.cl; W.dayLen = s.dl; W.night = s.n; W.upg = s.u; W.kills = s.k;
   W.nightT = s.nt || 0;
   if (s.ob) { W.obj = s.ob; W.obv = (W.obv || 0) + 1; }
+  if (s.pk) W.perk = s.pk;
   if (s.tk) { W.tasks = s.tk.map(a => ({ k: a[0], need: a[1], got: a[2], done: a[3], txt: a[4], rt: a[5] })); W.tkv++; }
   RES.forEach((r, i) => W.res[r.k] = s.res[i]); W.spawnLeft = s.sl;
   s.p.forEach((a, i) => {
     const p = W.p[i]; if (!p) return;
-    const [x, y, L, vx, vy, aim, hp, fl, downT, wpn, mag, ammo, owned, nades, meds, useT, medT, reloadT, kills, anim, sel, ap, vehs, shield, melee, gn, lives, fuel, fz, gam] = a;
+    const [x, y, L, vx, vy, aim, hp, fl, downT, wpn, mag, ammo, owned, nades, meds, useT, medT, reloadT, kills, anim, sel, ap, vehs, shield, melee, gn, lives, fuel, fz, gam, shl] = a;
     const mine = i === ME;
-    p.hp = hp; p.down = !!(fl & 1); p.dead = !!(fl & 2); p.gone = !!(fl & 4); p.downT = downT; p.selfRev = !!(fl & 128); p.ride = !!(fl & 256); p.veh = (fl >> 9) & 7; p.pass = ((fl >> 12) & 7) - 1; p.land = !!(fl & 32768); p.fuel = fuel || 0; p.fz = fz || 0; p.gam = gam || 0;
+    p.hp = hp; p.down = !!(fl & 1); p.dead = !!(fl & 2); p.gone = !!(fl & 4); p.downT = downT; p.selfRev = !!(fl & 128); p.ride = !!(fl & 256); p.veh = (fl >> 9) & 7; p.pass = ((fl >> 12) & 7) - 1; p.land = !!(fl & 32768); p.fuel = fuel || 0; p.fz = fz || 0; p.gam = gam || 0; p.shl = shl || 0;
     p.mag = mag.split(',').map(Number); p.ammo = ammo.split(',').map(Number); p.owned = owned.split('').map(Number);
     p.nades = nades; p.meds = meds; p.vehs = vehs || 0; p.shield = shield ? 1 : 0; p.gn = gn || [0, 0, 0]; p.lives = lives || 0; if (p.i !== ME || !(UI.meleeT > performance.now())) p.melee = melee || 0; p.useT = useT / 100; p.medT = medT; p.reloadT = reloadT; p.kills = kills; p.ready = !!(fl & 64);
     if (!mine) { p.tx = x; p.ty = y; p.L = L; p.vx = vx; p.vy = vy; p.aim = aim; p.build = !!(fl & 32); p.wpn = wpn; p.anim = anim; p.sel = sel; p.aimPt = ap ? { x: ap[0], y: ap[1], z: ap[2] } : null; if (p.x == null || d2(p.x, p.y, x, y) > 4) { p.x = x; p.y = y; } }

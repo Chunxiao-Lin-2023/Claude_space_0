@@ -10,6 +10,7 @@ const SIEGE = {
   tRange: 9, tRate: 0.32, tDmg: 18, tAmmo: 240, tRefill: { parts: 3 },  // turret
   loot: 2, mineR: 2.4, mineDmg: 200, spawnR: 24, vSpd: VEH.map(v => v ? v.spd : 1),    // search yield multiplier, mines, horde ring radius, vehicle speed (motorbike 2.3 -> 1.9 in round 20)
   occFrac: 0.55, clearRw: { parts: 6, steel: 4 },
+  reocc: 0.6, reoccHeld: 0.2, heldN: 6, reoccFrac: 0.6, reoccWear: [0.45, 0.75],   // (round 32) at dawn a cleared building is taken back 60% of the time (20% if you built 6+ things in it, never while you're inside), 60% as many sleepers, your things in it left at 45–75% hp
   bpOdds: { milcrate: 0.5, toolbox: 0.3, backpack: 0.18, cabinet: 0.14, crate: 0.14, car: 0.1, ammobox: 0.08 },
 };
 MODE_IDS.unshift('siege');
@@ -81,7 +82,7 @@ Object.assign(MODES.siege, {
   },
   night(n) { modeSay('第 ' + n + ' 夜：尸潮冲你们来了，撑到天亮（' + fmtT(BAL.nightMin(n)) + '）', '#ff9a6a', true); },
   // the sun comes up on time: whatever is still far from you wanders off, the rest stay (and stop counting for the next dawn)
-  dawn() { for (const z of W.zs) { if (z.hp <= 0 || z.mz) continue; if (!nearPl(z.x, z.y, 14)) z.hp = 0; else z.mz = 1; } W.zs = W.zs.filter(z => z.hp > 0); if (W.night >= SIEGE.nights) { endGame('win', '撑过了 ' + SIEGE.nights + ' 夜，救援车队开进了城'); return true; } return false; },
+  dawn() { for (const z of W.zs) { if (z.hp <= 0 || z.mz) continue; if (!nearPl(z.x, z.y, 14)) z.hp = 0; else z.mz = 1; } W.zs = W.zs.filter(z => z.hp > 0); if (W.night >= SIEGE.nights) { endGame('win', '撑过了 ' + SIEGE.nights + ' 夜，救援车队开进了城'); return true; } siegeReoccupy(); return false; },
   hud() {
     const O = W.obj, c = O.occ.filter(q => q.c).length;
     if (W.phase === 'night') { const L = BAL.nightMin(W.night); return { t: '第 ' + W.night + ' 夜 · 天亮还有 ' + fmtT(L - W.nightT), s: '躲进清理过的楼，封门封窗、埋雷、架机枪塔，撑到天亮', p: W.nightT / L }; }
@@ -172,4 +173,26 @@ function turretDone(p, tgt) {
   const b = W.blk[tgt.i], T = TUR[b]; if (!T) return;
   if (!affordable(W.res, T.refill)) return emit({ k: 'deny', p: p.i, why: '零件不够（要 ' + T.refill.parts + ' 个）' });
   for (const r in T.refill) W.res[r] -= T.refill[r]; (W.obj.tam = W.obj.tam || {})[tgt.i] = T.ammo; objChanged(); emit({ k: 'sfx', n: 'reload', x: p.x, y: p.y });
+}
+
+// (round 32) dawn: cleared buildings don't stay yours for good. Each may be taken back by sleepers (fewer than before); one you've fortified
+// (6+ things built in it) only rarely, one you're standing in never. Searched spots in it fill up again; what you built stays but gets knocked about.
+function siegeReoccupy() {
+  const O = W.obj; if (!O || !O.occ) return; const taken = [];
+  O.occ.forEach((q, id) => {
+    if (!q.c || q.out || q.h == null || !TOWN_HOUSES[q.h]) return;
+    const [x0, y0, x1, y1, st] = TOWN_HOUSES[q.h], inside = (x, y) => x >= x0 && x <= x1 && y >= y0 && y <= y1;
+    if (W.p.some(p => !p.gone && !p.dead && inside(Math.floor(p.x), Math.floor(p.y)))) return;
+    const mine = W.mine ? [...W.mine].filter(i => (W.blk[i] || W.slab[i]) && inside(cx_(i), cy_(i))) : [];
+    if (rand() > (mine.length >= SIEGE.heldN ? SIEGE.reoccHeld : SIEGE.reocc)) return;
+    const cells = [];
+    for (let L = 0; L < Math.max(1, st); L++) for (let y = y0 + 1; y < y1; y++) for (let x = x0 + 1; x < x1; x++) if (standable(x, y, L, 'z') && (L === 0 || W.slab[ci(x, y, L)])) cells.push([x, y, L]);
+    if (cells.length < 6) return;
+    const n = Math.max(4, Math.round(q.n * SIEGE.reoccFrac));
+    for (let j = 0; j < n; j++) { const [x, y, L] = cells[Math.floor(rand() * cells.length)]; const z = putZombie(sleeperKind(), x, y, L); z.sleep = 1; z.mz = 1; z.occ = id; z.face = rand() * 6.28; }
+    for (const i of mine) if (W.blk[i] && B[W.blk[i]].brk) { W.bhp[i] = Math.max(1, W.bhp[i] * (SIEGE.reoccWear[0] + rand() * (SIEGE.reoccWear[1] - SIEGE.reoccWear[0]))); W.dirty.add(i); }
+    for (const i of [...W.srch]) if (inside(cx_(i), cy_(i))) W.srch.delete(i);
+    q.c = 0; q.left = n; taken.push(q.name);
+  });
+  if (taken.length) { objChanged(); W.tkv++; modeSay('天亮了：' + taken.length + ' 栋清过的楼又被丧尸占了（' + taken.slice(0, 4).join('、') + (taken.length > 4 ? '…' : '') + '），里面的东西也重新刷了', '#ff9a6a', true); }
 }

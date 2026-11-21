@@ -165,6 +165,7 @@ function hudTick(dt) {
   const rl = me.reloadT > 0 ? 1 - me.reloadT / WPN[me.reloadW != null ? me.reloadW : wi].reload : me.reloadVis > 0 ? 1 - me.reloadVis / w.reload : me.medT > 0 ? 1 - me.medT / (me.selfRev ? 3 : BAL.healTime) : 0;
   $('wRl').style.width = (rl * 100) + '%';
   $('iNadeL').textContent = GREN[me.gt || 0].sn; $('iNade').textContent = gCount(me, me.gt || 0); $('iMed').textContent = me.meds; $('iKill').textContent = me.kills; $('iLife').textContent = me.lives != null ? me.lives : '-';
+  { const sw = $('iShlW'), ht = ownsVeh(me, 6); sw.classList.toggle('hidden', !ht); if (ht) $('iShl').textContent = me.shl || 0; } // (round 31) tank shells
   { const fw = $('iFuelW'), has = ownsVeh(me, 5); fw.classList.toggle('hidden', !has); if (has) { const f = Math.ceil(me.fuel || 0); $('iFuel').textContent = f + ' 秒 · 弹 ' + (me.gam || 0); fw.style.color = f < BAL.fuelLow ? '#ff7a6a' : airborne(me) ? '#9fe0ff' : ''; } } // (round 29) gyrocopter fuel
   uiKeys(me);
   const q = quickList(me), qk = q.join(','); if (UI.wbK !== qk) { UI.wbK = qk;
@@ -182,12 +183,13 @@ function hudTick(dt) {
   const ph = $('phase');
   if (W.phase === 'day') {
     const m = Math.max(0, Math.ceil(W.clock)); ph.className = '';
-    ph.innerHTML = (W.night ? '第 ' + (W.night + 1) + ' 夜前' : '第一个白天') + `<span class="sub">${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')} 后入夜</span>`;
+    const nl = BAL.nightLv(W.night + 1), up = W.night > 0 && nl > BAL.nightLv(W.night); /* (round 31) the next night's level */
+    ph.innerHTML = (W.night ? '第 ' + (W.night + 1) + ' 夜前' : '第一个白天') + `<span class="sub">${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')} 后入夜 · 今夜 Lv ${nl}${up ? '（升级）' : ''}</span>`;
   } else if (W.phase === 'night') {
     const left = W.zs.length + (NETROLE === 'guest' ? (W.spawnLeft || 0) : W.spawnQ.length);
     ph.className = isBlood(W.night) ? 'blood' : 'night';
     const rest = Math.max(0, Math.ceil(BAL.nightMin(W.night) - W.nightT));
-    ph.innerHTML = '第 ' + W.night + ' 夜' + (isBlood(W.night) ? ' · 血月' : '') + `<span class="sub">剩余 ${left} 只${rest > 0 ? ' · 天亮还要 ' + Math.floor(rest / 60) + ':' + String(rest % 60).padStart(2, '0') : ''} · ${W.night}/${BAL.nights}</span>`;
+    ph.innerHTML = '第 ' + W.night + ' 夜 · Lv ' + BAL.nightLv(W.night) + (isBlood(W.night) ? ' · 血月' : '') + `<span class="sub">剩余 ${left} 只${rest > 0 ? ' · 天亮还要 ' + Math.floor(rest / 60) + ':' + String(rest % 60).padStart(2, '0') : ''} · ${W.night}/${BAL.nights}</span>`;
   } else ph.textContent = W.phase === 'win' ? '获救' : '失守';
   // tasks: a one-line summary that opens on tap, and pops open for a few seconds when something changes
   if (UI.tkv !== W.tkv) {
@@ -195,7 +197,8 @@ function hudTick(dt) {
     if ((UI.tkv === -1 || changed) && !INP.touch) UI.tkOpenT = 5; // on phones it stays folded unless tapped
     UI.tkv = W.tkv; UI.tkDone = W.tasks.some(t => t.done);
     const nd = W.tasks.filter(t => t.done).length;
-    $('tasks').innerHTML = `<div class="tksum">今日任务 ${nd}/${W.tasks.length} <span>▾</span></div>` + W.tasks.map(t => `<div class="tk${t.done ? ' done' : ''}"><i>${t.done ? '✔' : ''}</i><span class="tt">${t.txt}</span><b>${t.done ? '完成' : t.got + '/' + t.need}</b><span class="tr">${t.rt}</span></div>`).join('');
+    const pk = W.perk ? Object.values(W.perk).reduce((a, b) => a + b, 0) : 0; /* (round 32) permanent tasks */
+    $('tasks').innerHTML = `<div class="tksum">永久任务 · 已拿 ${pk} 项提升 <span>▾</span></div>` + W.tasks.map(t => `<div class="tk${t.done ? ' done' : ''}"><i>${t.done ? '✔' : ''}</i><span class="tt">${t.txt}</span><b>${t.done ? '完成' : t.got + '/' + t.need}</b><span class="tr">${t.rt}</span></div>`).join('');
   }
   UI.tkOpenT = Math.max(0, (UI.tkOpenT || 0) - dt);
   $('tasks').classList.toggle('open', !!UI.tkPin || UI.tkOpenT > 0);
@@ -283,11 +286,12 @@ function renderCraft() {
   if (tab === 'gun') {
     h = WPN.map((w, k) => {
       const buy = CRAFT.find(c => c.wpn === k), am = CRAFT.find(c => c.ammo && c.ammo[0] === k), own = me.owned[k];
-      const st = own ? (w.inf ? '已有 · 子弹无限' : '已有 · ' + me.mag[k] + ' / ' + me.ammo[k]) : '没有';
+      const st = own ? (w.inf ? '已有 · 子弹无限' : '已有 · ' + me.mag[k] + ' / ' + me.ammo[k] + '（最多 ' + ammoCap(k) + '）') : '没有'; // (round 32) backpack cap
       const btns = !own && buy ? shopBtn(buy, '造这把枪') : own && am ? shopBtn(am, '买' + am.name) : own && w.inf ? '<span class="sfree">不用买子弹</span>' : '';
       return `<div class="sc${own ? ' own' : ''}"><div class="sh"><b>${w.name}</b><em>${st}</em></div><small>${w.tag || ''}</small><div class="sb">${btns}</div></div>`;
     }).join('');
     { const g = CRAFT.find(c => c.gam), own = ownsVeh(me, 5); h += `<div class="sc${own ? ' own' : ''}"><div class="sh"><b>旋翼机机枪</b><em>${own ? '机上 ' + (me.gam || 0) + ' / ' + BAL.gyroCap : '要先有旋翼机'}</em></div><small>飞的时候按开火：一发 ${BAL.gyroDmg}，射速快，打你瞄的地方；子弹存在飞机上</small><div class="sb">${own ? shopBtn(g, '买' + g.name) : '<span class="sfree">「载具」栏造</span>'}</div></div>`; } // (round 30)
+    { const g = CRAFT.find(c => c.shl), own = ownsVeh(me, 6); h += `<div class="sc${own ? ' own' : ''}"><div class="sh"><b>坦克炮</b><em>${own ? '车里 ' + (me.shl || 0) + ' / ' + BAL.tankCap : '要先有坦克'}</em></div><small>开坦克时按开火：炮弹打到哪炸到哪（${BAL.tankDmg}，半径 ${BAL.tankR}），${BAL.tankRate} 秒一发</small><div class="sb">${own ? shopBtn(g, '买' + g.name) : '<span class="sfree">「载具」栏造</span>'}</div></div>`; } // (round 31)
     // (round 23) melee: knife or riot shield, one at a time
     const sc = CRAFT.find(c => c.shield), useBtn = m => `<button class="sbtn mel" data-m="${m}"><b>${m ? '用盾' : '用刀'}</b><span>换成近战武器</span></button>`;
     h += `<div class="sgrp">近战 · 右键 / V（触屏「刀 / 盾」键）；X 或武器菜单里切换</div>`;
@@ -319,7 +323,7 @@ function renderKit() {
   $('kslots').innerHTML = [0, 1, 2, 3].map(j => `<button data-s="${j}" class="${j === sl ? 'sel' : ''}"><kbd>${j + 1}</kbd><b>${q[j] != null ? WPN[q[j]].name : '空'}</b></button>`).join('');
   $('kwpn').innerHTML = WPN.map((w, k) => { const own = me.owned[k], j = q.indexOf(k);
     return `<button data-w="${k}" class="kw${own ? '' : ' no'}${k === me.wpn ? ' cur' : ''}" ${own ? '' : 'disabled'}><b>${w.name}${j >= 0 ? ' <i>' + (j + 1) + '</i>' : ''}</b><small>${own ? (w.inf ? '∞' : me.mag[k] + ' / ' + me.ammo[k]) : '商店里造'}</small><span>${w.tag || ''}</span></button>`; }).join('');
-  $('kveh').innerHTML = [1, 2, 3, 4, 5].map(v => { const own = (me.vehs || 0) >> v & 1;
+  $('kveh').innerHTML = [1, 2, 3, 4, 5, 6].map(v => { const own = (me.vehs || 0) >> v & 1;
     return `<button data-v="${v}" class="${own ? '' : 'no'}${own && me.veh === v ? ' sel' : ''}" ${own ? '' : 'disabled'}><b>${VEH[v].name}</b><small>${own ? (me.veh === v ? '默认 ✓' : '设为默认') : '商店里造'}</small></button>`; }).join('');
   $('kshield').innerHTML = [0, 1].map(m => { const own = !m || me.shield, on = (me.melee === 1 && me.shield ? 1 : 0) === m; return `<button data-m="${m}" class="${on ? 'sel' : ''}${own ? '' : ' no'}" ${own ? '' : 'disabled'}><b>${m ? '防暴盾' : '刀'}</b><small>${!own ? '商店 → 武器 里买' : on ? '在用 ✓' : '换成它'}</small></button>`; }).join('');
   $('kshield').querySelectorAll('button[data-m]').forEach(b => b.onclick = () => { switchMelee(+b.dataset.m); renderKit(); });
@@ -374,7 +378,11 @@ function drawBigMap() {
     else { g.beginPath(); g.arc(px, py, 7, 0, 7); g.fill(); g.stroke(); if (m.ring) { g.beginPath(); g.arc(px, py, m.ring * S, 0, 7); g.strokeStyle = m.c; g.stroke(); } }
     g.font = '700 12px ' + getComputedStyle(document.body).fontFamily; g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.85)'; g.strokeText(m.n, px, py - 14); g.fillStyle = m.c; g.fillText(m.n, px, py - 14); }
   { const [px, py] = rot(W.radio.x + 0.5, W.radio.y + 0.5); g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.75)'; g.strokeText('营地', px, py); g.fillStyle = '#d8ffcc'; g.fillText('营地', px, py); }
-  for (const p of W.p) { if (p.gone || p.dead) continue; const [px, py] = rot(p.x, p.y); g.fillStyle = PCOL[p.i % 2].j; g.beginPath(); g.arc(px, py, 6, 0, 7); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 2; g.stroke(); g.fillStyle = '#fff'; g.font = '600 12px ' + getComputedStyle(document.body).fontFamily; g.strokeStyle = 'rgba(0,0,0,.8)'; g.lineWidth = 3; g.strokeText(p.name, px, py - 14); g.fillText(p.name, px, py - 14); }
+  // (round 31) players: big arrows (you: white with a halo), name tags in a dark pill; a fallen teammate shows as a grey cross
+  const ff = getComputedStyle(document.body).fontFamily, order = W.p.filter(p => !p.gone).sort((a, b) => (a.i === ME) - (b.i === ME));
+  for (const p of order) { const [px, py] = rot(p.x, p.y), mine = p.i === ME; playerMark(g, px, py, p.aim + R, p, mine, 1.6);
+    const lab = mine ? '你' : p.name + (p.dead ? ' ✝' : ''); g.font = '700 13px ' + ff; const w = g.measureText(lab).width + 12; g.fillStyle = 'rgba(0,0,0,.72)'; g.beginPath(); g.roundRect ? g.roundRect(px - w / 2, py - 34, w, 19, 9) : g.rect(px - w / 2, py - 34, w, 19); g.fill();
+    g.fillStyle = mine ? '#fff' : PCOL[p.i % 2].j; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(lab, px, py - 24.5); }
 }
 /* ---------- modes and maps: picker (title / lobby), objective panel ---------- */
 const curMode = () => MODES[SET.mode] ? SET.mode : 'siege';

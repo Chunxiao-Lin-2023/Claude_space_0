@@ -54,17 +54,17 @@ const { chromium } = require('playwright');
     for (let k = -3; k <= 3; k++) { W.blk[ci(x + k, y + 3, L)] = 3; W.blk[ci(x + k, y + 5, L)] = 3; } W.ver++; me.x = x - 2.5; me.y = y + 0.5; doBuild(me, x, y + 4, L, 15); scanCells(); const tight = W.trapCells.filter(j => W.trapAt[j] === ci(x, y + 4, L)).length;
     return { open, tight }; }, spot);
   check('wire on open ground covers 3×3; a bear trap in a 1-wide corridor covers just the 3 cells along it', s.open === 9 && s.tight === 3, JSON.stringify(s));
-  await put('walker', spot.x + 1.5, spot.y + 1.5, 400); await p.evaluate(() => { const z = W.zs[0]; z.stun = 0; z._x = z.x; }); await simWait(1);
+  await put('walker', spot.x + 0.8, spot.y + 0.8, 400); /* putZombie adds 0.3–0.7: lands in the corner cell */ await p.evaluate(() => { const z = W.zs[0]; z.stun = 0; z._x = z.x; }); await simWait(1);
   s = await p.evaluate(() => { const z = W.zs[0]; return { lost: +(400 - z.hp).toFixed(1) }; });
   check('a zombie on the corner of the wire patch (not the wire cell) is cut (8 a second)', s.lost > 4 && s.lost < 14, JSON.stringify(s));
   await clear();
-  await put('walker', spot.x + 1.5, spot.y + 4.5, 400); await p.evaluate(() => { W.zs[0].stun = 0; }); await simWait(0.3);
+  await put('walker', spot.x + 0.7, spot.y + 4.0, 400); await p.evaluate(() => { W.zs[0].stun = 0; }); await simWait(0.3);
   s = await p.evaluate(({ x, y, L }) => { const z = W.zs[0], i = ci(x, y + 4, L); return { stun: +(z.stun || 0).toFixed(1), limp: +(z.limp || 0).toFixed(1), lost: Math.round(400 - z.hp), trap: W.blk[i], hp: Math.round(W.bhp[i]) }; }, spot);
   check('a bear trap catches a zombie beside it: 1.8 s stuck, 18 damage, then a limp; one of its 3 uses gone', s.stun > 1.2 && s.stun <= 1.8 && s.limp > 2 && s.lost === 18 && s.trap === 15 && s.hp === 40, JSON.stringify(s));
   await clear();
   // mine: set off from the next cell, 120 damage, a slow patch left behind
   await p.evaluate(({ x, y, L }) => { for (let k = -3; k <= 3; k++) { W.blk[ci(x + k, y + 3, L)] = 0; W.blk[ci(x + k, y + 5, L)] = 0; W.blk[ci(x + k, y + 4, L)] = 0; } W.blk[ci(x, y, L)] = 0; W.ver++; doBuild(W.p[0], x, y, L, 51); }, spot);
-  await put('walker', spot.x - 0.5, spot.y + 0.5, 400); await put('walker', spot.x + 3.2, spot.y + 0.5, 400); await p.evaluate(() => { W.zs[0].stun = 0; }); await simWait(0.3);
+  await p.evaluate(({ x, y, L }) => { for (const dx of [-0.5, 2.4]) { const z = putZombie('walker', x + dx, y + 0.5, L); z.hp = z.max = 400; z.sleep = 0; z.mz = 1; z.stun = 99; } W.zs[0].stun = 0; }, spot); await simWait(0.3); // both in place before the first one can set it off
   s = await p.evaluate(({ x, y, L }) => ({ mine: W.blk[ci(x, y, L)], lost: W.zs.map(z => Math.round(400 - z.hp)), cz: (W.cz || []).map(c => [c.k, c.r]), limp: W.zs.map(z => +(z.limp || 0).toFixed(1)) }), spot);
   check('a mine goes off when a zombie steps next to it: about 120 damage, reaches 3 tiles, leaves a slow patch, they limp', s.mine === 0 && s.lost[0] >= 90 && s.lost[0] <= 140 && s.lost[1] > 0 && s.cz.some(c => c[0] === 1) && s.limp[0] > 2, JSON.stringify(s));
   check('no page errors', !errs.length, errs.slice(0, 3).join(' | '));

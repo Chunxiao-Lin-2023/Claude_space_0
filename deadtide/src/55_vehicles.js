@@ -252,10 +252,42 @@ function mkGyro() {
   S.dust = [-0.3, 0.02, 0.34]; v.userData.S = S; return v;
 }
 
+// (round 31) tank: tracked hull with road wheels (spin), sloped glacis, skirts, engine deck; a turret (turns to the aim) with a recoiling gun, the commander stands in the hatch
+function mkTank() {
+  const v = new THREE.Group(), S = { spin: [], steer: [] }, ol = lam('#5a6b3a'), od = lam('#3e4a2a'), tr = lam('#1d1d1f'), st = lam('#7b8087'), dk = lam('#1b1b1b');
+  for (const z of [-0.5, 0.5]) {
+    vBox(v, tr, 1.7, 0.08, 0.22, 0, 0.36, z); vBox(v, tr, 1.6, 0.08, 0.22, 0, 0.04, z);                                      // track runs
+    vCyl(v, tr, 0.17, 0.17, 0.22, 0.8, 0.2, z, 'z', 10); vCyl(v, tr, 0.17, 0.17, 0.22, -0.8, 0.2, z, 'z', 10);                 // track around the ends
+    for (let k = 0; k < 5; k++) S.spin.push(vWheel(v, -0.56 + k * 0.28, z, 0.14, 0.1, 'armor'));                              // road wheels
+    for (let k = 0; k < 12; k++) vBox(v, lam('#2a2a2c'), 0.05, 0.03, 0.23, -0.75 + k * 0.137, 0.405, z);                      // track links on top
+    vBox(v, od, 1.5, 0.16, 0.04, 0.0, 0.36, z * 1.24); for (let k = 0; k < 6; k++) vBox(v, lam('#8a9070'), 0.02, 0.02, 0.012, -0.6 + k * 0.24, 0.4, z * 1.26); // skirt + rivets
+  }
+  vBox(v, ol, 1.5, 0.3, 0.8, -0.02, 0.4, 0); vBox(v, ol, 0.42, 0.06, 0.8, 0.74, 0.46, 0, -0.55); vBox(v, od, 1.0, 0.04, 0.82, -0.1, 0.565, 0); // hull, glacis, deck plate
+  for (let k = 0; k < 5; k++) vBox(v, lam('#2c3420'), 0.03, 0.012, 0.6, -0.52 - k * 0.06, 0.59, 0);                                 // engine grille
+  vBox(v, st, 0.06, 0.06, 0.6, 0.9, 0.3, 0); for (const z of [-0.3, 0.3]) vRod(v, st, [0.92, 0.3, z], [0.82, 0.5, z], 0.018);           // tow bar
+  const hl = vLit('#fff4cf', '#ffe08a', 0.6); for (const z of [-0.32, 0.32]) { vCyl(v, dk, 0.04, 0.04, 0.05, 0.84, 0.52, z, 'x', 8); vCyl(v, hl, 0.034, 0.034, 0.008, 0.865, 0.52, z, 'x', 8); }
+  const tl = vLit('#c0201a', '#ff2010', 0.35); for (const z of [-0.36, 0.36]) vBox(v, tl, 0.02, 0.04, 0.05, -0.78, 0.5, z);
+  for (const z of [-0.26, 0.26]) vCyl(v, dk, 0.035, 0.035, 0.1, -0.74, 0.62, z, 'y', 8); S.exh = vMark(v, -0.74, 0.68, 0.26);
+  vBox(v, lam('#4a6a3a'), 0.08, 0.2, 0.14, -0.6, 0.66, 0.3); vBox(v, lam('#6a4a2e'), 0.3, 0.1, 0.12, -0.45, 0.62, -0.32);        // jerry can, log
+  // turret (turns with the aim): body, mantlet, gun (recoils), hatch ring, open lid, roof MG, smoke dischargers, antenna, star
+  const tu = new THREE.Group(); tu.position.set(0, 0.6, 0); v.add(tu); S.turret = tu;
+  vCyl(tu, od, 0.38, 0.4, 0.06, 0, 0.03, 0, 'y', 14); vBox(tu, ol, 0.72, 0.26, 0.62, -0.02, 0.19, 0); vBox(tu, ol, 0.2, 0.22, 0.5, 0.36, 0.17, 0, -0.35); vBox(tu, ol, 0.22, 0.18, 0.56, -0.44, 0.17, 0, 0.3);
+  const br = new THREE.Group(); br.position.set(0.44, 0.2, 0); tu.add(br); S.barrel = br;
+  vBox(br, od, 0.14, 0.16, 0.2, 0.02, 0, 0); vCyl(br, ol, 0.05, 0.055, 1.0, 0.55, 0, 0, 'x', 10); vCyl(br, od, 0.07, 0.07, 0.16, 0.4, 0, 0, 'x', 10); vBox(br, dk, 0.1, 0.09, 0.12, 1.07, 0, 0); S.muz = vMark(br, 1.12, 0, 0);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.03, 5, 14), od); ring.rotation.x = Math.PI / 2; ring.position.set(-0.08, 0.33, 0); tu.add(ring);
+  vBox(tu, ol, 0.3, 0.03, 0.3, -0.3, 0.46, 0, 1.1);                                                                                 // open hatch lid
+  vRod(tu, dk, [0.05, 0.36, -0.2], [0.35, 0.4, -0.2], 0.014); vBox(tu, dk, 0.1, 0.06, 0.05, 0.05, 0.37, -0.2);                    // roof MG
+  for (const s of [-1, 1]) for (let k = 0; k < 3; k++) vCyl(tu, dk, 0.025, 0.025, 0.08, 0.2 - k * 0.05, 0.3, s * 0.32, 'z', 6);
+  vRod(tu, dk, [-0.36, 0.32, 0.22], [-0.4, 1.0, 0.22], 0.006); vBox(tu, lam('#eae4d0'), 0.005, 0.1, 0.1, 0.0, 0.2, 0.312, 0.785); vBox(tu, lam('#eae4d0'), 0.005, 0.1, 0.1, 0.0, 0.2, -0.312, 0.785);
+  S.grip = [vMark(tu, 0.04, 0.37, -0.14), vMark(tu, 0.04, 0.37, 0.14)];
+  vLights(S, v, [hl], [tl], [0.86, 0.52, 0]);
+  S.dust = [-0.7, 0.02, 0.5]; v.userData.S = S; return v;
+}
+
 function mkVehicles() {
-  const g = new THREE.Group(), bike = mkBike(), moto = mkMoto(), cargo = mkCargo(), armor = mkArmor(), gyro = mkGyro();
-  for (const q of [bike, moto, cargo, armor, gyro]) q.traverse(o => { if (o.isMesh && !o.material.transparent) { o.castShadow = true; } });
-  g.add(bike, moto, cargo, armor, gyro); g.userData = { bike, moto, cargo, armor, gyro, all: [null, bike, moto, cargo, armor, gyro] }; return g;
+  const g = new THREE.Group(), bike = mkBike(), moto = mkMoto(), cargo = mkCargo(), armor = mkArmor(), gyro = mkGyro(), tank = mkTank();
+  for (const q of [bike, moto, cargo, armor, gyro, tank]) q.traverse(o => { if (o.isMesh && !o.material.transparent) { o.castShadow = true; } });
+  g.add(bike, moto, cargo, armor, gyro, tank); g.userData = { bike, moto, cargo, armor, gyro, tank, all: [null, bike, moto, cargo, armor, gyro, tank] }; return g;
 }
 
 // how a rider sits on each vehicle: H = hip height, lean = torso pitch (negative = forward), pedal = [x, y, crank radius] or peg = [x, y, half-width],
@@ -266,7 +298,8 @@ const VPOSE = [null,
   { H: 0.7, lean: -0.22, peg: [0.06, 0.3, 0.15], pH: 0.77, pLean: -0.26, pPeg: [-0.31, 0.38, 0.16], hold: [0.3, 0.83, 0.16], roll: 1.3, foot: 1, drop: 0.1, slide: 0 },
   { H: 0.66, lean: -0.22, pedal: [0.12, 0.27, 0.1], roll: 0.12 },
   { H: 0.55, lean: -0.06, peg: [0.3, 0.41, 0.1], pH: 0.55, pLean: -0.02, pPeg: [-0.08, 0.41, 0.11], hold: [0.06, 0.78, 0.34], roll: -0.15 },
-  { H: 0.58, lean: -0.08, peg: [0.42, 0.36, 0.1], pH: 0.67, pLean: -0.04, pPeg: [-0.12, 0.43, 0.13], hold: [0.12, 0.64, 0.25], roll: 0.9, fly: 1 },                                          // (round 29) gyrocopter: banks and noses down in flight
+  { H: 0.58, lean: -0.08, peg: [0.42, 0.36, 0.1], pH: 0.67, pLean: -0.04, pPeg: [-0.12, 0.43, 0.13], hold: [0.12, 0.64, 0.25], roll: 0.9, fly: 1 },
+  { H: 0.9, lean: 0, peg: [0.0, 0.55, 0.1], roll: -0.06, turret: 1 },                                                    // (round 31) tank: the commander stands in the turret hatch, turns with it                                          // (round 29) gyrocopter: banks and noses down in flight
 ];
 // two-bone leg IK: put the ankle of leg L at (tx, ty, tz) in the lower-body frame, hip pivot at (hx, hy, hz); the thigh abducts (rotation.x) for sideways targets
 function legIK(L, hx, hy, hz, tx, ty, tz, toe) {
@@ -308,6 +341,7 @@ function vehTick(p, m, dt, dk) {
   if (S.crank) { S.crank.rotation.z = -(p._crank || 0); for (const q of S.pedals) q.rotation.z = p._crank || 0; }
   for (const s of S.steer) s.rotation.y = p._steer || 0;
   if (S.wheel) S.wheel.rotation.x = -(p._steer || 0) * 3;
+  if (S.turret) { S.turret.rotation.y = -angDiff(p._ly, p.aim); const ap = p.aimPt, hd = ap ? Math.hypot(ap.x - p.x, ap.y - p.y) : 8; S.barrel.rotation.z = lerp(S.barrel.rotation.z, ap ? clamp(Math.atan2(ap.z - (p.z + 0.8), Math.max(1, hd)), -0.15, 0.4) : 0, Math.min(1, dt * 8)); p._crec = Math.max(0, (p._crec || 0) - dt * 2.5); S.barrel.position.x = 0.44 - 0.16 * p._crec; } // turret to the aim, gun recoils
   if (S.gun) { S.gun.rotation.y = -angDiff(p._ly, p.aim); const ap = p.aimPt, hd = ap ? Math.hypot(ap.x - p.x, ap.y - p.y) : 6; S.gun.rotation.z = lerp(S.gun.rotation.z, ap ? clamp(Math.atan2(ap.z - (p.z + 0.25), Math.max(0.5, hd)), -1.3, 0.3) : -0.3, Math.min(1, dt * 10)); }
   if (S.rotor) { const air = p.z - surfZ(p.x, p.y, skyTop(p.x, p.y)); p._rot = lerp(p._rot || 0, p.land && air < 0.15 ? 6 : 30, Math.min(1, dt * 1.5)); S.rotor.rotation.y += p._rot * dt; S.prop.rotation.x += p._rot * 1.4 * dt;
     if (air < 3.5 && air > 0.05 && FXR() < dt * 30) { const a = FXR() * 6.28, r = 0.6 + FXR() * 0.8, gz = p.z - air; addP({ x: p.x + Math.cos(a) * r, y: p.y + Math.sin(a) * r, z: gz + 0.05, vx: Math.cos(a) * 2.2, vy: Math.sin(a) * 2.2, vz: 0.15, g: -0.1, col: '#8a7e6a', s: 0.08, life: 0.5, smoke: 1 }); } } // rotor + prop spin; downwash kicks up dust close to the ground

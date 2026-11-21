@@ -4,7 +4,7 @@ function mkPlayer(i, name) {
     i, name, x: RADIO_XY[0] - 0.5 + i * 2, y: RADIO_XY[1] + 0.5 + i, L: 0, z: 0, r: 0.28, h: 1.0, vx: 0, vy: 0, kbx: 0, kby: 0, aim: -Math.PI / 2, aimPt: null,
     hp: BAL.pMaxHp, maxHp: BAL.pMaxHp, down: false, downT: 0, dead: false, gone: false,
     wpn: 1, owned: WPN.map((w, k) => k < 2 ? 1 : 0), mag: WPN.map((w, k) => k === 0 ? 12 : k === 1 ? 6 : 0), ammo: WPN.map((w, k) => k === 1 ? w.start : 0), bloom: 0, reloadT: 0, reloadW: 0, fireCD: 0, shoveCD: 0, shoveT: 0,
-    nades: 2, meds: 2, gn: [1, 1, 1], gt: 0, lives: 3, fuel: 60, land: false, gam: 0, gcd: 0, medT: 0, selfRev: false, useT: 0, useK: '', build: false, sel: 1, demo: false, sdir: 3, veh: 0, vehs: 0, shield: 0, melee: 0,
+    nades: 2, meds: 2, gn: [1, 1, 1], gt: 0, lives: 3, fuel: 60, land: false, gam: 0, gcd: 0, shl: 0, medT: 0, selfRev: false, useT: 0, useK: '', build: false, sel: 1, demo: false, sdir: 3, veh: 0, vehs: 0, shield: 0, melee: 0,
     inp: { mx: 0, my: 0, fire: 0, use: 0 }, kills: 0, hurtT: 0, anim: 0, emptyT: 0, ready: false, recoilT: 0,
   };
 }
@@ -85,11 +85,35 @@ function gyroFire(p) {
   noiseAt(p.x, p.y, 11, p.z);
   emit({ k: 'gshot', o: p.i, x: r2(sx), y: r2(sy), z: r2(sz), e: [r2(sx + dx * bd), r2(sy + dy * bd), r2(sz + dz * bd)], h: best ? 1 : 0 });
 }
+const vehGun = p => p && p.ride && VEH[p.veh] && VEH[p.veh].gun || null;
+// (round 31) tank cannon: a shell flies flat from the muzzle to the first thing in the way (or where you aim) and bursts there
+function tankFire(p) {
+  if (p.gcd > 0) return;
+  if (!(p.shl > 0)) { if (!(p.emptyT > 0)) { p.emptyT = 1.5; emit({ k: 'deny', p: p.i, why: '坦克没炮弹了：商店「武器 · 弹药」里买' }); } return; }
+  p.gcd = BAL.tankRate; p.shl--;
+  const a = p.aim, z0 = pZ(p) + 0.82, sx = p.x + Math.cos(a) * 1.4, sy = p.y + Math.sin(a) * 1.4;
+  const T = p.aimPt || { x: sx + Math.cos(a) * 10, y: sy + Math.sin(a) * 10, z: z0 - 0.5 };
+  let dx = T.x - sx, dy = T.y - sy, dz = T.z - z0; const hl = Math.hypot(dx, dy) || 1; dz = clamp(dz / hl, -0.3, 0.6) * hl; const n = Math.hypot(dx, dy, dz) || 1; dx /= n; dy /= n; dz /= n;
+  const want = Math.min(BAL.tankRange, Math.hypot(T.x - sx, T.y - sy, T.z - z0) + 0.2), wall = rayWorld(sx, sy, z0, dx, dy, dz, BAL.tankRange, { lean: LEAN }); let bd = Math.min(wall.d, p.aimPt ? want : BAL.tankRange);
+  for (const z of W.zs) { if (z.hp <= 0) continue; const d = rayBox(sx, sy, z0, dx, dy, dz, z.x - z.r, z.y - z.r, z.z, z.r * 2, z.r * 2, z.h, bd); if (d >= 0 && d < bd) bd = d; }
+  const ex = sx + dx * bd, ey = sy + dy * bd, ez = Math.max(z0 + dz * bd, 0);
+  emit({ k: 'cshot', o: p.i, x: r2(sx), y: r2(sy), z: r2(z0), e: [r2(ex), r2(ey), r2(ez)] });
+  explode(ex, ey, ez, p, BAL.tankR, BAL.tankDmg); noiseAt(p.x, p.y, SIEGE.boomR, p.z);
+}
 function skyTop(x, y) {
   x = Math.floor(x); y = Math.floor(y); if (!inMap(x, y)) return 0;
   for (let L = ML - 1; L >= 0; L--) { const i = ci(x, y, L), b = W.blk[i]; if (b && B[b].P) return Math.min(ML - 1, L + 1); if (L > 0 && W.slab[i]) return L; }
   return 0;
 }
+// (round 32) getting off a back seat: if the seat was over something you can't stand in (a railing, a crate), step onto the driver's spot or the nearest free one
+function offSeat(p, d) {
+  const fx = Math.floor(p.x), fy = Math.floor(p.y); if (p.L <= skyTop(p.x, p.y) && standable(fx, fy, p.L, 'p')) return;
+  if (d && !d.gone && standable(Math.floor(d.x), Math.floor(d.y), d.L, 'p') && !airborne(d)) { p.x = d.x; p.y = d.y; p.L = d.L; }
+  else { const t = landSpot(p.x, p.y); if (t) { p.x = t[0]; p.y = t[1]; p.L = skyTop(t[0], t[1]); } }
+  p.z = pZ(p); p.zv = p.z;
+}
+const landOK = (x, y) => { x = Math.floor(x); y = Math.floor(y); return inMap(x, y) && standable(x, y, skyTop(x, y), 'p'); };
+function landSpot(x, y) { let best = null, bd = 1e9; for (let dy = -4; dy <= 4; dy++) for (let dx = -4; dx <= 4; dx++) { const cx = Math.floor(x) + dx, cy = Math.floor(y) + dy, d = dx * dx + dy * dy; if (d < bd && landOK(cx, cy)) { bd = d; best = [cx + 0.5, cy + 0.5]; } } return best; }
 // take off only from the ground or a roof: nothing overhead, and some fuel
 function flyOK(p) {
   if (skyTop(p.x, p.y) > p.L) { emit({ k: 'deny', p: p.i, why: '旋翼机只能在地面或楼顶起飞：头顶不能有屋顶' }); return false; }
@@ -100,9 +124,11 @@ function flyOK(p) {
 function flyStep(p, dt) {
   const I = p.inp, m = Math.hypot(I.mx, I.my), k = m > 1 ? 1 / m : 1, V = VEH[p.veh];
   p.spool = (p.spool || 0) + dt; // (round 30) 1.2 s of rotor spin-up on the ground first: time for a teammate to hop in the back
-  p.alt = clamp((p.alt || 0) + (p.land ? -BAL.flyDrop : p.spool > 1.2 ? BAL.flyClimb : 0) * dt, 0, 1);
+  let lx = I.mx * k, ly = I.my * k, hold = false;
+  if (p.land && !landOK(p.x, p.y)) { const t = landSpot(p.x, p.y); if (t) { const dx = t[0] - p.x, dy = t[1] - p.y, d = Math.hypot(dx, dy) || 1; lx = dx / d; ly = dy / d; } hold = p.alt < 0.35; } // (round 31) never set down on a car, a crate or a fence: slide to the nearest spot you can stand on
+  p.alt = clamp((p.alt || 0) + (p.land ? (hold ? 0 : -BAL.flyDrop) : p.spool > 1.2 ? BAL.flyClimb : 0) * dt, 0, 1);
   const spd = BAL.pSpeed * V.spd * (0.3 + 0.7 * p.alt) * (p.land ? 0.7 : 1), a = Math.min(1, dt * 3.5);
-  p.vx = lerp(p.vx, I.mx * k * spd, a); p.vy = lerp(p.vy, I.my * k * spd, a);
+  p.vx = lerp(p.vx, lx * spd, a); p.vy = lerp(p.vy, ly * spd, a);
   const nx = clamp(p.x + p.vx * dt, 1.5, MW - 1.5), ny = clamp(p.y + p.vy * dt, 1.5, MH - 1.5);
   if (skyTop(nx, ny) * FH <= p.z + 0.25) { p.x = nx; p.y = ny; } else { p.vx *= 0.3; p.vy *= 0.3; }  // low down, a wall still stops you
   let top = 0; const ax = p.x + p.vx * 0.7, ay = p.y + p.vy * 0.7;
@@ -118,10 +144,11 @@ function flyStep(p, dt) {
 function stepMove(p, dt) {
   if (p.dead || p.gone) return;
   p.hurtT = Math.max(0, p.hurtT - dt);
+  if (p._wasPass != null && p._wasPass >= 0 && !(p.pass >= 0)) offSeat(p, W.p[p._wasPass]); p._wasPass = p.pass; // (round 32) however the back seat ended (landing, the driver went down, synced from the host), step off onto free ground
   // riding pillion on a teammate's motorbike: sit just behind the driver
   if (p.pass != null && p.pass >= 0) {
     const d = W.p[p.pass];
-    if (!d || !d.ride || !vehSeats(d) || d.dead || d.down || d.gone) p.pass = -1;
+    if (!d || !d.ride || !vehSeats(d) || d.dead || d.down || d.gone) { p.pass = -1; offSeat(p, d); }
     else { const a = d._ly != null ? d._ly : Math.atan2(d.vy || 0, d.vx || 1); p.x = d.x - Math.cos(a) * PILLION; p.y = d.y - Math.sin(a) * PILLION; /* (round 26) was -d._ly: the pillion sat mirrored, off the bike */ p.L = d.L; p.z = d.z; p.zv = d.zv; p.vx = d.vx; p.vy = d.vy; p._ly = d._ly; return; }
   }
   if (airborne(p)) { flyStep(p, dt); return; } // (round 29)
@@ -135,12 +162,14 @@ function stepMove(p, dt) {
     p.z = pZ(p); return;
   }
   if (p.dash) { const D = p.dash, f = Math.min(dt, D.T - D.t) / D.T; moveEnt(p, D.dx * f, D.dy * f, 'p', true); D.t += dt; if (D.t >= D.T) p.dash = null; p.z = pZ(p); p.anim += dt * 8; return; }
+  if (p.L > 0 && p.L > skyTop(p.x, p.y)) { p.L = skyTop(p.x, p.y); p.z = pZ(p); } // (round 31) knocked down mid-air, or a save made in flight: fall to what is below
   const spd = BAL.pSpeed * (p.down ? 0.22 : 1) * (p.medT > 0 ? 0.45 : 1) * (p.build ? 0.9 : 1) * (inMud(p.x, p.y, p.L) ? MUD_SLOW : 1) * (p.ride && VEH[p.veh] ? VEH[p.veh].spd : 1);
   const tx = I.mx * k * spd, ty = I.my * k * spd, a = Math.min(1, dt * 14);
   p.vx = lerp(p.vx, tx, a); p.vy = lerp(p.vy, ty, a);
   p.kbx *= Math.max(0, 1 - dt * 6); p.kby *= Math.max(0, 1 - dt * 6);
   p.dropped = 0; p.edgeWant = 0;
-  moveEnt(p, (p.vx + p.kbx) * dt, (p.vy + p.kby) * dt, 'p', true);
+  const ox = p.x, oy = p.y, oL = p.L; moveEnt(p, (p.vx + p.kbx) * dt, (p.vy + p.kby) * dt, 'p', true);
+  if (p.ride && VEH[p.veh] && VEH[p.veh].outdoor && skyTop(p.x, p.y) > p.L) { p.x = ox; p.y = oy; p.L = oL; p.vx *= 0.2; p.vy *= 0.2; } // (round 31) the tank doesn't fit under a roof
   p.edgeK = p.edgeWant; p.edgeT = p.edgeWant && m > 0.3 ? (p.edgeT || 0) + dt : 0;
   // keep pushing into a low obstacle (or a wall) to vault over it
   let vk = 0;
@@ -219,12 +248,13 @@ function stepActions(p, dt) {
   if (p.gone) return;
   const I = p.inp;
   p.fireCD -= dt; p.shoveCD -= dt; p.emptyT -= dt; if (p.bloom) p.bloom = Math.max(0, p.bloom - dt * 2.2);
+  for (let wi = 1; wi < NW; wi++) if (!WPN[wi].inf && p.ammo[wi] > ammoCap(wi)) p.ammo[wi] = ammoCap(wi); // (round 32) backpack: ammo you carry is capped (grows with the upgrade)
   // (round 29) gyrocopter: burns fuel while you're in it; empty → it comes down by itself; touching down gets you out
   if (airborne(p)) {
     p.fuel = Math.max(0, (p.fuel != null ? p.fuel : VEH[p.veh].fuel) - dt);
     if (p.fuel < BAL.fuelLow && !p._lowF) { p._lowF = 1; emit({ k: 'deny', p: p.i, why: '旋翼机油快没了（还剩 ' + Math.ceil(p.fuel) + ' 秒），没油会自己降落' }); }
     if (p.fuel <= 0 && !p.land) { p.land = true; emit({ k: 'deny', p: p.i, why: '旋翼机没油了，正在降落：进楼里按 F 加油' }); }
-    const g = skyTop(p.x, p.y); if (p.land && p.z - surfZ(p.x, p.y, g) < 0.08) { p.ride = false; p.land = false; p.L = g; p.z = surfZ(p.x, p.y, g); p.alt = 0; emit({ k: 'sfx', n: 'land', x: p.x, y: p.y, o: p.i }); }
+    const g = skyTop(p.x, p.y); if (p.land && p.z - surfZ(p.x, p.y, g) < 0.08 && landOK(p.x, p.y)) { p.ride = false; p.land = false; p.L = g; p.z = surfZ(p.x, p.y, g); p.alt = 0; emit({ k: 'sfx', n: 'land', x: p.x, y: p.y, o: p.i }); }
   } else { p._lowF = p.fuel < BAL.fuelLow ? p._lowF : 0; if (p.land) p.land = false; }
   // each gun has its own fire cooldown, and a reload keeps going in the holster (round 18: was one shared timer, swapping cancelled the reload)
   if (!p.cdW) p.cdW = WPN.map(() => 0); if (!p.rlBg) p.rlBg = WPN.map(() => 0);
@@ -246,8 +276,8 @@ function stepActions(p, dt) {
   }
   if (p.down) { p.downT -= dt; if (p.downT <= 0) { p.down = false; p.dead = true; p.reloadT = 0; p.medT = 0; p.ride = false; p.downT = W.phase === 'night' ? BAL.respawnNight : BAL.respawnDay; emit({ k: 'dead', p: p.i, t: p.lives > 0 ? Math.round(p.downT) : -1, n: p.lives || 0 }); checkLose(); return; } }
   const wi = p.down ? 0 : p.wpn, w = WPN[wi];
-  p.gcd = (p.gcd || 0) - dt; if (I.fire && airborne(p)) gyroFire(p); // (round 30) in the air the chin gun fires instead
-  if (I.fire && !p.build && !airborne(p) && p.fireCD <= 0 && p.cdW[wi] <= 0 && p.reloadT <= 0 && p.medT <= 0) {
+  p.gcd = (p.gcd || 0) - dt; if (I.fire && vehGun(p)) (vehGun(p) === 'cannon' ? tankFire(p) : gyroFire(p)); // (round 30 / 31) the aircraft's chin gun or the tank's cannon fires instead of your gun
+  if (I.fire && !p.build && !vehGun(p) && p.fireCD <= 0 && p.cdW[wi] <= 0 && p.reloadT <= 0 && p.medT <= 0) {
     if (p.mag[wi] > 0) fireWeapon(p, wi);
     else if (w.inf || p.ammo[wi] > 0) startReload(p);
     else if (p.emptyT <= 0) { p.emptyT = 0.5; emit({ k: 'sfx', n: 'empty', x: p.x, y: p.y, o: p.i }); }
@@ -311,24 +341,29 @@ function completeUse(p, tgt) {
   if (!got.length) got.push('什么也没有');
   emit({ k: 'loot', p: p.i, x: wx, y: wy, z: wz, text: got.join('  ') });
 }
-/* ---------- daily tasks ---------- */
+/* ---------- (round 32) permanent tasks: the counters build up over the whole run, every tier reached is a permanent team upgrade ---------- */
+// W.perm[k] = { got, tier }, W.perk[upgrade] = level; W.tasks is just what the panel shows (same shape as the old daily tasks, so the sync and save code stay)
 function rollTasks() {
-  const d = W.night + 1, pool = [];
-  for (const k in TASKS) { const T = TASKS[k]; if ((T.min || 1) <= d) pool.push(k); }
-  const pick = [];
-  while (pick.length < 3 && pool.length) {
-    let tot = 0; for (const k of pool) tot += TASKS[k].w;
-    let r = rand() * tot, j = 0;
-    for (; j < pool.length - 1; j++) { r -= TASKS[pool[j]].w; if (r <= 0) break; }
-    pick.push(pool.splice(j, 1)[0]);
-  }
-  W.tasks = pick.map(k => {
-    const T = TASKS[k], need = Math.max(1, T.need(d)), rk = T.rw[Math.floor(rand() * T.rw.length)], rw = TASK_RW[rk](d);
-    return { k, need, got: 0, done: 0, rw, txt: T.t(need), rt: taskRewardText(rw) };
-  });
-  W.tkv++;
+  W.perm = W.perm || {}; W.perk = W.perk || { hp: 0, bag: 0, med: 0, nade: 0, life: 0 };
+  const rows = [];
+  for (const P of PERM) { const q = W.perm[P.k] || (W.perm[P.k] = { got: 0, tier: 0 }); if (q.tier >= P.need.length) continue; const need = P.need[q.tier]; rows.push({ k: P.k, need, got: Math.min(q.got, need), done: 0, txt: P.name + ' ' + need + (P.need.length > 1 ? '（' + (q.tier + 1) + '/' + P.need.length + '）' : ''), rt: PERK[P.perk][0], f: q.got / need }); }
+  rows.sort((x, y) => y.f - x.f); W.tasks = rows.slice(0, 4); W.tkv++; // the four closest to done: a taller panel pushed the 准备入夜 button into the middle of the screen
+}
+function grantPerk(k) {
+  W.perk[k] = (W.perk[k] || 0) + 1;
+  for (const p of W.p) { if (p.gone) continue;
+    if (k === 'hp') { p.maxHp = BAL.pMaxHp; if (!p.dead && !p.down) p.hp = Math.min(p.maxHp, p.hp + PERK.hp[1]); }
+    if (k === 'life') p.lives = (p.lives || 0) + 1; }
+  modeSay('永久提升：' + PERK[k][0], '#9fe0ff', true);
 }
 function taskAdd(k, n = 1) {
+  if (!W || W.demo || W.over || NETROLE === 'guest' || !W.perm) return;
+  const P = PERM.find(q => q.k === k); if (!P) return; const q = W.perm[k] || (W.perm[k] = { got: 0, tier: 0 });
+  q.got += n; let up = false;
+  while (q.tier < P.need.length && q.got >= P.need[q.tier]) { q.tier++; grantPerk(P.perk); up = true; }
+  if (up || (W.tkN = (W.tkN || 0) + 1) % 3 === 0) rollTasks(); else { const r = W.tasks.find(t => t.k === k); if (r) { r.got = Math.min(q.got, r.need); W.tkv++; } }
+}
+function oldDailyTaskAdd(k, n = 1) { /* (before round 32) */
   if (!W || W.demo || W.over || NETROLE === 'guest') return;
   for (const t of W.tasks) {
     if (t.k !== k || t.done) continue;
@@ -483,7 +518,7 @@ function hurtZombie(z, dmg, p, kx, ky, quiet) {
 let KSRC = '';
 function killZombie(z, p) {
   z.hp = 0; W.kills++; if (p) p.kills++;
-  taskAdd('kill'); if (TASKS[z.k]) taskAdd(z.k); if (KSRC === 'nade') taskAdd('nade');
+  taskAdd('kill'); if (ZT[z.k].boss || z.k === 'brute' || z.k === 'armored') taskAdd('elite'); if (KSRC === 'nade') taskAdd('nade'); // (round 32) permanent task counters
   if (ZT[z.k].blast) zBlast(z.x, z.y, z.z + 0.5);
   emit({ k: 'zdie', x: r2(z.x), y: r2(z.y), z: r2(z.z), t: z.k, f: r2(z.face), id: z.id });
   if (rand() < (z.k === 'boss' ? 1 : z.k === 'brute' ? 0.6 : 0.07)) { const n = z.k === 'boss' ? 15 : z.k === 'brute' ? 3 : 1; W.res.parts += n; emit({ k: 'loot', p: -1, x: z.x, y: z.y, z: z.z + z.h, text: '+' + n + ' 零件' }); }
@@ -537,13 +572,14 @@ function doAct(p, a, v) {
   if (!W || W.over || p.gone || p.dead) return;
   switch (a) {
     case 'ride': if (!p.down && !p.dead) {
-      if (p.pass != null && p.pass >= 0) { const d = W.p[p.pass]; if (airborne(d) && d.z - surfZ(d.x, d.y, skyTop(d.x, d.y)) > 0.5) { emit({ k: 'deny', p: p.i, why: '在天上不能跳下去：等驾驶员降落（落地后自动下来）' }); break; } p.pass = -1; emit({ k: 'sfx', n: 'swap', x: p.x, y: p.y, o: p.i }); break; }     // hop off the back
+      if (p.pass != null && p.pass >= 0) { const d = W.p[p.pass]; if (airborne(d) && d.z - surfZ(d.x, d.y, skyTop(d.x, d.y)) > 0.5) { emit({ k: 'deny', p: p.i, why: '在天上不能跳下去：等驾驶员降落（落地后自动下来）' }); break; } p.pass = -1; offSeat(p, d); emit({ k: 'sfx', n: 'swap', x: p.x, y: p.y, o: p.i }); break; }     // hop off the back
       if (airborne(p)) { if (!p.land) { p.land = true; emit({ k: 'sfx', n: 'swap', x: p.x, y: p.y, o: p.i }); } break; } // (round 29) in the air: T / F brings it down, you get out on touchdown
-      if (v >= 1 && ownsVeh(p, v)) { if (VEH[v].fly && !flyOK(p)) break; p.land = false; p.veh = v; p.ride = true; p.build = false; if (!vehSeats(p)) for (const q of W.p) if (q.pass === p.i) q.pass = -1; emit({ k: 'sfx', n: 'swap', x: p.x, y: p.y, o: p.i }); break; }
+      if (v >= 1 && ownsVeh(p, v)) { if (VEH[v].fly && !flyOK(p)) break; if (VEH[v].outdoor && skyTop(p.x, p.y) > p.L) { emit({ k: 'deny', p: p.i, why: VEH[v].name + '太大，只能在室外开' }); break; } p.land = false; p.veh = v; p.ride = true; p.build = false; if (!vehSeats(p)) for (const q of W.p) if (q.pass === p.i) q.pass = -1; emit({ k: 'sfx', n: 'swap', x: p.x, y: p.y, o: p.i }); break; }
       const d = pillionFor(p);
       if (d && !p.ride) { p.pass = d.i; p.build = false; emit({ k: 'sfx', n: 'swap', x: p.x, y: p.y, o: p.i }); emit({ k: 'pillion', p: p.i, d: d.i }); break; } // get on behind a teammate
       if (!ownsVeh(p, p.veh)) p.veh = [4, 2, 3, 1, 5].find(k => ownsVeh(p, k)) || 0;
       if (p.veh && !p.ride && VEH[p.veh].fly && !flyOK(p)) break;
+      if (p.veh && !p.ride && VEH[p.veh].outdoor && skyTop(p.x, p.y) > p.L) { emit({ k: 'deny', p: p.i, why: VEH[p.veh].name + '太大，只能在室外开' }); break; }
       if (p.veh) { p.land = false; p.ride = !p.ride; if (p.ride) p.build = false; else for (const q of W.p) if (q.pass === p.i) q.pass = -1; emit({ k: 'sfx', n: 'swap', x: p.x, y: p.y, o: p.i }); }
     } break;
     case 'reload': if (!p.down) startReload(p); else if (p.mag[0] < WPN[0].mag) { p.reloadT = WPN[0].reload; p.reloadW = 0; } break;
@@ -565,7 +601,7 @@ function doAct(p, a, v) {
     case 'craft': doCraft(p, v); break;
     case 'build': doBuild(p, v.x, v.y, v.l, v.b, v.d); break;
     case 'demo': doDemolish(p, v.x, v.y, v.l); break;
-    case 'vdef': if (v >= 1 && ownsVeh(p, v) && p.ride && (airborne(p) || VEH[v].fly) && v !== p.veh) { emit({ k: 'deny', p: p.i, why: airborne(p) ? '先落地再换车' : '先下车，再坐旋翼机起飞' }); break; } if (v >= 1 && ownsVeh(p, v)) { p.veh = v; if (p.ride && !vehSeats(p)) for (const q of W.p) if (q.pass === p.i) q.pass = -1; } break; // pick the default vehicle (switches the one you're on too)
+    case 'vdef': if (v >= 1 && ownsVeh(p, v) && p.ride && VEH[v].outdoor && v !== p.veh && skyTop(p.x, p.y) > p.L) { emit({ k: 'deny', p: p.i, why: VEH[v].name + '太大，只能在室外开' }); break; } if (v >= 1 && ownsVeh(p, v) && p.ride && (airborne(p) || VEH[v].fly) && v !== p.veh) { emit({ k: 'deny', p: p.i, why: airborne(p) ? '先落地再换车' : '先下车，再坐旋翼机起飞' }); break; } if (v >= 1 && ownsVeh(p, v)) { p.veh = v; if (p.ride && !vehSeats(p)) for (const q of W.p) if (q.pass === p.i) q.pass = -1; } break; // pick the default vehicle (switches the one you're on too)
     case 'pad': if (v && inMap(v.x, v.y) && v.l >= 0 && v.l < ML) { const i = ci(v.x, v.y, v.l); if (W.blk[i] === 56) { setCell(i, 0, W.slab[i], null, 'demo'); emit({ k: 'sfx', n: 'jump', x: v.x + 0.5, y: v.y + 0.5 }); } } break;
     case 'mode': p.build = !!v; break;
   }
@@ -644,7 +680,10 @@ function craftBlocked(p, c) {
   if (c.shield && p.shield) return '已拥有';
   if (c.wpn && p.owned[c.wpn]) return '已拥有';
   if (c.ammo && !p.owned[c.ammo[0]]) return '没有这把枪';
+  if (c.ammo && p.ammo[c.ammo[0]] >= ammoCap(c.ammo[0])) return '背包满了'; // (round 32)
   if ((c.gam || c.fuel) && !ownsVeh(p, 5)) return '没有旋翼机';
+  if (c.shl && !ownsVeh(p, 6)) return '没有坦克';
+  if (c.shl && (p.shl || 0) >= BAL.tankCap) return '已满';
   if (c.fuel && airborne(p)) return '先落地';
   if (c.fuel && (p.fuel || 0) >= VEH[5].fuel - 0.5) return '油是满的';
   if (c.gam && (p.gam || 0) >= BAL.gyroCap) return '已满';
@@ -664,7 +703,8 @@ function doCraft(p, id) {
   if (c.upg) W.upg++;
   if (c.gam) p.gam = Math.min(BAL.gyroCap, (p.gam || 0) + c.gam);
   if (c.fuel) p.fuel = VEH[5].fuel;
-  if (c.veh) { p.vehs = (p.vehs || 0) | 1 << c.veh; p.veh = c.veh; if (VEH[c.veh].fly) p.gam = Math.max(p.gam || 0, BAL.gyroStart); }                  // (round 22) it becomes your default: T gets on
+  if (c.shl) p.shl = Math.min(BAL.tankCap, (p.shl || 0) + c.shl);
+  if (c.veh) { p.vehs = (p.vehs || 0) | 1 << c.veh; p.veh = c.veh; if (VEH[c.veh].fly) p.gam = Math.max(p.gam || 0, BAL.gyroStart); if (VEH[c.veh].gun === 'cannon') p.shl = Math.max(p.shl || 0, BAL.tankStart); }                  // (round 22) it becomes your default: T gets on
   if (c.shield) { p.shield = 1; p.melee = 1; }
   emit({ k: 'craft', p: p.i, id, name: c.name });
 }
@@ -689,7 +729,7 @@ function doBuild(p, x, y, L, id, dir) {
   for (const k in Bi.cost) W.res[k] -= Bi.cost[k];
   if (Bi.slab) setCell(i, W.blk[i] === 23 ? 0 : W.blk[i], id, null, 'build');
   else { if (W.blk[i] && W.srch) W.srch.delete(i); setCell(i, id, W.slab[i], Bi.stairs ? (dir & 3) : null, 'build'); } // (round 25) gear may replace a bush / searched spot
-  W.stats.built++; taskAdd('build'); if (L >= 2) taskAdd('high');
+  W.stats.built++; taskAdd('build'); if (L >= 2) taskAdd('high'); (W.mine = W.mine || new Set()).add(i); // (round 32) cells players built on (for the dawn re-occupation)
   recomputeStab();
 }
 function doDemolish(p, x, y, L) {
@@ -718,7 +758,7 @@ function startNight() {
   if (modeDef().ring) { updateFields(0, true); W.edges = siegeEdges(); }
   W.p.forEach(p => p.ready = false);
   const n = W.night, blood = isBlood(n), D = W.D;
-  const count = Math.round(BAL.nightSpawn(n) * D.n * (blood ? BAL.bloodMul : 1));
+  const count = Math.round(BAL.nightSpawn(BAL.lvN(n)) * D.n * (blood ? BAL.bloodMul : 1)); // (round 31) by level: steps every two nights
   // (round 18: every kind arrives 1-2 nights earlier; night 1 already has runners)
   // (round 21) every kind can turn up from night 1-2, rarely at first and more each night
   const wts = { walker: 10, crawler: 1.4, runner: 1 + n * 0.4, dog: 0.35 + n * 0.1, bloater: 0.4 + n * 0.08, climber: 0.35 + n * 0.18,
@@ -749,7 +789,7 @@ function startNight() {
   W.spawnQ = q;
   const names = ['东', '南', '西', '北'];
   modeNight(n);
-  emit({ k: 'night', n, blood: blood ? 1 : 0, count: q.length, from: front.map(s => names[s]).join('、') });
+  emit({ k: 'night', n, lv: BAL.nightLv(n), up: n > 1 && BAL.nightLv(n) > BAL.nightLv(n - 1) ? 1 : 0, blood: blood ? 1 : 0, count: q.length, from: front.map(s => names[s]).join('、') });
 }
 function dawn() {
   if (W.clean && W.night > 0) taskAdd('clean');
@@ -771,8 +811,8 @@ function spawnZombie(k, side, at, f, g) {
   const list = W.edges[side] && W.edges[side].length ? W.edges[side] : W.edges[0];
   let [x, y, L] = list[at != null && at >= 0 && at < list.length ? at : Math.floor(rand() * list.length)];
   if (g) { const o = Math.round(rand() * 4 - 2), nx = x + Math.sign(W.radio.x - x) * o, ny = y + Math.sign(W.radio.y - y) * o, nL = inMap(nx, ny) ? gAt(nx, ny) : -1; if (nL >= 0 && standable(nx, ny, nL, 'z') && W.ff.rw[ci(nx, ny, nL)] < Infinity) { x = nx; y = ny; L = nL; } } // a herd is a crowd, not a queue
-  const hpM = BAL.hpMul(n) * D.hp * (k === 'boss' ? 1 + n / 10 : 1) * (activeP().length > 1 ? 1.15 : 1);
-  const z = { id: W.zid++, k, x: x + 0.5, y: y + 0.5, L, z: L * FH, r: Z.r, h: Z.h, hp: Z.hp * hpM, max: Z.hp * hpM, spd: Z.spd * BAL.spdMul(n) * (f || (0.85 + rand() * 0.3)), face: 0, cd: rand(), st: 'walk', stun: 0, kbx: 0, kby: 0, hitT: 0, atk: 0, anim: rand() * 6, seed: (rand() * 1e6) | 0, spitT: 1 + rand() * 2, climbT: 0 };
+  const hpM = BAL.hpMul(BAL.lvN(n)) * D.hp * (k === 'boss' ? 1 + n / 10 : 1) * (activeP().length > 1 ? 1.15 : 1);
+  const z = { id: W.zid++, k, x: x + 0.5, y: y + 0.5, L, z: L * FH, r: Z.r, h: Z.h, hp: Z.hp * hpM, max: Z.hp * hpM, spd: Z.spd * BAL.spdMul(BAL.lvN(n)) * (f || (0.85 + rand() * 0.3)), face: 0, cd: rand(), st: 'walk', stun: 0, kbx: 0, kby: 0, hitT: 0, atk: 0, anim: rand() * 6, seed: (rand() * 1e6) | 0, spitT: 1 + rand() * 2, climbT: 0 };
   W.zs.push(z);
   return z;
 }

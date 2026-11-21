@@ -6,6 +6,7 @@ const TK_DIFFS = [{ v: 'easy', label: '简单', sub: '丧尸少，资源多' }, 
 const tkModes = () => MODE_IDS.map(k => ({ v: k, icon: MODES[k].icon, label: MODES[k].name, sub: MODES[k].desc }));
 const tkMaps = (mode) => MAP_IDS.map(k => ({ v: k, label: MAPS[k].name + (MODES[mode] && MODES[mode].map === k ? ' · 推荐' : ''), sub: MAPS[k].desc }));
 const tkFields = (vals, host) => [
+  { key: 'from', label: '从哪开始', hint: '可以用存档开房间：队友进来后接着这个存档玩（存档里有队友的装备就还给他）', type: 'cards', modes: ['host'], options: () => [{ v: 0, label: '新开一局', sub: '用下面的难度、模式和地图' }].concat([1, 2, 3, 4, 5].map(n => { const s = loadSlot(n); return s ? { v: n, label: '存档 ' + n, sub: saveLabel(s) + (s.p && s.p.length > 1 ? ' · 双人' : '') } : null; }).filter(Boolean)), def: () => 0, change: v => { SET.hostFrom = +v || 0; } }, // (round 32)
   { key: 'diff', label: '难度', type: 'seg', options: TK_DIFFS, def: () => SET.diff, change: v => { SET.diff = v; saveSet(); markDiff(); } },
   { key: 'mode', label: '模式', type: 'cards', options: tkModes, def: () => curMode(), change: (v, o) => { SET.mode = v; SET.map = o.map = MODES[v].map; saveSet(); uiModeLbl(); tkDemo(); } },
   { key: 'map', label: '地图', hint: '每种模式在哪张图上都能玩', type: 'cards', options: () => tkMaps((vals || TK.setup).mode || curMode()), def: () => curMap(), change: v => { SET.map = v; saveSet(); uiModeLbl(); tkDemo(); } }
@@ -56,7 +57,7 @@ const TK = TitleKit.create({
     Object.assign(SET, { diff: setup.diff, mode: setup.mode, map: setup.map }); saveSet();
     audioInit(); netLeave(); NETROLE = 'solo'; startGame((Math.random() * 1e9) | 0, [SET.name || '幸存者'], SET.diff, 0, SET.mode, SET.map);
   },
-  host: ({ setup }) => { Object.assign(SET, { diff: setup.diff, mode: setup.mode, map: setup.map }); saveSet(); audioInit(); netHost(); },
+  host: ({ setup }) => { Object.assign(SET, { diff: setup.diff, mode: setup.mode, map: setup.map }); SET.hostFrom = +setup.from || 0; saveSet(); audioInit(); netHost(); }, // (round 32) from: 0 = a new run, n = save slot n
   join: ({ code }) => { audioInit(); netJoin(code); },
   leaveRoom: () => { netLeave(); STATE.mode = 'title'; },
   roomReady: () => $('lReady').click(),

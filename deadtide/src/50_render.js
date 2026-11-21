@@ -571,6 +571,18 @@ function drawOverlay() {
 }
 
 /* ---------- minimap ---------- */
+// (round 31) a player marker you can spot at a glance: an arrow pointing where they aim, thick dark + white outline, your own with a pulsing white halo;
+// teammates in their colour; a fallen teammate is a grey cross
+function playerMark(g, x, y, ang, p, mine, k) {
+  const s = (mine ? 7 : 6.2) * k, col = PCOL[p.i % 2].j;
+  if (p.dead) { g.strokeStyle = 'rgba(0,0,0,.85)'; g.lineWidth = 4 * k; g.beginPath(); g.moveTo(x - s, y - s); g.lineTo(x + s, y + s); g.moveTo(x + s, y - s); g.lineTo(x - s, y + s); g.stroke(); g.strokeStyle = '#c8ccd0'; g.lineWidth = 2 * k; g.stroke(); return; }
+  if (mine) { const pu = 0.5 + 0.5 * Math.sin(performance.now() / 260); g.fillStyle = 'rgba(255,255,255,' + (0.18 + 0.2 * pu) + ')'; g.beginPath(); g.arc(x, y, s * (1.9 + 0.5 * pu), 0, 7); g.fill(); }
+  g.save(); g.translate(x, y); g.rotate(ang);
+  g.beginPath(); g.moveTo(s * 1.45, 0); g.lineTo(-s * 0.85, s * 0.95); g.lineTo(-s * 0.35, 0); g.lineTo(-s * 0.85, -s * 0.95); g.closePath();
+  g.lineJoin = 'round'; g.strokeStyle = 'rgba(0,0,0,.9)'; g.lineWidth = 4 * k; g.stroke(); g.strokeStyle = '#fff'; g.lineWidth = 2 * k; g.stroke(); g.fillStyle = mine ? '#ffffff' : col; g.fill();
+  if (mine) { g.fillStyle = col; g.beginPath(); g.arc(0, 0, s * 0.42, 0, 7); g.fill(); }
+  g.restore();
+}
 const MM = { base: null, t: 0 };
 function buildMinimapBase() {
   const c = document.createElement('canvas'); c.width = MW; c.height = MH; const g = c.getContext('2d');
@@ -589,10 +601,12 @@ function drawMinimap(dt) {
   g.fillStyle = 'rgba(30,30,34,.85)';
   for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) { for (let L = gAt(x, y); L < Math.min(ML, gAt(x, y) + 3); L++) { const b = W.blk[ci(x, y, L)]; if ((b && B[b].cost) || b === 24 || b === 50) { g.fillRect(x * S, y * S, S, S); break; } if (b === 22) { g.fillStyle = '#25381f'; g.fillRect(x * S, y * S, S, S); g.fillStyle = 'rgba(30,30,34,.85)'; break; } } }
   if (!modeDef().anyBuild) g.strokeStyle = 'rgba(255,207,107,.6)', g.lineWidth = 1, g.strokeRect((W.radio.x - BUILD_R) * S, (W.radio.y - BUILD_R) * S, (BUILD_R * 2 + 1) * S, (BUILD_R * 2 + 1) * S);
-  g.fillStyle = '#ff3b2f'; for (const z of W.zs) g.fillRect(z.x * S - 1.5, z.y * S - 1.5, 3, 3);
+  g.fillStyle = '#a8261f'; for (const z of W.zs) g.fillRect(z.x * S - 1, z.y * S - 1, 2, 2); // (round 31) zombies smaller and darker, so the players stand out
   g.fillStyle = '#7fd36b'; g.fillRect(W.radio.x * S - 1, W.radio.y * S - 1, S + 2, S + 2);
-  for (const p of W.p) { if (p.gone || p.dead) continue; g.fillStyle = PCOL[p.i % 2].j; g.beginPath(); g.arc(p.x * S, p.y * S, 3.2, 0, 7); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 1; g.stroke(); }
   g.restore();
+  const R = CAM.yaw, cx = cv.width / 2, cy = cv.height / 2, rot = (x, y) => { const dx = x * S - cx, dy = y * S - cy; return [cx + dx * Math.cos(R) - dy * Math.sin(R), cy + dx * Math.sin(R) + dy * Math.cos(R)]; };
+  for (const p of W.p) if (p.i !== ME && !p.gone) { const [px, py] = rot(p.x, p.y); playerMark(g, px, py, p.aim + R, p, false, 0.75); }
+  const me = W.p[ME]; if (me && !me.gone) { const [px, py] = rot(me.x, me.y); playerMark(g, px, py, me.aim + R, me, true, 0.75); }
 }
 
 /* ---------- events -> effects (+ guest-side state application) ---------- */
@@ -604,6 +618,7 @@ function fxEvent(e) {
   const guest = NETROLE === 'guest';
   switch (e.k) {
     case 'shot': if (guest && e.o === ME) break; shotFx(e.o, e.w, e.e); break;
+    case 'cshot': { RND.tracers.push({ x: e.x, y: e.y, z: e.z, x2: e.e[0], y2: e.e[1], z2: e.e[2], t: 0, life: 0.12, w: 0.09, col: [1, 0.7, 0.35] }); RND.flashes.push({ x: e.x, y: e.y, z: e.z, t: 0, life: 0.08 }); sfx('sniper', e.x, e.y); const q = W.p[e.o]; if (q) q._crec = 1; for (let k = 0; k < 6; k++) addP({ x: e.x, y: e.y, z: e.z, vx: frnd(-0.6, 0.6), vy: frnd(-0.6, 0.6), vz: frnd(0.2, 0.8), g: -0.3, col: '#8d8a84', s: 0.1, life: 0.8, smoke: 1 }); break; } // (round 31) tank cannon
     case 'gshot': RND.tracers.push({ x: e.x, y: e.y, z: e.z, x2: e.e[0], y2: e.e[1], z2: e.e[2], t: 0, life: 0.07, w: 0.03, col: [1, 0.8, 0.4] }); RND.flashes.push({ x: e.x, y: e.y, z: e.z, t: 0, life: 0.04 }); if (thr('gyro', 0.1)) sfx('rifle', e.x, e.y); if (e.h) addP({ x: e.e[0], y: e.e[1], z: e.e[2], vx: frnd(-1, 1), vy: frnd(-1, 1), vz: 1, col: '#7a1010', s: 0.06, life: 0.4 }); break; // (round 30) gyrocopter chin gun
     case 'tshot': { if (e.i != null) (RND.taim = RND.taim || {})[e.i] = Math.atan2(e.ty - e.y, e.tx - e.x);
       const a = Math.atan2(e.ty - e.y, e.tx - e.x), d = Math.hypot(e.tx - e.x, e.ty - e.y);
@@ -649,7 +664,7 @@ function fxEvent(e) {
     case 'task': sfx('craft'); uiMsg('任务完成：' + e.txt + '  奖励 ' + e.rt, '#ffd76a'); toast('任务完成 · ' + e.rt, '#ffd76a'); break;
     case 'tp': if (guest && e.p === ME) { const p = W.p[ME]; p.x = e.x; p.y = e.y; p.L = e.l; p.vx = p.vy = 0; } break;
     case 'kb': if (guest && e.p === ME) { const p = W.p[ME]; p.kbx += e.x; p.kby += e.y; } break;
-    case 'night': sfx(e.blood ? 'blood' : 'night'); banner(e.blood ? '第 ' + e.n + ' 夜 · 血月' : '第 ' + e.n + ' 夜', (e.blood ? '尸潮从四面八方涌来，巨尸出没' : '尸潮从' + e.from + '边来了') + '，守住堡垒', e.blood ? '#ff5a4a' : '#ffd27a'); break;
+    case 'night': sfx(e.blood ? 'blood' : 'night'); banner((e.blood ? '第 ' + e.n + ' 夜 · 血月' : '第 ' + e.n + ' 夜') + (e.lv ? ' · Lv ' + e.lv : ''), (e.up ? '尸潮升到 Lv ' + e.lv + '：更多、更硬、更快 · ' : '') + (e.blood ? '尸潮从四面八方涌来，巨尸出没' : '尸潮从' + e.from + '边来了') + '，守住堡垒', e.blood ? '#ff5a4a' : e.up ? '#ff9a5a' : '#ffd27a'); break; // (round 31) level every two nights
     case 'dawn': document.getElementById('over').classList.add('hidden'); sfx('dawn'); banner('天亮了', '撑过了第 ' + e.n + ' 夜 · 新的任务已刷新（点上方「今日任务」展开）', '#ffe7b0'); break;
     case 'say': uiMsg(e.text, e.col); break;
     case 'mbanner': banner(e.t, '', e.c); sfx('ready'); break;
