@@ -112,6 +112,7 @@ const VEH = [null,
   { k: 'armor', name: '装甲车', spd: 1.3, seats: 2, armor: 0.35, ram: 1, tag: '保护用：受到的伤害只剩 35%，撞开挡路的丧尸，后座能带一个队友' },
 ];
 const NVEH = VEH.length - 1;
+const PILLION = 0.38;                                   // how far behind the driver the back-seat rider sits
 // (round 24) grenade types: 0 frag (p.nades), 1–3 in p.gn[t - 1]
 const GREN = [
   { k: 'frag', name: '破片手雷', sn: '破片', tag: '炸一片：伤害高' },

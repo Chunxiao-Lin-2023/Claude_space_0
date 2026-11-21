@@ -43,6 +43,12 @@ function swapLast() { const me = W.p[ME]; if (UI.prevW != null && me.owned[UI.pr
 // vehicles: T gets on your default one; Shift+T / a long press on 载具 picks another you own (and gets on it)
 function rideKey(pick) {
   const me = W.p[ME], own = [1, 2, 3, 4].filter(v => (me.vehs || 0) >> v & 1);
+  // (round 26) next to a teammate who is riding: their back seat comes first (T on PC, 载具 on touch); say so when their vehicle has none
+  if (!me.ride && !(me.pass >= 0) && !pick) {
+    if (pillionFor(me)) { act('ride'); return; }
+    const near = W.p.find(d => d !== me && d.ride && !d.gone && Math.hypot(d.x - me.x, d.y - me.y) < 2.6);
+    if (near && !vehSeats(near)) toast(near.name + ' 骑的' + VEH[near.veh].name + '没有后座（摩托车、装甲车才能带人）');
+  }
   if (pick && own.length) { const j = own.indexOf(me.veh), v = own[(j + 1) % own.length]; act('ride', v); toast('载具：' + VEH[v].name + ' · ' + VEH[v].tag); return; }
   if (own.length || me.pass >= 0 || pillionFor(me)) act('ride'); else toast('还没有载具：在「商店 → 载具」里造（尸城求生要先找到蓝图），或者走到队友的摩托 / 装甲车边按 T 坐后座');
 }

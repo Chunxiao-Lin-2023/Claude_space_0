@@ -386,7 +386,8 @@ function mkVehicles() {
   const bike = new THREE.Group(); bike.add(wheel(0.22, 0.05, 0.38), wheel(0.22, 0.05, -0.38));
   const fm = lam('#c0392b'); bike.add(new THREE.Mesh(boxG(0.7, 0.05, 0.05, 0, 0.42, 0).rotateZ(0.08), fm), new THREE.Mesh(boxG(0.05, 0.36, 0.05, -0.12, 0.3, 0).rotateZ(0.35), fm), new THREE.Mesh(boxG(0.18, 0.04, 0.1, -0.16, 0.52, 0), lam('#222')), new THREE.Mesh(boxG(0.05, 0.05, 0.42, 0.36, 0.62, 0), lam('#888')));
   const moto = new THREE.Group(); moto.add(wheel(0.26, 0.12, 0.5), wheel(0.26, 0.12, -0.5));
-  const bm = lam('#2c3e50'); moto.add(new THREE.Mesh(boxG(0.8, 0.22, 0.26, 0, 0.42, 0), bm), new THREE.Mesh(boxG(0.36, 0.08, 0.28, -0.14, 0.56, 0), lam('#151515')), new THREE.Mesh(boxG(0.22, 0.2, 0.24, 0.32, 0.6, 0), lam('#c0392b')), new THREE.Mesh(boxG(0.05, 0.05, 0.5, 0.42, 0.76, 0), lam('#999')), new THREE.Mesh(boxG(0.3, 0.06, 0.08, -0.3, 0.34, 0.16), lam('#777')));
+  const bm = lam('#2c3e50'); moto.add(new THREE.Mesh(boxG(0.8, 0.22, 0.26, 0, 0.42, 0), bm), new THREE.Mesh(boxG(0.36, 0.08, 0.28, -0.14, 0.56, 0), lam('#151515')), new THREE.Mesh(boxG(0.22, 0.2, 0.24, 0.32, 0.6, 0), lam('#c0392b')), new THREE.Mesh(boxG(0.05, 0.05, 0.5, 0.42, 0.76, 0), lam('#999')), new THREE.Mesh(boxG(0.3, 0.06, 0.08, -0.3, 0.34, 0.16), lam('#777')),
+    new THREE.Mesh(boxG(0.3, 0.07, 0.26, -0.46, 0.57, 0), lam('#1e1e1e')), new THREE.Mesh(boxG(0.24, 0.16, 0.22, -0.46, 0.45, 0), bm), new THREE.Mesh(boxG(0.04, 0.04, 0.3, -0.6, 0.64, 0), lam('#999'))); // (round 26) pillion seat over the back wheel
   // (round 22) cargo trike: one wheel in front, a box on two wheels behind; armoured car: an open-topped steel tub with a push bar
   const cargo = new THREE.Group(), cm = lam('#3f7a5a'); cargo.add(wheel(0.2, 0.08, 0.5));
   for (const z of [-0.3, 0.3]) { const w = wheel(0.2, 0.08, -0.42); w.position.z = z; cargo.add(w); }
@@ -406,7 +407,11 @@ function drawPlayers(vl, dt) {
   W.p.forEach((p, i) => {
     const m = OBJ.pl[i]; if (!m.g.visible) return;
     if (!m.veh) { m.veh = mkVehicles(); m.g.add(m.veh); }
-    const zv = (p.zv != null ? p.zv : p.z) + (p.jz || 0); m.g.position.set(p.x, zv, p.y); m.g.rotation.x = p.dead ? -1.45 : 0; // a dead player lies flat until respawn / rescue
+    let zv = (p.zv != null ? p.zv : p.z) + (p.jz || 0), gx = p.x, gy = p.y;
+    // (round 26) the back-seat rider is drawn glued to the driver as drawn on this screen (their own reported position lags behind over the network)
+    const drv = p.pass != null && p.pass >= 0 && !p.down && !p.dead ? W.p[p.pass] : null;
+    if (drv && drv.ride && !drv.gone && drv._ly != null) { gx = drv.x - Math.cos(drv._ly) * PILLION; gy = drv.y - Math.sin(drv._ly) * PILLION; zv = (drv.zv != null ? drv.zv : drv.z) + (drv.jz || 0); }
+    m.g.position.set(gx, zv, gy); m.g.rotation.x = p.dead ? -1.45 : 0; // a dead player lies flat until respawn / rescue
     // smoothing state
     if (p._uy == null) { p._uy = p.aim; p._ly = p.aim; p._ph = 0; p._kick = 0; p._spd = 0; p._px = p.x; p._py = p.y; p._st = 0; }
     const sp = dt > 0 ? Math.min(8, Math.hypot(p.x - p._px, p.y - p._py) / dt) : 0, mvx = p.x - p._px, mvy = p.y - p._py; p._px = p.x; p._py = p.y;
@@ -418,6 +423,7 @@ function drawPlayers(vl, dt) {
       const md = Math.atan2(mvy, mvx); back = Math.cos(angDiff(md, p._uy)) < -0.35;
       p._ly = angLerp(p._ly, back ? md + Math.PI : md, Math.min(1, dt * 12));
     } else p._ly = angLerp(p._ly, p._uy, Math.min(1, dt * 5));
+    if (drv && drv.ride && drv._ly != null) { p._ly = drv._ly; back = false; }                 // sit facing the way the bike goes
     // keep the hips within ~100 degrees of the chest
     const tw = angDiff(p._uy, p._ly); if (Math.abs(tw) > 1.75) p._ly = p._uy - Math.sign(tw) * 1.75;
     p._ph += dt * p._spd * 2.1 * (back ? -1 : 1);
@@ -435,7 +441,7 @@ function drawPlayers(vl, dt) {
     if (m.shield) m.shield.visible = !!p.shield && p.melee === 1 && !down && !p.dead && !p.ride; // (round 23) shown when it's your melee weapon
     const legH = (a, k) => 0.23 * Math.cos(a) + 0.22 * Math.cos(a - k) + 0.03;
     const hipY = down ? 0.2 : Math.max(legH(aL, kL), legH(aR, kR));
-    const seat = ride ? (pil ? (p.pass >= 0 && W.p[p.pass] && W.p[p.pass].veh === 4 ? 0.34 : 0.46) : p.veh === 2 ? 0.42 : p.veh === 4 ? 0.3 : 0.36) : 0; m.hips.position.y = hipY + seat; m.upper.position.y = hipY + seat;
+    const seat = ride ? (pil ? (p.pass >= 0 && W.p[p.pass] && W.p[p.pass].veh === 4 ? 0.34 : 0.4) : p.veh === 2 ? 0.42 : p.veh === 4 ? 0.3 : 0.36) : 0; m.hips.position.y = hipY + seat; m.upper.position.y = hipY + seat;
     m.legs[0].th.rotation.z = aL; m.legs[0].kn.rotation.z = -kL; m.legs[0].ft.rotation.z = kL - aL;
     m.legs[1].th.rotation.z = aR; m.legs[1].kn.rotation.z = -kR; m.legs[1].ft.rotation.z = kR - aR;
     if (down) { m.legs[1].th.rotation.x = 0.6; } else m.legs[1].th.rotation.x = 0;

@@ -204,7 +204,7 @@ function hudTick(dt) {
   for (const r of RES) { const el = $('res_' + r.k), v = W.res[r.k]; el.firstElementChild.textContent = v; if (UI.resPrev[r.k] != null && v > UI.resPrev[r.k]) { el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); } UI.resPrev[r.k] = v; }
   // prompt
   let ptxt = '', prog = 0;
-  if (!me.dead && !me.build && !me.ride && !(me.pass >= 0) && pillionFor(me)) ptxt = (INP.touch ? '点「坐后座」' : '按 T ') + '坐上 ' + pillionFor(me).name + ' 的摩托后座（后座能开枪）';
+  if (!me.dead && !me.build && !me.ride && !(me.pass >= 0) && pillionFor(me)) ptxt = (INP.touch ? '点「坐后座」' : '按 T ') + '坐上 ' + pillionFor(me).name + ' 的' + VEH[pillionFor(me).veh].name + '后座（后座能开枪）';
   if (me.dead) ptxt = me.lives > 0 ? '你阵亡了 · ' + Math.ceil(me.downT) + ' 秒后在据点复活（还剩 ' + me.lives + ' 次）· 队友带医疗包到你身边按住交互 6 秒能马上救你' : '你阵亡了 · 复活次数用完了 · 只能等队友带医疗包来救你';
   if (!me.dead && !me.build) {
     const tgt = useTarget(me), inB = canCraft(me); if (inB && !UI.inB) UI.craftHintT = W.t; UI.inB = inB;

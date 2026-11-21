@@ -75,7 +75,7 @@ function stepMove(p, dt) {
   if (p.pass != null && p.pass >= 0) {
     const d = W.p[p.pass];
     if (!d || !d.ride || !vehSeats(d) || d.dead || d.down || d.gone) p.pass = -1;
-    else { const a = d._ly != null ? -d._ly : Math.atan2(d.vy || 0, d.vx || 1); p.x = d.x - Math.cos(a) * 0.42; p.y = d.y - Math.sin(a) * 0.42; p.L = d.L; p.z = d.z; p.zv = d.zv; p.vx = d.vx; p.vy = d.vy; p._ly = d._ly; return; }
+    else { const a = d._ly != null ? d._ly : Math.atan2(d.vy || 0, d.vx || 1); p.x = d.x - Math.cos(a) * PILLION; p.y = d.y - Math.sin(a) * PILLION; /* (round 26) was -d._ly: the pillion sat mirrored, off the bike */ p.L = d.L; p.z = d.z; p.zv = d.zv; p.vx = d.vx; p.vy = d.vy; p._ly = d._ly; return; }
   }
   const I = p.inp, m = Math.hypot(I.mx, I.my), k = m > 1 ? 1 / m : 1;
   if (p.jmp) { // mid-vault / mid-jump: a scripted arc
@@ -441,7 +441,7 @@ function knock(p, kx, ky) { if (p.i === ME && NETROLE !== 'guest') { p.kbx += kx
 // a teammate on a motorbike with the back seat free, close enough to climb on
 const vehSeats = d => !!(VEH[d.veh] && VEH[d.veh].seats);
 const ownsVeh = (p, v) => !!((p.vehs || 0) >> v & 1) || (!p.vehs && v >= 1 && p.veh === v); // vehs = owned bitmask; a bare veh (older state) counts as owned
-function pillionFor(p) { return W.p.find(d => d !== p && d.ride && vehSeats(d) && !d.dead && !d.down && !d.gone && d.L === p.L && Math.hypot(d.x - p.x, d.y - p.y) < 1.8 && !W.p.some(q => q.pass === d.i)) || null; }
+function pillionFor(p) { return W.p.find(d => d !== p && d.ride && vehSeats(d) && !d.dead && !d.down && !d.gone && Math.abs(d.L - p.L) <= 1 && Math.hypot(d.x - p.x, d.y - p.y) < 2.6 && !W.p.some(q => q.pass === d.i)) || null; } // (round 26) 1.8 → 2.6 tiles, a step up/down is fine
 // (round 24) how many times each player may come back: difficulty, plus a bit more in the long modes
 function livesFor(diff, mode) { return (BAL.lives[diff] != null ? BAL.lives[diff] : BAL.lives.normal) + (mode === 'classic' || mode === 'siege' ? BAL.livesLong : 0); }
 function respawnP(p) {
