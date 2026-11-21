@@ -458,6 +458,28 @@ function drawNadeMark() {
   const pt = INP.nadePt; M.visible = !!pt && STATE.mode === 'play'; if (!pt) return;
   const z = pt.z != null ? pt.z : surfZ(pt.x, pt.y, gAt(Math.floor(pt.x), Math.floor(pt.y))); M.position.set(pt.x, z + 0.06, pt.y);
 }
+// (round 24) grenade clouds: a bluish sticky puddle (slow) or a grey smoke ball (smoke)
+function drawClouds() {
+  let C = OBJ.clouds;
+  if (!C) {
+    C = OBJ.clouds = []; const disc = new THREE.CircleGeometry(1, 40).rotateX(-Math.PI / 2), ring = new THREE.RingGeometry(0.93, 1, 40).rotateX(-Math.PI / 2), puff = new THREE.SphereGeometry(1, 10, 8);
+    for (let k = 0; k < 6; k++) {
+      const g = new THREE.Group(), sm = new THREE.MeshBasicMaterial({ color: '#5fb6d8', transparent: true, opacity: 0.35, depthWrite: false }), rm = new THREE.MeshBasicMaterial({ color: '#9fe6ff', transparent: true, opacity: 0.7, depthWrite: false });
+      const pm = new THREE.MeshLambertMaterial({ color: '#b8bcc4', transparent: true, opacity: 0.6, depthWrite: false });
+      const d = new THREE.Mesh(disc, sm), r = new THREE.Mesh(ring, rm), puffs = []; g.add(d, r);
+      for (let j = 0; j < 9; j++) { const m = new THREE.Mesh(puff, pm); g.add(m); puffs.push(m); }
+      g.visible = false; SCN.add(g); C.push({ g, d, r, puffs, pm, sm });
+    }
+  }
+  const list = W.cz || []; let n = 0;
+  for (const c of list) {
+    if (n >= C.length) break; const o = C[n++], fade = clamp(c.t / 1.5, 0, 1); o.g.visible = true; o.g.position.set(c.x, c.z + 0.04, c.y);
+    const slow = c.k === 1; o.d.visible = o.r.visible = slow; o.d.scale.set(c.r, 1, c.r); o.r.scale.set(c.r, 1, c.r); o.sm.opacity = 0.35 * fade;
+    o.puffs.forEach((m, j) => { m.visible = !slow; if (slow) return; const a = j / 9 * Math.PI * 2 + W.t * 0.15, rr = j === 8 ? 0 : c.r * 0.55; m.position.set(Math.cos(a) * rr, 0.9 + (j % 3) * 0.35 + Math.sin(W.t + j) * 0.08, Math.sin(a) * rr); const sc = c.r * (j === 8 ? 0.62 : 0.48); m.scale.set(sc, sc * 0.8, sc); });
+    o.pm.opacity = 0.62 * fade;
+  }
+  for (let k = n; k < C.length; k++) C[k].g.visible = false;
+}
 // (round 23) brute tells on the ground: a red lane before a charge, a red ring before a slam
 function drawTells() {
   let T = OBJ.tells;
@@ -486,7 +508,7 @@ function draw(dt) {
   if (key !== CUT_KEY) { CUT_KEY = key; rebuildCells(); }
   if (STATE.mode === 'play' && !W.demo) qualTick(dt);
   applyTime(darkness()); archFrame();
-  drawZombies(vl, dt); drawPlayers(vl, dt); drawFx(); drawGhost(me); drawPlan(); drawNadeMark(); drawTells();
+  drawZombies(vl, dt); drawPlayers(vl, dt); drawFx(); drawGhost(me); drawPlan(); drawNadeMark(); drawTells(); drawClouds();
   OBJ.zone.visible = (!W.demo && W.phase === 'day' || !!(me && me.build)) && !modeDef().anyBuild;
   RENDER.render(SCN, CAMO);
   drawOverlay();
@@ -602,10 +624,10 @@ function fxEvent(e) {
       if (e.p === ME) { RND.hurtV = Math.min(1, RND.hurtV + 0.5); CAM.shake = Math.max(CAM.shake, 0.12); if (thr('hurt', 0.25)) sfx('hurt'); } break;
     case 'down': sfx('down', W.p[e.p].x, W.p[e.p].y); uiMsg(e.p === ME ? (W.p.length > 1 ? '你倒地了！等队友扶你，或按 H 用医疗包自救' : '你倒地了！按 H 用医疗包自救') : W.p[e.p].name + ' 倒地了！快去扶（按住 F）', '#ff6b5a'); break;
     case 'revive': sfx('revive'); uiMsg(e.p === e.by ? W.p[e.p].name + ' 自救成功' : W.p[e.by].name + (e.rez ? ' 用医疗包救回了 ' : ' 扶起了 ') + W.p[e.p].name, '#8fe39a'); break;
-    case 'dead': uiMsg(W.p[e.p].name + ' 阵亡了：' + (e.t || 60) + ' 秒后（或天亮）在队友身边复活，带医疗包到他倒下的地方能马上救回来', '#ff6b5a'); break;
+    case 'dead': uiMsg(W.p[e.p].name + ' 阵亡了：' + (e.t >= 0 ? (e.t || 20) + ' 秒后在据点复活（还剩 ' + (e.n || 0) + ' 次）' : '复活次数用完了') + '，带医疗包到他倒下的地方能马上救回来', '#ff6b5a'); break;
     case 'slam': { debrisFx(e.x, e.y, e.z + 0.2, '#9a8a70', e.r > 1 ? 18 : 8); shake(e.x, e.y, e.r > 1 ? 0.5 : 0.3); break; } // brute slam / charge crash
     case 'sbash': { const q = W.p[e.p]; sfx('bash', q.x, q.y); if (e.p !== ME) q.knT = 0.3; if (e.n) { debrisFx(e.x, e.y, e.z, '#cfd8e0', 6); if (e.p === ME) shake(q.x, q.y, 0.18); } break; } // (round 23) shield bash
-    case 'respawn': uiMsg(W.p[e.p].name + ' 回来了' + (e.near >= 0 ? '（在 ' + W.p[e.near].name + ' 身边）' : '（在营地）'), '#8fe39a'); break;
+    case 'respawn': uiMsg(W.p[e.p].name + ' 回来了' + '（在据点）', '#8fe39a'); break;
     case 'task': sfx('craft'); uiMsg('任务完成：' + e.txt + '  奖励 ' + e.rt, '#ffd76a'); toast('任务完成 · ' + e.rt, '#ffd76a'); break;
     case 'tp': if (guest && e.p === ME) { const p = W.p[ME]; p.x = e.x; p.y = e.y; p.L = e.l; p.vx = p.vy = 0; } break;
     case 'kb': if (guest && e.p === ME) { const p = W.p[ME]; p.kbx += e.x; p.kby += e.y; } break;

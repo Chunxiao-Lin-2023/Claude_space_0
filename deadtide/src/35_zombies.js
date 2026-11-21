@@ -41,6 +41,7 @@ function stepZombies(dt) {
     const cx = Math.floor(z.x), cy = Math.floor(z.y), i = ci(cx, cy, z.L);
     // barbed wire
     let slow = inMud(z.x, z.y, z.L) ? MUD_SLOW : 1;
+    const cz = W.cz && W.cz.length ? cloudAt(z.x, z.y, z.z) : 0; if (cz & 1) slow *= BAL.slowMul; if (cz & 2) z.conf = BAL.smokeConf; else if (z.conf > 0) z.conf -= dt; // (round 24) slow field / smoke
     if (B[W.blk[i]].mine) { setCell(i, 0, W.slab[i], null, 'mine'); explode(cx + 0.5, cy + 0.5, z.L * FH + 0.3, null, SIEGE.mineR, SIEGE.mineDmg); if (z.hp <= 0) continue; }
     if (B[W.blk[i]].trap) { z.stun = 2.5; hurtZombie(z, 30, null); setCell(i, 0, W.slab[i], null, 'trap'); if (z.hp <= 0) continue; }
     if (B[W.blk[i]].stairs && !B[W.blk[i]].nat) slow = climbT ? 0.75 : 0.38; // ladders are slow going for zombies
@@ -55,7 +56,7 @@ function stepZombies(dt) {
     const field = pf[i] < Infinity ? pf : rf;
     // spitter: lob acid at a visible player in range
     let hold = false;
-    if (z.k === 'spitter') {
+    if (z.k === 'spitter' && !(z.conf > 0)) {
       z.spitT -= dt;
       let tp = null, td = 1e9;
       for (const p of W.p) { if (p.gone || p.dead) continue; const d = d2(p.x, p.y, z.x, z.y); if (d < Z.range && d < td && los(z.x, z.y, z.z + 0.9, p.x, p.y, p.z + 0.6)) { td = d; tp = p; } }
@@ -130,10 +131,11 @@ function stepZombies(dt) {
       let best = null, bd = 1e9; for (const p of W.p) { if (!standingP(p) && !p.down) continue; const d = d2(p.x, p.y, z.x, z.y); if (d < bd) { bd = d; best = p; } }
       if (best) { tx = best.x; ty = best.y; } else { tx = W.radio.x + 0.5; ty = W.radio.y + 0.5; }
     }
+    if (z.conf > 0) { if (z.wa == null || rand() < dt * 0.9) z.wa = rand() * Math.PI * 2; tx = z.x + Math.cos(z.wa); ty = z.y + Math.sin(z.wa); attackI = -1; z.chg = z.slam = null; z.tl = 0; } // lost in the smoke: wander
     if (attackI >= 0) { zAttackCell(z, attackI); tx = null; }
     // bite players in reach
     for (const p of W.p) {
-      if (p.gone || p.dead || Math.abs(p.z - z.z) > 0.8) continue;
+      if (p.gone || p.dead || Math.abs(p.z - z.z) > 0.8 || z.conf > 0) continue;
       const d = d2(p.x, p.y, z.x, z.y);
       if (d < p.r + z.r + 0.28) {
         z.st = 'attack'; z.atk = 0.3; z.face = Math.atan2(p.y - z.y, p.x - z.x); tx = null;

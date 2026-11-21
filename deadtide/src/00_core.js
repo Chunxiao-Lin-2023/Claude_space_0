@@ -114,6 +114,15 @@ const VEH = [null,
   { k: 'armor', name: '装甲车', spd: 1.3, seats: 2, armor: 0.35, ram: 1, tag: '保护用：受到的伤害只剩 35%，撞开挡路的丧尸，后座能带一个队友' },
 ];
 const NVEH = VEH.length - 1;
+// (round 24) grenade types: 0 frag (p.nades), 1–3 in p.gn[t - 1]
+const GREN = [
+  { k: 'frag', name: '破片手雷', sn: '破片', tag: '炸一片：伤害高' },
+  { k: 'slow', name: '减速雷', sn: '减速', tag: '一片黏液 8 秒：里面的丧尸只剩 30% 速度' },
+  { k: 'smoke', name: '烟雾弹', sn: '烟雾', tag: '一团烟 10 秒：里面的丧尸找不到你、乱走、不咬人' },
+  { k: 'blast', name: '爆破弹', sn: '爆破', tag: '伤害低，把一大片丧尸炸飞、晕住，清出一条路' },
+];
+const gCount = (p, t) => t ? ((p.gn || [])[t - 1] || 0) : p.nades;
+const gCap = t => t ? BAL.gnCap : BAL.nadeCap;
 // blueprints (尸城求生): what you can build / make from the start, and what has to be found first
 const BP_BASE = [1, 4, 6, 7, 12, 53, 56];
 const BP_LIST = [2, 3, 5, 8, 13, 14, 9, 15, 10, 51, 52, 'bike', 'moto', 'cargo', 'armor'];
@@ -238,8 +247,11 @@ const CRAFT = [
   { id: 'bolts', cat: 'gun', name: '弩箭 ×12', desc: '', cost: { wood: 4, parts: 1 }, ammo: [4, 12] },
   { id: 'fuel', cat: 'gun', name: '燃料 ×120', desc: '', cost: { parts: 3, steel: 1 }, ammo: [5, 120] },
   { id: 'shells40', cat: 'gun', name: '榴弹 ×4', desc: '', cost: { parts: 5, steel: 2 }, ammo: [6, 4] },
-  { id: 'nade', cat: 'item', name: '手雷 ×2', desc: '最多带 10 颗；按住 G 瞄，松开扔', cost: { parts: 4 }, nade: 2 },
-  { id: 'med', cat: 'item', name: '医疗包', desc: '回复 60 生命，最多带 5 个；H 用，也能救回阵亡的队友', cost: { parts: 3, wood: 2 }, med: 1 },
+  { id: 'nade', cat: 'item', name: '破片手雷 ×2', desc: '炸一片，伤害高；最多带 15 颗', cost: { parts: 4 }, nade: 2, gt: 0 },
+  { id: 'gslow', cat: 'item', name: '减速雷 ×2', desc: '落地一片黏液 8 秒，丧尸只剩 30% 速度；最多 8 颗', cost: { parts: 3, steel: 1 }, nade: 2, gt: 1 },
+  { id: 'gsmoke', cat: 'item', name: '烟雾弹 ×2', desc: '一团烟 10 秒，里面的丧尸找不到你、不咬人；最多 8 颗', cost: { wood: 2, parts: 2 }, nade: 2, gt: 2 },
+  { id: 'gblast', cat: 'item', name: '爆破弹 ×2', desc: '把一大片丧尸炸飞 3–5 格、晕 1.6 秒，清出一条路；最多 8 颗', cost: { parts: 4, steel: 2 }, nade: 2, gt: 3 },
+  { id: 'med', cat: 'item', name: '医疗包', desc: '回复 60 生命，最多带 8 个；H 用，也能救回阵亡的队友', cost: { parts: 3, wood: 2 }, med: 1 },
   { id: 'shield', cat: 'melee', name: '防暴盾', desc: '近战武器（和刀二选一）：猛推前方一片丧尸，撞开 3 格、晕 1 秒；拿着它时正面挨打少受一半', cost: { steel: 6, parts: 4 }, shield: 1 },
   { id: 'bike', cat: 'veh', name: '自行车', desc: VEH[1].tag, cost: { wood: 6, steel: 6, parts: 4 }, veh: 1, bp: 'bike' },
   { id: 'moto', cat: 'veh', name: '摩托车', desc: VEH[2].tag, cost: { steel: 14, parts: 12 }, veh: 2, bp: 'moto' },
@@ -255,7 +267,7 @@ const BAL = {
   pMaxHp: 100, pSpeed: 4.4, pReach: 6.5,
   stairHold: 0.18, ledgeHold: 0.45,  // seconds of pushing before you walk down stairs / jump off a ledge
   downTime: 30, reviveTime: 2.4, soloDownTime: 8, respawnHp: 0.5,
-  respawnDay: 20, respawnNight: 60, rezTime: 6, rezHp: 0.4, // (round 20) a dead teammate comes back by a living one after this long (or at dawn); a medkit at the body brings them back at once
+  respawnDay: 20, respawnNight: 20, respawnInv: 2.5, lives: { easy: 5, normal: 3, hard: 1 }, livesLong: 2, /* respawns each: by difficulty, +2 in the long modes (经典 15 夜 / 尸城求生 10 夜) */ /* (round 24) 20 s day or night (was 60 at night), back at the base, 2.5 s untouchable */ rezTime: 6, rezHp: 0.4, // (round 20) a dead teammate comes back by a living one after this long (or at dawn); a medkit at the body brings them back at once
   searchTime: 1.5, healTime: 1.0, medHeal: 60,
   shieldBlock: 0.5, shieldCos: 0.26,                          // (round 23) riot shield is a melee weapon now: with it out, hits from within ~75° of your aim lose half; no wear
   chgWind: 0.85, chgSpd: 7.5, chgTime: 1.2, chgDmg: 34, chgKB: 10, chgWall: 400, chgStun: 1.4, chgCD: 6, chgMin: 3.2, chgMax: 10, // brute charge: red line on the ground, then a rush
@@ -265,7 +277,10 @@ const BAL = {
   ramDmg: 30, ramCD: 0.7, ramSpd: 2.2,                         // armoured car: hitting a zombie at speed
   cargoSearch: 0.5, cargoLoot: 1.5, cargoReach: 2.3,           // cargo trike: search time x, loot x, reach from the seat
   knifeDmg: 55, knifeKB: 2.5, knifeCD: 0.5, knifeRange: 2.3, knifeLunge: 1.3, knifeBack: 2, // melee (was a shove: 18 dmg, KB 6, CD 0.55, 1.3 cone)
-  nadeCap: 10, medCap: 5,                                      // (round 23d) how many grenades / medkits you can carry (was 6 / 3)
+  nadeCap: 15, medCap: 8, gnCap: 8,                            // (round 24) carry: frag grenades / medkits / each special grenade (was 10 / 5 in 23d)
+  slowR: 3.6, slowT: 8, slowMul: 0.3,                           // slow grenade: a sticky field, zombies inside crawl at 30%
+  smokeR: 3.8, smokeT: 10, smokeConf: 1.2,                      // smoke: zombies in the cloud lose you, wander and don't bite (and for 1.2 s after leaving)
+  blastR: 4.4, blastDmg: 70, blastKB: 24, blastStun: 1.6,       // blast: little damage, throws everything out of the way (clears a path)
   nadeRange: 12, nadeDmg: 286, nadeR: 3.4, nadeFuse: 1.6, nadeLand: 0.35, nadeMin: 0.5, // (round 18: radius 2.8 -> 3.4, damage at the edge 35% -> 50%, goes off 0.35 s after landing where you aimed)
   headshot: 1.6,
   radioHp: 1500, radioDmg: 0.5,

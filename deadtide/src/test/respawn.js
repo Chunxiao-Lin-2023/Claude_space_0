@@ -18,16 +18,16 @@ const { chromium } = require('playwright');
   check('a teammate who bleeds out dies, lies where they fell, and shows a ✝ tag', s.dead && s.visible && s.lying && s.tag && !s.over, JSON.stringify(s));
   check('by day the respawn clock is 20 s, and the game goes on while someone stands', s.t > 18 && s.t <= 20 && !s.over, JSON.stringify(s));
   await simWait(20.5);
-  s = await p.evaluate(() => { const [a, q] = W.p; return { dead: q.dead, hp: q.hp, d: +Math.hypot(q.x - a.x, q.y - a.y).toFixed(1) }; });
-  check('after the clock they come back beside the living teammate (half health)', !s.dead && s.hp === 50 && s.d <= 3.5, JSON.stringify(s));
+  s = await p.evaluate(() => { const [a, q] = W.p; return { dead: q.dead, hp: q.hp, d: +Math.hypot(q.x - W.radio.x - 0.5, q.y - W.radio.y - 0.5).toFixed(1), lives: q.lives }; });
+  check('after the clock they come back at the base (round 24), half health, one respawn used', !s.dead && s.hp === 50 && s.d <= 8 && s.lives === 4, JSON.stringify(s));
   // at night: 60 s; a medkit at the body brings them back at once
-  r = await p.evaluate(() => { W.phase = 'night'; W.nightT = 0; W.spawnQ = []; const [a, q] = W.p; q.x = a.x + 0.8; q.y = a.y; hurtPlayer(q, 999); q.downT = 0.01; return 1; });
+  r = await p.evaluate(() => { W.phase = 'night'; W.nightT = 0; W.spawnQ = []; const [a, q] = W.p; q.x = a.x + 0.8; q.y = a.y; q.L = a.L; q.z = a.z; q.invT = 0; hurtPlayer(q, 999); q.downT = 0.01; return 1; });
   await simWait(0.3);
   s = await p.evaluate(() => { const [a, q] = W.p; const t = +q.downT.toFixed(0); a.meds = 0; const none = useTarget(a); a.meds = 2; const tg = useTarget(a); if (tg) completeUse(a, tg); return { t, none: none && none.k, k: tg && tg.k, dead: q.dead, hp: q.hp, meds: a.meds }; });
-  check('at night the clock is 60 s', s.t >= 58 && s.t <= 60, JSON.stringify(s));
+  check('at night the clock is 20 s too (round 24)', s.t >= 18 && s.t <= 20, JSON.stringify(s));
   check('no medkit: nothing to do at the body; with one: hold F 6 s and they are back (40% health, 1 medkit used)', s.none !== 'rez' && s.k === 'rez' && !s.dead && s.hp === 40 && s.meds === 1, JSON.stringify(s));
   // dawn brings the dead back too
-  r = await p.evaluate(() => { const [a, q] = W.p; hurtPlayer(q, 999); q.downT = 0.01; return 1; });
+  r = await p.evaluate(() => { const [a, q] = W.p; q.invT = 0; hurtPlayer(q, 999); q.downT = 0.01; return 1; });
   await simWait(0.3);
   s = await p.evaluate(() => { W.nightT = BAL.nightMin(W.night) + 1; return W.p[1].dead; });
   await simWait(0.4);
@@ -42,8 +42,8 @@ const { chromium } = require('playwright');
   check('a teammate can ride on the back of the motorbike and is carried along', s.on === 0 && s.follow > 1.5 && s.gap < 0.6, JSON.stringify(s));
   check('the pillion rider shoots at 70% rate; when the driver gets off so do they', Math.abs(s.cd - s.base * 1.43) < 0.06 && s.offAfter === -1, JSON.stringify(s));
   // both down -> game over
-  r = await p.evaluate(() => { for (const q of W.p) { q.meds = 0; q.selfRev = false; hurtPlayer(q, 999); } return W.over; });
-  check('when nobody is left standing it is game over', r === 'lose' || (await p.evaluate(() => W.over)) === 'lose', String(r));
+  r = await p.evaluate(() => { for (const q of W.p) { q.meds = 0; q.selfRev = false; q.lives = 0; q.invT = 0; hurtPlayer(q, 999); } return W.over; });
+  check('when nobody is left standing and no respawns are left it is game over', r === 'lose' || (await p.evaluate(() => W.over)) === 'lose', String(r));
   check('no page errors', !errs.length, errs.slice(0, 3).join(' | '));
   console.log(ok ? 'ALL PASS' : 'SOME FAIL'); await b.close();
 })();

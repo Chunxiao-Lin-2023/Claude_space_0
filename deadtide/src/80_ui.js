@@ -9,6 +9,7 @@ function showScreen(s) {
   if (s === 'title' && typeof renderBest === 'function') renderBest();
   if (s === 'title') { STATE.mode = 'title'; renderBest(); }
   if (s === 'lobby') STATE.mode = 'lobby';
+  if (s === 'play' && W && W.p[ME]) W.p[ME].gt = SET.gt || 0;                          // (round 24) last grenade type picked
   if (s === 'play' && INP.touch && !SET.guide22) { SET.guide22 = 1; saveSet(); setTimeout(() => document.body.classList.add('guide'), 600); } // (round 22) the first touch game shows what each control does; the next tap hides it
   if (s !== 'play') document.body.classList.remove('guide');
 }
@@ -64,7 +65,7 @@ function uiKeys(me) {
   if (me.build) rows = [['左键', '放（拖动一排）'], ['右键', '拆'], ['1–9', '选道具（再按换材料）'], ['R', '换材料'], ['X', '拆除模式', me.demo ? 1 : 0], ['Enter', '确认'], ['Esc', '取消'], ['B', '收起道具', 1]];
   else {
     const canRl = me.mag[wi] < w.mag && (w.inf || me.ammo[wi] > 0) && !(me.reloadT > 0), ut = useTarget(me), bench = canCraft(me);
-    rows = [['左键', '射击'], ['R', '换弹', me.mag[wi] === 0 && canRl ? 2 : canRl ? 0 : -1], ['G', '手雷 ×' + me.nades + ' 按住瞄', me.nades ? 0 : -1],
+    rows = [['左键', '射击'], ['R', '换弹', me.mag[wi] === 0 && canRl ? 2 : canRl ? 0 : -1], ['G', GREN[me.gt || 0].sn + ' ×' + gCount(me, me.gt || 0) + ' 按住瞄', gCount(me, me.gt || 0) ? 0 : -1], ['5–8', '换手雷'],
       ['H', me.down ? '自救' : '医疗 ×' + me.meds, !me.meds ? -1 : (me.down || me.hp < me.maxHp * 0.4) ? 2 : me.hp >= me.maxHp ? -1 : 0],
       ['右键', me.melee === 1 && me.shield ? '盾推 / V' : '刀 / V'], ...(me.shield ? [['X', '换成' + (me.melee === 1 ? '刀' : '盾')]] : []), ['F', ut ? ut.name : '交互', ut ? 1 : 0], ['1–4', '快捷武器'], ['Z', '切回上一把'], ['I', '装备'], ['C', '商店', bench ? 1 : -1], ['B', '道具']];
     const pil = !me.ride && !(me.pass >= 0) && pillionFor(me);
@@ -163,12 +164,16 @@ function hudTick(dt) {
   $('wRes').textContent = me.build ? '' : '/ ' + (w.inf ? '∞' : me.ammo[wi]);
   const rl = me.reloadT > 0 ? 1 - me.reloadT / WPN[me.reloadW != null ? me.reloadW : wi].reload : me.reloadVis > 0 ? 1 - me.reloadVis / w.reload : me.medT > 0 ? 1 - me.medT / (me.selfRev ? 3 : BAL.healTime) : 0;
   $('wRl').style.width = (rl * 100) + '%';
-  $('iNade').textContent = me.nades; $('iMed').textContent = me.meds; $('iKill').textContent = me.kills;
+  $('iNadeL').textContent = GREN[me.gt || 0].sn; $('iNade').textContent = gCount(me, me.gt || 0); $('iMed').textContent = me.meds; $('iKill').textContent = me.kills; $('iLife').textContent = me.lives != null ? me.lives : '-';
   uiKeys(me);
   const q = quickList(me), qk = q.join(','); if (UI.wbK !== qk) { UI.wbK = qk;
-    $('wbar').innerHTML = q.map((k, j) => `<button data-w="${k}"><span><kbd>${j + 1}</kbd>${WPN[k].name}</span><small id="wb${k}"></small></button>`).join('') + `<button id="wbKit" class="kit"><span><kbd>I</kbd>装备</span><small>换快捷枪</small></button>`;
+    $('wbar').innerHTML = q.map((k, j) => `<button data-w="${k}"><span><kbd>${j + 1}</kbd>${WPN[k].name}</span><small id="wb${k}"></small></button>`).join('') + `<i class="wsep"></i><button id="wbMel" class="mel"><span><kbd>X</kbd><b>刀</b></span><small>右键 / V</small></button>` + GREN.map((g, t) => `<button data-g="${t}" class="gr"><span><kbd>${t + 5}</kbd>${g.sn}</span><small id="wg${t}"></small></button>`).join('') + `<button id="wbKit" class="kit"><span><kbd>I</kbd>装备</span><small>换快捷枪</small></button>`;
     $('wbar').querySelectorAll('button[data-w]').forEach(b => b.addEventListener('pointerdown', e => { e.stopPropagation(); if (inGame()) act('wpn', +b.dataset.w); }));
-    $('wbKit').addEventListener('pointerdown', e => { e.stopPropagation(); openKit(); }); }
+    $('wbKit').addEventListener('pointerdown', e => { e.stopPropagation(); openKit(); });
+    $('wbMel').addEventListener('pointerdown', e => { e.stopPropagation(); if (inGame()) switchMelee(); });
+    $('wbar').querySelectorAll('button[data-g]').forEach(b => b.addEventListener('pointerdown', e => { e.stopPropagation(); if (inGame()) setGren(+b.dataset.g); })); }
+  { const mb = $('wbMel'), sh = me.melee === 1 && me.shield; mb.querySelector('b').textContent = sh ? '盾' : '刀'; mb.classList.toggle('dim', !me.shield); mb.lastElementChild.textContent = me.shield ? '右键 · X 换' + (sh ? '刀' : '盾') : '右键 / V';
+    GREN.forEach((g, t) => { const b = $('wbar').querySelector('[data-g="' + t + '"]'), c = gCount(me, t); b.classList.toggle('sel', t === (me.gt || 0)); b.classList.toggle('dim', !c); $('wg' + t).textContent = '×' + c; }); }
   q.forEach(i => { const b = $('wbar').querySelector('[data-w="' + i + '"]'), w2 = WPN[i]; b.classList.toggle('sel', i === me.wpn); $('wb' + i).textContent = (me.rlBg && me.rlBg[i] > 0 ? '⟳ ' : '') + (w2.inf ? '∞' : me.mag[i] + '/' + me.ammo[i]); });
   if (!q.includes(me.wpn) && !me.build) { const b = $('wbKit'); if (b) b.lastElementChild.textContent = '在用：' + w.name; }
   // phase
@@ -199,7 +204,7 @@ function hudTick(dt) {
   // prompt
   let ptxt = '', prog = 0;
   if (!me.dead && !me.build && !me.ride && !(me.pass >= 0) && pillionFor(me)) ptxt = (INP.touch ? '点「坐后座」' : '按 T ') + '坐上 ' + pillionFor(me).name + ' 的摩托后座（后座能开枪）';
-  if (me.dead) ptxt = '你阵亡了 · ' + Math.ceil(me.downT) + ' 秒后（或天亮）在队友身边复活 · 队友带医疗包到你身边按住交互 6 秒能马上救你';
+  if (me.dead) ptxt = me.lives > 0 ? '你阵亡了 · ' + Math.ceil(me.downT) + ' 秒后在据点复活（还剩 ' + me.lives + ' 次）· 队友带医疗包到你身边按住交互 6 秒能马上救你' : '你阵亡了 · 复活次数用完了 · 只能等队友带医疗包来救你';
   if (!me.dead && !me.build) {
     const tgt = useTarget(me), inB = canCraft(me); if (inB && !UI.inB) UI.craftHintT = W.t; UI.inB = inB;
     const key = INP.touch ? '点「交互」' : '按 F ';
@@ -229,7 +234,7 @@ function hudTick(dt) {
     md.firstElementChild.textContent = me.down ? '自救' : '医疗'; $('tMedN').textContent = '×' + me.meds;
     $('tWpn').firstElementChild.textContent = w.sn || w.name; $('tWpn').lastElementChild.textContent = w.inf ? '∞' : me.mag[wi] + '/' + me.ammo[wi];
     $('tWpn').classList.toggle('dim', me.down || me.owned.filter(Boolean).length < 2);
-    $('tNadeN').textContent = me.nades; $('tNade').classList.toggle('empty', !me.nades);
+    const gt = me.gt || 0, gc = gCount(me, gt), tn = $('tNade'); $('tNadeN').textContent = gc; tn.classList.toggle('empty', !gc); if (tn.firstChild.nodeValue !== GREN[gt].sn) tn.firstChild.nodeValue = GREN[gt].sn; // (round 24) shows the picked grenade type
     const sv = $('tShove'); if (sv.dataset.m !== String(me.melee === 1 && me.shield ? 1 : 0)) { sv.dataset.m = me.melee === 1 && me.shield ? 1 : 0; sv.textContent = me.melee === 1 && me.shield ? '盾' : '刀'; } sv.classList.toggle('sw', !!me.shield);
     $('tFire').style.setProperty('--rl', rl);
     $('tLLbl').textContent = ((me.build && BUILD_HOVER ? BUILD_HOVER.L : buildL()) + 1) + 'F';
@@ -286,7 +291,7 @@ function renderCraft() {
     h += `<div class="sc own"><div class="sh"><b>刀</b><em>${me.melee !== 1 || !me.shield ? '在用' : '已有'}</em></div><small>冲上去砍一只，背后砍双倍，睡着的一刀死</small><div class="sb">${me.melee === 1 && me.shield ? useBtn(0) : '<span class="sfree">在用</span>'}</div></div>`;
     h += `<div class="sc${me.shield ? ' own' : ''}"><div class="sh"><b>防暴盾</b><em>${me.shield ? (me.melee === 1 ? '在用' : '已有') : '没有'}</em></div><small>${sc.desc}</small><div class="sb">${!me.shield ? shopBtn(sc, '买') : me.melee === 1 ? '<span class="sfree">在用</span>' : useBtn(1)}</div></div>`;
   } else if (tab === 'item') {
-    const st = { nade: '带着 ' + me.nades + ' / ' + BAL.nadeCap, med: '带着 ' + me.meds + ' / ' + BAL.medCap };
+    const st = { nade: '带着 ' + me.nades + ' / ' + BAL.nadeCap, med: '带着 ' + me.meds + ' / ' + BAL.medCap }; for (let t = 1; t < 4; t++) st['g' + GREN[t].k] = '带着 ' + gCount(me, t) + ' / ' + BAL.gnCap;
     h = CRAFT.filter(c => c.cat === 'item').map(c => `<div class="sc"><div class="sh"><b>${c.name}</b><em>${st[c.id] || ''}</em></div><small>${c.desc}</small><div class="sb">${shopBtn(c, c.shield && me.shield > 0 ? '修满' : '买')}</div></div>`).join('');
     h += `<div class="sgrp">放置类道具 · 不用先买：点「去放」，放一个扣一份材料（电脑按 B，触屏点「道具」）</div>`;
     h += ITEMS.map((g, n) => `<div class="sc mini"><div class="sh"><b>${g.name}</b><em>${g.ids.map(id => B[id].name + (hasBP(id) ? '' : '🔒')).join(' / ')}</em></div><small>${B[g.ids[0]].tip}</small><div class="sb"><button class="sbtn go" data-g="${n}"><b>去放</b><span>${costText(B[g.ids.find(id => hasBP(id)) || g.ids[0]].cost)} 起</span></button></div></div>`).join('');

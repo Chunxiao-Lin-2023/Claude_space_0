@@ -27,7 +27,7 @@ function saveGame(quiet) {
   const S = {
     v: SAVE_V, mw: MW, at: Date.now(), mode: W.mode, map: W.map, obj: W.obj, seed: W.seed, diff: W.diff, night: W.night, phase: W.phase, clock: W.clock, dayLen: W.dayLen, nightT: W.nightT,
     res: W.res, upg: W.upg, kills: W.kills, stats: W.stats, endless: W.endless, clean: W.clean, tasks: W.tasks, srch: [...W.srch], spotN: W.spotN, t: W.t,
-    p: W.p.filter(p => !p.gone).map(p => ({ name: p.name, x: p.x, y: p.y, L: p.L, hp: p.hp, dead: p.dead, wpn: p.wpn, owned: p.owned, mag: p.mag, ammo: p.ammo, meds: p.meds, nades: p.nades, kills: p.kills, veh: p.veh || 0, vehs: p.vehs || 0, shield: p.shield ? 1 : 0, melee: p.melee || 0 })),
+    p: W.p.filter(p => !p.gone).map(p => ({ name: p.name, x: p.x, y: p.y, L: p.L, hp: p.hp, dead: p.dead, wpn: p.wpn, owned: p.owned, mag: p.mag, ammo: p.ammo, meds: p.meds, nades: p.nades, kills: p.kills, veh: p.veh || 0, vehs: p.vehs || 0, shield: p.shield ? 1 : 0, melee: p.melee || 0, gn: p.gn || [0, 0, 0], lives: p.lives || 0 })),
     zs: W.zs.filter(z => z.hp > 0).slice(0, 300).map(z => [z.k, +z.x.toFixed(2), +z.y.toFixed(2), z.L, Math.round(z.hp), Math.round(z.max), z.mz ? 1 : 0, z.g || 0, z.sleep ? 1 : 0, z.occ == null ? -1 : z.occ]),
     q: W.spawnQ.slice(0, 500).map(s => [+s.t.toFixed(1), s.k, s.side, s.at == null ? -1 : s.at, s.f ? +s.f.toFixed(2) : 0, s.g || 0]), gid: W.gid || 0,
     g: [rleEnc(W.blk), rleEnc(W.slab), rleEnc(W.bdir), rleEnc(hpPack(W.bhp)), rleEnc(hpPack(W.shp))].map(b64e),
@@ -55,7 +55,7 @@ function applySave(S) {
   Object.assign(W, { night: S.night, phase: S.phase, clock: S.clock, dayLen: S.dayLen, nightT: S.nightT || 0, res: S.res, upg: S.upg, kills: S.kills, stats: S.stats, endless: !!S.endless, clean: S.clean !== false, tasks: S.tasks || [], t: S.t || 0 });
   W.srch = new Set(S.srch || []); W.spotN = S.spotN || null; if (!W.spotN) { W.spotN = spotCount(); for (const k in W.spotN) W.spotN[k] = Math.round(W.spotN[k] * 2); } W.tkv++; W.rng = mulberry((S.seed ^ (S.night * 7919) ^ (S.at & 0xffff)) >>> 0);
   const p = W.p[0], P = S.p[0];
-  if (P) { Object.assign(p, { x: P.x, y: P.y, L: P.L, hp: P.dead ? BAL.pMaxHp * 0.5 : P.hp, wpn: P.wpn, owned: P.owned, mag: P.mag, ammo: P.ammo, meds: P.meds, nades: P.nades, kills: P.kills, veh: P.veh || 0, vehs: P.vehs != null ? P.vehs : (P.veh ? 1 << P.veh : 0), shield: P.shield ? 1 : 0, melee: P.shield ? P.melee || 0 : 0 }); p.dead = false; p.down = false; } // (round 22) vehs = owned bitmask; older saves only knew the best one
+  if (P) { Object.assign(p, { x: P.x, y: P.y, L: P.L, hp: P.dead ? BAL.pMaxHp * 0.5 : P.hp, wpn: P.wpn, owned: P.owned, mag: P.mag, ammo: P.ammo, meds: P.meds, nades: P.nades, kills: P.kills, veh: P.veh || 0, vehs: P.vehs != null ? P.vehs : (P.veh ? 1 << P.veh : 0), shield: P.shield ? 1 : 0, melee: P.shield ? P.melee || 0 : 0, gn: P.gn || [0, 0, 0], lives: P.lives != null ? P.lives : livesFor(W.diff, W.mode) }); p.dead = false; p.down = false; } // (round 22) vehs = owned bitmask; older saves only knew the best one
   // older saves may have fewer weapons
   for (const k of ['owned', 'mag', 'ammo']) while (p[k].length < NW) p[k].push(0);
   p.z = pZ(p); p.zv = p.z; CAM.tx = p.x; CAM.ty = p.y;

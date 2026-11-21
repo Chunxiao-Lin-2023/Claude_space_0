@@ -210,6 +210,7 @@ body:not(.touch) .tch{display:none}
 .kw.cur{border-color:rgba(125,200,140,.6)}.kw.no{opacity:.45}
 .kveh{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.kveh button{min-height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center}.kveh button.sel{border-color:var(--amber);color:var(--amber)}.kveh button.no{opacity:.4}.kveh small{font-size:11px;color:var(--sub)}
 #wbar .kit{min-width:64px;border-style:dashed}
+#wbar .wsep{display:inline-block;width:1px;align-self:stretch;margin:4px 4px;background:var(--line)}#wbar .gr,#wbar .mel{min-width:58px}#wbar .gr.sel{border-color:#9fd0ff;background:rgba(80,140,200,.22)}#wbar .dim{opacity:.45}
 #bbar button .ic{display:block;width:26px;height:26px}#bbar button .ic canvas{width:26px;height:26px}
 #bbar button .vd{position:absolute;right:4px;top:2px;font-style:normal;font-size:8px;letter-spacing:-1px;color:var(--amber)}
 #bvar{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(122px + var(--sa-b));display:flex;gap:6px;padding:4px;border-radius:12px;background:rgba(10,10,12,.72);border:1px solid var(--line)}
@@ -527,7 +528,7 @@ body.aiming canvas#cv{cursor:none}body.touch #reticle b{left:-34px;top:-38px}
     <div class="hcard">
       <div class="wpn ptr"><b id="wName">手枪</b><span class="am" id="wMag">12</span><span class="rs" id="wRes">/ ∞</span></div>
       <div class="rl ptr"><i id="wRl"></i></div>
-      <div class="items"><div>手雷 <span id="iNade">1</span></div><div>医疗包 <span id="iMed">1</span></div><div>击杀 <span id="iKill">0</span></div></div>
+      <div class="items"><div><span id="iNadeL">手雷</span> <span id="iNade">1</span></div><div>医疗包 <span id="iMed">1</span></div><div>击杀 <span id="iKill">0</span></div><div>复活 <span id="iLife">3</span></div></div>
     </div>
     <div class="hcard ptr" id="keys"></div>
   </div>
@@ -539,7 +540,7 @@ body.aiming canvas#cv{cursor:none}body.touch #reticle b{left:-34px;top:-38px}
   </div>
   <div id="hTR">
     <div class="res hcard" id="resBox"></div>
-    <div class="tbtn"><button id="tCraft" class="ghost tch hidden" >商店</button><button id="tRide" class="ghost tch hidden" >载具</button><button id="tBuild" class="ghost tch" >道具</button><button id="vToggle" class="ghost tch" >视角</button><button id="tHelp" class="ghost tch">?</button><div id="gcard" class="tch"><b>右上角</b>商店：枪、弹药、盾、车 · 载具：点=上下车，长按=换车 · 道具：墙、陷阱、跳板… · 视角：缩放、转镜头<br><b>射击键</b>点=一发 · 按住=连射（按住再拖=边打边转）· 先拖再松手=只选目标<br><b>武器键</b>点=下一把 · 往上拖=一小圈武器，滑过去松手<br><b>刀 / 盾</b>点=近战 · 在键上滑一下=换刀 / 盾<br><b>手雷</b>点=自动扔向最大的尸堆 · 拖=放落点圈，松手扔（拖回中间取消）<br><b>交互键</b>能搜 / 砍 / 扶时变亮 · 它左边的绿键=医疗包<br><b>走路</b>碰到矮障碍会自己翻过去，一格宽的空隙会自己跳过去<br><small>点任意处关闭 · 随时点「?」再看</small></div><button id="muteBtn" class="ghost ptr" title="静音">🔊</button><button id="pauseBtn" class="ghost" title="菜单 (Esc)">❚❚</button></div>
+    <div class="tbtn"><button id="tCraft" class="ghost tch hidden" >商店</button><button id="tRide" class="ghost tch hidden" >载具</button><button id="tBuild" class="ghost tch" >道具</button><button id="vToggle" class="ghost tch" >视角</button><button id="tHelp" class="ghost tch">?</button><div id="gcard" class="tch"><b>右上角</b>商店：枪、弹药、盾、车 · 载具：点=上下车，长按=换车 · 道具：墙、陷阱、跳板… · 视角：缩放、转镜头<br><b>射击键</b>点=一发 · 按住=连射（按住再拖=边打边转）· 先拖再松手=只选目标<br><b>武器键</b>点=下一把 · 往上拖=一小圈武器，滑过去松手<br><b>刀 / 盾</b>点=近战 · 在键上滑一下=换刀 / 盾<br><b>手雷</b>点=自动扔向最大的尸堆 · 拖=放落点圈，松手扔（拖回中间取消）· 按住不动=一小圈手雷种类，滑过去松手<br><b>交互键</b>能搜 / 砍 / 扶时变亮 · 它左边的绿键=医疗包<br><b>走路</b>碰到矮障碍会自己翻过去，一格宽的空隙会自己跳过去<br><small>点任意处关闭 · 随时点「?」再看</small></div><button id="muteBtn" class="ghost ptr" title="静音">🔊</button><button id="pauseBtn" class="ghost" title="菜单 (Esc)">❚❚</button></div>
     <canvas id="mini" width="128" height="128" class="hcard"></canvas>
     <div id="viewBox" class="hcard">
       <div class="vrow"><button id="vZin" title="放大 (滚轮 / +)">＋</button><button id="vZout" title="缩小 (滚轮 / −)">－</button><button id="vRl" title="向左转 (Q)">⟲</button><button id="vRr" title="向右转 (E)">⟳</button></div>
@@ -646,8 +647,8 @@ body.aiming canvas#cv{cursor:none}body.touch #reticle b{left:-34px;top:-38px}
       <details><summary>白天和每日任务</summary>出门砍树（木材）、采石（砖石），搜汽车、补给箱和废墟瓦砾（钢材、零件、弹药），离家越远收获越多；回来盖楼；在任何建筑里（或营地工作台）都能造枪、买弹药（按 C / 点「商店」）。河上只有两座桥，丧尸也只能从桥上过河。每 5 夜一次血月。<br>每天天亮刷新 3 个小任务（左上角），比如击杀、搜索、建造、今夜无人倒下。完成立刻发奖励：材料、全队弹药、医疗包、手雷或强化弹头。没完成的会在下一个天亮作废。</details>
       <details><summary>爬梯和翻越</summary>朝梯子走就爬上去，往下要继续推一下；丧尸爬梯子很慢（攀爬者除外）。没有跳键：走路碰到沙袋、拒马、掩体、栅栏、瓦砾和一人高的墙会自己翻过去，朝一格宽的空隙走会自己跳过去；丧尸不会翻，只能砸。</details>
       <details><summary>视角</summary>滚轮或 ＋/－ 缩放，Q / E 或 ⟲⟳ 转镜头。楼层视图默认跟随你所在的层，上面的楼层会自动隐藏；▲▼ 手动看别的层，「跟随我所在的层」恢复。</details>
-      <details class="kbd"><summary>键鼠</summary><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 移动　鼠标瞄准，左键射击（准星圆圈 = 散布；变黄 = 爆头）<br><kbd>1</kbd>–<kbd>4</kbd> 快捷武器　<kbd>Z</kbd> 切回上一把　<kbd>I</kbd> 装备　<kbd>R</kbd> 换弹　<kbd>右键</kbd> / <kbd>V</kbd> 近战（刀 / 盾，<kbd>X</kbd> 切换）　按住 <kbd>G</kbd> 瞄手雷、松开扔　<kbd>H</kbd> 医疗包<br><kbd>F</kbd> 交互（砍树 / 搜索 / 扶人）　<kbd>C</kbd> 商店　<kbd>T</kbd> 上下车（<kbd>Shift</kbd>+<kbd>T</kbd> 换车）<br><kbd>B</kbd> 道具：<kbd>1</kbd>–<kbd>9</kbd> 选道具，再按一次 / <kbd>R</kbd> 换材料，左键放，右键拆，<kbd>X</kbd> 拆除模式<br><kbd>Q</kbd><kbd>E</kbd> 转镜头　滚轮缩放　<kbd>PageUp</kbd><kbd>PageDown</kbd> 楼层视图　<kbd>M</kbd> / <kbd>Tab</kbd> 大地图　<kbd>N</kbd> 准备入夜　<kbd>Esc</kbd> 菜单</details>
-      <details class="tch" open><summary>触屏</summary><b>左半屏</b>按下就是摇杆。<b>右下角只有一个射击键</b>，四周四个小键：<br>· <b>射击键</b>：点一下 = 打一发；<b>按住不动 = 一直打</b>（自动吸附最近的丧尸），按住后再拖 = 边打边转方向；<b>先拖再松手 = 只选目标</b>（脚下蓝圈），之后按住就打它。<br>· <b>武器键</b>：点一下换下一把快捷武器；<b>按住往上拖</b>武器键上方弹出一小圈武器，滑到想要的那把松手（圈里还有「换弹」，中间是「装备」）。<br>· <b>交互键</b>：旁边有能搜 / 砍 / 扶的东西时变亮，点一下开始；骑车时是「下车」。<br>· <b>医疗</b>：交互键左边的绿键，点一下用医疗包（倒地时 = 自救），受伤时会亮起来。<br>· <b>刀 / 盾</b>：点 = 近战（刀冲上去砍，盾推开一片）；在键上滑一下 = 刀和盾互换。<b>手雷</b>：点一下自动扔向最大的尸堆；拖动 = 地上出现落点圈，松手扔，拖回中间取消。<br>· 没有跳键：走路会自己翻过矮障碍、跳过一格空隙。<br>也可以直接点丧尸：点一下选中，再点同一只开火。右上角：「道具」放墙 / 陷阱 / 跳板，「载具」上下车（长按换车），「商店」（在建筑里出现），「视角」，「?」按键说明。两指捏合缩放。</details>
+      <details class="kbd"><summary>键鼠</summary><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 移动　鼠标瞄准，左键射击（准星圆圈 = 散布；变黄 = 爆头）<br><kbd>1</kbd>–<kbd>4</kbd> 快捷武器　<kbd>Z</kbd> 切回上一把　<kbd>I</kbd> 装备　<kbd>R</kbd> 换弹　<kbd>右键</kbd> / <kbd>V</kbd> 近战（刀 / 盾，<kbd>X</kbd> 切换）　按住 <kbd>G</kbd> 瞄手雷、松开扔（按住时滚轮换种类）　<kbd>5</kbd>–<kbd>8</kbd> 破片 / 减速 / 烟雾 / 爆破　<kbd>H</kbd> 医疗包<br><kbd>F</kbd> 交互（砍树 / 搜索 / 扶人）　<kbd>C</kbd> 商店　<kbd>T</kbd> 上下车（<kbd>Shift</kbd>+<kbd>T</kbd> 换车）<br><kbd>B</kbd> 道具：<kbd>1</kbd>–<kbd>9</kbd> 选道具，再按一次 / <kbd>R</kbd> 换材料，左键放，右键拆，<kbd>X</kbd> 拆除模式<br><kbd>Q</kbd><kbd>E</kbd> 转镜头　滚轮缩放　<kbd>PageUp</kbd><kbd>PageDown</kbd> 楼层视图　<kbd>M</kbd> / <kbd>Tab</kbd> 大地图　<kbd>N</kbd> 准备入夜　<kbd>Esc</kbd> 菜单</details>
+      <details class="tch" open><summary>触屏</summary><b>左半屏</b>按下就是摇杆。<b>右下角只有一个射击键</b>，四周四个小键：<br>· <b>射击键</b>：点一下 = 打一发；<b>按住不动 = 一直打</b>（自动吸附最近的丧尸），按住后再拖 = 边打边转方向；<b>先拖再松手 = 只选目标</b>（脚下蓝圈），之后按住就打它。<br>· <b>武器键</b>：点一下换下一把快捷武器；<b>按住往上拖</b>武器键上方弹出一小圈武器，滑到想要的那把松手（圈里还有「换弹」，中间是「装备」）。<br>· <b>交互键</b>：旁边有能搜 / 砍 / 扶的东西时变亮，点一下开始；骑车时是「下车」。<br>· <b>医疗</b>：交互键左边的绿键，点一下用医疗包（倒地时 = 自救），受伤时会亮起来。<br>· <b>刀 / 盾</b>：点 = 近战（刀冲上去砍，盾推开一片）；在键上滑一下 = 刀和盾互换。<b>手雷</b>：点一下自动扔向最大的尸堆；拖动 = 地上出现落点圈，松手扔，拖回中间取消；<b>按住不动</b> = 手雷键上方弹出一小圈手雷种类（和武器键一样），滑过去松手。<br>· 没有跳键：走路会自己翻过矮障碍、跳过一格空隙。<br>也可以直接点丧尸：点一下选中，再点同一只开火。右上角：「道具」放墙 / 陷阱 / 跳板，「载具」上下车（长按换车），「商店」（在建筑里出现），「视角」，「?」按键说明。两指捏合缩放。</details>
     </div>
     <button id="helpClose" class="primary">好</button>
   </div>
@@ -4908,6 +4909,15 @@ const VEH = [null,
   { k: 'armor', name: '装甲车', spd: 1.3, seats: 2, armor: 0.35, ram: 1, tag: '保护用：受到的伤害只剩 35%，撞开挡路的丧尸，后座能带一个队友' },
 ];
 const NVEH = VEH.length - 1;
+// (round 24) grenade types: 0 frag (p.nades), 1–3 in p.gn[t - 1]
+const GREN = [
+  { k: 'frag', name: '破片手雷', sn: '破片', tag: '炸一片：伤害高' },
+  { k: 'slow', name: '减速雷', sn: '减速', tag: '一片黏液 8 秒：里面的丧尸只剩 30% 速度' },
+  { k: 'smoke', name: '烟雾弹', sn: '烟雾', tag: '一团烟 10 秒：里面的丧尸找不到你、乱走、不咬人' },
+  { k: 'blast', name: '爆破弹', sn: '爆破', tag: '伤害低，把一大片丧尸炸飞、晕住，清出一条路' },
+];
+const gCount = (p, t) => t ? ((p.gn || [])[t - 1] || 0) : p.nades;
+const gCap = t => t ? BAL.gnCap : BAL.nadeCap;
 // blueprints (尸城求生): what you can build / make from the start, and what has to be found first
 const BP_BASE = [1, 4, 6, 7, 12, 53, 56];
 const BP_LIST = [2, 3, 5, 8, 13, 14, 9, 15, 10, 51, 52, 'bike', 'moto', 'cargo', 'armor'];
@@ -5032,8 +5042,11 @@ const CRAFT = [
   { id: 'bolts', cat: 'gun', name: '弩箭 ×12', desc: '', cost: { wood: 4, parts: 1 }, ammo: [4, 12] },
   { id: 'fuel', cat: 'gun', name: '燃料 ×120', desc: '', cost: { parts: 3, steel: 1 }, ammo: [5, 120] },
   { id: 'shells40', cat: 'gun', name: '榴弹 ×4', desc: '', cost: { parts: 5, steel: 2 }, ammo: [6, 4] },
-  { id: 'nade', cat: 'item', name: '手雷 ×2', desc: '最多带 10 颗；按住 G 瞄，松开扔', cost: { parts: 4 }, nade: 2 },
-  { id: 'med', cat: 'item', name: '医疗包', desc: '回复 60 生命，最多带 5 个；H 用，也能救回阵亡的队友', cost: { parts: 3, wood: 2 }, med: 1 },
+  { id: 'nade', cat: 'item', name: '破片手雷 ×2', desc: '炸一片，伤害高；最多带 15 颗', cost: { parts: 4 }, nade: 2, gt: 0 },
+  { id: 'gslow', cat: 'item', name: '减速雷 ×2', desc: '落地一片黏液 8 秒，丧尸只剩 30% 速度；最多 8 颗', cost: { parts: 3, steel: 1 }, nade: 2, gt: 1 },
+  { id: 'gsmoke', cat: 'item', name: '烟雾弹 ×2', desc: '一团烟 10 秒，里面的丧尸找不到你、不咬人；最多 8 颗', cost: { wood: 2, parts: 2 }, nade: 2, gt: 2 },
+  { id: 'gblast', cat: 'item', name: '爆破弹 ×2', desc: '把一大片丧尸炸飞 3–5 格、晕 1.6 秒，清出一条路；最多 8 颗', cost: { parts: 4, steel: 2 }, nade: 2, gt: 3 },
+  { id: 'med', cat: 'item', name: '医疗包', desc: '回复 60 生命，最多带 8 个；H 用，也能救回阵亡的队友', cost: { parts: 3, wood: 2 }, med: 1 },
   { id: 'shield', cat: 'melee', name: '防暴盾', desc: '近战武器（和刀二选一）：猛推前方一片丧尸，撞开 3 格、晕 1 秒；拿着它时正面挨打少受一半', cost: { steel: 6, parts: 4 }, shield: 1 },
   { id: 'bike', cat: 'veh', name: '自行车', desc: VEH[1].tag, cost: { wood: 6, steel: 6, parts: 4 }, veh: 1, bp: 'bike' },
   { id: 'moto', cat: 'veh', name: '摩托车', desc: VEH[2].tag, cost: { steel: 14, parts: 12 }, veh: 2, bp: 'moto' },
@@ -5049,7 +5062,7 @@ const BAL = {
   pMaxHp: 100, pSpeed: 4.4, pReach: 6.5,
   stairHold: 0.18, ledgeHold: 0.45,  // seconds of pushing before you walk down stairs / jump off a ledge
   downTime: 30, reviveTime: 2.4, soloDownTime: 8, respawnHp: 0.5,
-  respawnDay: 20, respawnNight: 60, rezTime: 6, rezHp: 0.4, // (round 20) a dead teammate comes back by a living one after this long (or at dawn); a medkit at the body brings them back at once
+  respawnDay: 20, respawnNight: 20, respawnInv: 2.5, lives: { easy: 5, normal: 3, hard: 1 }, livesLong: 2, /* respawns each: by difficulty, +2 in the long modes (经典 15 夜 / 尸城求生 10 夜) */ /* (round 24) 20 s day or night (was 60 at night), back at the base, 2.5 s untouchable */ rezTime: 6, rezHp: 0.4, // (round 20) a dead teammate comes back by a living one after this long (or at dawn); a medkit at the body brings them back at once
   searchTime: 1.5, healTime: 1.0, medHeal: 60,
   shieldBlock: 0.5, shieldCos: 0.26,                          // (round 23) riot shield is a melee weapon now: with it out, hits from within ~75° of your aim lose half; no wear
   chgWind: 0.85, chgSpd: 7.5, chgTime: 1.2, chgDmg: 34, chgKB: 10, chgWall: 400, chgStun: 1.4, chgCD: 6, chgMin: 3.2, chgMax: 10, // brute charge: red line on the ground, then a rush
@@ -5059,7 +5072,10 @@ const BAL = {
   ramDmg: 30, ramCD: 0.7, ramSpd: 2.2,                         // armoured car: hitting a zombie at speed
   cargoSearch: 0.5, cargoLoot: 1.5, cargoReach: 2.3,           // cargo trike: search time x, loot x, reach from the seat
   knifeDmg: 55, knifeKB: 2.5, knifeCD: 0.5, knifeRange: 2.3, knifeLunge: 1.3, knifeBack: 2, // melee (was a shove: 18 dmg, KB 6, CD 0.55, 1.3 cone)
-  nadeCap: 10, medCap: 5,                                      // (round 23d) how many grenades / medkits you can carry (was 6 / 3)
+  nadeCap: 15, medCap: 8, gnCap: 8,                            // (round 24) carry: frag grenades / medkits / each special grenade (was 10 / 5 in 23d)
+  slowR: 3.6, slowT: 8, slowMul: 0.3,                           // slow grenade: a sticky field, zombies inside crawl at 30%
+  smokeR: 3.8, smokeT: 10, smokeConf: 1.2,                      // smoke: zombies in the cloud lose you, wander and don't bite (and for 1.2 s after leaving)
+  blastR: 4.4, blastDmg: 70, blastKB: 24, blastStun: 1.6,       // blast: little damage, throws everything out of the way (clears a path)
   nadeRange: 12, nadeDmg: 286, nadeR: 3.4, nadeFuse: 1.6, nadeLand: 0.35, nadeMin: 0.5, // (round 18: radius 2.8 -> 3.4, damage at the edge 35% -> 50%, goes off 0.35 s after landing where you aimed)
   headshot: 1.6,
   radioHp: 1500, radioDmg: 0.5,
@@ -5905,7 +5921,7 @@ function mkPlayer(i, name) {
     i, name, x: RADIO_XY[0] - 0.5 + i * 2, y: RADIO_XY[1] + 0.5 + i, L: 0, z: 0, r: 0.28, h: 1.0, vx: 0, vy: 0, kbx: 0, kby: 0, aim: -Math.PI / 2, aimPt: null,
     hp: BAL.pMaxHp, maxHp: BAL.pMaxHp, down: false, downT: 0, dead: false, gone: false,
     wpn: 1, owned: WPN.map((w, k) => k < 2 ? 1 : 0), mag: WPN.map((w, k) => k === 0 ? 12 : k === 1 ? 6 : 0), ammo: WPN.map((w, k) => k === 1 ? w.start : 0), bloom: 0, reloadT: 0, reloadW: 0, fireCD: 0, shoveCD: 0, shoveT: 0,
-    nades: 1, meds: 1, medT: 0, selfRev: false, useT: 0, useK: '', build: false, sel: 1, demo: false, sdir: 3, veh: 0, vehs: 0, shield: 0, melee: 0,
+    nades: 2, meds: 2, gn: [1, 1, 1], gt: 0, lives: 3, medT: 0, selfRev: false, useT: 0, useK: '', build: false, sel: 1, demo: false, sdir: 3, veh: 0, vehs: 0, shield: 0, melee: 0,
     inp: { mx: 0, my: 0, fire: 0, use: 0 }, kills: 0, hurtT: 0, anim: 0, emptyT: 0, ready: false, recoilT: 0,
   };
 }
@@ -5929,6 +5945,7 @@ function newWorld(seed, names, diff, mode) {
   modeInit();
   updateFields(0, true);
   W.edges = edgeSpawns();
+  { const n = livesFor(W.diff, W.mode); for (const p of W.p) p.lives = n; }                   // (round 24) respawns per player
   rollTasks();
   return W;
 }
@@ -6075,6 +6092,7 @@ function stepActions(p, dt) {
     const dx = z.x - p.x, dy = z.y - p.y, d = Math.hypot(dx, dy) || 0.01;
     if (d < p.r + z.r + 0.3 && dx * p.vx + dy * p.vy > 0) { z.ramT = W.t + BAL.ramCD; const k = ZT[z.k].boss || z.k === 'brute' ? 1 : 5; hurtZombie(z, BAL.ramDmg, p, dx / d * k, dy / d * k); emit({ k: 'sfx', n: 'bash', x: z.x, y: z.y }); }
   }
+  if (p.invT > 0) p.invT -= dt;
   for (let k = 0; k < NW; k++) { if (p.cdW[k] > 0) p.cdW[k] -= dt; if (p.rlBg[k] > 0) { p.rlBg[k] -= dt; if (p.rlBg[k] <= 0) { p.rlBg[k] = 0; reloadInto(p, k); } } }
   if (p.dead) return;
   if (p.reloadT > 0) { p.reloadT -= dt; if (p.reloadT <= 0) finishReload(p); }
@@ -6085,7 +6103,7 @@ function stepActions(p, dt) {
       else { p.hp = Math.min(p.maxHp, p.hp + BAL.medHeal); emit({ k: 'sfx', n: 'heal', x: p.x, y: p.y }); }
     }
   }
-  if (p.down) { p.downT -= dt; if (p.downT <= 0) { p.down = false; p.dead = true; p.reloadT = 0; p.medT = 0; p.ride = false; p.downT = W.phase === 'night' ? BAL.respawnNight : BAL.respawnDay; emit({ k: 'dead', p: p.i, t: Math.round(p.downT) }); checkLose(); return; } }
+  if (p.down) { p.downT -= dt; if (p.downT <= 0) { p.down = false; p.dead = true; p.reloadT = 0; p.medT = 0; p.ride = false; p.downT = W.phase === 'night' ? BAL.respawnNight : BAL.respawnDay; emit({ k: 'dead', p: p.i, t: p.lives > 0 ? Math.round(p.downT) : -1, n: p.lives || 0 }); checkLose(); return; } }
   const wi = p.down ? 0 : p.wpn, w = WPN[wi];
   if (I.fire && !p.build && p.fireCD <= 0 && p.cdW[wi] <= 0 && p.reloadT <= 0 && p.medT <= 0) {
     if (p.mag[wi] > 0) fireWeapon(p, wi);
@@ -6142,7 +6160,8 @@ function completeUse(p, tgt) {
   const bpk = siegeBlueprint(Object.keys(SPOTS).find(k => SPOTS[k] === S), !!S.bp); if (bpk) got.push(bpk);
   if (S.fuel && activeP().some(q => q.owned[5])) { for (const q of activeP()) if (q.owned[5]) q.ammo[5] += Math.round(S.fuel * m); got.push('燃料'); }
   if (S.med && rand() < S.med && p.meds < BAL.medCap) { p.meds++; got.push('医疗包'); }
-  if (S.nade && rand() < S.nade && p.nades < BAL.nadeCap) { p.nades = Math.min(BAL.nadeCap, p.nades + (S.nade >= 1 ? 2 : 1)); got.push('手雷'); }
+  if (S.nade && rand() < S.nade) { const t = rand() < 0.4 ? 1 + Math.floor(rand() * 3) : 0, n = S.nade >= 1 ? 2 : 1;           // (round 24) 4 in 10 finds are a special grenade
+    if (gCount(p, t) < gCap(t)) { if (t) p.gn[t - 1] = Math.min(BAL.gnCap, p.gn[t - 1] + n); else p.nades = Math.min(BAL.nadeCap, p.nades + n); got.push(GREN[t].name); } }
   if (!got.length) got.push('什么也没有');
   emit({ k: 'loot', p: p.i, x: wx, y: wy, z: wz, text: got.join('  ') });
 }
@@ -6324,7 +6343,7 @@ function killZombie(z, p) {
   if (rand() < (z.k === 'boss' ? 1 : z.k === 'brute' ? 0.6 : 0.07)) { const n = z.k === 'boss' ? 15 : z.k === 'brute' ? 3 : 1; W.res.parts += n; emit({ k: 'loot', p: -1, x: z.x, y: z.y, z: z.z + z.h, text: '+' + n + ' 零件' }); }
 }
 function hurtPlayer(p, dmg, src) {
-  if (p.gone || p.dead) return;
+  if (p.gone || p.dead || (p.invT || 0) > 0) return; // invT: just respawned
   if (DBG && DBG.god) return;
   if (p.ride && VEH[p.veh] && VEH[p.veh].armor) dmg *= VEH[p.veh].armor;                                   // (round 22) inside the armoured car
   if (src && p.shield && p.melee === 1 && !p.down && !p.ride && Math.cos(angDiff(p.aim, Math.atan2(src.y - p.y, src.x - p.x))) > BAL.shieldCos) { // riot shield out: hits from the front lose half
@@ -6339,18 +6358,24 @@ function knock(p, kx, ky) { if (p.i === ME && NETROLE !== 'guest') { p.kbx += kx
 const vehSeats = d => !!(VEH[d.veh] && VEH[d.veh].seats);
 const ownsVeh = (p, v) => !!((p.vehs || 0) >> v & 1) || (!p.vehs && v >= 1 && p.veh === v); // vehs = owned bitmask; a bare veh (older state) counts as owned
 function pillionFor(p) { return W.p.find(d => d !== p && d.ride && vehSeats(d) && !d.dead && !d.down && !d.gone && d.L === p.L && Math.hypot(d.x - p.x, d.y - p.y) < 1.8 && !W.p.some(q => q.pass === d.i)) || null; }
+// (round 24) how many times each player may come back: difficulty, plus a bit more in the long modes
+function livesFor(diff, mode) { return (BAL.lives[diff] != null ? BAL.lives[diff] : BAL.lives.normal) + (mode === 'classic' || mode === 'siege' ? BAL.livesLong : 0); }
 function respawnP(p) {
+  if (!(p.lives > 0)) return; p.lives--;
   let x = W.radio.x - 0.5 + p.i * 2, y = W.radio.y + 0.5, L = gAt(W.radio.x, W.radio.y);
-  const mate = activeP().find(q => q !== p && standingP(q));
-  if (mate) { const mx = Math.floor(mate.x), my = Math.floor(mate.y); let done = false; for (let r = 1; r <= 3 && !done; r++) for (let dy = -r; dy <= r && !done; dy++) for (let dx = -r; dx <= r && !done; dx++) { if (Math.max(Math.abs(dx), Math.abs(dy)) !== r || !inMap(mx + dx, my + dy) || !standable(mx + dx, my + dy, mate.L, 'p')) continue; x = mx + dx + 0.5; y = my + dy + 0.5; L = mate.L; done = true; } if (!done) { x = mate.x; y = mate.y; L = mate.L; } }
-  p.dead = false; p.down = false; p.downT = 0; p.hp = Math.round(p.maxHp * BAL.respawnHp); p.x = x; p.y = y; p.L = L; p.z = surfZ(x, y, L); p.vx = p.vy = 0;
+  // (round 24) back at the base (the camp / start point), on the nearest free tile; was next to a living teammate
+  const bx = W.radio.x, by = W.radio.y; let done = false;
+  for (let r = 1; r <= 6 && !done; r++) for (let dy = -r; dy <= r && !done; dy++) for (let dx = -r; dx <= r && !done; dx++) { if (Math.max(Math.abs(dx), Math.abs(dy)) !== r || !inMap(bx + dx, by + dy)) continue; const l = gAt(bx + dx, by + dy); if (!standable(bx + dx, by + dy, l, 'p') || W.zs.some(z => z.hp > 0 && Math.hypot(z.x - bx - dx - 0.5, z.y - by - dy - 0.5) < 1.2)) continue; x = bx + dx + 0.5; y = by + dy + 0.5; L = l; done = true; }
+  const mate = null;
+  p.dead = false; p.down = false; p.downT = 0; p.invT = BAL.respawnInv; p.hp = Math.round(p.maxHp * BAL.respawnHp); p.x = x; p.y = y; p.L = L; p.z = surfZ(x, y, L); p.vx = p.vy = 0;
   emit({ k: 'tp', p: p.i, x: p.x, y: p.y, l: p.L }); emit({ k: 'respawn', p: p.i, near: mate ? mate.i : -1 });
 }
 function checkLose() {
   if (W.over) return;
   const act = activeP(); if (!act.length) return;
   if (act.some(standingP)) return;
-  if (act.some(p => p.down && (p.meds > 0 || p.selfRev))) return;
+  if (act.some(p => p.down && (p.meds > 0 || p.selfRev || p.lives > 0))) return;
+  if (act.some(p => p.dead && p.lives > 0)) return;                                       // (round 24) somebody will respawn at the base
   endGame('lose', act.length > 1 ? '所有人都倒下了' : '你倒下了');
 }
 function endGame(kind, why) {
@@ -6446,13 +6471,14 @@ function knife(p, zid) {
 }
 // (round 23) v = {x, y, z}: where it should land (the player picked it, or the auto pick for the biggest bunch); else along the aim
 function throwNade(p, v) {
-  if (p.down || p.nades <= 0) return;
-  p.nades--;
+  const t = v && v.t >= 1 && v.t <= 3 ? v.t | 0 : 0;                                     // (round 24) grenade type
+  if (p.down || gCount(p, t) <= 0) return;
+  if (t) p.gn[t - 1]--; else p.nades--;
   if (v && v.x != null) { p.aim = Math.atan2(v.y - p.y, v.x - p.x); p.aimPt = { x: v.x, y: v.y, z: v.z != null ? v.z : surfZ(v.x, v.y, gAt(Math.floor(v.x), Math.floor(v.y))) }; }
   const [sx, sy, sz] = shoulder(p), [ax, ay] = aimDir(p);
   let dist = p.aimPt ? Math.min(BAL.nadeRange, d2(p.aimPt.x, p.aimPt.y, sx, sy)) : 6; dist = Math.max(2, dist);
   const T = 0.75 + dist * 0.03, g = 14;
-  W.proj.push({ k: 'nade', x: sx, y: sy, z: sz, vx: Math.cos(Math.atan2(ay, ax)) * dist / T, vy: Math.sin(Math.atan2(ay, ax)) * dist / T, vz: g * T / 2 + ((p.aimPt ? p.aimPt.z - 0.5 : sz - 0.72) - sz) / T, t: Math.min(BAL.nadeFuse, T + BAL.nadeLand), o: p.i });
+  W.proj.push({ k: 'nade', x: sx, y: sy, z: sz, vx: Math.cos(Math.atan2(ay, ax)) * dist / T, vy: Math.sin(Math.atan2(ay, ax)) * dist / T, vz: g * T / 2 + ((p.aimPt ? p.aimPt.z - 0.5 : sz - 0.72) - sz) / T, t: Math.min(BAL.nadeFuse, T + BAL.nadeLand), o: p.i, gt: t });
   emit({ k: 'sfx', n: 'throw', x: p.x, y: p.y });
 }
 function checkReady() {
@@ -6470,7 +6496,7 @@ function craftBlocked(p, c) {
   if (c.shield && p.shield) return '已拥有';
   if (c.wpn && p.owned[c.wpn]) return '已拥有';
   if (c.ammo && !p.owned[c.ammo[0]]) return '没有这把枪';
-  if (c.nade && p.nades >= BAL.nadeCap) return '已满';
+  if (c.nade && gCount(p, c.gt || 0) >= gCap(c.gt || 0)) return '已满';
   if (c.med && p.meds >= BAL.medCap) return '已满';
   if (c.upg && W.upg >= 5) return '已满级';
   if (!affordable(W.res, c.cost)) return '材料不足';
@@ -6481,7 +6507,7 @@ function doCraft(p, id) {
   for (const k in c.cost) W.res[k] -= c.cost[k];
   if (c.wpn) { p.owned[c.wpn] = 1; p.mag[c.wpn] = WPN[c.wpn].mag; p.ammo[c.wpn] += WPN[c.wpn].loot * 2 || 10; p.wpn = c.wpn; }
   if (c.ammo) p.ammo[c.ammo[0]] += c.ammo[1];
-  if (c.nade) p.nades = Math.min(BAL.nadeCap, p.nades + c.nade);
+  if (c.nade) { const t = c.gt || 0; if (t) { p.gn = p.gn || [0, 0, 0]; p.gn[t - 1] = Math.min(BAL.gnCap, p.gn[t - 1] + c.nade); } else p.nades = Math.min(BAL.nadeCap, p.nades + c.nade); }
   if (c.med) p.meds = Math.min(BAL.medCap, p.meds + 1);
   if (c.upg) W.upg++;
   if (c.veh) { p.vehs = (p.vehs || 0) | 1 << c.veh; p.veh = c.veh; }                  // (round 22) it becomes your default: T gets on
@@ -6598,7 +6624,7 @@ function spawnZombie(k, side, at, f, g) {
 }
 function stepPhase(dt) {
   if (W.over) return;
-  for (const p of activeP()) if (p.dead && (p.downT -= dt) <= 0 && activeP().some(standingP)) respawnP(p); // the dead come back beside a teammate after a while
+  for (const p of activeP()) if (p.dead && p.lives > 0 && (p.downT -= dt) <= 0) respawnP(p); // (round 24) the dead come back at the base after 20 s while they have respawns left (solo too)
   if (W.phase === 'day') {
     W.clock -= dt; W.strayT -= dt;
     if (W.strayT <= 0 && W.night >= 1) { W.strayT = BAL.dayStragglerCD; if (W.zs.length < BAL.dayStragglers) spawnZombie(strayKind(W.night), Math.floor(rand() * 4)); }
@@ -6640,7 +6666,7 @@ function stepProj(dt) {
       if (solidFor(blkAt(Math.floor(b.x), Math.floor(ny), L), 'b') || solidFor(blkAt(Math.floor(b.x), Math.floor(ny), L), 'p')) b.vy *= -0.4; else b.y = ny;
       const fz = floorUnder(b.x, b.y, b.z + 0.01);
       if (nz <= fz && b.vz < 0) { b.z = fz; b.vz *= -0.25; b.vx *= 0.4; b.vy *= 0.4; if (Math.abs(b.vz) > 1.5) emit({ k: 'sfx', n: 'clink', x: b.x, y: b.y }); } else b.z = nz;
-      if (b.t <= 0) { b.dead = true; explode(b.x, b.y, b.z + 0.2, W.p[b.o]); }
+      if (b.t <= 0) { b.dead = true; if (b.gt) gSpecial(b.gt, b.x, b.y, b.z + 0.2, W.p[b.o]); else explode(b.x, b.y, b.z + 0.2, W.p[b.o]); }
     } else {
       b.x += b.vx * dt; b.y += b.vy * dt; b.z += b.vz * dt;
       const x = Math.floor(b.x), y = Math.floor(b.y), L = Math.floor(b.z / FH), blk = blkAt(x, y, L);
@@ -6652,6 +6678,21 @@ function stepProj(dt) {
   }
   W.proj = W.proj.filter(b => !b.dead);
 }
+// (round 24) the special grenades: a slow field or a smoke cloud (W.cz, ticked here, sent to guests), or a blast that throws zombies aside
+function gSpecial(t, x, y, z, p) {
+  noiseAt(x, y, t === 3 ? SIEGE.boomR : 6, z);
+  if (t === 3) {
+    for (const zb of W.zs) { if (zb.hp <= 0) continue; const dx = zb.x - x, dy = zb.y - y, d = Math.hypot(dx, dy, (zb.z + zb.h / 2 - z) * 0.8); if (d > BAL.blastR + zb.r) continue;
+      const f = 1 - Math.max(0, d - zb.r) / BAL.blastR, heavy = ZT[zb.k].boss ? 0.2 : zb.k === 'brute' ? 0.45 : 1, n = Math.hypot(dx, dy) || 1;
+      zb.stun = Math.max(zb.stun || 0, (0.5 + BAL.blastStun * f) * Math.max(heavy, 0.5)); if (zb.chg || zb.slam) { zb.chg = zb.slam = null; }
+      hurtZombie(zb, BAL.blastDmg * (0.5 + 0.5 * f), p, dx / n * BAL.blastKB * (0.45 + 0.55 * f) * heavy, dy / n * BAL.blastKB * (0.45 + 0.55 * f) * heavy); }
+    emit({ k: 'boom', x: r2(x), y: r2(y), z: r2(z), r: BAL.blastR, b: 1 }); return;
+  }
+  (W.cz = W.cz || []).push({ k: t, x: r2(x), y: r2(y), z: r2(Math.max(0, z - 0.2)), r: t === 1 ? BAL.slowR : BAL.smokeR, t: t === 1 ? BAL.slowT : BAL.smokeT });
+  emit({ k: 'sfx', n: t === 1 ? 'acid' : 'throw', x, y });
+}
+// which clouds a point is in: bit 1 = slow field, bit 2 = smoke
+function cloudAt(x, y, z) { let m = 0; for (const c of W.cz || []) if (Math.abs(z - c.z) < 1.6 && Math.hypot(x - c.x, y - c.y) < c.r) m |= c.k === 1 ? 1 : 2; return m; }
 function explode(x, y, z, p, R = BAL.nadeR, dmg = BAL.nadeDmg) {
   KSRC = 'nade';
   for (const zb of W.zs) {
@@ -6684,6 +6725,7 @@ function simStep(dt) {
     updateFields(dt);
     stepZombies(dt);
     stepProj(dt);
+    if (W.cz && W.cz.length) { for (const c of W.cz) c.t -= dt; W.cz = W.cz.filter(c => c.t > 0); }
     modeTick(dt);
     checkLose();
   }
@@ -6733,6 +6775,7 @@ function stepZombies(dt) {
     const cx = Math.floor(z.x), cy = Math.floor(z.y), i = ci(cx, cy, z.L);
     // barbed wire
     let slow = inMud(z.x, z.y, z.L) ? MUD_SLOW : 1;
+    const cz = W.cz && W.cz.length ? cloudAt(z.x, z.y, z.z) : 0; if (cz & 1) slow *= BAL.slowMul; if (cz & 2) z.conf = BAL.smokeConf; else if (z.conf > 0) z.conf -= dt; // (round 24) slow field / smoke
     if (B[W.blk[i]].mine) { setCell(i, 0, W.slab[i], null, 'mine'); explode(cx + 0.5, cy + 0.5, z.L * FH + 0.3, null, SIEGE.mineR, SIEGE.mineDmg); if (z.hp <= 0) continue; }
     if (B[W.blk[i]].trap) { z.stun = 2.5; hurtZombie(z, 30, null); setCell(i, 0, W.slab[i], null, 'trap'); if (z.hp <= 0) continue; }
     if (B[W.blk[i]].stairs && !B[W.blk[i]].nat) slow = climbT ? 0.75 : 0.38; // ladders are slow going for zombies
@@ -6747,7 +6790,7 @@ function stepZombies(dt) {
     const field = pf[i] < Infinity ? pf : rf;
     // spitter: lob acid at a visible player in range
     let hold = false;
-    if (z.k === 'spitter') {
+    if (z.k === 'spitter' && !(z.conf > 0)) {
       z.spitT -= dt;
       let tp = null, td = 1e9;
       for (const p of W.p) { if (p.gone || p.dead) continue; const d = d2(p.x, p.y, z.x, z.y); if (d < Z.range && d < td && los(z.x, z.y, z.z + 0.9, p.x, p.y, p.z + 0.6)) { td = d; tp = p; } }
@@ -6822,10 +6865,11 @@ function stepZombies(dt) {
       let best = null, bd = 1e9; for (const p of W.p) { if (!standingP(p) && !p.down) continue; const d = d2(p.x, p.y, z.x, z.y); if (d < bd) { bd = d; best = p; } }
       if (best) { tx = best.x; ty = best.y; } else { tx = W.radio.x + 0.5; ty = W.radio.y + 0.5; }
     }
+    if (z.conf > 0) { if (z.wa == null || rand() < dt * 0.9) z.wa = rand() * Math.PI * 2; tx = z.x + Math.cos(z.wa); ty = z.y + Math.sin(z.wa); attackI = -1; z.chg = z.slam = null; z.tl = 0; } // lost in the smoke: wander
     if (attackI >= 0) { zAttackCell(z, attackI); tx = null; }
     // bite players in reach
     for (const p of W.p) {
-      if (p.gone || p.dead || Math.abs(p.z - z.z) > 0.8) continue;
+      if (p.gone || p.dead || Math.abs(p.z - z.z) > 0.8 || z.conf > 0) continue;
       const d = d2(p.x, p.y, z.x, z.y);
       if (d < p.r + z.r + 0.28) {
         z.st = 'attack'; z.atk = 0.3; z.face = Math.atan2(p.y - z.y, p.x - z.x); tx = null;
@@ -7767,6 +7811,28 @@ function drawNadeMark() {
   const pt = INP.nadePt; M.visible = !!pt && STATE.mode === 'play'; if (!pt) return;
   const z = pt.z != null ? pt.z : surfZ(pt.x, pt.y, gAt(Math.floor(pt.x), Math.floor(pt.y))); M.position.set(pt.x, z + 0.06, pt.y);
 }
+// (round 24) grenade clouds: a bluish sticky puddle (slow) or a grey smoke ball (smoke)
+function drawClouds() {
+  let C = OBJ.clouds;
+  if (!C) {
+    C = OBJ.clouds = []; const disc = new THREE.CircleGeometry(1, 40).rotateX(-Math.PI / 2), ring = new THREE.RingGeometry(0.93, 1, 40).rotateX(-Math.PI / 2), puff = new THREE.SphereGeometry(1, 10, 8);
+    for (let k = 0; k < 6; k++) {
+      const g = new THREE.Group(), sm = new THREE.MeshBasicMaterial({ color: '#5fb6d8', transparent: true, opacity: 0.35, depthWrite: false }), rm = new THREE.MeshBasicMaterial({ color: '#9fe6ff', transparent: true, opacity: 0.7, depthWrite: false });
+      const pm = new THREE.MeshLambertMaterial({ color: '#b8bcc4', transparent: true, opacity: 0.6, depthWrite: false });
+      const d = new THREE.Mesh(disc, sm), r = new THREE.Mesh(ring, rm), puffs = []; g.add(d, r);
+      for (let j = 0; j < 9; j++) { const m = new THREE.Mesh(puff, pm); g.add(m); puffs.push(m); }
+      g.visible = false; SCN.add(g); C.push({ g, d, r, puffs, pm, sm });
+    }
+  }
+  const list = W.cz || []; let n = 0;
+  for (const c of list) {
+    if (n >= C.length) break; const o = C[n++], fade = clamp(c.t / 1.5, 0, 1); o.g.visible = true; o.g.position.set(c.x, c.z + 0.04, c.y);
+    const slow = c.k === 1; o.d.visible = o.r.visible = slow; o.d.scale.set(c.r, 1, c.r); o.r.scale.set(c.r, 1, c.r); o.sm.opacity = 0.35 * fade;
+    o.puffs.forEach((m, j) => { m.visible = !slow; if (slow) return; const a = j / 9 * Math.PI * 2 + W.t * 0.15, rr = j === 8 ? 0 : c.r * 0.55; m.position.set(Math.cos(a) * rr, 0.9 + (j % 3) * 0.35 + Math.sin(W.t + j) * 0.08, Math.sin(a) * rr); const sc = c.r * (j === 8 ? 0.62 : 0.48); m.scale.set(sc, sc * 0.8, sc); });
+    o.pm.opacity = 0.62 * fade;
+  }
+  for (let k = n; k < C.length; k++) C[k].g.visible = false;
+}
 // (round 23) brute tells on the ground: a red lane before a charge, a red ring before a slam
 function drawTells() {
   let T = OBJ.tells;
@@ -7795,7 +7861,7 @@ function draw(dt) {
   if (key !== CUT_KEY) { CUT_KEY = key; rebuildCells(); }
   if (STATE.mode === 'play' && !W.demo) qualTick(dt);
   applyTime(darkness()); archFrame();
-  drawZombies(vl, dt); drawPlayers(vl, dt); drawFx(); drawGhost(me); drawPlan(); drawNadeMark(); drawTells();
+  drawZombies(vl, dt); drawPlayers(vl, dt); drawFx(); drawGhost(me); drawPlan(); drawNadeMark(); drawTells(); drawClouds();
   OBJ.zone.visible = (!W.demo && W.phase === 'day' || !!(me && me.build)) && !modeDef().anyBuild;
   RENDER.render(SCN, CAMO);
   drawOverlay();
@@ -7911,10 +7977,10 @@ function fxEvent(e) {
       if (e.p === ME) { RND.hurtV = Math.min(1, RND.hurtV + 0.5); CAM.shake = Math.max(CAM.shake, 0.12); if (thr('hurt', 0.25)) sfx('hurt'); } break;
     case 'down': sfx('down', W.p[e.p].x, W.p[e.p].y); uiMsg(e.p === ME ? (W.p.length > 1 ? '你倒地了！等队友扶你，或按 H 用医疗包自救' : '你倒地了！按 H 用医疗包自救') : W.p[e.p].name + ' 倒地了！快去扶（按住 F）', '#ff6b5a'); break;
     case 'revive': sfx('revive'); uiMsg(e.p === e.by ? W.p[e.p].name + ' 自救成功' : W.p[e.by].name + (e.rez ? ' 用医疗包救回了 ' : ' 扶起了 ') + W.p[e.p].name, '#8fe39a'); break;
-    case 'dead': uiMsg(W.p[e.p].name + ' 阵亡了：' + (e.t || 60) + ' 秒后（或天亮）在队友身边复活，带医疗包到他倒下的地方能马上救回来', '#ff6b5a'); break;
+    case 'dead': uiMsg(W.p[e.p].name + ' 阵亡了：' + (e.t >= 0 ? (e.t || 20) + ' 秒后在据点复活（还剩 ' + (e.n || 0) + ' 次）' : '复活次数用完了') + '，带医疗包到他倒下的地方能马上救回来', '#ff6b5a'); break;
     case 'slam': { debrisFx(e.x, e.y, e.z + 0.2, '#9a8a70', e.r > 1 ? 18 : 8); shake(e.x, e.y, e.r > 1 ? 0.5 : 0.3); break; } // brute slam / charge crash
     case 'sbash': { const q = W.p[e.p]; sfx('bash', q.x, q.y); if (e.p !== ME) q.knT = 0.3; if (e.n) { debrisFx(e.x, e.y, e.z, '#cfd8e0', 6); if (e.p === ME) shake(q.x, q.y, 0.18); } break; } // (round 23) shield bash
-    case 'respawn': uiMsg(W.p[e.p].name + ' 回来了' + (e.near >= 0 ? '（在 ' + W.p[e.near].name + ' 身边）' : '（在营地）'), '#8fe39a'); break;
+    case 'respawn': uiMsg(W.p[e.p].name + ' 回来了' + '（在据点）', '#8fe39a'); break;
     case 'task': sfx('craft'); uiMsg('任务完成：' + e.txt + '  奖励 ' + e.rt, '#ffd76a'); toast('任务完成 · ' + e.rt, '#ffd76a'); break;
     case 'tp': if (guest && e.p === ME) { const p = W.p[ME]; p.x = e.x; p.y = e.y; p.L = e.l; p.vx = p.vy = 0; } break;
     case 'kb': if (guest && e.p === ME) { const p = W.p[ME]; p.kbx += e.x; p.kby += e.y; } break;
@@ -9087,6 +9153,9 @@ function rideKey(pick) {
   if (own.length || me.pass >= 0 || pillionFor(me)) act('ride'); else toast('还没有载具：在「商店 → 载具」里造（尸城求生要先找到蓝图），或者走到队友的摩托 / 装甲车边按 T 坐后座');
 }
 function cycleWpn(d) { const me = W.p[ME]; let w = me.wpn; for (let k = 0; k < NW; k++) { w = (w + d + NW) % NW; if (me.owned[w]) break; } if (w !== me.wpn) act('wpn', w); }
+// (round 24) pick the grenade type (touch: the ring over the grenade key; PC: 5–8, Shift+G, or the wheel while holding G)
+function setGren(t) { const me = W.p[ME]; if (!GREN[t]) return; me.gt = t; SET.gt = t; toast(GREN[t].name + ' ×' + gCount(me, t) + ' · ' + GREN[t].tag); sfx('swap'); }
+function cycleGren(d) { const me = W.p[ME]; let t = me.gt || 0; for (let k = 0; k < 4; k++) { t = (t + d + 4) % 4; if (gCount(me, t) > 0) break; } setGren(t); }
 // (round 23) the melee slot: knife or riot shield
 function switchMelee(v) {
   const me = W.p[ME]; if (!me.shield) { toast('近战只有刀：商店 → 武器 里能买防暴盾（猛推开一片丧尸）'); return; }
@@ -9161,11 +9230,11 @@ function onKeyPress(k) {
     if (k === 'r') return selItem(ITEMS.indexOf(itemOf(me.sel)));
     if (k === 'z') return swapLast();
     if ((k === 'Enter' || k === ' ') && PLAN) return confirmPlan();
-  } else { const n = '1234'.indexOf(k); if (n >= 0) return quickWpn(n); if (k === 'r') return act('reload'); if (k === 'z') return swapLast(); }
+  } else { const n = '1234'.indexOf(k); if (n >= 0) return quickWpn(n); const gk = '5678'.indexOf(k); if (gk >= 0) return setGren(gk); if (k === 'r') return act('reload'); if (k === 'z') return swapLast(); }
   if (k === 'i') return openKit();
   if (k === 'x' && !me.build) return switchMelee();
   if (k === 'v') return doKnife();
-  if (k === 'g') { if (me.nades > 0 && !me.down) INP.nadeAim = { pc: 1 }; else toast('没有手雷了'); return; } // hold G: the landing ring follows the cursor; let go to throw
+  if (k === 'g') { if (KD('Shift')) return cycleGren(1); if (gCount(me, me.gt || 0) > 0 && !me.down) INP.nadeAim = { pc: 1 }; else toast('没有' + GREN[me.gt || 0].name + '了：按 5–8 换别的手雷'); return; } // hold G: the landing ring follows the cursor; let go to throw
   if (k === 'h') return act('med');
   if (k === 'n') return toggleReady();
   if (k === 'c') return openCraft();
@@ -9183,7 +9252,7 @@ CV.addEventListener('mousedown', e => {
 });
 addEventListener('mouseup', e => { if (e.button === 0) INP.mL = false; if (e.button === 2) INP.mR = false; });
 CV.addEventListener('contextmenu', e => e.preventDefault());
-CV.addEventListener('wheel', e => { if (STATE.mode !== 'play') return; e.preventDefault(); camZoom(e.deltaY > 0 ? 1.1 : 1 / 1.1); }, { passive: false });
+CV.addEventListener('wheel', e => { if (STATE.mode !== 'play') return; e.preventDefault(); if (INP.nadeAim && INP.nadeAim.pc) { const n = Date.now(); if (n - (UI.whT || 0) > 120) { UI.whT = n; cycleGren(e.deltaY > 0 ? 1 : -1); } return; } camZoom(e.deltaY > 0 ? 1.1 : 1 / 1.1); }, { passive: false }); // holding G: the wheel picks the grenade
 
 /* ---------- touch ---------- */
 addEventListener('pointerdown', e => { if (e.pointerType === 'touch') { setTouch(true); INP.lastTouch = performance.now(); } }, true);
@@ -9424,11 +9493,13 @@ function wpickItems(me) {
   const w = WPN[me.wpn]; if (me.mag[me.wpn] < w.mag && (w.inf || me.ammo[me.wpn] > 0)) out.push({ k: 'rl', t: '换弹', s: '' });
   out.push({ k: 'kit', t: '装备', s: '' }); return out;
 }
-function toggleWpick(force) {
-  const el = $('wpick'), open = force != null ? force : el.classList.contains('hidden');
-  el.classList.toggle('hidden', !open); WK.classList.toggle('on', open); if (!open) { UI.wpHi = null; return; }
-  // (round 23b) a small ring just above the weapon key: short names, the gun you're on at the bottom (nearest the thumb), 装备 in the middle
-  const me = W.p[ME], all = wpickItems(me), kit = all.find(it => it.k === 'kit'), items = all.filter(it => it.k !== 'kit'), wr = WK.getBoundingClientRect();
+// (round 24) grenade types for the same kind of ring over the grenade key
+function gpickItems(me) { return GREN.map((g, t) => ({ k: 'g' + t, t: g.sn, s: String(gCount(me, t)), sel: t === (me.gt || 0), q: gCount(me, t) > 0 })); }
+function toggleWpick(force, kind) {
+  const el = $('wpick'), open = force != null ? force : el.classList.contains('hidden'), g = kind === 'g', key = g ? document.getElementById('tNade') : WK;
+  el.classList.toggle('hidden', !open); WK.classList.remove('on'); document.getElementById('tNade').classList.remove('on'); if (open) key.classList.add('on'); if (!open) { UI.wpHi = null; return; }
+  // (round 23b) a small ring just above the key: short names, the one you're on at the bottom (nearest the thumb), 装备 in the middle (guns only)
+  const me = W.p[ME], all = g ? gpickItems(me) : wpickItems(me), kit = all.find(it => it.k === 'kit'), items = all.filter(it => it.k !== 'kit'), wr = key.getBoundingClientRect();
   const big = VW >= 760 && VH >= 760, cs = big ? 56 : 48, n = items.length, R = Math.max(cs * 0.95, n * (cs + 6) / (2 * Math.PI)), kx = wr.left + wr.width / 2, kr = wr.width / 2;
   const cx = clamp(kx - 8, R + cs / 2 + 4, VW - R - cs / 2 - 4), cy = Math.max(R + cs / 2 + 4, wr.top - 6 - R - cs / 2);
   el.innerHTML = ''; UI.wpOpts = [];
@@ -9442,7 +9513,7 @@ function toggleWpick(force) {
   items.forEach((it, j) => { const a = Math.PI / 2 + ((j - j0 + n) % n) / n * Math.PI * 2; put(it, cx + Math.cos(a) * R, cy + Math.sin(a) * R, cs); });
   if (kit) put(kit, cx, cy, Math.round(cs * 0.82), ' mid');
 }
-function wpickDo(k) { toggleWpick(false); if (!inGame()) return; sfx('click'); if (k === 'rl') act('reload'); else if (k === 'kit') openKit(); else if (k === 'melee') switchMelee(); else { const me = W.p[ME]; if (me.build) toggleBuild(false); act('wpn', k); } }
+function wpickDo(k) { toggleWpick(false); if (!inGame()) return; sfx('click'); if (/^g\d$/.test(k)) setGren(+k[1]); else if (k === 'rl') act('reload'); else if (k === 'kit') openKit(); else if (k === 'melee') switchMelee(); else { const me = W.p[ME]; if (me.build) toggleBuild(false); act('wpn', k); } }
 function wpickHover(x, y) { let best = null, bd = 1e9; for (const o of UI.wpOpts || []) { if (Math.abs(o.x - x) > o.w / 2 + 3 || Math.abs(o.y - y) > o.h / 2 + 3) continue; const d = Math.hypot(o.x - x, o.y - y); if (d < bd) { bd = d; best = o; } } for (const o of UI.wpOpts || []) o.b.classList.toggle('hi', o === best); UI.wpHi = best; }
 WK.addEventListener('pointerdown', e => {
   e.preventDefault(); e.stopPropagation(); audioInit(); if (!inGame()) return;
@@ -9463,7 +9534,7 @@ function wkEnd(e) {
   // held without moving: the fan stays open, tap a gun
 }
 WK.addEventListener('pointerup', wkEnd); WK.addEventListener('pointercancel', wkEnd);
-document.addEventListener('pointerdown', e => { const el = $('wpick'); if (el && !el.classList.contains('hidden') && !el.contains(e.target) && e.target !== WK && !WK.contains(e.target)) toggleWpick(false); }, true);
+document.addEventListener('pointerdown', e => { const el = $('wpick'), nk = document.getElementById('tNade'); if (el && !el.classList.contains('hidden') && !el.contains(e.target) && e.target !== WK && !WK.contains(e.target) && e.target !== nk && !nk.contains(e.target)) toggleWpick(false); }, true);
 // vehicle key: tap = on / off your default; hold = pick another vehicle you own
 (() => {
   const el = document.getElementById('tRide'); let st = null;
@@ -9486,11 +9557,19 @@ bindBtn('bcOk', () => confirmPlan()); bindBtn('bcNo', () => cancelPlan());
 // (round 23) grenade key: tap = throw at the biggest bunch in range; drag = put the landing ring where you want (drag back to the middle to cancel)
 (() => {
   const el = document.getElementById('tNade');
-  el.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); audioInit(); if (!inGame()) return; const me = W.p[ME]; if (me.nades <= 0 || me.down) { toast('没有手雷了（搜补给箱、背包，或商店 → 道具）'); return; }
-    const r = el.getBoundingClientRect(); INP.nadeAim = { id: e.pointerId, ox: r.left + r.width / 2, oy: r.top + r.height / 2, dx: 0, dy: 0, drag: false }; el.classList.add('on'); try { el.setPointerCapture(e.pointerId); } catch (_) { } });
-  el.addEventListener('pointermove', e => { const A = INP.nadeAim; if (!A || A.id !== e.pointerId) return; e.preventDefault(); A.dx = e.clientX - A.ox; A.dy = e.clientY - A.oy; if (Math.hypot(A.dx, A.dy) > 16) A.drag = true; });
-  const end = e => { const A = INP.nadeAim; if (!A || A.id !== e.pointerId) return; el.classList.remove('on'); if (A.drag && Math.hypot(A.dx, A.dy) < 16) { INP.nadeAim = null; INP.nadePt = null; toast('取消扔手雷'); return; } nadeRelease(); };
-  el.addEventListener('pointerup', end); el.addEventListener('pointercancel', e => { INP.nadeAim = null; INP.nadePt = null; el.classList.remove('on'); });
+  el.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); audioInit(); if (!inGame()) return; const me = W.p[ME];
+    if (!$('wpick').classList.contains('hidden')) { toggleWpick(false); return; }
+    const r = el.getBoundingClientRect(); UI.gk = { id: e.pointerId, x: e.clientX, y: e.clientY, ring: false, tm: setTimeout(() => { const k = UI.gk; if (k && !k.ring && !(INP.nadeAim && INP.nadeAim.drag)) { k.ring = true; INP.nadeAim = null; INP.nadePt = null; toggleWpick(true, 'g'); } }, 380) };
+    if (gCount(me, me.gt || 0) > 0 && !me.down) INP.nadeAim = { id: e.pointerId, ox: r.left + r.width / 2, oy: r.top + r.height / 2, dx: 0, dy: 0, drag: false, t: me.gt || 0 };
+    el.classList.add('on'); try { el.setPointerCapture(e.pointerId); } catch (_) { } });
+  el.addEventListener('pointermove', e => { const k = UI.gk; if (k && k.id === e.pointerId && k.ring) { e.preventDefault(); wpickHover(e.clientX, e.clientY); return; }
+    const A = INP.nadeAim; if (!A || A.id !== e.pointerId) return; e.preventDefault(); A.dx = e.clientX - A.ox; A.dy = e.clientY - A.oy; if (Math.hypot(A.dx, A.dy) > 16) A.drag = true; });
+  const end = e => {
+    const k = UI.gk; if (k && k.id === e.pointerId) { clearTimeout(k.tm); UI.gk = null; if (k.ring) { el.classList.remove('on'); if (UI.wpHi) wpickDo(UI.wpHi.k); else if (Math.hypot(e.clientX - k.x, e.clientY - k.y) > 16) toggleWpick(false); return; } }
+    el.classList.remove('on'); const A = INP.nadeAim; const me = W.p[ME];
+    if (!A || A.id !== e.pointerId) { if (inGame()) toast('没有' + GREN[me.gt || 0].name + '了：按住手雷键换别的，或去商店 → 道具'); return; }
+    if (A.drag && Math.hypot(A.dx, A.dy) < 16) { INP.nadeAim = null; INP.nadePt = null; toast('取消扔手雷'); return; } nadeRelease(); };
+  el.addEventListener('pointerup', end); el.addEventListener('pointercancel', e => { INP.nadeAim = null; INP.nadePt = null; if (UI.gk) clearTimeout(UI.gk.tm); UI.gk = null; el.classList.remove('on'); });
 })();
 // where the grenade would land right now (null = nothing worth it)
 function nadeAimPt(me) {
@@ -9508,8 +9587,9 @@ function nadeAuto(me) {
   return best ? { x: best.x, y: best.y, z: best.z, n: bs } : null;
 }
 function nadeRelease() {
-  const me = W.p[ME], pt = inGame() ? nadeAimPt(me) : null; INP.nadeAim = null; INP.nadePt = null; if (!inGame() || me.down || me.nades <= 0) return;
-  if (pt) act('nade', { x: +pt.x.toFixed(2), y: +pt.y.toFixed(2), z: pt.z != null ? +pt.z.toFixed(2) : null }); else act('nade');
+  const me = W.p[ME], pt = inGame() ? nadeAimPt(me) : null; INP.nadeAim = null; INP.nadePt = null; if (!inGame() || me.down) return;
+  const t = me.gt || 0; if (gCount(me, t) <= 0) return;
+  if (pt) act('nade', { x: +pt.x.toFixed(2), y: +pt.y.toFixed(2), z: pt.z != null ? +pt.z.toFixed(2) : null, t }); else act('nade', { t });
 }
 bindBtn('tMed', () => { if (!inGame()) return; const me = W.p[ME]; if (me.meds <= 0) toast('没有医疗包了（搜补给、或商店 → 道具）'); else if (!me.down && me.hp >= me.maxHp) toast('血是满的'); else act('med'); });
 // the context key on the fire ring: search / revive / gather when there's something, get off when riding, otherwise heal with a medkit
@@ -9706,11 +9786,11 @@ function hostStart() {
 const ZI = ZKEYS;
 function pFlags(p) { return (p.down ? 1 : 0) | (p.dead ? 2 : 0) | (p.gone ? 4 : 0) | (p.build ? 32 : 0) | (p.ready ? 64 : 0) | (p.selfRev ? 128 : 0) | (p.ride ? 256 : 0) | ((p.veh || 0) << 9) | ((p.pass != null && p.pass >= 0 ? p.pass + 1 : 0) << 12); } // veh: 3 bits (round 22: four vehicles)
 function makeSnap() {
-  const P = p => [r2(p.x), r2(p.y), p.L, r2(p.vx), r2(p.vy), r2(p.aim), Math.ceil(p.hp), pFlags(p), Math.round(p.downT * 10) / 10, p.wpn, p.mag.join(','), p.ammo.join(','), p.owned.join(''), p.nades, p.meds, Math.round(p.useT * 100), Math.round(p.medT * 10) / 10, Math.round(p.reloadT * 10) / 10, p.kills, Math.round(p.anim * 10) / 10, p.sel, p.aimPt ? [r2(p.aimPt.x), r2(p.aimPt.y), r2(p.aimPt.z)] : 0, p.vehs || 0, p.shield ? 1 : 0, p.melee || 0];
+  const P = p => [r2(p.x), r2(p.y), p.L, r2(p.vx), r2(p.vy), r2(p.aim), Math.ceil(p.hp), pFlags(p), Math.round(p.downT * 10) / 10, p.wpn, p.mag.join(','), p.ammo.join(','), p.owned.join(''), p.nades, p.meds, Math.round(p.useT * 100), Math.round(p.medT * 10) / 10, Math.round(p.reloadT * 10) / 10, p.kills, Math.round(p.anim * 10) / 10, p.sel, p.aimPt ? [r2(p.aimPt.x), r2(p.aimPt.y), r2(p.aimPt.z)] : 0, p.vehs || 0, p.shield ? 1 : 0, p.melee || 0, p.gn || [0, 0, 0], p.lives || 0];
   const z = []; for (const q of W.zs) z.push(q.id, ZI.indexOf(q.k), Math.round(q.x * 100), Math.round(q.y * 100), q.L, Math.round(q.z * 100), Math.round(q.face * 100), Math.ceil(q.hp / q.max * 100), (q.climbing ? 1 : 0) | (q.atk > 0 ? 2 : 0) | (q.hitT > 0 ? 4 : 0) | (q.moving ? 8 : 0) | (q.burn > 0 ? 16 : 0) | (q.scr > 0 ? 32 : 0) | (q.rage > 0 ? 64 : 0) | (q.hidden ? 128 : 0) | (q.sleep ? 256 : 0) | ((q.aw || 0) > 0.15 ? 512 : 0) | ((q.tl || 0) << 10)); // tl (round 23): brute tells, 2 bits
-  const pr = []; for (const b of W.proj) pr.push(b.k === 'nade' ? 0 : b.k === 'gl' ? 2 : 1, r2(b.x), r2(b.y), r2(b.z), r2(b.vx), r2(b.vy), r2(b.vz));
+  const pr = []; for (const b of W.proj) pr.push(b.k === 'nade' ? (b.gt ? 2 + b.gt : 0) : b.k === 'gl' ? 2 : 1, r2(b.x), r2(b.y), r2(b.z), r2(b.vx), r2(b.vy), r2(b.vz));
   const d = []; for (const i of W.dirty) d.push(i, Math.round(W.bhp[i]), Math.round(W.shp[i])); W.dirty.clear();
-  return { t: 's', T: r2(W.t), ph: W.phase, cl: Math.round(W.clock * 10) / 10, dl: W.dayLen, n: W.night, nt: Math.round(W.nightT), tk: NET.tkv === W.tkv && (NET.tkN = (NET.tkN || 0) + 1) % 12 ? 0 : (NET.tkv = W.tkv, W.tasks.map(t => [t.k, t.need, t.got, t.done, t.txt, t.rt])), res: RES.map(r => W.res[r.k]), u: W.upg, k: W.kills, p: W.p.map(P), z, pr, d, sl: W.spawnQ.length, ob: NET.obv === W.obv ? 0 : (NET.obv = W.obv, W.obj) };
+  return { t: 's', T: r2(W.t), ph: W.phase, cl: Math.round(W.clock * 10) / 10, dl: W.dayLen, n: W.night, nt: Math.round(W.nightT), tk: NET.tkv === W.tkv && (NET.tkN = (NET.tkN || 0) + 1) % 12 ? 0 : (NET.tkv = W.tkv, W.tasks.map(t => [t.k, t.need, t.got, t.done, t.txt, t.rt])), res: RES.map(r => W.res[r.k]), u: W.upg, k: W.kills, p: W.p.map(P), z, pr, d, sl: W.spawnQ.length, cz: (W.cz || []).map(c => [c.k, c.x, c.y, c.z, c.r, r2(c.t)]), ob: NET.obv === W.obv ? 0 : (NET.obv = W.obv, W.obj) };
 }
 function hostNetTick(dt) {
   if (!NET.gctl || !NET.gctl.open) return;
@@ -9760,11 +9840,11 @@ function applySnap(s) {
   RES.forEach((r, i) => W.res[r.k] = s.res[i]); W.spawnLeft = s.sl;
   s.p.forEach((a, i) => {
     const p = W.p[i]; if (!p) return;
-    const [x, y, L, vx, vy, aim, hp, fl, downT, wpn, mag, ammo, owned, nades, meds, useT, medT, reloadT, kills, anim, sel, ap, vehs, shield, melee] = a;
+    const [x, y, L, vx, vy, aim, hp, fl, downT, wpn, mag, ammo, owned, nades, meds, useT, medT, reloadT, kills, anim, sel, ap, vehs, shield, melee, gn, lives] = a;
     const mine = i === ME;
     p.hp = hp; p.down = !!(fl & 1); p.dead = !!(fl & 2); p.gone = !!(fl & 4); p.downT = downT; p.selfRev = !!(fl & 128); p.ride = !!(fl & 256); p.veh = (fl >> 9) & 7; p.pass = ((fl >> 12) & 7) - 1;
     p.mag = mag.split(',').map(Number); p.ammo = ammo.split(',').map(Number); p.owned = owned.split('').map(Number);
-    p.nades = nades; p.meds = meds; p.vehs = vehs || 0; p.shield = shield ? 1 : 0; if (p.i !== ME || !(UI.meleeT > performance.now())) p.melee = melee || 0; p.useT = useT / 100; p.medT = medT; p.reloadT = reloadT; p.kills = kills; p.ready = !!(fl & 64);
+    p.nades = nades; p.meds = meds; p.vehs = vehs || 0; p.shield = shield ? 1 : 0; p.gn = gn || [0, 0, 0]; p.lives = lives || 0; if (p.i !== ME || !(UI.meleeT > performance.now())) p.melee = melee || 0; p.useT = useT / 100; p.medT = medT; p.reloadT = reloadT; p.kills = kills; p.ready = !!(fl & 64);
     if (!mine) { p.tx = x; p.ty = y; p.L = L; p.vx = vx; p.vy = vy; p.aim = aim; p.build = !!(fl & 32); p.wpn = wpn; p.anim = anim; p.sel = sel; p.aimPt = ap ? { x: ap[0], y: ap[1], z: ap[2] } : null; if (p.x == null || d2(p.x, p.y, x, y) > 4) { p.x = x; p.y = y; } }
     else if (performance.now() > (p.wpnLock || 0)) p.wpn = wpn;
   });
@@ -9779,7 +9859,8 @@ function applySnap(s) {
     zs.push(z);
   }
   W.zs = zs;
-  W.proj = []; for (let k = 0; k < s.pr.length; k += 7) W.proj.push({ k: ['nade', 'acid', 'gl'][s.pr[k]], x: s.pr[k + 1], y: s.pr[k + 2], z: s.pr[k + 3], vx: s.pr[k + 4], vy: s.pr[k + 5], vz: s.pr[k + 6] });
+  W.cz = (s.cz || []).map(a => ({ k: a[0], x: a[1], y: a[2], z: a[3], r: a[4], t: a[5] }));
+  W.proj = []; for (let k = 0; k < s.pr.length; k += 7) W.proj.push({ gt: s.pr[k] >= 3 ? s.pr[k] - 2 : 0, k: ['nade', 'acid', 'gl', 'nade', 'nade', 'nade'][s.pr[k]], x: s.pr[k + 1], y: s.pr[k + 2], z: s.pr[k + 3], vx: s.pr[k + 4], vy: s.pr[k + 5], vz: s.pr[k + 6] });
   for (let k = 0; k < s.d.length; k += 3) { const i = s.d[k]; if (W.blk[i]) W.bhp[i] = s.d[k + 1]; if (W.slab[i]) W.shp[i] = s.d[k + 2]; W.ver++; }
 }
 function guestNetTick(dt) {
@@ -9826,6 +9907,7 @@ function showScreen(s) {
   if (s === 'title' && typeof renderBest === 'function') renderBest();
   if (s === 'title') { STATE.mode = 'title'; renderBest(); }
   if (s === 'lobby') STATE.mode = 'lobby';
+  if (s === 'play' && W && W.p[ME]) W.p[ME].gt = SET.gt || 0;                          // (round 24) last grenade type picked
   if (s === 'play' && INP.touch && !SET.guide22) { SET.guide22 = 1; saveSet(); setTimeout(() => document.body.classList.add('guide'), 600); } // (round 22) the first touch game shows what each control does; the next tap hides it
   if (s !== 'play') document.body.classList.remove('guide');
 }
@@ -9881,7 +9963,7 @@ function uiKeys(me) {
   if (me.build) rows = [['左键', '放（拖动一排）'], ['右键', '拆'], ['1–9', '选道具（再按换材料）'], ['R', '换材料'], ['X', '拆除模式', me.demo ? 1 : 0], ['Enter', '确认'], ['Esc', '取消'], ['B', '收起道具', 1]];
   else {
     const canRl = me.mag[wi] < w.mag && (w.inf || me.ammo[wi] > 0) && !(me.reloadT > 0), ut = useTarget(me), bench = canCraft(me);
-    rows = [['左键', '射击'], ['R', '换弹', me.mag[wi] === 0 && canRl ? 2 : canRl ? 0 : -1], ['G', '手雷 ×' + me.nades + ' 按住瞄', me.nades ? 0 : -1],
+    rows = [['左键', '射击'], ['R', '换弹', me.mag[wi] === 0 && canRl ? 2 : canRl ? 0 : -1], ['G', GREN[me.gt || 0].sn + ' ×' + gCount(me, me.gt || 0) + ' 按住瞄', gCount(me, me.gt || 0) ? 0 : -1], ['5–8', '换手雷'],
       ['H', me.down ? '自救' : '医疗 ×' + me.meds, !me.meds ? -1 : (me.down || me.hp < me.maxHp * 0.4) ? 2 : me.hp >= me.maxHp ? -1 : 0],
       ['右键', me.melee === 1 && me.shield ? '盾推 / V' : '刀 / V'], ...(me.shield ? [['X', '换成' + (me.melee === 1 ? '刀' : '盾')]] : []), ['F', ut ? ut.name : '交互', ut ? 1 : 0], ['1–4', '快捷武器'], ['Z', '切回上一把'], ['I', '装备'], ['C', '商店', bench ? 1 : -1], ['B', '道具']];
     const pil = !me.ride && !(me.pass >= 0) && pillionFor(me);
@@ -9980,12 +10062,16 @@ function hudTick(dt) {
   $('wRes').textContent = me.build ? '' : '/ ' + (w.inf ? '∞' : me.ammo[wi]);
   const rl = me.reloadT > 0 ? 1 - me.reloadT / WPN[me.reloadW != null ? me.reloadW : wi].reload : me.reloadVis > 0 ? 1 - me.reloadVis / w.reload : me.medT > 0 ? 1 - me.medT / (me.selfRev ? 3 : BAL.healTime) : 0;
   $('wRl').style.width = (rl * 100) + '%';
-  $('iNade').textContent = me.nades; $('iMed').textContent = me.meds; $('iKill').textContent = me.kills;
+  $('iNadeL').textContent = GREN[me.gt || 0].sn; $('iNade').textContent = gCount(me, me.gt || 0); $('iMed').textContent = me.meds; $('iKill').textContent = me.kills; $('iLife').textContent = me.lives != null ? me.lives : '-';
   uiKeys(me);
   const q = quickList(me), qk = q.join(','); if (UI.wbK !== qk) { UI.wbK = qk;
-    $('wbar').innerHTML = q.map((k, j) => `<button data-w="${k}"><span><kbd>${j + 1}</kbd>${WPN[k].name}</span><small id="wb${k}"></small></button>`).join('') + `<button id="wbKit" class="kit"><span><kbd>I</kbd>装备</span><small>换快捷枪</small></button>`;
+    $('wbar').innerHTML = q.map((k, j) => `<button data-w="${k}"><span><kbd>${j + 1}</kbd>${WPN[k].name}</span><small id="wb${k}"></small></button>`).join('') + `<i class="wsep"></i><button id="wbMel" class="mel"><span><kbd>X</kbd><b>刀</b></span><small>右键 / V</small></button>` + GREN.map((g, t) => `<button data-g="${t}" class="gr"><span><kbd>${t + 5}</kbd>${g.sn}</span><small id="wg${t}"></small></button>`).join('') + `<button id="wbKit" class="kit"><span><kbd>I</kbd>装备</span><small>换快捷枪</small></button>`;
     $('wbar').querySelectorAll('button[data-w]').forEach(b => b.addEventListener('pointerdown', e => { e.stopPropagation(); if (inGame()) act('wpn', +b.dataset.w); }));
-    $('wbKit').addEventListener('pointerdown', e => { e.stopPropagation(); openKit(); }); }
+    $('wbKit').addEventListener('pointerdown', e => { e.stopPropagation(); openKit(); });
+    $('wbMel').addEventListener('pointerdown', e => { e.stopPropagation(); if (inGame()) switchMelee(); });
+    $('wbar').querySelectorAll('button[data-g]').forEach(b => b.addEventListener('pointerdown', e => { e.stopPropagation(); if (inGame()) setGren(+b.dataset.g); })); }
+  { const mb = $('wbMel'), sh = me.melee === 1 && me.shield; mb.querySelector('b').textContent = sh ? '盾' : '刀'; mb.classList.toggle('dim', !me.shield); mb.lastElementChild.textContent = me.shield ? '右键 · X 换' + (sh ? '刀' : '盾') : '右键 / V';
+    GREN.forEach((g, t) => { const b = $('wbar').querySelector('[data-g="' + t + '"]'), c = gCount(me, t); b.classList.toggle('sel', t === (me.gt || 0)); b.classList.toggle('dim', !c); $('wg' + t).textContent = '×' + c; }); }
   q.forEach(i => { const b = $('wbar').querySelector('[data-w="' + i + '"]'), w2 = WPN[i]; b.classList.toggle('sel', i === me.wpn); $('wb' + i).textContent = (me.rlBg && me.rlBg[i] > 0 ? '⟳ ' : '') + (w2.inf ? '∞' : me.mag[i] + '/' + me.ammo[i]); });
   if (!q.includes(me.wpn) && !me.build) { const b = $('wbKit'); if (b) b.lastElementChild.textContent = '在用：' + w.name; }
   // phase
@@ -10016,7 +10102,7 @@ function hudTick(dt) {
   // prompt
   let ptxt = '', prog = 0;
   if (!me.dead && !me.build && !me.ride && !(me.pass >= 0) && pillionFor(me)) ptxt = (INP.touch ? '点「坐后座」' : '按 T ') + '坐上 ' + pillionFor(me).name + ' 的摩托后座（后座能开枪）';
-  if (me.dead) ptxt = '你阵亡了 · ' + Math.ceil(me.downT) + ' 秒后（或天亮）在队友身边复活 · 队友带医疗包到你身边按住交互 6 秒能马上救你';
+  if (me.dead) ptxt = me.lives > 0 ? '你阵亡了 · ' + Math.ceil(me.downT) + ' 秒后在据点复活（还剩 ' + me.lives + ' 次）· 队友带医疗包到你身边按住交互 6 秒能马上救你' : '你阵亡了 · 复活次数用完了 · 只能等队友带医疗包来救你';
   if (!me.dead && !me.build) {
     const tgt = useTarget(me), inB = canCraft(me); if (inB && !UI.inB) UI.craftHintT = W.t; UI.inB = inB;
     const key = INP.touch ? '点「交互」' : '按 F ';
@@ -10046,7 +10132,7 @@ function hudTick(dt) {
     md.firstElementChild.textContent = me.down ? '自救' : '医疗'; $('tMedN').textContent = '×' + me.meds;
     $('tWpn').firstElementChild.textContent = w.sn || w.name; $('tWpn').lastElementChild.textContent = w.inf ? '∞' : me.mag[wi] + '/' + me.ammo[wi];
     $('tWpn').classList.toggle('dim', me.down || me.owned.filter(Boolean).length < 2);
-    $('tNadeN').textContent = me.nades; $('tNade').classList.toggle('empty', !me.nades);
+    const gt = me.gt || 0, gc = gCount(me, gt), tn = $('tNade'); $('tNadeN').textContent = gc; tn.classList.toggle('empty', !gc); if (tn.firstChild.nodeValue !== GREN[gt].sn) tn.firstChild.nodeValue = GREN[gt].sn; // (round 24) shows the picked grenade type
     const sv = $('tShove'); if (sv.dataset.m !== String(me.melee === 1 && me.shield ? 1 : 0)) { sv.dataset.m = me.melee === 1 && me.shield ? 1 : 0; sv.textContent = me.melee === 1 && me.shield ? '盾' : '刀'; } sv.classList.toggle('sw', !!me.shield);
     $('tFire').style.setProperty('--rl', rl);
     $('tLLbl').textContent = ((me.build && BUILD_HOVER ? BUILD_HOVER.L : buildL()) + 1) + 'F';
@@ -10103,7 +10189,7 @@ function renderCraft() {
     h += `<div class="sc own"><div class="sh"><b>刀</b><em>${me.melee !== 1 || !me.shield ? '在用' : '已有'}</em></div><small>冲上去砍一只，背后砍双倍，睡着的一刀死</small><div class="sb">${me.melee === 1 && me.shield ? useBtn(0) : '<span class="sfree">在用</span>'}</div></div>`;
     h += `<div class="sc${me.shield ? ' own' : ''}"><div class="sh"><b>防暴盾</b><em>${me.shield ? (me.melee === 1 ? '在用' : '已有') : '没有'}</em></div><small>${sc.desc}</small><div class="sb">${!me.shield ? shopBtn(sc, '买') : me.melee === 1 ? '<span class="sfree">在用</span>' : useBtn(1)}</div></div>`;
   } else if (tab === 'item') {
-    const st = { nade: '带着 ' + me.nades + ' / ' + BAL.nadeCap, med: '带着 ' + me.meds + ' / ' + BAL.medCap };
+    const st = { nade: '带着 ' + me.nades + ' / ' + BAL.nadeCap, med: '带着 ' + me.meds + ' / ' + BAL.medCap }; for (let t = 1; t < 4; t++) st['g' + GREN[t].k] = '带着 ' + gCount(me, t) + ' / ' + BAL.gnCap;
     h = CRAFT.filter(c => c.cat === 'item').map(c => `<div class="sc"><div class="sh"><b>${c.name}</b><em>${st[c.id] || ''}</em></div><small>${c.desc}</small><div class="sb">${shopBtn(c, c.shield && me.shield > 0 ? '修满' : '买')}</div></div>`).join('');
     h += `<div class="sgrp">放置类道具 · 不用先买：点「去放」，放一个扣一份材料（电脑按 B，触屏点「道具」）</div>`;
     h += ITEMS.map((g, n) => `<div class="sc mini"><div class="sh"><b>${g.name}</b><em>${g.ids.map(id => B[id].name + (hasBP(id) ? '' : '🔒')).join(' / ')}</em></div><small>${B[g.ids[0]].tip}</small><div class="sb"><button class="sbtn go" data-g="${n}"><b>去放</b><span>${costText(B[g.ids.find(id => hasBP(id)) || g.ids[0]].cost)} 起</span></button></div></div>`).join('');
@@ -10479,7 +10565,7 @@ function saveGame(quiet) {
   const S = {
     v: SAVE_V, mw: MW, at: Date.now(), mode: W.mode, map: W.map, obj: W.obj, seed: W.seed, diff: W.diff, night: W.night, phase: W.phase, clock: W.clock, dayLen: W.dayLen, nightT: W.nightT,
     res: W.res, upg: W.upg, kills: W.kills, stats: W.stats, endless: W.endless, clean: W.clean, tasks: W.tasks, srch: [...W.srch], spotN: W.spotN, t: W.t,
-    p: W.p.filter(p => !p.gone).map(p => ({ name: p.name, x: p.x, y: p.y, L: p.L, hp: p.hp, dead: p.dead, wpn: p.wpn, owned: p.owned, mag: p.mag, ammo: p.ammo, meds: p.meds, nades: p.nades, kills: p.kills, veh: p.veh || 0, vehs: p.vehs || 0, shield: p.shield ? 1 : 0, melee: p.melee || 0 })),
+    p: W.p.filter(p => !p.gone).map(p => ({ name: p.name, x: p.x, y: p.y, L: p.L, hp: p.hp, dead: p.dead, wpn: p.wpn, owned: p.owned, mag: p.mag, ammo: p.ammo, meds: p.meds, nades: p.nades, kills: p.kills, veh: p.veh || 0, vehs: p.vehs || 0, shield: p.shield ? 1 : 0, melee: p.melee || 0, gn: p.gn || [0, 0, 0], lives: p.lives || 0 })),
     zs: W.zs.filter(z => z.hp > 0).slice(0, 300).map(z => [z.k, +z.x.toFixed(2), +z.y.toFixed(2), z.L, Math.round(z.hp), Math.round(z.max), z.mz ? 1 : 0, z.g || 0, z.sleep ? 1 : 0, z.occ == null ? -1 : z.occ]),
     q: W.spawnQ.slice(0, 500).map(s => [+s.t.toFixed(1), s.k, s.side, s.at == null ? -1 : s.at, s.f ? +s.f.toFixed(2) : 0, s.g || 0]), gid: W.gid || 0,
     g: [rleEnc(W.blk), rleEnc(W.slab), rleEnc(W.bdir), rleEnc(hpPack(W.bhp)), rleEnc(hpPack(W.shp))].map(b64e),
@@ -10507,7 +10593,7 @@ function applySave(S) {
   Object.assign(W, { night: S.night, phase: S.phase, clock: S.clock, dayLen: S.dayLen, nightT: S.nightT || 0, res: S.res, upg: S.upg, kills: S.kills, stats: S.stats, endless: !!S.endless, clean: S.clean !== false, tasks: S.tasks || [], t: S.t || 0 });
   W.srch = new Set(S.srch || []); W.spotN = S.spotN || null; if (!W.spotN) { W.spotN = spotCount(); for (const k in W.spotN) W.spotN[k] = Math.round(W.spotN[k] * 2); } W.tkv++; W.rng = mulberry((S.seed ^ (S.night * 7919) ^ (S.at & 0xffff)) >>> 0);
   const p = W.p[0], P = S.p[0];
-  if (P) { Object.assign(p, { x: P.x, y: P.y, L: P.L, hp: P.dead ? BAL.pMaxHp * 0.5 : P.hp, wpn: P.wpn, owned: P.owned, mag: P.mag, ammo: P.ammo, meds: P.meds, nades: P.nades, kills: P.kills, veh: P.veh || 0, vehs: P.vehs != null ? P.vehs : (P.veh ? 1 << P.veh : 0), shield: P.shield ? 1 : 0, melee: P.shield ? P.melee || 0 : 0 }); p.dead = false; p.down = false; } // (round 22) vehs = owned bitmask; older saves only knew the best one
+  if (P) { Object.assign(p, { x: P.x, y: P.y, L: P.L, hp: P.dead ? BAL.pMaxHp * 0.5 : P.hp, wpn: P.wpn, owned: P.owned, mag: P.mag, ammo: P.ammo, meds: P.meds, nades: P.nades, kills: P.kills, veh: P.veh || 0, vehs: P.vehs != null ? P.vehs : (P.veh ? 1 << P.veh : 0), shield: P.shield ? 1 : 0, melee: P.shield ? P.melee || 0 : 0, gn: P.gn || [0, 0, 0], lives: P.lives != null ? P.lives : livesFor(W.diff, W.mode) }); p.dead = false; p.down = false; } // (round 22) vehs = owned bitmask; older saves only knew the best one
   // older saves may have fewer weapons
   for (const k of ['owned', 'mag', 'ammo']) while (p[k].length < NW) p[k].push(0);
   p.z = pZ(p); p.zv = p.z; CAM.tx = p.x; CAM.ty = p.y;

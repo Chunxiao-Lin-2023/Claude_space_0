@@ -47,6 +47,9 @@ function rideKey(pick) {
   if (own.length || me.pass >= 0 || pillionFor(me)) act('ride'); else toast('还没有载具：在「商店 → 载具」里造（尸城求生要先找到蓝图），或者走到队友的摩托 / 装甲车边按 T 坐后座');
 }
 function cycleWpn(d) { const me = W.p[ME]; let w = me.wpn; for (let k = 0; k < NW; k++) { w = (w + d + NW) % NW; if (me.owned[w]) break; } if (w !== me.wpn) act('wpn', w); }
+// (round 24) pick the grenade type (touch: the ring over the grenade key; PC: 5–8, Shift+G, or the wheel while holding G)
+function setGren(t) { const me = W.p[ME]; if (!GREN[t]) return; me.gt = t; SET.gt = t; toast(GREN[t].name + ' ×' + gCount(me, t) + ' · ' + GREN[t].tag); sfx('swap'); }
+function cycleGren(d) { const me = W.p[ME]; let t = me.gt || 0; for (let k = 0; k < 4; k++) { t = (t + d + 4) % 4; if (gCount(me, t) > 0) break; } setGren(t); }
 // (round 23) the melee slot: knife or riot shield
 function switchMelee(v) {
   const me = W.p[ME]; if (!me.shield) { toast('近战只有刀：商店 → 武器 里能买防暴盾（猛推开一片丧尸）'); return; }
@@ -121,11 +124,11 @@ function onKeyPress(k) {
     if (k === 'r') return selItem(ITEMS.indexOf(itemOf(me.sel)));
     if (k === 'z') return swapLast();
     if ((k === 'Enter' || k === ' ') && PLAN) return confirmPlan();
-  } else { const n = '1234'.indexOf(k); if (n >= 0) return quickWpn(n); if (k === 'r') return act('reload'); if (k === 'z') return swapLast(); }
+  } else { const n = '1234'.indexOf(k); if (n >= 0) return quickWpn(n); const gk = '5678'.indexOf(k); if (gk >= 0) return setGren(gk); if (k === 'r') return act('reload'); if (k === 'z') return swapLast(); }
   if (k === 'i') return openKit();
   if (k === 'x' && !me.build) return switchMelee();
   if (k === 'v') return doKnife();
-  if (k === 'g') { if (me.nades > 0 && !me.down) INP.nadeAim = { pc: 1 }; else toast('没有手雷了'); return; } // hold G: the landing ring follows the cursor; let go to throw
+  if (k === 'g') { if (KD('Shift')) return cycleGren(1); if (gCount(me, me.gt || 0) > 0 && !me.down) INP.nadeAim = { pc: 1 }; else toast('没有' + GREN[me.gt || 0].name + '了：按 5–8 换别的手雷'); return; } // hold G: the landing ring follows the cursor; let go to throw
   if (k === 'h') return act('med');
   if (k === 'n') return toggleReady();
   if (k === 'c') return openCraft();
@@ -143,7 +146,7 @@ CV.addEventListener('mousedown', e => {
 });
 addEventListener('mouseup', e => { if (e.button === 0) INP.mL = false; if (e.button === 2) INP.mR = false; });
 CV.addEventListener('contextmenu', e => e.preventDefault());
-CV.addEventListener('wheel', e => { if (STATE.mode !== 'play') return; e.preventDefault(); camZoom(e.deltaY > 0 ? 1.1 : 1 / 1.1); }, { passive: false });
+CV.addEventListener('wheel', e => { if (STATE.mode !== 'play') return; e.preventDefault(); if (INP.nadeAim && INP.nadeAim.pc) { const n = Date.now(); if (n - (UI.whT || 0) > 120) { UI.whT = n; cycleGren(e.deltaY > 0 ? 1 : -1); } return; } camZoom(e.deltaY > 0 ? 1.1 : 1 / 1.1); }, { passive: false }); // holding G: the wheel picks the grenade
 
 /* ---------- touch ---------- */
 addEventListener('pointerdown', e => { if (e.pointerType === 'touch') { setTouch(true); INP.lastTouch = performance.now(); } }, true);
@@ -384,11 +387,13 @@ function wpickItems(me) {
   const w = WPN[me.wpn]; if (me.mag[me.wpn] < w.mag && (w.inf || me.ammo[me.wpn] > 0)) out.push({ k: 'rl', t: '换弹', s: '' });
   out.push({ k: 'kit', t: '装备', s: '' }); return out;
 }
-function toggleWpick(force) {
-  const el = $('wpick'), open = force != null ? force : el.classList.contains('hidden');
-  el.classList.toggle('hidden', !open); WK.classList.toggle('on', open); if (!open) { UI.wpHi = null; return; }
-  // (round 23b) a small ring just above the weapon key: short names, the gun you're on at the bottom (nearest the thumb), 装备 in the middle
-  const me = W.p[ME], all = wpickItems(me), kit = all.find(it => it.k === 'kit'), items = all.filter(it => it.k !== 'kit'), wr = WK.getBoundingClientRect();
+// (round 24) grenade types for the same kind of ring over the grenade key
+function gpickItems(me) { return GREN.map((g, t) => ({ k: 'g' + t, t: g.sn, s: String(gCount(me, t)), sel: t === (me.gt || 0), q: gCount(me, t) > 0 })); }
+function toggleWpick(force, kind) {
+  const el = $('wpick'), open = force != null ? force : el.classList.contains('hidden'), g = kind === 'g', key = g ? document.getElementById('tNade') : WK;
+  el.classList.toggle('hidden', !open); WK.classList.remove('on'); document.getElementById('tNade').classList.remove('on'); if (open) key.classList.add('on'); if (!open) { UI.wpHi = null; return; }
+  // (round 23b) a small ring just above the key: short names, the one you're on at the bottom (nearest the thumb), 装备 in the middle (guns only)
+  const me = W.p[ME], all = g ? gpickItems(me) : wpickItems(me), kit = all.find(it => it.k === 'kit'), items = all.filter(it => it.k !== 'kit'), wr = key.getBoundingClientRect();
   const big = VW >= 760 && VH >= 760, cs = big ? 56 : 48, n = items.length, R = Math.max(cs * 0.95, n * (cs + 6) / (2 * Math.PI)), kx = wr.left + wr.width / 2, kr = wr.width / 2;
   const cx = clamp(kx - 8, R + cs / 2 + 4, VW - R - cs / 2 - 4), cy = Math.max(R + cs / 2 + 4, wr.top - 6 - R - cs / 2);
   el.innerHTML = ''; UI.wpOpts = [];
@@ -402,7 +407,7 @@ function toggleWpick(force) {
   items.forEach((it, j) => { const a = Math.PI / 2 + ((j - j0 + n) % n) / n * Math.PI * 2; put(it, cx + Math.cos(a) * R, cy + Math.sin(a) * R, cs); });
   if (kit) put(kit, cx, cy, Math.round(cs * 0.82), ' mid');
 }
-function wpickDo(k) { toggleWpick(false); if (!inGame()) return; sfx('click'); if (k === 'rl') act('reload'); else if (k === 'kit') openKit(); else if (k === 'melee') switchMelee(); else { const me = W.p[ME]; if (me.build) toggleBuild(false); act('wpn', k); } }
+function wpickDo(k) { toggleWpick(false); if (!inGame()) return; sfx('click'); if (/^g\d$/.test(k)) setGren(+k[1]); else if (k === 'rl') act('reload'); else if (k === 'kit') openKit(); else if (k === 'melee') switchMelee(); else { const me = W.p[ME]; if (me.build) toggleBuild(false); act('wpn', k); } }
 function wpickHover(x, y) { let best = null, bd = 1e9; for (const o of UI.wpOpts || []) { if (Math.abs(o.x - x) > o.w / 2 + 3 || Math.abs(o.y - y) > o.h / 2 + 3) continue; const d = Math.hypot(o.x - x, o.y - y); if (d < bd) { bd = d; best = o; } } for (const o of UI.wpOpts || []) o.b.classList.toggle('hi', o === best); UI.wpHi = best; }
 WK.addEventListener('pointerdown', e => {
   e.preventDefault(); e.stopPropagation(); audioInit(); if (!inGame()) return;
@@ -423,7 +428,7 @@ function wkEnd(e) {
   // held without moving: the fan stays open, tap a gun
 }
 WK.addEventListener('pointerup', wkEnd); WK.addEventListener('pointercancel', wkEnd);
-document.addEventListener('pointerdown', e => { const el = $('wpick'); if (el && !el.classList.contains('hidden') && !el.contains(e.target) && e.target !== WK && !WK.contains(e.target)) toggleWpick(false); }, true);
+document.addEventListener('pointerdown', e => { const el = $('wpick'), nk = document.getElementById('tNade'); if (el && !el.classList.contains('hidden') && !el.contains(e.target) && e.target !== WK && !WK.contains(e.target) && e.target !== nk && !nk.contains(e.target)) toggleWpick(false); }, true);
 // vehicle key: tap = on / off your default; hold = pick another vehicle you own
 (() => {
   const el = document.getElementById('tRide'); let st = null;
@@ -446,11 +451,19 @@ bindBtn('bcOk', () => confirmPlan()); bindBtn('bcNo', () => cancelPlan());
 // (round 23) grenade key: tap = throw at the biggest bunch in range; drag = put the landing ring where you want (drag back to the middle to cancel)
 (() => {
   const el = document.getElementById('tNade');
-  el.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); audioInit(); if (!inGame()) return; const me = W.p[ME]; if (me.nades <= 0 || me.down) { toast('没有手雷了（搜补给箱、背包，或商店 → 道具）'); return; }
-    const r = el.getBoundingClientRect(); INP.nadeAim = { id: e.pointerId, ox: r.left + r.width / 2, oy: r.top + r.height / 2, dx: 0, dy: 0, drag: false }; el.classList.add('on'); try { el.setPointerCapture(e.pointerId); } catch (_) { } });
-  el.addEventListener('pointermove', e => { const A = INP.nadeAim; if (!A || A.id !== e.pointerId) return; e.preventDefault(); A.dx = e.clientX - A.ox; A.dy = e.clientY - A.oy; if (Math.hypot(A.dx, A.dy) > 16) A.drag = true; });
-  const end = e => { const A = INP.nadeAim; if (!A || A.id !== e.pointerId) return; el.classList.remove('on'); if (A.drag && Math.hypot(A.dx, A.dy) < 16) { INP.nadeAim = null; INP.nadePt = null; toast('取消扔手雷'); return; } nadeRelease(); };
-  el.addEventListener('pointerup', end); el.addEventListener('pointercancel', e => { INP.nadeAim = null; INP.nadePt = null; el.classList.remove('on'); });
+  el.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); audioInit(); if (!inGame()) return; const me = W.p[ME];
+    if (!$('wpick').classList.contains('hidden')) { toggleWpick(false); return; }
+    const r = el.getBoundingClientRect(); UI.gk = { id: e.pointerId, x: e.clientX, y: e.clientY, ring: false, tm: setTimeout(() => { const k = UI.gk; if (k && !k.ring && !(INP.nadeAim && INP.nadeAim.drag)) { k.ring = true; INP.nadeAim = null; INP.nadePt = null; toggleWpick(true, 'g'); } }, 380) };
+    if (gCount(me, me.gt || 0) > 0 && !me.down) INP.nadeAim = { id: e.pointerId, ox: r.left + r.width / 2, oy: r.top + r.height / 2, dx: 0, dy: 0, drag: false, t: me.gt || 0 };
+    el.classList.add('on'); try { el.setPointerCapture(e.pointerId); } catch (_) { } });
+  el.addEventListener('pointermove', e => { const k = UI.gk; if (k && k.id === e.pointerId && k.ring) { e.preventDefault(); wpickHover(e.clientX, e.clientY); return; }
+    const A = INP.nadeAim; if (!A || A.id !== e.pointerId) return; e.preventDefault(); A.dx = e.clientX - A.ox; A.dy = e.clientY - A.oy; if (Math.hypot(A.dx, A.dy) > 16) A.drag = true; });
+  const end = e => {
+    const k = UI.gk; if (k && k.id === e.pointerId) { clearTimeout(k.tm); UI.gk = null; if (k.ring) { el.classList.remove('on'); if (UI.wpHi) wpickDo(UI.wpHi.k); else if (Math.hypot(e.clientX - k.x, e.clientY - k.y) > 16) toggleWpick(false); return; } }
+    el.classList.remove('on'); const A = INP.nadeAim; const me = W.p[ME];
+    if (!A || A.id !== e.pointerId) { if (inGame()) toast('没有' + GREN[me.gt || 0].name + '了：按住手雷键换别的，或去商店 → 道具'); return; }
+    if (A.drag && Math.hypot(A.dx, A.dy) < 16) { INP.nadeAim = null; INP.nadePt = null; toast('取消扔手雷'); return; } nadeRelease(); };
+  el.addEventListener('pointerup', end); el.addEventListener('pointercancel', e => { INP.nadeAim = null; INP.nadePt = null; if (UI.gk) clearTimeout(UI.gk.tm); UI.gk = null; el.classList.remove('on'); });
 })();
 // where the grenade would land right now (null = nothing worth it)
 function nadeAimPt(me) {
@@ -468,8 +481,9 @@ function nadeAuto(me) {
   return best ? { x: best.x, y: best.y, z: best.z, n: bs } : null;
 }
 function nadeRelease() {
-  const me = W.p[ME], pt = inGame() ? nadeAimPt(me) : null; INP.nadeAim = null; INP.nadePt = null; if (!inGame() || me.down || me.nades <= 0) return;
-  if (pt) act('nade', { x: +pt.x.toFixed(2), y: +pt.y.toFixed(2), z: pt.z != null ? +pt.z.toFixed(2) : null }); else act('nade');
+  const me = W.p[ME], pt = inGame() ? nadeAimPt(me) : null; INP.nadeAim = null; INP.nadePt = null; if (!inGame() || me.down) return;
+  const t = me.gt || 0; if (gCount(me, t) <= 0) return;
+  if (pt) act('nade', { x: +pt.x.toFixed(2), y: +pt.y.toFixed(2), z: pt.z != null ? +pt.z.toFixed(2) : null, t }); else act('nade', { t });
 }
 bindBtn('tMed', () => { if (!inGame()) return; const me = W.p[ME]; if (me.meds <= 0) toast('没有医疗包了（搜补给、或商店 → 道具）'); else if (!me.down && me.hp >= me.maxHp) toast('血是满的'); else act('med'); });
 // the context key on the fire ring: search / revive / gather when there's something, get off when riding, otherwise heal with a medkit
