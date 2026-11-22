@@ -520,7 +520,7 @@ const zAlive = z => z && z.hp > 0 && W.zs.includes(z);
 function touchAutoAim(me, dirx, diry, any, cur) {
   const [sx, sy, sz] = shoulder(me); let best = null, bs = 1e9, cs = 1e9;
   const AS = assistLv(), wi = me.down ? 0 : me.wpn, range = WPN[wi].range * AS.range, a0 = Math.atan2(diry, dirx), vl = viewL();
-  if (!AS.range) return { x: sx + dirx * 6, y: sy + diry * 6, z: sz };
+  if (!AS.range) return { x: sx + dirx * 6, y: sy + diry * 6, z: sz, auto: 1 };
   for (const z of W.zs) {
     if (z.hp <= 0 || z.L > vl || lcHide(Math.floor(z.x), Math.floor(z.y), z.L)) continue;
     const dx = z.x - sx, dy = z.y - sy, d = Math.hypot(dx, dy); if (d > range || d < 0.2) continue;
@@ -529,8 +529,8 @@ function touchAutoAim(me, dirx, diry, any, cur) {
     if ((score < bs || z === cur) && los(sx, sy, sz, z.x, z.y, z.z + z.h * 0.6, LEAN)) { if (z === cur) cs = score; if (score < bs) { bs = score; best = z; } }
   }
   if (cur && cs < 1e9 && cs <= bs * 1.35 + 0.6) best = cur;
-  if (best) return { x: best.x, y: best.y, z: best.z + best.h * 0.6, zb: best };
-  return { x: sx + dirx * 6, y: sy + diry * 6, z: sz };
+  if (best) return { x: best.x, y: best.y, z: best.z + best.h * 0.6, zb: best, auto: 1 }; /* (round 36k) auto: picked by the touch auto-aim, not by hand — a mech's ranged shot then uses the smart aim */
+  return { x: sx + dirx * 6, y: sy + diry * 6, z: sz, auto: 1 };
 }
 // keep the aim point glued to a locked zombie between re-picks
 function trackAim(me) { const z = me.aimPt && me.aimPt.zb; if (!z) return; if (!zAlive(z)) { INP.aimT = 0; return; } me.aimPt.x = z.x; me.aimPt.y = z.y; me.aimPt.z = z.z + z.h * 0.6; }

@@ -115,9 +115,28 @@ function mechEject(p, why) { if (inMech(p)) startXform(p, 0, why); }
 // (round 35) what a mech's next attack goes for: the zombie you picked if it is in range, else the best one in front of you (closer to where you aim
 // and nearer scores higher), in sight, awake and not cloaked. Melee looks a little past its reach (it steps in); ranged within its range.
 const mechRanged = M => M.atk === 'rocket' || M.atk === 'cannon' || M.atk === 'parcel';
+// (round 36k) smart aim for a mech's lobbed / explosive shot when nobody aimed by hand (touch auto-aim, or no aim at all):
+// every zombie in range is a candidate centre, each at its predicted spot when the shot lands; a centre scores the threat-weighted zombies its blast would catch
+// (big ones and elites count more, near ones and ones coming at you count more, a little preference for where you face); the shot goes to the weighted middle of the best group
+function mechSmart(p, M, range) {
+  const lob = M.atk === 'parcel', R = (M.blast || 1.5) * 0.9, spd = M.atk === 'rocket' ? 20 : M.atk === 'cannon' ? 45 : 0, pz = p.z + 1.6, C = [];
+  for (const z of W.zs) {
+    if (!(z.hp > 0) || z.hidden || z.sleep || z.ck || z.ckF || Math.abs(z.z - p.z) > 6) continue; const fly = ZT[z.k].fly; if (lob && fly) continue;
+    const dx = z.x - p.x, dy = z.y - p.y, d = Math.hypot(dx, dy); if (d > range + z.r || d < 0.8) continue; if (!lob && !los(p.x, p.y, pz, z.x, z.y, z.z + z.h * 0.5)) continue;
+    let tt = spd ? d / spd : 0.25 + Math.min(range, d) / 14, x = z.x + (z.evx || 0) * tt, y = z.y + (z.evy || 0) * tt; { const d2 = Math.hypot(x - p.x, y - p.y); tt = spd ? d2 / spd : 0.25 + Math.min(range, d2) / 14; x = z.x + (z.evx || 0) * tt; y = z.y + (z.evy || 0) * tt; }
+    const T = ZT[z.k], big = T.boss || T.kaiju || T.elite || z.k === 'brute' || z.k === 'riot', vr = -((z.evx || 0) * dx + (z.evy || 0) * dy) / (d || 1);
+    const w = (big ? 2.5 : 1) * (1 + 1.6 * (1 - d / (range + 1))) * (1 + 0.12 * clamp(vr, 0, 5)) * (0.85 + 0.15 * Math.cos(angDiff(Math.atan2(dy, dx), p.aim)));
+    C.push({ z, x, y, w, zz: z.z + z.h * 0.45 });
+  }
+  if (!C.length) return null; let best = null, bs = -1;
+  for (const c of C) { let s = 0; for (const o of C) if (Math.hypot(o.x - c.x, o.y - c.y) < R) s += o.w; if (c.z.id === p._smZ) s *= 1.15; if (s > bs) { bs = s; best = c; } } // a slight stickiness so it doesn't flick between equal groups
+  let sx = 0, sy = 0, sw = 0, sz = 0; for (const o of C) if (Math.hypot(o.x - best.x, o.y - best.y) < R) { sx += o.x * o.w; sy += o.y * o.w; sz += o.zz * o.w; sw += o.w; }
+  p._smZ = best.z.id; return { z: best.z, pt: { x: sx / sw, y: sy / sw, z: sz / sw } };
+}
 function mechLock(p, M, far) {
   M = M || mechOf(p); if (!M) return null; const ranged = mechRanged(M) || far, range = far || (ranged ? M.range || 16 : M.reach + 2.4), cmin = ranged ? 0.64 : 0.17, a = p.aim;
   const ok = z => z && z.hp > 0 && !z.hidden && !z.sleep && !(z.ck || z.ckF) && Math.abs(z.z - p.z) < (ranged ? 6 : 2.6);
+  p._smPt = null; if (mechRanged(M) && !far && (!p.aimPt || p.aimPt.auto)) { const sm = mechSmart(p, M, M.range || 16); if (sm) { p._smPt = sm.pt; return sm.z; } } // (round 36k) no hand aim: smart aim
   const pz = p.z + 1.6, lob = M.atk === 'parcel' && !far; let zb = p.aimPt && p.aimPt.zb; /* (round 36j) a lobbed parcel goes over walls: no line of sight needed */
   if (ranged && !far && p.aimPt && !zb) { const A = p.aimPt; let nz = null, nd = 1e9; for (const z of W.zs) { if (!ok(z)) continue; const d = Math.hypot(z.x - A.x, z.y - A.y); if (d < z.r + 0.55 && d < nd) { nd = d; nz = z; } } // (round 36j) a lobbed / explosive mech shot goes where you point: on a zombie = that zombie (led), on the ground = that spot (no auto-lock)
     if (!nz && Math.hypot(A.x - p.x, A.y - p.y) <= range + 1) return null; zb = nz; }
@@ -164,7 +183,8 @@ function mechShoot(p, kind, LK, aa) {
   const s = (MECH_DIM[M.style] || {}).s || 1, sx = p.x + (ca * sh[0] - sa * sh[1]) * s, sy = p.y + (sa * sh[0] + ca * sh[1]) * s, z0 = pZ(p) + sh[2] * s;
   let T = p.aimPt ? { x: p.aimPt.x, y: p.aimPt.y, z: p.aimPt.z } : { x: p.x + ca * 10, y: p.y + sa * 10, z: pZ(p) + 0.6 };
   { const best = LK && LK.hp > 0 && Math.hypot(LK.x - p.x, LK.y - p.y) <= range + LK.r ? LK : LK === undefined ? mechLock(p, M) : null; // (round 35) the target mechPunch picked (mechLock: a wider cone, in sight)
-    if (best) { T = { x: best.x, y: best.y, z: best.z + best.h * 0.45 }; // (round 36j) lead it: aim where it will be when the shot arrives (its smoothed velocity × flight time)
+    if (best && p._smPt) { T = { x: p._smPt.x, y: p._smPt.y, z: p._smPt.z }; p._smPt = null; } /* (round 36k) the smart-aim point already has the lead and the group centre */
+    else if (best) { T = { x: best.x, y: best.y, z: best.z + best.h * 0.45 }; // (round 36j) lead it: aim where it will be when the shot arrives (its smoothed velocity × flight time)
       const spd = kind === 'rocket' ? 20 : kind === 'cannon' ? 45 : 0; let tt = 0; for (let it = 0; it < 3; it++) { const d = Math.hypot(T.x - p.x, T.y - p.y); tt = spd ? d / spd : 0.25 + Math.min(range, d) / 14; T.x = best.x + (best.evx || 0) * tt; T.y = best.y + (best.evy || 0) * tt; } } }
   if (kind === 'parcel') { const d = Math.min(range, Math.hypot(T.x - p.x, T.y - p.y)), ex = p.x + Math.cos(Math.atan2(T.y - p.y, T.x - p.x)) * d, ey = p.y + Math.sin(Math.atan2(T.y - p.y, T.x - p.x)) * d, cx = Math.floor(ex), cy = Math.floor(ey), L = inMap(cx, cy) ? gAt(cx, cy) : p.L, gz = L * FH + 0.15, tt = 0.25 + d / 14; // a parcel lobbed in an arc
     emit({ k: 'mrkt', o: p.i, kd: 'parcel', x: r2(sx), y: r2(sy), z: r2(z0), e: [r2(ex), r2(ey), r2(gz)], t: r2(tt) }); (W.dly = W.dly || []).push({ t: tt, box: 1, x: ex, y: ey, zz: gz, R: M.blast, dmg: M.dmg, o: p.i }); noiseAt(p.x, p.y, 5, p.z); return; }
