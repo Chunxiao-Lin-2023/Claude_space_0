@@ -38,6 +38,17 @@ for (const sid in ctx.SCRIPTS) {
   sc.questions.forEach((q, i) => { if (q.a == null || q.a >= q.opts.length) errs.push(`${sid}: 第 ${i + 1} 题答案不对`); });
   if (sc.questions[0].roles[sc.questions[0].a] !== sc.killer) errs.push(`${sid}: 第一题答案不是凶手`);
   sc.timeline.rows.forEach((r, i) => { if (r.length !== sc.timeline.cols.length + 1) errs.push(`${sid}: 时间线第 ${i + 1} 行列数不对`); });
+  /* Claude 相关数据（25_ai.js 用）和平面图 */
+  for (const r of sc.suspects) { if (!(sc.voice || {})[r]) errs.push(`${sid}: ${r} 没有 voice（Claude 扮演时的说话风格）`); if (!((sc.dodge || {})[r] || []).length) errs.push(`${sid}: ${r} 没有 dodge（剧本外问题的中性回避句）`); }
+  for (const S of sc.secrets || []) { if (!S.words || !S.words.length) errs.push(`${sid}: secrets 有一项没有 words`); (S.ok || []).forEach(i => need(i, 'secrets.ok')); }
+  if (!(sc.secrets || []).length) errs.push(`${sid}: 没有 secrets（Claude 不许提前说出的词）`);
+  if (Object.prototype.toString.call(sc.confess) !== '[object RegExp]') errs.push(`${sid}: 没有 confess 正则（凶手认罪说法）`);
+  for (const t in sc.topicScope || {}) if (!tops.has(t)) errs.push(`${sid}: topicScope.${t} 话题不存在`);
+  for (const t of sc.topics) if (!(sc.topicScope || {})[t.id]) errs.push(`${sid}: 话题 ${t.id} 没有 topicScope（自由提问归类用）`);
+  for (const t in sc.topicWords || {}) if (!tops.has(t)) errs.push(`${sid}: topicWords.${t} 话题不存在`);
+  for (const t of sc.pressTopics || []) if (!tops.has(t)) errs.push(`${sid}: pressTopics 里 ${t} 话题不存在`);
+  for (const A of sc.planAreas || []) { if (A.length < 5 || A[0] >= A[2] || A[1] >= A[3]) errs.push(`${sid}: planAreas 坐标不对 ${JSON.stringify(A)}`); if (A[4]) need(A[4], 'planAreas'); else if (!A[5]) errs.push(`${sid}: planAreas 没线索也没提示`); }
+  for (const c in sc.clues) if (sc.clues[c].img && !sc.clues[c].img.match(/^[a-z]+$/)) errs.push(`${sid}: 线索 ${c} 的 img 键名不对`);
   console.log(`${sc.title}: ${Object.keys(sc.clues).length} 条线索 · ${Object.keys(sc.facts).length} 条证词/推论 · ${sc.talk.length} 条 AI 发言 · ${n} 处引用已检查`);
 }
 if (errs.length) { console.log(errs.join('\n')); process.exit(1); }

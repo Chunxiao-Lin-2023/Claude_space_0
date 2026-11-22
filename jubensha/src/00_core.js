@@ -22,7 +22,10 @@ let ME = { seat: 0 };  /* 本机：座位号；角色从 G.seats 里查 */
 const S = () => SCRIPTS[G.sid];
 const myRole = () => G && G.seats ? G.seats[ME.seat] : null;
 const isHuman = r => G && G.seats && G.seats.includes(r);
-const roleName = r => { const sc = G ? S() : SCRIPTS.renchiren; return r === 'zhao' ? sc.victim : r === 'deduce' ? '推论' : (sc.roles[r] || {}).name || r; };
+const DEFAULT_SID = 'renchiren';
+/* 死者在证词/时间线里的 id：sc.victimId（默认 zhao） */
+const isVictim = (sc, r) => r === (sc.victimId || 'zhao');
+const roleName = r => { const sc = G ? S() : SCRIPTS[DEFAULT_SID]; return isVictim(sc, r) ? sc.victim : r === 'deduce' ? '推论' : (sc.roles[r] || {}).name || r; };
 const PHASES = [
   { id: 'read', name: '读本' },
   { id: 'intro', name: '自我介绍' },

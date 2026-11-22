@@ -5,7 +5,7 @@ const app = () => $('#app');
 const PH_MIN = { read: 5, intro: 2, r1: 5, d1: 15, r2: 5, d2: 20, final: 2, answer: 5 };
 const KIND = { truth: '实话', lie: '谎话', evade: '回避' };
 const narrow = () => innerWidth <= 640;
-function sealH(r, big) { const sc = G ? S() : SCRIPTS.renchiren; const R = r === 'zhao' ? { seal: '赵', color: '#3d3d3d' } : r === 'deduce' ? { seal: '推', color: '#8a2b1f' } : (sc && sc.roles[r]) || { seal: '?', color: '#555' }; return '<span class="seal' + (big ? ' big' : '') + '" style="--c:' + R.color + '">' + R.seal + '</span>'; }
+function sealH(r, big) { const sc = G ? S() : SCRIPTS[DEFAULT_SID]; const R = isVictim(sc, r) ? { seal: sc.victim[0], color: '#3d3d3d' } : r === 'deduce' ? { seal: '推', color: '#8a2b1f' } : (sc && sc.roles[r]) || { seal: '?', color: '#555' }; return '<span class="seal' + (big ? ' big' : '') + '" style="--c:' + R.color + '">' + R.seal + '</span>'; }
 function toast(t, ms) { const d = document.createElement('div'); d.className = 'toast'; d.textContent = t; document.body.appendChild(d); setTimeout(() => d.remove(), ms || 2600); }
 function fmtT(ms) { const s = Math.max(0, Math.floor(ms / 1000)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
 const phaseClock = () => Date.now() - (NET.skew || 0) - G.pt0;
@@ -218,7 +218,7 @@ function gR1() {
   const hots = ids.map((c, n) => { const p = sc.spots[c]; return `<button class="hot ${G.pub.includes(c) ? 'done' : ''}" style="left:${p[0] * 100}%;top:${p[1] * 100}%" onclick="UI.look('${c}')" aria-label="${esc(sc.clues[c].title)}"><b>${n + 1}</b><span>${esc(sc.clues[c].title)}</span></button>`; }).join('');
   const legend = `<div class="legend">${ids.map((c, n) => `<button class="sm ${G.pub.includes(c) ? 'ghost' : ''}" onclick="UI.look('${c}')"><b>${n + 1}</b> ${esc(sc.clues[c].title)}</button>`).join('')}</div>`;
   return `<div class="main"><div class="wrap"><div class="plan" onclick="UI.planClick(event)"><canvas id="plan"></canvas>${hots}</div>${legend}
-    <p class="mut small" style="text-align:center">赵慈善借住的屋子 · 5 月 15 日清晨 · 点位置查看</p>
+    <p class="mut small" style="text-align:center">${esc(sc.planCaption || '')} · 点位置查看</p>
     <div class="grid">${seen.map(c => clueCard(c)).join('')}</div></div></div>` + readyBar('开始讨论', `<span class="mut small">已看 ${seen.length}/${ids.length}</span>`, seen.length < 4 && humanRoles(G).length === 1);
 }
 function shownTo(id) { const t = [...new Set(G.log.filter(e => e.k === 'show' && e.ref === id).map(e => e.to))]; return t.length ? '<div class="small mut" style="margin-top:6px">已出示给：' + t.map(x => esc(roleName(x))).join('、') + '</div>' : ''; }
@@ -456,8 +456,8 @@ const UI = {
     const ids = Object.keys(sc.clues).filter(c => sc.clues[c].r === 1 && sc.spots[c]);
     const near = rad => ids.map(c => [c, Math.hypot(sc.spots[c][0] - x, (sc.spots[c][1] - y) / 1.5)]).filter(v => v[1] < rad).sort((p, q) => p[1] - q[1])[0];
     let hit = near(0.07);
-    if (!hit && x > 0.66 && x < 0.9 && y > 0.18 && y < 0.54) return toast('床板好像能整块掀开……第二轮搜证时可以深入调查。');
-    if (!hit && x > 0.6 && x < 0.86 && y > 0.58 && y < 0.72) hit = ['c_room'];
+    /* 剧本的 planAreas：[x0, y0, x1, y1, 线索 id 或 null, 提示]——画出来但不是第一轮线索的东西点了有反应 */
+    if (!hit) for (const A of sc.planAreas || []) if (x > A[0] && y > A[1] && x < A[2] && y < A[3]) { if (A[4]) { hit = [A[4]]; break; } return toast(A[5]); }
     if (!hit) hit = near(0.12);
     if (hit) return UI.look(hit[0]);
     toast('这里没发现什么。带标签、会发光的点才是线索。');

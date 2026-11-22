@@ -59,8 +59,11 @@ function flyLoop(t) {
 }
 addEventListener('resize', () => { ART.key = ''; if (typeof render === 'function') render(); });
 
-/* 赵家平面图（粉笔线） */
-function drawPlan(c, round) {
+/* 平面图和线索图片按剧本分发：剧本的 art.plan(c, round) / art.img(c, key)。《人吃人》的在下面 */
+function drawPlan(c, round) { const f = (S().art || {}).plan; if (f && c) f(c, round); }
+function drawImg(c) { const f = (S().art || {}).img; if (f) f(c, c.dataset.img); }
+/* 《人吃人》：赵家平面图（粉笔线） */
+function drawPlanRcr(c, round) {
   if (!c) return; const r = c.getBoundingClientRect(), dpr = Math.min(2, devicePixelRatio || 1); c.width = r.width * dpr; c.height = r.height * dpr;
   const x = c.getContext('2d'); x.scale(dpr, dpr); const W = r.width, H = r.height, u = W / 600;
   const bg = x.createLinearGradient(0, 0, W, H); bg.addColorStop(0, '#16221f'); bg.addColorStop(1, '#0d1513'); x.fillStyle = bg; x.fillRect(0, 0, W, H);
@@ -99,9 +102,9 @@ function drawPlan(c, round) {
   /* 村内地图图标 */
   chalk(1.5, .6); x.strokeRect(.85 * W, .8 * H, .08 * W, .1 * H); x.beginPath(); x.moveTo(.87 * W, .83 * H); x.lineTo(.91 * W, .87 * H); x.moveTo(.89 * W, .82 * H); x.lineTo(.89 * W, .88 * H); x.stroke();
 }
-/* 线索图片 */
-function drawImg(c) {
-  const k = c.dataset.img, x = c.getContext('2d'), W = c.width, H = c.height;
+/* 《人吃人》：线索图片（死亡讯息、村内地图） */
+function drawImgRcr(c, k) {
+  const x = c.getContext('2d'), W = c.width, H = c.height;
   if (k === 'msg') {
     x.fillStyle = '#f6f1e6'; x.fillRect(0, 0, W, H); paperNoise(x, W, H, .05);
     x.strokeStyle = '#7d0a0a'; x.lineWidth = 16; x.lineCap = 'round'; x.lineJoin = 'round';
@@ -126,3 +129,4 @@ function drawImg(c) {
     x.moveTo(382, 92); x.lineTo(392, 92); x.lineTo(392, 110); x.stroke();
   }
 }
+SCRIPTS.renchiren.art = { plan: drawPlanRcr, img: drawImgRcr };

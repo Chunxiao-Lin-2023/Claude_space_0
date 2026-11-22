@@ -117,8 +117,11 @@ function suspicion(g, viewer) {
   if (viewer) delete s[viewer];
   return s;
 }
+/* 剧本里的话说完后，AI 追问真人的话题顺序（默认：所有不带条件的话题） */
+const pressTopics = sc => sc.pressTopics || sc.topics.filter(t => !t.when).map(t => t.id);
 function aiVote(g, viewer) {
-  const s = suspicion(g, viewer), order = ['zhang', 'li', 'hu', 'wang'];
+  /* 平票时按 voteOrder 取第一个；默认凶手排最后（平票不会让凶手被投） */
+  const sc = SCRIPTS[g.sid], s = suspicion(g, viewer), order = sc.voteOrder || sc.suspects.filter(r => r !== sc.killer).concat(sc.killer);
   let best = null; for (const r of order) if (r in s && (best == null || s[r] > s[best])) best = r;
   return best;
 }
@@ -151,7 +154,7 @@ function aiStep(g) {
     }
     /* 剧本里的话说完了：真人是嫌疑人时，AI 轮流追问他还没被问过的话题 */
     const hs = humanRoles(g).filter(r => r !== 'det' && !promptFor(g, r));
-    for (const h of hs) for (const t of ['where', 'zhao', 'saw', 'village']) {
+    for (const h of hs) for (const t of pressTopics(SCRIPTS[g.sid])) {
       if (g.asked[h + ':' + t]) continue;
       const who = ais[(g.idleI++) % ais.length]; g.aiN[ph]++; answer(g, who, h, t); return true;
     }
@@ -167,7 +170,7 @@ function aiHasMore(g) {
   const ph = g.phase; if (ph !== 'd1' && ph !== 'd2' || g.aiN[ph] >= dif(g).budget[ph]) return false;
   const sc = SCRIPTS[g.sid], D = dif(g), round = ph === 'd1' ? 1 : 2, P = mkP(g);
   if (sc.talk.some(it => !g.used[it.id] && it.r <= round && (!it.diff || D[it.diff]) && (!it.when || it.when(P)) && [].concat(it.who).some(r => !g.seats.includes(r)))) return true;
-  return humanRoles(g).some(h => h !== 'det' && ['where', 'zhao', 'saw', 'village'].some(t => !g.asked[h + ':' + t]));
+  return humanRoles(g).some(h => h !== 'det' && pressTopics(sc).some(t => !g.asked[h + ':' + t]));
 }
 function selfThink(g, who, id) {
   const sc = SCRIPTS[g.sid], ent = (sc.show[who] || {})[id], P = mkP(g, who);
@@ -283,7 +286,7 @@ function finalize(g) {
   g.missed = {
     clues: Object.keys(sc.clues).filter(id => !g.pub.includes(id)),
     deduce: Object.keys(sc.facts).filter(id => id[0] === 'd' && !g.pub.includes(id)),
-    unbroken: ['li', 'zhang', 'hu'].filter(r => !g.brk[r].where)
+    unbroken: sc.suspects.filter(r => r !== sc.killer && !g.brk[r].where)
   };
 }
 function allReady(g) { return humanRoles(g).every(r => g.ready[r]); }
