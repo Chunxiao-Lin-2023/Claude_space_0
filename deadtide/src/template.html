@@ -12,6 +12,7 @@ __IOSMETA__
 html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--txt);font-family:var(--font);overscroll-behavior:none;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 canvas#cv{position:fixed;inset:0;width:100%;height:100%;display:block;cursor:crosshair;touch-action:none}
 #ov{position:fixed;inset:0;z-index:4;pointer-events:none;overflow:hidden}
+#hpov{position:fixed;inset:0;z-index:4;pointer-events:none;overflow:hidden}
 #ov .zmk{position:absolute;transform:translate(-50%,-100%);font-weight:900;text-shadow:0 0 3px #000,0 1px 3px #000,0 0 6px #000;pointer-events:none;font-family:system-ui,sans-serif}
 #ov .fl{position:absolute;transform:translate(-50%,-100%);font-weight:700;font-size:14px;text-shadow:0 1px 3px #000;white-space:nowrap}
 #ov .tag{position:absolute;transform:translate(-50%,-100%);text-align:center;font-size:11px;font-weight:600;color:#fff;text-shadow:0 1px 2px #000}
@@ -325,7 +326,7 @@ body.aiming canvas#cv{cursor:none}body.touch #reticle b{left:-34px;top:-38px}
 #ov .oa i{display:block;font-style:normal;font-size:20px;line-height:1}
 @media (max-height:520px){.mapgrid{grid-template-columns:repeat(auto-fill,minmax(104px,1fr))}.mgrid{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}.mcard p{font-size:11px}.mapcard p{display:none}}
 #iMechW.low{color:#ff8a6a}
-.hpb{position:absolute;width:46px;height:7px;margin:-3px 0 0 -23px;background:rgba(0,0,0,.6);border:1px solid rgba(0,0,0,.85);border-radius:4px;overflow:hidden;pointer-events:none}
+.hpb{position:absolute;left:0;top:0;will-change:transform;width:46px;height:7px;margin:-3px 0 0 -23px;background:rgba(0,0,0,.6);border:1px solid rgba(0,0,0,.85);border-radius:4px;overflow:hidden;pointer-events:none}
 .hpb.me{width:54px;margin-left:-27px;border-color:rgba(255,255,255,.55)}
 .hpb i{display:block;height:100%;transition:width .15s}
 .hpb b{position:absolute;left:0;bottom:0;height:2px;background:#ffad3a}
@@ -339,7 +340,7 @@ body.aiming canvas#cv{cursor:none}body.touch #reticle b{left:-34px;top:-38px}
 <div id="lowhp"></div>
 <div id="loading">尸潮堡垒</div>
 <canvas id="cv"></canvas>
-<div id="ov"></div>
+<div id="ov"></div><div id="hpov"></div>
 <div id="stickL" class="stick hidden"><i></i></div>
 <div id="stickR" class="stick hidden"><i></i></div>
 

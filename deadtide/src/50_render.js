@@ -528,16 +528,29 @@ function draw(dt) {
   RENDER.render(SCN, CAMO);
   drawOverlay();
 }
+// (round 34d perf) health bars live in their own layer as persistent elements: moved with a transform and only touched when a value changes,
+// so the per-frame overlay rebuild stays skippable and the low-health pulse animation is not restarted every frame
+const HPOV = document.getElementById('hpov'), HPB = new Map();
+function hpBars() {
+  if (!HPOV) return; const seen = new Set();
+  for (const p of W.p) { if (p.gone || p.dead || p.down) continue; const m = inMech(p) || (p._xfT != null && p._xfT < BAL.xformT && p.ride), hz = m ? 3.5 * ((MECH_DIM[(MECHS[p.veh] || {}).style] || {}).s || 1) : 1.62;
+    const [sx, sy] = w2s(p.rx != null ? p.rx : p.x, p.ry != null ? p.ry : p.y, (p.zv != null ? p.zv : p.z) + (p.rjz != null ? p.rjz : p.jz || 0) + hz); if (sx < -40 || sx > VW + 40 || sy < -20 || sy > VH + 20) continue;
+    const f = clamp(p.hp / (p.maxHp || 100), 0, 1), low = f < 0.3, col = f > 0.6 ? '#5fd35a' : f > 0.3 ? '#e8c53a' : '#ff4a3a', hf = m ? clamp(mhpOf(p) / MECHS[p.veh].hp, 0, 1) : -1;
+    let e = HPB.get(p.i); if (!e) { const d = document.createElement('div'); d.innerHTML = '<i></i><b></b>'; HPOV.appendChild(d); e = { d, i: d.firstChild, b: d.lastChild, k: '' }; HPB.set(p.i, e); }
+    seen.add(p.i);
+    const cls = 'hpb' + (low ? ' low' : '') + (p.i === ME ? ' me' : ''); if (e.d.className !== cls) e.d.className = cls;
+    const tr = 'translate3d(' + (sx | 0) + 'px,' + (sy | 0) + 'px,0)'; if (e.tr !== tr) { e.tr = tr; e.d.style.transform = tr; }
+    const k = ((f * 100) | 0) + col + '|' + (hf >= 0 ? (hf * 100) | 0 : -1);
+    if (e.k !== k) { e.k = k; e.i.style.width = ((f * 100) | 0) + '%'; e.i.style.background = col; e.b.style.display = hf >= 0 ? '' : 'none'; if (hf >= 0) e.b.style.width = ((hf * 100) | 0) + '%'; } }
+  for (const [i, e] of HPB) { const on = seen.has(i); if (e.on !== on) { e.on = on; e.d.style.display = on ? '' : 'none'; } }
+}
 // DOM overlay: floating loot text, teammate tag, off-screen markers
 const OV = document.getElementById('ov');
 function drawOverlay() {
   if (!OV) return;
   let html = '';
   // (round 34d) a health bar over every survivor (an orange hull line under it in a mech); it pulses red when low
-  for (const p of W.p) { if (p.gone || p.dead || p.down) continue; const m = inMech(p) || (p._xfT != null && p._xfT < BAL.xformT && p.ride), hz = m ? 3.5 * ((MECH_DIM[(MECHS[p.veh] || {}).style] || {}).s || 1) : 1.62;
-    const [sx, sy] = w2s(p.rx != null ? p.rx : p.x, p.ry != null ? p.ry : p.y, (p.zv != null ? p.zv : p.z) + (p.rjz != null ? p.rjz : p.jz || 0) + hz); if (sx < -40 || sx > VW + 40 || sy < -20 || sy > VH + 20) continue;
-    const f = clamp(p.hp / (p.maxHp || 100), 0, 1), low = f < 0.3, col = f > 0.6 ? '#5fd35a' : f > 0.3 ? '#e8c53a' : '#ff4a3a', hf = m ? clamp(mhpOf(p) / MECHS[p.veh].hp, 0, 1) : -1;
-    html += `<div class="hpb${low ? ' low' : ''}${p.i === ME ? ' me' : ''}" style="left:${sx | 0}px;top:${sy | 0}px"><i style="width:${(f * 100) | 0}%;background:${col}"></i>${hf >= 0 ? `<b style="width:${(hf * 100) | 0}%"></b>` : ''}</div>`; }
+  hpBars();
   for (const f of RND.floats) { const [sx, sy] = w2s(f.x, f.y, f.z); html += `<div class="fl" style="left:${sx | 0}px;top:${sy | 0}px;opacity:${clamp(2.2 - f.t, 0, 1).toFixed(2)};color:${f.col}">${f.text}</div>`; }
   // 尸城求生: sleepers show a "z", a growing "?" while they're noticing you, a "!" as they wake
   if (isSiege()) {
@@ -576,7 +589,7 @@ function drawOverlay() {
       used.push([ax, ay]); arrows++;
       html += `<div class="oa" style="left:${ax | 0}px;top:${ay | 0}px;color:${m.c}"><i style="transform:rotate(${an}rad)">➤</i>${m.n} ${Math.round(m.d)} 米</div>`;
     } }
-  OV.innerHTML = html;
+  if (OV._h !== html) { OV._h = html; OV.innerHTML = html; } /* (round 34d perf) only rebuild when something changed */
 }
 
 /* ---------- minimap ---------- */
