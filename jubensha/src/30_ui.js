@@ -400,7 +400,10 @@ function modalHTML(k) {
   }
   if (k === 'link') {
     const ids = (G.own[r] || []).concat(G.pub), sel = U.linkSel;
-    return dlg('指出关联', `<p class="mut small">选两条你觉得能放在一起看的线索或证词。对了就会得出推论、逼出实话或抓到谎话；错了扣评级。</p><div class="optl">${ids.map(id => `<button class="${sel.includes(id) ? 'on' : ''}" onclick="UI.linkPick('${id}')">${sel.includes(id) ? '<b class="acc">［' + (sel.indexOf(id) + 1) + '］</b> ' : ''}${itemBtn(id)}</button>`).join('')}</div>`,
+    /* 每条都显示内容摘要；选中的两条在上面完整展开，不用另开窗口看细节 */
+    const full = id => sc.clues[id] ? sc.clues[id].text : sc.facts[id].text;
+    const selBox = sel.length ? `<div class="linksel">${sel.map((id, n) => `<div class="card"><b class="acc">［${n + 1}］</b> <b>${itemBtn(id)}</b>${sc.clues[id] && sc.clues[id].img ? `<canvas class="cimg" data-img="${sc.clues[id].img}" width="420" height="300"></canvas>` : ''}<div class="small" style="white-space:pre-wrap;margin-top:4px">${esc(full(id))}</div><button class="sm ghost" onclick="UI.linkPick('${id}')">取消选择</button></div>`).join('')}</div>` : '';
+    return dlg('指出关联', `<p class="mut small">选两条你觉得能放在一起看的线索或证词。对了就会得出推论、逼出实话或抓到谎话；错了扣评级。</p>${selBox}<div class="optl">${ids.map(id => `<button class="linkopt ${sel.includes(id) ? 'on' : ''}" onclick="UI.linkPick('${id}')">${sel.includes(id) ? '<b class="acc">［' + (sel.indexOf(id) + 1) + '］</b> ' : ''}<b>${itemBtn(id)}</b>${sc.clues[id] ? `<span class="ex">${esc(full(id))}</span>` : ''}</button>`).join('')}</div>`,
       `<span class="mut small">已选 ${sel.length}/2</span><button class="pri" ${sel.length === 2 ? '' : 'disabled'} onclick="UI.doLink()">放在一起看</button>`);
   }
   if (k === 'say') {
@@ -490,9 +493,12 @@ const UI = {
   toTitle(b) { if (NET.role && b && !U.titleArm) { U.titleArm = 1; b.textContent = '再点一次确认（会离开房间）'; setTimeout(() => U.titleArm = 0, 3000); return; } save(); NET.leave(); G = null; UI.go('title'); },
   again(net) { const g = G; if (NET.role === 'host' || net) { NET.restart(); return; } G = newGame(g.sid, g.mode, g.seats, g.diff); save(); render(); },
   modal(k, keep) {
-    const db = $('.mask .db'), st = keep && db ? db.scrollTop : 0;
-    closeMask(); const h = modalHTML(k); if (!h) { U.modalOpen = null; return; } U.modalOpen = k;
-    document.body.insertAdjacentHTML('beforeend', h); $$('.mask canvas.cimg').forEach(c => drawImg(c));
+    const db = $('.mask .db'), st = keep && db ? db.scrollTop : 0, old = $('.mask');
+    const h = modalHTML(k); if (!h) { closeMask(); U.modalOpen = null; return; }
+    /* 同一个弹窗刷新：原地换内容，不重放淡入动画（以前每点一下都闪一下） */
+    if (keep && old && U.modalOpen === k && $$('.mask').length === 1) { const t = document.createElement('div'); t.innerHTML = h; old.innerHTML = t.firstElementChild.innerHTML; }
+    else { closeMask(); document.body.insertAdjacentHTML('beforeend', h); }
+    U.modalOpen = k; $$('.mask canvas.cimg').forEach(c => drawImg(c));
     if (keep) { const d = $('.mask .db'); if (d) d.scrollTop = st; } else sfx('tick');
     if (k === 'ai') { const box = $('.mask .ak'); if (box) AIKit.bind(box, () => { if (G) { aiAfter(); save(); netSend(); } UI.modal('ai', 1); render(); }); }
     sendStatus();

@@ -163,6 +163,8 @@ h3.grp{font-size:15px;color:var(--mut);margin:10px 0 2px}
 .tl{table-layout:fixed;width:100%}.tl th:first-child,.tl td.t{width:58px}
 @media (max-width:640px){.aichip .akl{display:none}}
 .outcome{margin-top:12px;font-size:18px;font-family:var(--serif);font-weight:700}.outcome.win{color:#8fd19e}.outcome.lose{color:#e88}
+.linkopt{text-align:left}.linkopt .ex{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:12px;color:var(--mut);font-weight:400;margin-top:2px}
+.linksel{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0 12px}.linksel .card{padding:10px}.linksel canvas{width:100%;height:auto;max-height:150px;object-fit:contain;border-radius:6px;margin-top:6px}@media (max-width:640px){.linksel{grid-template-columns:1fr}}
 .aichip{font-size:12px;padding:2px 8px;border-radius:999px;border:1px solid var(--acc);color:var(--acc);background:transparent;min-height:28px}
 .prompt-badge{background:#d9524a;color:#fff;border-radius:999px;padding:0 7px;font-size:12px;margin-left:4px}
 @media (max-width:640px){.hot{font-size:13px;padding:0;min-height:30px;min-width:30px;width:30px;height:30px}.hot span{display:none}.hot b{display:inline}.legend{display:flex}.seats{flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;padding:4px 8px 22px;gap:4px}.seats .seal.big{width:34px;height:34px;font-size:19px;border-radius:7px}.st{min-width:58px;padding:4px 6px}.st .nm{font-size:11px}.sbar{width:44px}.hide-n,.partner{display:none}.seats .logtg{bottom:2px;right:6px;min-height:26px;padding:2px 8px;font-size:12px}.top{padding:6px 8px;gap:4px}.top .tm{display:none}.book{padding:18px 16px;font-size:17px}.msg .tx{font-size:16px}.top .ph{font-size:16px}button{padding:9px 12px}}
@@ -2467,7 +2469,10 @@ function modalHTML(k) {
   }
   if (k === 'link') {
     const ids = (G.own[r] || []).concat(G.pub), sel = U.linkSel;
-    return dlg('指出关联', `<p class="mut small">选两条你觉得能放在一起看的线索或证词。对了就会得出推论、逼出实话或抓到谎话；错了扣评级。</p><div class="optl">${ids.map(id => `<button class="${sel.includes(id) ? 'on' : ''}" onclick="UI.linkPick('${id}')">${sel.includes(id) ? '<b class="acc">［' + (sel.indexOf(id) + 1) + '］</b> ' : ''}${itemBtn(id)}</button>`).join('')}</div>`,
+    /* 每条都显示内容摘要；选中的两条在上面完整展开，不用另开窗口看细节 */
+    const full = id => sc.clues[id] ? sc.clues[id].text : sc.facts[id].text;
+    const selBox = sel.length ? `<div class="linksel">${sel.map((id, n) => `<div class="card"><b class="acc">［${n + 1}］</b> <b>${itemBtn(id)}</b>${sc.clues[id] && sc.clues[id].img ? `<canvas class="cimg" data-img="${sc.clues[id].img}" width="420" height="300"></canvas>` : ''}<div class="small" style="white-space:pre-wrap;margin-top:4px">${esc(full(id))}</div><button class="sm ghost" onclick="UI.linkPick('${id}')">取消选择</button></div>`).join('')}</div>` : '';
+    return dlg('指出关联', `<p class="mut small">选两条你觉得能放在一起看的线索或证词。对了就会得出推论、逼出实话或抓到谎话；错了扣评级。</p>${selBox}<div class="optl">${ids.map(id => `<button class="linkopt ${sel.includes(id) ? 'on' : ''}" onclick="UI.linkPick('${id}')">${sel.includes(id) ? '<b class="acc">［' + (sel.indexOf(id) + 1) + '］</b> ' : ''}<b>${itemBtn(id)}</b>${sc.clues[id] ? `<span class="ex">${esc(full(id))}</span>` : ''}</button>`).join('')}</div>`,
       `<span class="mut small">已选 ${sel.length}/2</span><button class="pri" ${sel.length === 2 ? '' : 'disabled'} onclick="UI.doLink()">放在一起看</button>`);
   }
   if (k === 'say') {
@@ -2557,9 +2562,12 @@ const UI = {
   toTitle(b) { if (NET.role && b && !U.titleArm) { U.titleArm = 1; b.textContent = '再点一次确认（会离开房间）'; setTimeout(() => U.titleArm = 0, 3000); return; } save(); NET.leave(); G = null; UI.go('title'); },
   again(net) { const g = G; if (NET.role === 'host' || net) { NET.restart(); return; } G = newGame(g.sid, g.mode, g.seats, g.diff); save(); render(); },
   modal(k, keep) {
-    const db = $('.mask .db'), st = keep && db ? db.scrollTop : 0;
-    closeMask(); const h = modalHTML(k); if (!h) { U.modalOpen = null; return; } U.modalOpen = k;
-    document.body.insertAdjacentHTML('beforeend', h); $$('.mask canvas.cimg').forEach(c => drawImg(c));
+    const db = $('.mask .db'), st = keep && db ? db.scrollTop : 0, old = $('.mask');
+    const h = modalHTML(k); if (!h) { closeMask(); U.modalOpen = null; return; }
+    /* 同一个弹窗刷新：原地换内容，不重放淡入动画（以前每点一下都闪一下） */
+    if (keep && old && U.modalOpen === k && $$('.mask').length === 1) { const t = document.createElement('div'); t.innerHTML = h; old.innerHTML = t.firstElementChild.innerHTML; }
+    else { closeMask(); document.body.insertAdjacentHTML('beforeend', h); }
+    U.modalOpen = k; $$('.mask canvas.cimg').forEach(c => drawImg(c));
     if (keep) { const d = $('.mask .db'); if (d) d.scrollTop = st; } else sfx('tick');
     if (k === 'ai') { const box = $('.mask .ak'); if (box) AIKit.bind(box, () => { if (G) { aiAfter(); save(); netSend(); } UI.modal('ai', 1); render(); }); }
     sendStatus();
