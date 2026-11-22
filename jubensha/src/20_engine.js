@@ -242,13 +242,13 @@ function enterPhase(g, id) {
   const sc = SCRIPTS[g.sid]; g.phase = id; g.pt0 = Date.now(); g.ready = {};
   if (id === 'intro') for (const r of aiRoles(g)) logPush(g, { k: 'intro', who: r, text: sc.roles[r].intro });
   if (id === 'r1') logPush(g, { k: 'sys', text: '第一轮：现场勘查开始。赵家的平面图上标出了可以查看的地方。' });
-  if (id === 'd1') { for (const c in sc.clues) if (sc.clues[c].r === 1 && !g.pub.includes(c)) g.pub.push(c); logPush(g, { k: 'sys', text: '第一轮讨论开始。现场线索已全部放进线索箱。' }); }
+  if (id === 'd1') { for (const c in sc.clues) if (sc.clues[c].r === 1 && !g.pub.includes(c)) g.pub.push(c); logPush(g, { k: 'sys', text: '第一轮讨论开始。现场线索已全部放进线索箱。' }); aiStep(g); /* 开场先有人说话，不冷场 */ }
   if (id === 'r2') {
     const D = dif(g); for (const r of humanRoles(g)) g.ap[r] = D.ap;
     g.aiAp = {}; for (const a of aiRoles(g)) g.aiAp[a] = g.seats.includes('det') ? 1 : D.aiAp;
     logPush(g, { k: 'sys', text: '第二轮：搜身搜屋。每人 ' + D.ap + ' 点行动点；你每查一次，AI 也轮流查一次，结束时 AI 把剩下的点用完。' });
   }
-  if (id === 'd2') { aiSearch(g); logPush(g, { k: 'sys', text: '第二轮讨论开始。把证词和线索对起来。' }); }
+  if (id === 'd2') { aiSearch(g); logPush(g, { k: 'sys', text: '第二轮讨论开始。把证词和线索对起来。' }); aiStep(g); }
   if (id === 'final') {
     g.prompts = [];
     logPush(g, { k: 'sys', text: '讨论结束。投票前，每个人说最后一句话。' });

@@ -102,7 +102,7 @@ async function voiceOne(g, e) {
     if (line) line = line.replace(new RegExp('^(' + R.name + '|' + R.seal + ')[：:]\\s*'), '').replace(/^[「“"]+|[」”"]+$/g, '').trim();
     const why = aiCheck(g, e, line, orig);
     if (why) { e.v = 's'; e.aiWhy = why; } else { e.text0 = orig; e.text = line; e.v = 'a'; }
-  } catch (err) { e.v = 's'; AIJ.err = err.message; if (/密钥|401/.test(err.message)) { AIKit.setCfg({ on: false }); toast('Claude 调用失败：' + err.message + '。已改回脚本 AI，可在设置里重新打开。', 5000); } }
+  } catch (err) { e.v = 's'; AIJ.err = err.message; if (/密钥|401/.test(err.message)) { AIKit.setCfg({ on: false }); g.ai = 0; g.log.forEach(x => { if (x.v === 'p') x.v = 's'; }); toast('Claude 调用失败：' + err.message + '。已改回脚本 AI，可在设置里重新打开。', 5000); } }
   if (G === g) { save(); netSend(); render(); }
 }
 
@@ -139,7 +139,7 @@ function routeReq(g, f, R, tops, items) {
 const QRE = /[？?]|吗|呢|谁|什么|哪|怎么|为什么|为啥|是不是|有没有|几点|多少|难道/;
 async function handleFree(f) {
   const g = G, sc = SCRIPTS[g.sid], seat = g.seats.indexOf(f.role); if (seat < 0) return;
-  const msg = (t, back) => { g.freeCur = null; g.freeMsg = g.freeMsg || {}; g.freeMsg[f.role] = { n: g.nid++, text: t, back: back ? f.text : '' }; save(); netSend(); render(); };
+  const msg = (t, back) => { g.freeCur = null; g.freeMsg = g.freeMsg || {}; g.freeMsg[f.role] = { n: g.nid++, text: t, back: back ? f.text : '', pid: f.pid, say: f.say }; save(); netSend(); render(); };
   const callC = async o => { try { return await AIKit.call(o); } catch (err) { AIJ.err = err.message; throw err; } finally { g.freeCur = null; } };
   const pr = f.pid != null ? g.prompts.find(p => p.id === f.pid && p.to === f.role) : null;
   try {
@@ -154,11 +154,11 @@ async function handleFree(f) {
         user: '【这个人物的剧本】\n' + (R.bookText || TEXT[R.book]).slice(0, 3000) + '\n\n【可选说法】\n' + opts.map((o, k) => k + '. [' + o.kind + '] ' + o.say).join('\n') + (pr ? '\n\n【被问的问题】' + (pr.q || topicQ(sc, pr.topic)) : '') + '\n\n【玩家打的话】' + f.text,
         tool: { name: 'judge', schema: { type: 'object', properties: { index: { type: 'integer', description: '最接近的可选说法编号；都不接近填 -1' }, kind: { type: 'string', enum: ['truth', 'evade', 'lie'] }, contradicts: { type: 'boolean', description: '是否和人物剧本里的事实矛盾' } }, required: ['index', 'kind', 'contradicts'] } }
       });
-      if (!killer && (v.kind === 'lie' || v.contradicts)) return msg('你不是凶手，不能说谎：这句话和你的剧本对不上。换个说法，或者回避。');
+      if (!killer && (v.kind === 'lie' || v.contradicts)) return msg('你不是凶手，不能说谎：这句话和你的剧本对不上。换个说法，或者回避。', 1);
       const k = Number.isInteger(v.index) && v.index >= 0 && v.index < opts.length ? v.index : -1;
       if (k >= 0) {
         const o = opts[k];
-        if (!killer && o.kind === 'lie') return msg('你不是凶手，不能说谎。');
+        if (!killer && o.kind === 'lie') return msg('你不是凶手，不能说谎。', 1);
         apply(g, pr ? { t: 'say', pid: pr.id, i: k, fromFree: 1, q: f.text } : { t: 'say', topic: o.tp, i: o.i, fromFree: 1, q: f.text }, seat);
       } else if (pr) {
         /* 不像任何一条：当作回避，记下原话 */

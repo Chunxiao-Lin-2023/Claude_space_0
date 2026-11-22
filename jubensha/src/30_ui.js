@@ -108,7 +108,7 @@ function topBar() {
   return `<div class="top"><button class="ghost sm" onclick="UI.modal('menu')">≡</button>
     <span class="ph">${esc(p.name)}</span><span class="tm" id="ptm">${mins ? fmtT(phaseClock()) + ' / 建议 ' + mins + ' 分' : ''}</span>${partnerLine()}<span class="sp"></span>
     ${r ? sealH(r) + '<span class="nm small hide-n">' + esc(sc.roles[r].name) + '</span>' : ''}
-    ${G.ai ? `<button class="aichip" onclick="${NET.role === 'guest' ? "toast('房主开着 Claude：AI 玩家由 Claude 扮演')" : "UI.modal('ai')"}" title="AI 玩家由 Claude 扮演">✦ Claude</button>` : ''}
+    ${G.ai ? `<button class="aichip" onclick="${NET.role === 'guest' ? "toast('房主开着 Claude：AI 玩家由 Claude 扮演')" : "UI.modal('ai')"}" title="AI 玩家由 Claude 扮演">✦<span class="akl"> Claude</span></button>` : ''}
     <button class="sm ghost" onclick="UI.modal('book')" title="剧本">📖</button>
     <button class="sm ghost" onclick="UI.modal('notes')" title="笔记">📝</button>
     <button class="sm ghost" onclick="UI.modal('clues')" title="线索箱">🗂 ${G.pub.filter(i => sc.clues[i]).length + (G.own[r] || []).length}${unseen ? '<span class="dot"></span>' : ''}</button>
@@ -146,7 +146,7 @@ function renderGame() {
   const voicedNow = G.log.filter(e => e.v === 'a' && !AIJ.voiced[e.i]); voicedNow.forEach(e => AIJ.voiced[e.i] = 1);
   if (voicedNow.length && U.seenI) typeNew(voicedNow);
   U.seenI = G.log.length ? G.log[G.log.length - 1].i : 0;
-  const fm = (G.freeMsg || {})[r]; if (fm && fm.n !== U.freeSeen) { U.freeSeen = fm.n; toast(fm.text, 4200); const fi = $('#freeq'); if (fm.back && fi && !fi.value) fi.value = fm.back; }
+  const fm = (G.freeMsg || {})[r]; if (fm && fm.n !== U.freeSeen) { U.freeSeen = fm.n; toast(fm.text, 4200); if (fm.back) { const reopen = fm.pid != null && G.prompts.some(p => p.id === fm.pid) ? 'prompt' : fm.say ? 'say' : null; if (reopen && !U.modalOpen) UI.modal(reopen); const fi = $(reopen === 'prompt' ? '#freea' : reopen === 'say' ? '#frees' : '#freeq'); if (fi && !fi.value) { fi.value = fm.back; fi.select(); } } }
   $$('#app canvas.cimg').forEach(c => drawImg(c));
   if (ph === 'r1') drawPlan($('#plan'), 1);
   if (ph === 'r2') drawPlan($('#plan'), 2);
@@ -234,7 +234,7 @@ function gR2() {
     const its = items.filter(c => (sc.clues[c].owner || 'scene') === o); if (!its.length) return '';
     const cards = its.map((c, i) => { const t = G.taken[c]; const mine = t === r, pubd = G.pub.includes(c);
       if (t) return `<div class="it ${mine ? 'got' : 'gone'}">${mine || pubd ? '<b>' + esc(sc.clues[c].title) + '</b>' : '？'}<span class="small mut">${mine ? (pubd ? '你搜到 · 已公开' : '你搜到 · 未公开') : esc(roleName(t)) + '搜走' + (pubd ? ' · 已公开' : '')}</span></div>`;
-      const dis = o === r || ap <= 0; return `<button class="it" ${dis ? 'disabled' : ''} onclick="act({t:'search',id:'${c}'})"><b>${o === 'scene' ? '🔍 ' + esc(sc.clues[c].title) : '线索 ' + (i + 1)}</b><span class="small mut">${o === r ? '不能搜自己' : ap <= 0 ? '行动点用完了' : '花 1 点查看'}</span></button>`; }).join('');
+      const dis = o === r || ap <= 0; return `<button class="it" ${dis ? 'disabled' : ''} onclick="UI.search('${c}')"><b>${o === 'scene' ? '🔍 ' + esc(sc.clues[c].title) : '线索 ' + (i + 1)}</b><span class="small mut">${o === r ? '不能搜自己' : ap <= 0 ? '行动点用完了' : '花 1 点查看'}</span></button>`; }).join('');
     return `<div style="margin-bottom:14px"><h3>${o === 'scene' ? '🏚 现场深入调查' : sealH(o) + ' ' + esc(roleName(o))}</h3><div class="items">${cards}</div></div>`;
   }).join('');
   const mine = (G.own[r] || []);
@@ -285,10 +285,22 @@ function gFinal() {
   const pick = opts.length ? `<div class="card" style="max-width:820px;margin:12px auto"><h3>你的最后一句话</h3><p class="mut small">说完就进入答卷，说的话会影响 AI 怎么投票。</p><div class="optl">${opts.map((e, i) => `<button onclick="act({t:'say',topic:'final',i:${i}})"><span class="k k-${e.kind}">${KIND[e.kind]}</span>${esc(e.say)}</button>`).join('')}</div></div>` : '';
   return `<div class="main">${logHTML(e => e.ph === 'final')}${pick}</div>` + readyBar('去答卷', `<span class="mut small">${r === 'det' ? '听完他们的陈述，然后由你指认。' : ''}</span>`, !!opts.length);
 }
+/* 选项顺序每局打乱（正确答案不总在第一个）；指认题按座位顺序不打乱 */
+/* 弹窗里显示 AI 实际说出口的那句（Claude 改写过就用改写的） */
+function promptText(p) {
+  const e = G.log.filter(x => x.k === 'ask' && x.who === p.from && x.to === p.to && x.i < p.id).pop();
+  return e && e.v === 'a' ? e.text : (p.q || topicQ(S(), p.topic));
+}
+function optOrder(q, i) {
+  const idx = q.opts.map((_, j) => j); if (q.killer) return idx;
+  let h = 2166136261; for (const ch of String(G.gid) + ':' + i) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0;
+  for (let k = idx.length - 1; k > 0; k--) { h = Math.imul(h ^ (h >>> 13), 1274126177) >>> 0; const m = h % (k + 1); [idx[k], idx[m]] = [idx[m], idx[k]]; }
+  return idx;
+}
 function gAnswer() {
   const sc = S(), r = myRole(), mine = G.answers[r];
   if (!U.sheet || U.sheetGid !== G.gid) { U.sheet = (mine || sc.questions.map(() => null)).slice(); U.sheetGid = G.gid; }
-  const qs = sc.questions.map((q, i) => `<div class="q"><div class="qt">${i + 1}. ${esc(q.q)}${i === 0 ? ' <span class="stamp" style="font-size:14px;padding:0 6px">指认</span>' : ''}</div><div class="os">${q.opts.map((o, j) => `<button class="${U.sheet[i] === j ? 'on' : ''}" ${mine ? 'disabled' : ''} onclick="UI.ans(${i},${j})">${esc(o)}</button>`).join('')}</div></div>`).join('');
+  const qs = sc.questions.map((q, i) => `<div class="q"><div class="qt">${i + 1}. ${esc(q.q)}${i === 0 ? ' <span class="stamp" style="font-size:14px;padding:0 6px">指认</span>' : ''}</div><div class="os">${optOrder(q, i).map(j => `<button class="${U.sheet[i] === j ? 'on' : ''}" ${mine ? 'disabled' : ''} onclick="UI.ans(${i},${j})">${esc(q.opts[j])}</button>`).join('')}</div></div>`).join('');
   const done = U.sheet.every(x => x != null), left = U.sheet.filter(x => x == null).length;
   const wait = humanRoles(G).filter(x => !G.answers[x]).map(x => sc.roles[x].name);
   return `<div class="main"><div class="book" style="font-family:var(--sans)"><h2>答　卷</h2><p class="mut" style="text-indent:0">第一题就是你的指认。${G.seats.includes('det') ? '侦探的指认决定结果，其他人的投票只作参考。' : '所有人（包括 AI）投票，票多的被指认；平票则无人被指认。'}</p>${qs}</div></div>
@@ -328,8 +340,8 @@ function coach() {
   let st = lsGet('tut', 0);
   if (st === 0 && U.target) { st = 1; lsSet('tut', 1); }
   if (st === 1 && G.acts > 0) { st = 2; lsSet('tut', 2); }
-  const txt = ['点上面任意一个人，选中他。', '点「提问」问他问题，或者「出示」线索给他看。', '不知道问什么？点「👂 听大家说」让 AI 先聊；卡住了就用「💡 提示」或「🔗 指出关联」。'][st];
-  document.body.insertAdjacentHTML('beforeend', `<div class="coach">${esc(txt)}${st === 2 ? ' <button class="sm" onclick="lsSet(\'tut\',3);coach()">知道了</button>' : ''} <button class="sm ghost" onclick="lsSet('tut',3);coach()">跳过引导</button></div>`);
+  const txt = ['点上面任意一个人，选中他。', G.ai ? '点「提问」问他问题、「出示」线索给他看，或者直接在下面打字问。' : '点「提问」问他问题，或者「出示」线索给他看。', '不知道问什么？点「👂 听大家说」让 AI 先聊；卡住了就用「💡 提示」或「🔗 指出关联」。'][st];
+  document.body.insertAdjacentHTML('beforeend', `<div class="coach ${G.ai ? 'up' : ''}">${esc(txt)}${st === 2 ? ' <button class="sm" onclick="lsSet(\'tut\',3);coach()">知道了</button>' : ''} <button class="sm ghost" onclick="lsSet('tut',3);coach()">跳过引导</button></div>`);
 }
 
 /* ---------- 弹窗 ---------- */
@@ -360,12 +372,13 @@ function modalHTML(k) {
       <div style="display:flex;flex-direction:column;gap:10px">${body || '<p class="mut">还没有。</p>'}</div>`);
   }
   if (k === 'tl') {
-    const times = ['20:30', '21:00', '21:05', '21:10', '21:15', '21:25', '21:30', '21:40'], cols = sc.timeline.cols;
-    const facts = G.pub.filter(i => sc.facts[i] && sc.facts[i].t);
+    const cols = sc.timeline.cols, facts = G.pub.filter(i => sc.facts[i] && sc.facts[i].t);
+    /* 只列已公开证词里出现的时间点：没公开的时间不能出现在表上，否则等于剧透 */
+    const times = [...new Set(facts.map(i => sc.facts[i].t))].sort();
     const caught = new Set(sc.contra.filter((c, i) => G.contraUsed[i]).flatMap(c => [c.a, c.b].filter(x => sc.facts[x] && sc.facts[x].who !== 'deduce' && x.startsWith('f_' + c.who))));
     const cell = (t, c) => facts.filter(i => sc.facts[i].t === t && sc.facts[i].who === c).map(i => `<span class="${caught.has(i) ? 'lie' : ''}">${esc(sc.facts[i].text.replace(/^[^：]+：/, ''))}</span>`).join('<br>');
     const other = G.pub.filter(i => sc.facts[i] && !sc.facts[i].t);
-    return dlg('时间线板', `<p class="mut small">只放已经公开的证词。红色虚线 = 已经被当场指出矛盾的说法。注意：凶手的证词可能是假的。</p><div style="overflow:auto"><table class="tl"><tr><th>时间</th>${cols.map(c => `<th>${esc(roleName(c))}</th>`).join('')}</tr>
+    return dlg('时间线板', `<p class="mut small">只放已经公开的证词。红色虚线 = 已经被当场指出矛盾的说法。注意：凶手的证词可能是假的。</p><div style="overflow:auto">${times.length ? '' : '<p class="mut">还没有带时间的证词。问问大家那晚在哪。</p>'}<table class="tl" ${times.length ? '' : 'hidden'}><tr><th>时间</th>${cols.map(c => `<th>${esc(roleName(c))}</th>`).join('')}</tr>
       ${times.map(t => `<tr><td class="t">${t}</td>${cols.map(c => `<td>${cell(t, c)}</td>`).join('')}</tr>`).join('')}</table></div>
       <h3 style="margin-top:12px">其他证词与推论</h3>${other.length ? other.map(i => `<div class="fact ${i[0] === 'd' ? 'ded' : ''} ${caught.has(i) ? 'lie' : ''}" style="margin:6px 0">${esc(sc.facts[i].text)}</div>`).join('') : '<p class="mut">还没有。</p>'}`);
   }
@@ -394,7 +407,7 @@ function modalHTML(k) {
     const p = G.prompts.find(x => x.to === r); if (!p) return '';
     const list = deckFor(G, r, p.topic);
     const fb = G.ai ? `<div class="freebox"><input id="freea" maxlength="120" autocomplete="off" placeholder="或者自己打字回答…" onkeydown="if(event.key==='Enter')UI.freeAns(${p.id})"><button onclick="UI.freeAns(${p.id})">回答</button></div><p class="mut small">${r === sc.killer ? '你是凶手，可以撒谎。' : '你不是凶手：和你剧本矛盾的话会被拒绝。'}</p>` : '';
-    return dlg(esc(roleName(p.from)) + '问你', `<div class="msg">${sealH(p.from)}<div class="bd"><div class="tx">${p.clue ? '（出示了' + esc(itemTitle(sc, p.clue)) + '）' : ''}${esc(p.q || topicQ(sc, p.topic))}</div></div></div>
+    return dlg(esc(roleName(p.from)) + '问你', `<div class="msg">${sealH(p.from)}<div class="bd"><div class="tx">${p.clue ? '（出示了' + esc(itemTitle(sc, p.clue)) + '）' : ''}${esc(promptText(p))}</div></div></div>
       ${p.clue ? clueCard(p.clue) : ''}<h3 style="margin-top:12px">你怎么回答？</h3>
       <div class="optl">${list.map((e, i) => `<button onclick="UI.doSay(null,${i},${p.id})"><span class="k k-${e.kind}">${KIND[e.kind]}</span>${esc(e.say)}${e.tip ? ' <span class="mut small">（' + esc(e.tip) + '）</span>' : ''}</button>`).join('')}</div>${fb}
       ${G.prompts.filter(x => x.to === r).length > 1 ? `<p class="mut small">后面还有 ${G.prompts.filter(x => x.to === r).length - 1} 个问题。</p>` : ''}`);
@@ -424,6 +437,11 @@ const UI = {
   },
   tab(t) { U.tab = t; render(); },
   tgt(x) { U.target = U.target === x ? null : x; render(); },
+  search(c) {
+    act({ t: 'search', id: c });
+    if (!(G.own[myRole()] || []).includes(c)) return;
+    showClue(c, `<div class="optl" style="margin-top:10px"><button class="pri" onclick="act({t:'publish',id:'${c}'});UI.close()">公开给大家</button><button onclick="UI.close()">先留着（只有我知道）</button></div><p class="mut small">留着的线索讨论时也能出示——出示就等于公开。</p>`);
+  },
   look(c) { act({ t: 'look', id: c }); U.modalOpen = null; showClue(c); },
   /* 点在平面图空白处 / 家具 / 文字上：就近打开线索；床是第二轮的深入调查；其他地方提示看圆点 */
   planClick(ev) {
@@ -443,7 +461,11 @@ const UI = {
   doSay(tp, i, pid) { UI.close(); act(pid != null ? { t: 'say', i, pid } : { t: 'say', topic: tp, i }); },
   linkPick(id) { const s = U.linkSel, k = s.indexOf(id); if (k >= 0) s.splice(k, 1); else { if (s.length >= 2) s.shift(); s.push(id); } UI.modal('link', 1); },
   doLink() { const [a, b] = U.linkSel; U.linkSel = []; UI.close(); act({ t: 'link', a, b }); },
-  hint() { act({ t: 'hint' }); },
+  hint(ok) {
+    const cost = dif(G).hintCost;
+    if (cost && !ok && !U.hintOk) return document.body.insertAdjacentHTML('beforeend', dlg('💡 用提示？', `<p>这一局每用一次提示，评级扣 ${cost} 分。</p><div class="optl"><button class="pri" onclick="U.hintOk=1;UI.close();UI.hint(1)">用一次（本局不再询问）</button><button onclick="UI.close()">先不用</button></div>`));
+    act({ t: 'hint' });
+  },
   listen() { if (!aiHasMore(G)) toast('AI 没有新的话了：去提问、出示证据、指出关联，或者用提示。', 3200); act({ t: 'listen' }); },
   endDisc() { if (humanRoles(G).length === 1 && !U.endArm) { U.endArm = 1; render(); setTimeout(() => { if (U.endArm) { U.endArm = 0; if (G && (G.phase === 'd1' || G.phase === 'd2')) render(); } }, 4000); return; } U.endArm = 0; act({ t: 'ready' }); },
   logAll() { U.logAll = !U.logAll; render(); },
@@ -474,7 +496,7 @@ const UI = {
 const STATUS = { book: '在看剧本', notes: '在记笔记', clues: '在翻线索箱', tl: '在看时间线', ask: '在想问什么', show: '在挑证据', link: '在找关联', prompt: '在回答问题', say: '在想怎么说', chat: '在打字' };
 function sendStatus() { if (!G || humanRoles(G).length < 2 || U.scr !== 'game') return; const s = STATUS[U.modalOpen] || ''; if (s === U.lastStatus) return; U.lastStatus = s; act({ t: 'status', s }); }
 function closeMask() { $$('.mask').forEach(m => m.remove()); }
-function showClue(c) { closeMask(); U.modalOpen = null; document.body.insertAdjacentHTML('beforeend', dlg('线索', clueCard(c))); $$('.mask canvas.cimg').forEach(x => drawImg(x)); sfx('fact'); }
+function showClue(c, extra) { closeMask(); U.modalOpen = null; lsSet(localKey('seenc'), [...new Set([...seenClues(), c])]); document.body.insertAdjacentHTML('beforeend', dlg('线索', clueCard(c) + (extra || ''))); $$('.mask canvas.cimg').forEach(x => drawImg(x)); sfx('fact'); }
 document.addEventListener('click', e => { const p = e.target.closest('.book p.q'); if (p) UI.addQuote(p.textContent.trim()); });
 setInterval(() => { const e = $('#ptm'); if (e && G && PH_MIN[G.phase]) e.textContent = fmtT(phaseClock()) + ' / 建议 ' + PH_MIN[G.phase] + ' 分'; }, 1000);
 setInterval(() => { if (G && G.phase === 'reveal' && U.scr === 'game' && U.tlShown < S().timeline.rows.length) { U.tlShown++; const rows = $$('table.tl tr'); if (rows[U.tlShown]) rows[U.tlShown].style.visibility = ''; if (U.tlShown >= S().timeline.rows.length) { const b = $$('.card button').find(x => x.textContent === '全部显示'); if (b) b.remove(); } } }, 900);
