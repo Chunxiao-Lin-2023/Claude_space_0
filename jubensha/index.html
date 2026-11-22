@@ -2211,7 +2211,7 @@ function gR1() {
   const sc = S(), ids = Object.keys(sc.clues).filter(c => sc.clues[c].r === 1), seen = ids.filter(c => G.pub.includes(c));
   const hots = ids.map((c, n) => { const p = sc.spots[c]; return `<button class="hot ${G.pub.includes(c) ? 'done' : ''}" style="left:${p[0] * 100}%;top:${p[1] * 100}%" onclick="UI.look('${c}')" aria-label="${esc(sc.clues[c].title)}"><b>${n + 1}</b><span>${esc(sc.clues[c].title)}</span></button>`; }).join('');
   const legend = `<div class="legend">${ids.map((c, n) => `<button class="sm ${G.pub.includes(c) ? 'ghost' : ''}" onclick="UI.look('${c}')"><b>${n + 1}</b> ${esc(sc.clues[c].title)}</button>`).join('')}</div>`;
-  return `<div class="main"><div class="wrap"><div class="plan"><canvas id="plan"></canvas>${hots}</div>${legend}
+  return `<div class="main"><div class="wrap"><div class="plan" onclick="UI.planClick(event)"><canvas id="plan"></canvas>${hots}</div>${legend}
     <p class="mut small" style="text-align:center">赵慈善借住的屋子 · 5 月 15 日清晨 · 点位置查看</p>
     <div class="grid">${seen.map(c => clueCard(c)).join('')}</div></div></div>` + readyBar('开始讨论', `<span class="mut small">已看 ${seen.length}/${ids.length}</span>`, seen.length < 4 && humanRoles(G).length === 1);
 }
@@ -2419,6 +2419,19 @@ const UI = {
   tab(t) { U.tab = t; render(); },
   tgt(x) { U.target = U.target === x ? null : x; render(); },
   look(c) { act({ t: 'look', id: c }); U.modalOpen = null; showClue(c); },
+  /* 点在平面图空白处 / 家具 / 文字上：就近打开线索；床是第二轮的深入调查；其他地方提示看圆点 */
+  planClick(ev) {
+    if (ev.target.closest('.hot')) return;
+    const sc = S(), r = ev.currentTarget.getBoundingClientRect(), x = (ev.clientX - r.left) / r.width, y = (ev.clientY - r.top) / r.height;
+    const ids = Object.keys(sc.clues).filter(c => sc.clues[c].r === 1 && sc.spots[c]);
+    const near = rad => ids.map(c => [c, Math.hypot(sc.spots[c][0] - x, (sc.spots[c][1] - y) / 1.5)]).filter(v => v[1] < rad).sort((p, q) => p[1] - q[1])[0];
+    let hit = near(0.07);
+    if (!hit && x > 0.66 && x < 0.9 && y > 0.18 && y < 0.54) return toast('床板好像能整块掀开……第二轮搜证时可以深入调查。');
+    if (!hit && x > 0.6 && x < 0.86 && y > 0.58 && y < 0.72) hit = ['c_room'];
+    if (!hit) hit = near(0.12);
+    if (hit) return UI.look(hit[0]);
+    toast('这里没发现什么。带标签、会发光的点才是线索。');
+  },
   doAsk(t, tp) { UI.close(); act({ t: 'ask', to: t, topic: tp }); },
   doShow(t, id) { UI.close(); act({ t: 'show', to: t, id }); },
   doSay(tp, i, pid) { UI.close(); act(pid != null ? { t: 'say', i, pid } : { t: 'say', topic: tp, i }); },
