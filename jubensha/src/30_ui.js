@@ -127,7 +127,7 @@ function renderGame() {
   const m0 = $('.main'), samePh = U._ph === ph, keep = m0 && samePh ? m0.scrollTop : null;
   const atBottom = m0 && (m0.scrollHeight - m0.scrollTop - m0.clientHeight < 60);
   const r = myRole(), fresh = G.log.filter(e => e.i > U.seenI);
-  if (G.gid !== U.gid) { U.gid = G.gid; U.seenI = fresh.length > 8 ? G.log[G.log.length - 1].i : 0; U.unread = 0; U.sheet = null; U.tlShown = 0; U.linkSel = []; U.endArm = 0; U.hintSeen = (G.hintText[r] || {}).n || 0; }
+  if (G.gid !== U.gid) { U.gid = G.gid; U.seenI = fresh.length > 8 ? G.log[G.log.length - 1].i : 0; U.unread = 0; U.sheet = null; U.tlShown = 0; U.linkSel = []; U.endArm = 0; U.hintSeen = (G.hintText[r] || {}).n || 0; U.hintOk = 0; U.pendSearch = null; U.target = null; U.freeSeen = ((G.freeMsg || {})[r] || {}).n; }
   const fq0 = $('#freeq'), fqv = fq0 ? fq0.value : '', fqf = fq0 && document.activeElement === fq0, fqs = fq0 ? fq0.selectionStart : 0;
   app().innerHTML = `<div class="scr" ${samePh ? 'style="animation:none"' : ''}>${topBar()}${f()}</div>`;
   const fq1 = $('#freeq'); if (fq1 && fqv) { fq1.value = fqv; } if (fq1 && fqf) { fq1.focus(); try { fq1.setSelectionRange(fqs, fqs); } catch (e) { } }
@@ -432,7 +432,7 @@ function modalHTML(k) {
 const UI = {
   go(s) { U.scr = s; U.modalOpen = null; closeMask(); render(); },
   hub(b) { if (G && U.scr === 'game' && NET.role) { if (!U.hubArm) { U.hubArm = 1; b.textContent = '再点一次确认'; setTimeout(() => U.hubArm = 0, 3000); return; } } save(); NET.leave(); location.href = '../'; },
-  resume() { G = loadSave('renchiren'); ME = { seat: 0 }; U.scr = 'game'; U.gid = null; render(); },
+  resume() { G = loadSave('renchiren'); ME = { seat: 0 }; U.scr = 'game'; U.gid = null; aiAfter(); render(); },
   resumeNet(reopen) { UI.close(); G = loadSave('renchiren'); ME = { seat: 0 }; U.gid = null;
     if (reopen && !ARTIFACT) { const code = G.room; seatLeft(G, 1); U.scr = 'game'; save(); render(); NET.host(code); }
     else { seatLeft(G, 1); G.mode = 'sus'; U.scr = 'game'; save(); render(); } },

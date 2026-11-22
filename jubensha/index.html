@@ -1782,6 +1782,7 @@ function enterPhase(g, id) {
     g.aiAp = {}; for (const a of aiRoles(g)) g.aiAp[a] = g.seats.includes('det') ? 1 : D.aiAp;
     logPush(g, { k: 'sys', text: '第二轮：搜身搜屋。每人 ' + D.ap + ' 点行动点；你每查一次，AI 也轮流查一次，结束时 AI 把剩下的点用完。' });
   }
+  if (id === 'r2') g.prompts = []; /* 第一轮没回答的问题不带进第二轮 */
   if (id === 'd2') { aiSearch(g); logPush(g, { k: 'sys', text: '第二轮讨论开始。把证词和线索对起来。' }); aiStep(g); }
   if (id === 'final') {
     g.prompts = [];
@@ -1809,6 +1810,8 @@ function finalize(g) {
   g.score = {};
   for (const h of humanRoles(g)) {
     const ans = g.answers[h] || [], right = sc.questions.map((q, i) => ans[i] === q.a);
+    /* 凶手不能指认自己：他的指认题按“有没有逃脱”算 */
+    if (h === sc.killer) right[0] = g.verdict !== sc.killer;
     let s = (right[0] ? 50 : 0) + right.slice(1).filter(Boolean).length * 50 / (sc.questions.length - 1);
     let side = null; if (sc.sides[h]) { side = !!sc.sides[h](g, h); if (side) s += 10; }
     const pen = (g.hints[h] || 0) * D.hintCost + (g.wrong[h] || 0) * 2, adj = Math.round(s) - pen;
@@ -1901,7 +1904,8 @@ function needVoice(g, e) {
 function aiAfter() {
   if (!G) return;
   G.ai = aiOn() ? 1 : 0;
-  if (!G.ai) return;
+  /* 没有 Claude（刷新后没密钥、关掉了）：还在等改写的句子直接用脚本原句，不能一直显示“…” */
+  if (!G.ai) { if (NET.role !== 'guest') G.log.forEach(e => { if (e.v === 'p') e.v = 's'; }); return; }
   const pend = G.log.filter(e => needVoice(G, e));
   /* 太旧的不补了，只说最近的几句 */
   pend.slice(0, -6).forEach(e => e.v = 's');
@@ -2198,7 +2202,7 @@ function renderGame() {
   const m0 = $('.main'), samePh = U._ph === ph, keep = m0 && samePh ? m0.scrollTop : null;
   const atBottom = m0 && (m0.scrollHeight - m0.scrollTop - m0.clientHeight < 60);
   const r = myRole(), fresh = G.log.filter(e => e.i > U.seenI);
-  if (G.gid !== U.gid) { U.gid = G.gid; U.seenI = fresh.length > 8 ? G.log[G.log.length - 1].i : 0; U.unread = 0; U.sheet = null; U.tlShown = 0; U.linkSel = []; U.endArm = 0; U.hintSeen = (G.hintText[r] || {}).n || 0; }
+  if (G.gid !== U.gid) { U.gid = G.gid; U.seenI = fresh.length > 8 ? G.log[G.log.length - 1].i : 0; U.unread = 0; U.sheet = null; U.tlShown = 0; U.linkSel = []; U.endArm = 0; U.hintSeen = (G.hintText[r] || {}).n || 0; U.hintOk = 0; U.pendSearch = null; U.target = null; U.freeSeen = ((G.freeMsg || {})[r] || {}).n; }
   const fq0 = $('#freeq'), fqv = fq0 ? fq0.value : '', fqf = fq0 && document.activeElement === fq0, fqs = fq0 ? fq0.selectionStart : 0;
   app().innerHTML = `<div class="scr" ${samePh ? 'style="animation:none"' : ''}>${topBar()}${f()}</div>`;
   const fq1 = $('#freeq'); if (fq1 && fqv) { fq1.value = fqv; } if (fq1 && fqf) { fq1.focus(); try { fq1.setSelectionRange(fqs, fqs); } catch (e) { } }
@@ -2503,7 +2507,7 @@ function modalHTML(k) {
 const UI = {
   go(s) { U.scr = s; U.modalOpen = null; closeMask(); render(); },
   hub(b) { if (G && U.scr === 'game' && NET.role) { if (!U.hubArm) { U.hubArm = 1; b.textContent = '再点一次确认'; setTimeout(() => U.hubArm = 0, 3000); return; } } save(); NET.leave(); location.href = '../'; },
-  resume() { G = loadSave('renchiren'); ME = { seat: 0 }; U.scr = 'game'; U.gid = null; render(); },
+  resume() { G = loadSave('renchiren'); ME = { seat: 0 }; U.scr = 'game'; U.gid = null; aiAfter(); render(); },
   resumeNet(reopen) { UI.close(); G = loadSave('renchiren'); ME = { seat: 0 }; U.gid = null;
     if (reopen && !ARTIFACT) { const code = G.room; seatLeft(G, 1); U.scr = 'game'; save(); render(); NET.host(code); }
     else { seatLeft(G, 1); G.mode = 'sus'; U.scr = 'game'; save(); render(); } },
@@ -2866,7 +2870,8 @@ NET.leave = function () { NET.tok++; NET.leaving = 1; setTimeout(() => NET.leavi
 /* 剧本杀 · 开始界面：共用的 TitleKit（shared/titlekit）
    标题页交给 TitleKit：继续上次 / 开始新的案件 / 和朋友联机 / 存档 / 设置 / 玩法说明 / 游戏厅。
    选剧本（setup）和联机大厅（lobby：剧本、模式、难度、各自的角色）仍是游戏自己的二级界面。 */
-const tkSave = () => { const sv = loadSave('renchiren'); return sv && sv.phase !== 'reveal' ? sv : null; };
+/* 看真相时刷新也能回来接着看（以前真相页的存档不算，刷新就没了） */
+const tkSave = () => loadSave(DEFAULT_SID);
 const TK = TitleKit.create({
   id: 'jubensha', title: '夜半推理馆', hub: HUB, onHub: () => { NET.leave(); location.href = '../'; }, artifact: ARTIFACT, z: 50, hidden: true, shade: false,
   logo: '<div class="tk-s" style="letter-spacing:.5em;margin:0 0 6px">剧本杀</div><div class="tk-t" style="font-family:var(--serif);color:#e8c77a;letter-spacing:.12em">夜半推理馆</div>',
@@ -2879,8 +2884,8 @@ const TK = TitleKit.create({
     label: '存档', slots: 1, remove: true,
     note: '每一步都会自动存档。只有一个存档位：开始新的案件会覆盖上次没下完的局。',
     list: () => { const sv = tkSave(); return [sv ? { slot: 1, title: SCRIPTS[sv.sid].title + ' · ' + PHASES[phaseIdx(sv.phase)].name + (sv.mode === 'net' ? ' · 联机局' + (sv.room ? '（房间 ' + sv.room + '）' : '') : ''), detail: DIFF[sv.diff] ? DIFF[sv.diff].name : '', time: sv.pt0 || sv.t0 || 0 } : { slot: 1, empty: true, title: '没有进行中的案件' }]; },
-    load: () => { const sv = tkSave(); if (!sv) return; TK.hide(); if (sv.mode === 'net' && (sv.seats.filter(Boolean).length > 1 || sv.guestRole)) UI.modal('resumeNet'); else UI.resume(); },
-    remove: () => lsSet('save-renchiren', null)
+    load: () => { const sv = tkSave(); if (!sv) return; TK.hide(); if (sv.mode === 'net' && sv.phase !== 'reveal' && (sv.seats.filter(Boolean).length > 1 || sv.guestRole)) UI.modal('resumeNet'); else UI.resume(); },
+    remove: () => lsSet('save-' + DEFAULT_SID, null)
   },
   sound: { get: () => !OPT.sound, set: v => { OPT.sound = !v; saveOpt(); } },
   settings: [

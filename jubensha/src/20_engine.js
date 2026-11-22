@@ -251,6 +251,7 @@ function enterPhase(g, id) {
     g.aiAp = {}; for (const a of aiRoles(g)) g.aiAp[a] = g.seats.includes('det') ? 1 : D.aiAp;
     logPush(g, { k: 'sys', text: '第二轮：搜身搜屋。每人 ' + D.ap + ' 点行动点；你每查一次，AI 也轮流查一次，结束时 AI 把剩下的点用完。' });
   }
+  if (id === 'r2') g.prompts = []; /* 第一轮没回答的问题不带进第二轮 */
   if (id === 'd2') { aiSearch(g); logPush(g, { k: 'sys', text: '第二轮讨论开始。把证词和线索对起来。' }); aiStep(g); }
   if (id === 'final') {
     g.prompts = [];
@@ -278,6 +279,8 @@ function finalize(g) {
   g.score = {};
   for (const h of humanRoles(g)) {
     const ans = g.answers[h] || [], right = sc.questions.map((q, i) => ans[i] === q.a);
+    /* 凶手不能指认自己：他的指认题按“有没有逃脱”算 */
+    if (h === sc.killer) right[0] = g.verdict !== sc.killer;
     let s = (right[0] ? 50 : 0) + right.slice(1).filter(Boolean).length * 50 / (sc.questions.length - 1);
     let side = null; if (sc.sides[h]) { side = !!sc.sides[h](g, h); if (side) s += 10; }
     const pen = (g.hints[h] || 0) * D.hintCost + (g.wrong[h] || 0) * 2, adj = Math.round(s) - pen;

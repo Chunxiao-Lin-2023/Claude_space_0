@@ -23,7 +23,8 @@ function needVoice(g, e) {
 function aiAfter() {
   if (!G) return;
   G.ai = aiOn() ? 1 : 0;
-  if (!G.ai) return;
+  /* 没有 Claude（刷新后没密钥、关掉了）：还在等改写的句子直接用脚本原句，不能一直显示“…” */
+  if (!G.ai) { if (NET.role !== 'guest') G.log.forEach(e => { if (e.v === 'p') e.v = 's'; }); return; }
   const pend = G.log.filter(e => needVoice(G, e));
   /* 太旧的不补了，只说最近的几句 */
   pend.slice(0, -6).forEach(e => e.v = 's');
