@@ -352,7 +352,23 @@ body.touch .hcard{background:rgba(14,16,20,.62)}
 @media (min-width:501px){body.touch #hTC{min-width:0;max-width:max(200px,calc(100vw - 560px - var(--sa-l) - var(--sa-r)))}}
 @media (pointer:coarse) and (max-height:500px){body.touch #pcards{padding:3px 7px}body.touch #pcards .nm{font-size:10px}body.touch #pcards .bar{height:4px}body.touch #pcards .pbar{gap:1px}
   body.touch #hTC{left:calc(176px + var(--sa-l));transform:none;align-items:flex-start;max-width:calc(100vw - 176px - 380px - var(--sa-l) - var(--sa-r));background:rgba(14,16,20,.38)}body.touch .hcard{background:rgba(14,16,20,.42)}
-  body.touch #objp{display:none!important}body.touch #hTL{width:160px}body.touch .items{font-size:11px}body.touch .res b{font-size:14px}}
+  body.touch #objp{display:none!important}
+body.touch #hTL{width:160px}body.touch .items{font-size:11px}body.touch .res b{font-size:14px}}
+/* (round 36b) desktop: the weapon bar at the bottom already shows every gun's ammo and the grenades, so the top-left card keeps only medkits, respawns and what you're riding */
+body:not(.touch) #hTL>div.hcard:nth-of-type(2) .wpn,body:not(.touch) #hTL>div.hcard:nth-of-type(2) .rl{display:none}
+body:not(.touch) #hTL .items>div:nth-child(1),body:not(.touch) #hTL .items>div:nth-child(3){display:none}
+body:not(.touch) #hTL .items{flex-wrap:wrap;gap:1px 10px}body:not(.touch):not([data-veh="6"]) #hTL #iShlW,body:not(.touch):not([data-veh="5"]) #hTL #iFuelW{display:none}body:not(.touch) #hTL .items>#iMechW{flex-basis:100%}
+@media (pointer:coarse) and (max-height:500px),(pointer:coarse) and (max-width:500px){
+  body.touch #hTL .items>#iMechW{white-space:normal}
+  /* (round 36b) phones: no weapon / item card — the ammo is on the weapon key, grenades / medkits on theirs; only what you're riding (mech, gyrocopter, tank) shows, in one small line */
+  body.touch #hTL>div.hcard:nth-of-type(2) .wpn,body.touch #hTL>div.hcard:nth-of-type(2) .rl{display:none}
+  body.touch #hTL .items>div{display:none}
+  body[data-veh="6"].touch #hTL .items>#iShlW:not(.hidden),body[data-veh="5"].touch #hTL .items>#iFuelW:not(.hidden),body.touch.inmech #hTL .items>#iMechW:not(.hidden){display:block}
+  body.touch #hTL>div.hcard:nth-of-type(2){padding:3px 7px}
+  body.touch:not([data-veh="1"]):not([data-veh="2"]):not([data-veh="3"]):not([data-veh="4"]):not([data-veh="5"]):not([data-veh="6"]) #hTL>div.hcard:nth-of-type(2){display:none}
+  body[data-veh="1"].touch #hTL>div.hcard:nth-of-type(2),body[data-veh="2"].touch #hTL>div.hcard:nth-of-type(2),body[data-veh="3"].touch #hTL>div.hcard:nth-of-type(2),body[data-veh="4"].touch #hTL>div.hcard:nth-of-type(2){display:none}
+  body[data-veh].touch.inmech #hTL>div.hcard:nth-of-type(2){display:block}
+}
 </style>
 <style>
 /* TitleKit — shared start screen for every game in the Claude_space_0 hub.
@@ -5050,7 +5066,7 @@ const ZT = {
   shade: { name: '隐身者', hp: 420, spd: 1.5, r: 0.3, h: 1.25, dmg: 12, bdmg: 10, cd: 0.9, sc: 1.2, look: 'walker', skin: '#50505e', elite: { k: 'cloak', cd: 6, col: '#c0c0e0', tip: '隐身摸到你身边偷袭，留意空气里的扭曲，附近炸一下就现形' } },
 };
 const ELITES = ['blinker', 'caller', 'warden', 'shade'];
-const BUILD_TAG = '第 36 轮之二'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
+const BUILD_TAG = '第 36 轮之三'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
 // aim assist (SET.assist): fire-button lock range (x weapon range), lock-on time before it fires, spread while auto-aimed, mouse/finger magnet
 const PORT = 1.25; // firing port: your own shots pass a wall / door you built if it is this close to you
 const ASSIST = [{ name: '关', range: 0, acq: 0, spread: 1, mag: 0 }, { name: '标准', range: 0.75, acq: 0.3, spread: 1.5, mag: 1 }, { name: '强', range: 1, acq: 0, spread: 1, mag: 1 }];
@@ -6342,7 +6358,7 @@ function mechShoot(p, kind, LK, aa) {
     if (best) T = { x: best.x, y: best.y, z: best.z + best.h * 0.45 }; }
   if (kind === 'parcel') { const d = Math.min(range, Math.hypot(T.x - p.x, T.y - p.y)), ex = p.x + Math.cos(Math.atan2(T.y - p.y, T.x - p.x)) * d, ey = p.y + Math.sin(Math.atan2(T.y - p.y, T.x - p.x)) * d, cx = Math.floor(ex), cy = Math.floor(ey), L = inMap(cx, cy) ? gAt(cx, cy) : p.L, gz = L * FH + 0.15, tt = 0.25 + d / 14; // a parcel lobbed in an arc
     emit({ k: 'mrkt', o: p.i, kd: 'parcel', x: r2(sx), y: r2(sy), z: r2(z0), e: [r2(ex), r2(ey), r2(gz)], t: r2(tt) }); (W.dly = W.dly || []).push({ t: tt, box: 1, x: ex, y: ey, zz: gz, R: M.blast, dmg: M.dmg, o: p.i }); noiseAt(p.x, p.y, 5, p.z); return; }
-  let dx = T.x - sx, dy = T.y - sy, dz = (T.z != null ? T.z : z0 - 1) - z0; const hl = Math.hypot(dx, dy) || 1; dz = clamp(dz / hl, -1.2, 0.4) * hl; const n = Math.hypot(dx, dy, dz) || 1; dx /= n; dy /= n; dz /= n;
+  let dx = T.x - sx, dy = T.y - sy, dz = (T.z != null ? T.z : z0 - 1) - z0; const hl = Math.hypot(dx, dy) || 1; dz = clamp(dz / hl, airborne(p) ? -6 : -1.2, 0.4) * hl; /* (round 36b) from the air it can shoot steeply down (was capped at -1.2: rockets at close targets flew over them) */ const n = Math.hypot(dx, dy, dz) || 1; dx /= n; dy /= n; dz /= n;
   const want = Math.min(range, Math.hypot(T.x - sx, T.y - sy) + 0.3), wall = rayWorld(sx, sy, z0, dx, dy, dz, range, { lean: LEAN }); let bd = Math.min(wall.d, p.aimPt && !fist ? want : range), hz = null;
   for (const z of W.zs) { if (z.hp <= 0 || z.hidden) continue; const d = rayBox(sx, sy, z0, dx, dy, dz, z.x - z.r - 0.15, z.y - z.r - 0.15, z.z, z.r * 2 + 0.3, z.r * 2 + 0.3, z.h, bd); if (d >= 0 && d < bd) { bd = d; hz = z; } }
   const ex = sx + dx * bd, ey = sy + dy * bd, ez = Math.max(z0 + dz * bd, 0), spd = kind === 'rocket' ? 20 : kind === 'cannon' ? 45 : 26, tt = bd / spd;
@@ -12060,7 +12076,8 @@ function hudTick(dt) {
   const rl = me.reloadT > 0 ? 1 - me.reloadT / WPN[me.reloadW != null ? me.reloadW : wi].reload : me.reloadVis > 0 ? 1 - me.reloadVis / w.reload : me.medT > 0 ? 1 - me.medT / (me.selfRev ? 3 : BAL.healTime) : 0;
   $('wRl').style.width = (rl * 100) + '%';
   if (inMech(me)) { $('iNadeL').textContent = mechOf(me).sn; $('iNade').textContent = (me.mcd || 0) > 0 ? Math.ceil(me.mcd) + 's' : '✓'; } else { $('iNadeL').textContent = GREN[me.gt || 0].sn; $('iNade').textContent = gCount(me, me.gt || 0); } // (round 34) in a mech the grenade key is its skill $('iMed').textContent = me.meds; $('iKill').textContent = me.kills; $('iLife').textContent = me.lives != null ? me.lives : '-';
-  { const mw = $('iMechW'), sh = me.ride && MECHS[me.veh]; mw.classList.toggle('hidden', !sh); if (sh) { const M = MECHS[me.veh], im = inMech(me), h = mhpOf(me); $('iMech').textContent = M.name + (me.mtr > 0 ? ' · 变形中' : im ? '' : '（X / 变形）') + ' · 装甲 ' + Math.round(h) + '/' + M.hp + ' · 电 ' + Math.floor(me.bat != null ? me.bat : BAL.mechBat) + 's' + (im ? ' · ' + M.sn + ((me.mcd || 0) > 0 ? ' ' + Math.ceil(me.mcd) + 's' : ' 好了') : ''); mw.classList.toggle('low', (me.bat || 0) < BAL.mechLow || h < M.hp * 0.25); } } // (round 34b) mech line whenever you drive
+  { const mw = $('iMechW'), sh = me.ride && MECHS[me.veh]; mw.classList.toggle('hidden', !sh); if (sh) { const M = MECHS[me.veh], im = inMech(me), h = mhpOf(me); $('iMech').textContent = INP.touch ? '装甲 ' + Math.round(h) + ' · 电 ' + Math.floor(me.bat != null ? me.bat : BAL.mechBat) + (me.mtr > 0 ? ' · 变形中' : '') : M.name + (me.mtr > 0 ? ' · 变形中' : im ? '' : '（X / 变形）') + ' · 装甲 ' + Math.round(h) + '/' + M.hp + ' · 电 ' + Math.floor(me.bat != null ? me.bat : BAL.mechBat) + 's' + (im ? ' · ' + M.sn + ((me.mcd || 0) > 0 ? ' ' + Math.ceil(me.mcd) + 's' : ' 好了') : ''); /* (round 36b) on touch the skill cooldown lives on the skill key; the line is just hull and energy */ mw.classList.toggle('low', (me.bat || 0) < BAL.mechLow || h < M.hp * 0.25); } } // (round 34b) mech line whenever you drive
+  { const dv = String(me.ride ? me.veh : 0); if (document.body.dataset.veh !== dv) document.body.dataset.veh = dv; const im = inMech(me) || me.mtr > 0; if (document.body.classList.contains('inmech') !== im) document.body.classList.toggle('inmech', im); } // (round 36b) phones show only the info for what you're riding
   { const sw = $('iShlW'), ht = ownsVeh(me, 6); sw.classList.toggle('hidden', !ht); if (ht) $('iShl').textContent = me.shl || 0; } // (round 31) tank shells
   { const fw = $('iFuelW'), has = ownsVeh(me, 5); fw.classList.toggle('hidden', !has); if (has) { const f = Math.ceil(me.fuel || 0); $('iFuel').textContent = f + ' 秒 · 弹 ' + (me.gam || 0); fw.style.color = f < BAL.fuelLow ? '#ff7a6a' : airborne(me) ? '#9fe0ff' : ''; } } // (round 29) gyrocopter fuel
   uiKeys(me);

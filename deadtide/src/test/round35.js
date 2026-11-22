@@ -92,6 +92,12 @@ const { chromium } = require('playwright');
       out[v] = { dbg, lock: lock === z, hurt: Math.round(9999 - z.hp), moved: +Math.hypot(me.x - o.x, me.y - o.y).toFixed(2) }; }
     me.ride = false; me.mform = 0; window.__dbg.god = false; return out; });
   check('mech aiming: 赤刃 turns to a zombie 45° off its aim and steps in to chop it; 苍隼 locks its rockets onto one 9 tiles out, 43° off', s[2].lock && s[2].hurt > 0 && s[2].moved > 0.5 && s[5].lock && s[5].hurt > 0, JSON.stringify(s));
+  // (round 36b) 苍隼 in the air: rockets at a zombie close below land on it (the downward angle used to be capped and they overshot)
+  s = await p.evaluate(() => { const o = spot(true); put(o); const me = W.p[ME]; window.__dbg.god = true; me.vehs |= 32; me.veh = 5; me.ride = true; me.mform = 1; me.mtr = 0; me.mh = []; me.bat = 120; me.mfly = true; me.alt = 1; me.gcd = 0; me.aim = 0; me.aimPt = null;
+    me.L = Math.min(ML - 1, o.L + 2); me.z = o.L * FH + 2.2 * FH; const out = [];
+    for (const D of [3, 6]) { W.zs.length = 0; const z = spawnZombie('walker', 0); z.x = me.x + D; z.y = me.y; z.L = o.L; z.z = surfZ(z.x, z.y, z.L); z.hp = z.max = 9999; z.stun = 99; me.gcd = 0; mechPunch(me); for (let k = 0; k < 90; k++) stepDelayed(1 / 60); out.push(Math.round(9999 - z.hp)); }
+    me.ride = false; me.mform = 0; me.mfly = false; me.alt = 0; me.L = o.L; me.z = pZ(me); window.__dbg.god = false; return out; });
+  check('苍隼 flying: rockets hit zombies 3 and 6 tiles out below it', s[0] > 0 && s[1] > 0, JSON.stringify(s));
   // drawing: flyers, auras, the bubble, the cloak shimmer, names over heads
   s = await p.evaluate(() => { window.__dbg.skipDraw = false; const o = spot(true); put(o); const me = W.p[ME]; W.edges = { 0: [[Math.floor(o.x) + 3, Math.floor(o.y), o.L]] };
     const a = spawnZombie('crow', 0), bt = spawnZombie('bat', 0), w = spawnZombie('warden', 0), sh = spawnZombie('shade', 0); sh.x = me.x + 2.5; sh.y = me.y; sh.stun = 99; w.x = me.x - 2; for (const k of ['blinker', 'caller']) spawnZombie(k, 0);
