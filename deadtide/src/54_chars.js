@@ -396,15 +396,23 @@ function drawPlayers(vl, dt) {
     const drv = p.pass != null && p.pass >= 0 && !p.down && !p.dead ? W.p[p.pass] : null;
     if (drv && drv.ride && !drv.gone && drv._ly != null) { gx = (drv.rx != null ? drv.rx : drv.x) - Math.cos(drv._ly) * PILLION; gy = (drv.ry != null ? drv.ry : drv.y) - Math.sin(drv._ly) * PILLION; zv = (drv.zv != null ? drv.zv : drv.z) + (drv.jz || 0) - Math.sin(drv._pitch || 0) * PILLION; } // (round 30) a nose-down aircraft lifts the back seat
     m.g.position.set(gx, zv, gy);
-    if (inMech(p) && !p.dead && !p.down) { // (round 34) in a mech: draw the mech, hide the pilot
-      if (!m.mech || m.mech.userData.J.k !== (p.mk || 0)) { if (m.mech) m.g.remove(m.mech); m.mech = mkMech(p.mk || 0); m.g.add(m.mech); }
-      m.mech.visible = true; m.lower.visible = m.upper.visible = false; m.veh.visible = false; m.g.rotation.set(0, 0, 0);
+    if (p._xfT != null) p._xfT += dt;
+    const xfing = p._xfT != null && p._xfT < BAL.xformT && p.ride && !p.dead && !p.down && MECHS[p.veh];
+    if ((inMech(p) || xfing) && !p.dead && !p.down) { // (round 34) in a mech (or turning into / out of one): draw the mech, hide the pilot
+      if (!m.mech || m.mech.userData.J.k !== p.veh) { if (m.mech) m.g.remove(m.mech); m.mech = mkMech(p.veh); m.g.add(m.mech); }
+      const f = xfing ? (p._xfTo ? p._xfT / BAL.xformT : 1 - p._xfT / BAL.xformT) : 1; // 0 = vehicle … 1 = mech
+      m.mech.visible = f > 0.2; m.lower.visible = m.upper.visible = false; m.g.rotation.set(0, 0, 0);
+      // (round 34b) the vehicle stands up on its tail, folds and splits while the mech unfolds out of it, with sparks
+      const fv = clamp(f / 0.55, 0, 1); m.veh.visible = f < 0.55; if (m.veh.visible) { m.veh.userData.all.forEach((q, k) => { if (q) q.visible = k === p.veh; }); const V = m.veh.userData.all[p.veh], e2 = ease(fv); m.veh.rotation.set(0, -p._ly, 0); V.rotation.set(0, 0, e2 * 1.4 + Math.sin(fv * 40) * 0.05 * fv); V.position.y = e2 * 0.7; V.scale.set(1 - e2 * 0.5, 1 - e2 * 0.35, 1 - e2 * 0.6); }
+      if (xfing && FXR() < dt * 40) { const a = FXR() * 6.28, r = 0.3 + FXR() * 0.6; addP({ x: gx + Math.cos(a) * r, y: gy + Math.sin(a) * r, z: zv + 0.4 + FXR() * 2 * f, vx: Math.cos(a) * 2, vy: Math.sin(a) * 2, vz: 1 + FXR() * 2, col: FXR() < 0.5 ? '#ffd27a' : '#cfd6dc', s: 0.05, life: 0.35 }); }
+      if (xfing) { const stp = Math.floor(p._xfT / 0.25); if (stp !== p._xfS) { p._xfS = stp; if (p.i === ME || thr('xf' + p.i, 0.2)) sfx('clank', gx, gy); } }
       if (p._px == null || p._ly == null) { p._px = gx; p._py = gy; p._ly = p.aim; p._spd = 0; }
       const mvx = gx - p._px, mvy = gy - p._py; p._spd = lerp(p._spd || 0, dt > 0 ? Math.min(8, Math.hypot(mvx, mvy) / dt) : 0, Math.min(1, dt * 10)); p._px = gx; p._py = gy;
-      if (p._spd > 0.4 && Math.hypot(mvx, mvy) > 1e-4) p._ly = angLerp(p._ly, Math.atan2(mvy, mvx), Math.min(1, dt * 6)); else if (p._spd < 0.25) p._ly = angLerp(p._ly, p.aim, Math.min(1, dt * 2));
-      p._uy = p.aim; m.mech.rotation.y = -p._ly; mechTick(p, m.mech, dt); return;
+      if (p._spd > 0.4 && Math.hypot(mvx, mvy) > 1e-4) { const md = Math.atan2(mvy, mvx); p._mback = Math.cos(angDiff(md, p.aim)) < (p._mback ? -0.2 : -0.45); p._ly = angLerp(p._ly, p._mback ? md + Math.PI : md, Math.min(1, dt * 4)); } else if (p._spd < 0.25) { p._mback = false; p._ly = angLerp(p._ly, p.aim, Math.min(1, dt * 1.6)); } // (round 34b) backing away: walk backwards, still facing the fight
+      p._uy = p.aim; m.mech.rotation.y = -p._ly; if (m.mech.visible) mechTick(p, m.mech, dt, xfing ? clamp((f - 0.2) / 0.8, 0, 1) : 1); return;
     }
     if (m.mech) m.mech.visible = false; m.lower.visible = m.upper.visible = true;
+    if (m.veh && m.veh.userData.all) for (const q of m.veh.userData.all) if (q && (q.rotation.z || q.position.y || q.scale.x !== 1)) { q.rotation.z = 0; q.position.y = 0; q.scale.set(1, 1, 1); } // undo the fold
     const vr = drv && drv.ride ? drv : p.ride && !p.down && !p.dead ? p : null; // (round 27) whose vehicle this player is on
     if (p.dead) m.g.rotation.set(-1.45, 0, 0); else if (vr && vr._ly != null && (vr._roll || vr._pitch)) rideBank(m, vr._ly, vr._roll, vr._pitch); else m.g.rotation.set(0, 0, 0); // a dead player lies flat until respawn / rescue
     // smoothing state

@@ -46,36 +46,45 @@ const { chromium } = require('playwright');
   const open = await p.evaluate(() => { window.readInput = () => { }; window.__dbg.god = false; W.zs.length = 0; W.spawnQ = []; W.phase = 'day'; W.clock = 9999; const me = W.p[ME]; for (const k in W.res) W.res[k] = 999;
     const x = W.radio.x + 22, y = W.radio.y + 22, L = gAt(x, y); for (let dy = -12; dy <= 12; dy++) for (let dx = -12; dx <= 12; dx++) for (let l = L; l < L + 5; l++) { const i = ci(x + dx, y + dy, l); W.blk[i] = 0; if (l > L) W.slab[i] = 0; } W.ver++; W.navDirty = true;
     return { x, y, L }; });
-  s = await p.evaluate(o => { const me = W.p[ME]; me.x = W.radio.x + 0.5; me.y = W.radio.y + 0.5; me.L = 0; me.z = pZ(me); const can = canCraft(me), blk = craftBlocked(me, CRAFT.find(c => c.id === 'mech0')); doCraft(me, 'mech0'); const own = ownsVeh(me, 7);
-    me.x = o.x + 0.5; me.y = o.y + 0.5; me.L = o.L; me.z = pZ(me); doAct(me, 'ride', 7); return { can, blk, own, mk: me.mk, mhp: me.mhp, bat: me.bat, ride: inMech(me) }; }, open);
-  check('mech: built in the shop (铁卫: hull 2400, battery 150 s) and climbed into out in the open', s.can && !s.blk && s.own && s.mk === 0 && s.mhp === 2400 && s.bat === 150 && s.ride, JSON.stringify(s));
-  s = await p.evaluate(o => { const me = W.p[ME]; me.aim = 0; me.gcd = 0; const z = spawnZombie('walker', 0); z.x = me.x + 1.8; z.y = me.y; z.L = me.L; z.z = surfZ(z.x, z.y, z.L); z.hp = z.max = 1000; const z2 = spawnZombie('walker', 0); z2.x = me.x - 1.8; z2.y = me.y; z2.L = me.L; z2.z = z.z; z2.hp = z2.max = 1000;
-    mechPunch(me); const a = 1000 - z.hp, behind = 1000 - z2.hp; const hp0 = me.hp; hurtPlayer(me, 100, z); return { a, behind, hp: me.hp === hp0, mhp: me.mhp }; }, open);
-  check('mech: a punch hits what is in front (95), not behind; damage goes to the hull at 60% (pilot untouched)', s.a === 95 && s.behind === 0 && s.hp && s.mhp === 2340, JSON.stringify(s));
+
+  const ride = (v, o) => p.evaluate(([v, o]) => { const me = W.p[ME]; me.ride = false; me.mform = 0; me.mtr = 0; me.mh = []; me.bat = BAL.mechBat; me.mcd = 0; me.down = false; me.dead = false; me.invT = 0; me.hp = me.maxHp; me.vehs |= 1 << v; me.veh = v; me.shl = 50; me.fuel = 60;
+    me.x = o.x + 0.5; me.y = o.y + 0.5; me.L = o.L; me.z = pZ(me); me.jmp = null; me.dash = null; doAct(me, 'ride', v); return me.ride; }, [v, o]);
+  const xform = () => p.evaluate(() => { doAct(W.p[ME], 'xform'); return W.p[ME].mtr; });
+  await ride(4, open);
+  s = await p.evaluate(() => { const me = W.p[ME]; const before = inMech(me); doAct(me, 'xform'); return { before, mtr: me.mtr, mid: inMech(me), gun: vehGun(me) }; });
+  await simWait(0.5); const half = await p.evaluate(() => ({ mech: inMech(W.p[ME]), mtr: W.p[ME].mtr }));
+  await simWait(0.7); const done = await p.evaluate(() => ({ mech: inMech(W.p[ME]), name: mechOf(W.p[ME]).name, hp: mhpOf(W.p[ME]) }));
+  check('装甲车 → 铁卫: 变形 takes 1 s (nothing fires meanwhile), no blueprint needed', !s.before && s.mtr === 1 && !s.mid && s.gun === 'busy' && !half.mech && half.mtr > 0 && done.mech && done.name === '铁卫' && done.hp === 2400, JSON.stringify([s, half, done]));
+  s = await p.evaluate(() => { const me = W.p[ME]; me.aim = 0; me.gcd = 0; W.zs.length = 0; const z = spawnZombie('walker', 0); z.x = me.x + 1.8; z.y = me.y; z.L = me.L; z.z = surfZ(z.x, z.y, z.L); z.hp = z.max = 1000; const z2 = spawnZombie('walker', 0); z2.x = me.x - 1.8; z2.y = me.y; z2.L = me.L; z2.z = z.z; z2.hp = z2.max = 1000;
+    mechPunch(me); W.dly = []; mechPunchHit(me); const a = 1000 - z.hp, behind = 1000 - z2.hp; const hp0 = me.hp; hurtPlayer(me, 100, z); return { a, behind, pilot: hp0 - me.hp, hull: mhpOf(me) }; });
+  check('铁卫: a punch hits in front (95), not behind; a 100 hit takes 70 off the hull (×0.7) and 10% gets through to the pilot (×0.35 in the armoured car: 3.5)', s.a === 95 && s.behind === 0 && s.hull === 2330 && Math.abs(s.pilot - 3.5) < 0.01, JSON.stringify(s));
   s = await p.evaluate(() => { const me = W.p[ME]; W.zs.length = 0; const zs = [1.5, 3.5, 6].map(d => { const z = spawnZombie('walker', 0); z.x = me.x + d; z.y = me.y + 0.3; z.L = me.L; z.z = surfZ(z.x, z.y, z.L); z.hp = z.max = 1000; return z; });
-    mechSkill(me, null); return { lost: zs.map(z => Math.round(1000 - z.hp)), stun: zs.map(z => +(z.stun || 0).toFixed(1)), cd: me.mcd, again: (mechSkill(me, null), me.mcd) }; });
-  check('mech 震地: 220 close, 60% further out to 4.5, nothing at 6; stuns; 12 s cooldown blocks a second use', s.lost[0] === 220 && s.lost[1] === 132 && s.lost[2] === 0 && s.stun[0] >= 1.5 && s.cd === 12 && s.again === 12, JSON.stringify(s));
-  // 赤刃 dash and 苍隼 leap
-  s = await p.evaluate(o => { const me = W.p[ME]; me.ride = false; me.x = W.radio.x + 0.5; me.y = W.radio.y + 0.5; me.L = 0; me.z = pZ(me); doCraft(me, 'mech1'); me.x = o.x - 6.5; me.y = o.y + 0.5; me.L = o.L; me.z = pZ(me); doAct(me, 'ride', 7); me.mcd = 0; W.zs.length = 0;
-    const z = spawnZombie('walker', 0); z.x = me.x + 4; z.y = me.y + 0.6; z.L = me.L; z.z = surfZ(z.x, z.y, z.L); z.hp = z.max = 1000; window.__z = z; window.__x0 = me.x; mechSkill(me, { x: me.x + 10, y: me.y }); return { mk: me.mk, hp: me.mhp, dash: !!me.dash }; }, open);
-  await simWait(0.6);
-  s.after = await p.evaluate(() => ({ moved: +(W.p[ME].x - __x0).toFixed(1), lost: Math.round(1000 - __z.hp) }));
-  check('mech 赤刃 (swapped in the shop, hull 1700): 冲斩 dashes ~8 toward the target and cuts what is on the way (180)', s.mk === 1 && s.hp === 1700 && s.dash && s.after.moved > 6 && s.after.moved < 9 && s.after.lost === 180, JSON.stringify(s));
-  s = await p.evaluate(o => { const me = W.p[ME]; me.ride = false; me.x = W.radio.x + 0.5; me.y = W.radio.y + 0.5; me.L = 0; me.z = pZ(me); doCraft(me, 'mech2'); me.x = o.x - 6.5; me.y = o.y + 0.5; me.L = o.L; me.z = pZ(me); doAct(me, 'ride', 7); me.mcd = 0; W.zs.length = 0;
-    const z = spawnZombie('walker', 0); z.x = o.x + 4.5; z.y = o.y + 1; z.L = me.L; z.z = surfZ(z.x, z.y, z.L); z.hp = z.max = 1000; window.__z = z;
-    for (let l = o.L; l < o.L + 3; l++) W.blk[ci(o.x - 1, o.y, l)] = W.blk[ci(o.x - 1, o.y + 1, l)] = W.blk[ci(o.x - 1, o.y - 1, l)] = 3; W.ver++;  // a wall in the way
-    mechSkill(me, { x: o.x + 4.5, y: o.y + 0.5 }); return { jmp: !!me.jmp }; }, open);
-  await simWait(1.4);
-  s.after = await p.evaluate(o => ({ x: +(W.p[ME].x - o.x).toFixed(1), y: +(W.p[ME].y - o.y).toFixed(1), lost: Math.round(1000 - __z.hp), ride: inMech(W.p[ME]) }), open);
-  check('mech 苍隼: 跃击 jumps over a wall to the target and the landing hits around it (150)', s.jmp && Math.abs(s.after.x - 4.5) < 1.5 && s.after.lost >= 150 && s.after.lost <= 200 && s.after.ride, JSON.stringify(s));
-  s = await p.evaluate(() => { const me = W.p[ME]; me.bat = 1; return 1; }); await simWait(1.3);
-  s = await p.evaluate(() => { const me = W.p[ME], out = { batOut: !inMech(me), deny: mechDeny(me, 7) }; const c1 = craftBlocked(me, CRAFT.find(c => c.mbat)); me.x = W.radio.x + 0.5; me.y = W.radio.y + 0.5; me.L = 0; doCraft(me, 'mbat'); out.c1 = c1; out.bat = me.bat;
-    me.x = W.radio.x + 22.5; me.y = W.radio.y + 22.5; me.L = gAt(Math.floor(me.x), Math.floor(me.y)); me.z = pZ(me); doAct(me, 'ride', 7); me.mhp = 10; me.invT = 0; hurtPlayer(me, 100); out.hullOut = !inMech(me); out.mhp = me.mhp; out.hp = me.hp; return out; });
-  check('mech: an empty battery throws you out and you can\'t get back in until it is charged in the shop; a broken hull throws you out too', s.batOut && !!s.deny && !s.c1 && s.bat === 150 && s.hullOut && s.mhp === 0 && s.hp > 50, JSON.stringify(s));
-  s = await p.evaluate(() => { const me = W.p[ME]; const x = W.radio.x + 0.5, y = W.radio.y + 0.5; me.x = x; me.y = y; me.L = 0; me.mhp = 100; doCraft(me, 'mfix'); const fixed = me.mhp; let room = null;
-    for (let r = 2; r < 60 && !room; r++) for (let dy = -r; dy <= r && !room; dy++) for (let dx = -r; dx <= r; dx++) { const a = W.radio.x + dx, b = W.radio.y + dy; if (inMap(a, b) && skyTop(a, b) >= 1 && !W.blk[ci(a, b, 0)] && support(a, b, 0)) { room = [a, b]; break; } }
-    me.x = room[0] + 0.5; me.y = room[1] + 0.5; me.L = 0; me.z = pZ(me); doAct(me, 'ride', 7); const indoor = inMech(me); const snap = makeSnap(); return { fixed, indoor, snap: /\[2,1500,1[0-9.]+,[0-9.]+\]/.test(JSON.stringify(snap)) }; });
-  check('mech: repaired in the shop; too big to climb into under a roof; synced to the teammate (model, hull, battery, cooldown)', s.fixed === 1500 && !s.indoor && s.snap, JSON.stringify(s));
+    mechSkill(me, null); return { lost: zs.map(z => Math.round(1000 - z.hp)), stun: zs.map(z => +(z.stun || 0).toFixed(1)), cd: me.mcd }; });
+  check('铁卫 震地: 220 close, 60% to 4.5, nothing at 6, stuns; 12 s cooldown', s.lost[0] === 220 && s.lost[1] === 132 && s.lost[2] === 0 && s.stun[0] >= 1.5 && s.cd === 12, JSON.stringify(s));
+  s = await p.evaluate(() => { const me = W.p[ME]; me.mh[me.veh] = 10; me.invT = 0; hurtPlayer(me, 100); return { mech: inMech(me), mtr: me.mtr, hull: mhpOf(me), deny: xformDeny(me, 1) }; });
+  await simWait(1.2); s.after = await p.evaluate(() => ({ ride: W.p[ME].ride, mech: inMech(W.p[ME]) }));
+  check('a broken hull folds it back into the vehicle (you stay in the seat) and it can\'t stand up again until the hull comes back', !s.mech && s.mtr > 0 && s.hull === 0 && !!s.deny && s.after.ride && !s.after.mech, JSON.stringify(s));
+  s = await p.evaluate(() => { const me = W.p[ME]; me.mh[4] = 0; for (let k = 0; k < 600; k++) stepActions(me, 1 / 60); return { hull: Math.round(mhpOf(me, 4)) }; });
+  check('out of mech form the hull comes back by itself (1.5% a second)', s.hull > 300 && s.hull < 420, JSON.stringify(s));
+  // the other five
+  const want = { 1: '疾风', 2: '赤刃', 3: '工蜂', 5: '苍隼', 6: '重炮' }, got = {};
+  for (const v of [1, 2, 3, 5, 6]) { await ride(v, open); await xform(); await simWait(1.15); got[v] = await p.evaluate(() => ({ n: inMech(W.p[ME]) ? mechOf(W.p[ME]).name : '', spd: mechOf(W.p[ME]).spd, air: airborne(W.p[ME]) })); }
+  check('every vehicle has its own mech: 疾风 / 赤刃 / 工蜂 / 苍隼 (lands from the air) / 重炮', Object.keys(want).every(v => got[v].n === want[v]) && !got[5].air, JSON.stringify(got));
+  await ride(1, open); await xform(); await simWait(1.15);
+  s = await p.evaluate(() => { const me = W.p[ME]; W.zs.length = 0; const z = spawnZombie('walker', 0); z.x = me.x + 3; z.y = me.y + 0.4; z.L = me.L; z.z = surfZ(z.x, z.y, z.L); z.hp = z.max = 1000; window.__z = z; window.__x0 = me.x; mechSkill(me, { x: me.x + 10, y: me.y }); return 1; });
+  await simWait(0.5); s = await p.evaluate(() => ({ moved: +(W.p[ME].x - __x0).toFixed(1), lost: Math.round(1000 - __z.hp), stun: __z.stun > 0.5 }));
+  check('疾风 滑铲: slides ~6 and knocks down what is on the way (90)', s.moved > 4.5 && s.moved < 7 && s.lost === 90 && s.stun, JSON.stringify(s));
+  await ride(3, open); await xform(); await simWait(1.15);
+  s = await p.evaluate(() => { const me = W.p[ME]; me.aim = 0; W.zs.length = 0; const z = spawnZombie('walker', 0); z.x = me.x + 1.5; z.y = me.y; z.L = me.L; z.z = surfZ(z.x, z.y, z.L); z.hp = z.max = 1000; const y = spawnZombie('walker', 0); y.x = me.x + 7.5; y.y = me.y + 0.8; y.L = me.L; y.z = z.z; y.hp = y.max = 1000; window.__z = z; window.__y = y; mechSkill(me, { x: me.x + 7, y: me.y }); return 1; });
+  await simWait(0.9); s = await p.evaluate(() => ({ zx: +(__z.x - W.p[ME].x).toFixed(1), zl: Math.round(1000 - __z.hp), yl: Math.round(1000 - __y.hp) }));
+  check('工蜂 抓投: grabs the zombie in front and throws it ~7 away (200), splashing one where it lands (100)', s.zx > 5.5 && s.zl === 200 && s.yl === 100, JSON.stringify(s));
+  await ride(6, open); await xform(); await simWait(1.15);
+  s = await p.evaluate(() => { const me = W.p[ME]; me.aim = 0; W.zs.length = 0; const z = spawnZombie('walker', 0); z.x = me.x + 10; z.y = me.y; z.L = me.L; z.z = surfZ(z.x, z.y, z.L); z.hp = z.max = 1000; window.__z = z; const s0 = me.shl; mechSkill(me, { x: me.x + 10, y: me.y }); return { used: s0 - me.shl }; });
+  await simWait(1.0); s.lost = await p.evaluate(() => Math.round(1000 - __z.hp));
+  check('重炮 齐射: 3 tank shells at the target (the middle one lands on it)', s.used === 3 && s.lost >= 110, JSON.stringify(s));
+  s = await p.evaluate(() => { const me = W.p[ME]; let room = null; for (let r = 2; r < 60 && !room; r++) for (let dy = -r; dy <= r && !room; dy++) for (let dx = -r; dx <= r; dx++) { const a = W.radio.x + dx, b = W.radio.y + dy; if (inMap(a, b) && skyTop(a, b) >= 1 && !W.blk[ci(a, b, 0)] && support(a, b, 0)) { room = [a, b]; break; } }
+    me.ride = false; me.mform = 0; me.veh = 1; me.x = room[0] + 0.5; me.y = room[1] + 0.5; me.L = 0; me.z = pZ(me); doAct(me, 'ride', 1); const deny = xformDeny(me, 1); const snap = JSON.stringify(makeSnap()); me.bat = 1; return { ride: me.ride, deny, snap: /\[0,0,\[/.test(snap) }; });
+  check('under a roof it won\'t stand up; mech form / hulls / energy go to the teammate', s.ride && /屋顶/.test(s.deny) && s.snap, JSON.stringify(s));
   // ---------- kaiju ----------
   s = await p.evaluate(o => { const me = W.p[ME]; me.ride = false; me.x = o.x + 0.5; me.y = o.y + 0.5; me.L = o.L; me.z = pZ(me); me.hp = me.maxHp; me.down = false; me.dead = false; me.invT = 0; me.invT = 0; W.zs.length = 0;
     const z = spawnZombie('kjaw', 0); z.x = me.x + 4; z.y = me.y; z.L = me.L; z.z = surfZ(z.x, z.y, z.L); z.kcd = 0; window.__k = z; window.__hp0 = me.hp; return 1; }, open);

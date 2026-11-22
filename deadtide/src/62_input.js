@@ -69,6 +69,8 @@ function doBash() {
   me.aim = f; INP.aimT = 0.3; me.knT = 0.3; act('knife', { a: +f.toFixed(3) });
 }
 // knife: find the zombie, turn to it, lunge into reach and slash; the host settles the damage
+// (round 34b) vehicle ⇄ mech (1 s); the host says why not if it can't
+function doXform() { const me = W.p[ME]; if (!me || !me.ride || me.down) return; if (me.mtr > 0) return; act('xform'); sfx('swap'); }
 function doKnife() {
   const me = W.p[ME]; if (!me || me.dead || me.down || me.build || me.ride || me.pass >= 0 || me.medT > 0 || me.jmp || (me.knCD || 0) > performance.now()) return;
   if (me.melee === 1 && me.shield) return doBash();
@@ -132,6 +134,7 @@ function onKeyPress(k) {
     if ((k === 'Enter' || k === ' ') && PLAN) return confirmPlan();
   } else { const n = '1234'.indexOf(k); if (n >= 0) return quickWpn(n); const gk = '5678'.indexOf(k); if (gk >= 0) return setGren(gk); if (k === 'r') return act('reload'); if (k === 'z') return swapLast(); }
   if (k === 'i') return openKit();
+  if (k === 'x' && me.ride) return doXform(); // (round 34b) driving: X = transform
   if (k === 'x' && !me.build) return switchMelee();
   if (k === 'v') return doKnife();
   if (k === 'g') { if (KD('Shift') && !inMech(me)) return cycleGren(1); if ((gCount(me, me.gt || 0) > 0 || inMech(me)) && !me.down) INP.nadeAim = { pc: 1 }; else toast('没有' + GREN[me.gt || 0].name + '了：按 5–8 换别的手雷'); return; } // hold G: the landing ring follows the cursor; let go to throw
@@ -451,7 +454,7 @@ document.addEventListener('pointerdown', e => { const el = $('wpick'), nk = docu
 })();
 bindBtn('tLUp', () => viewStep(1)); bindBtn('tLDn', () => viewStep(-1));
 bindBtn('vToggle', () => { document.body.classList.toggle('vopen'); $('vToggle').classList.toggle('on', document.body.classList.contains('vopen')); sfx('click'); });
-bindBtn('tShove', () => { if (inGame()) { INP.knHeld = true; doKnife(); } }, () => { INP.knHeld = false; });
+bindBtn('tShove', () => { if (!inGame()) return; if (W.p[ME].ride) return doXform(); INP.knHeld = true; doKnife(); }, () => { INP.knHeld = false; }); // (round 34b) driving: this key is 变形
 // (round 23b) swipe off the melee key (any direction) = swap knife <-> shield
 (() => {
   const el = document.getElementById('tShove'); let st = null;

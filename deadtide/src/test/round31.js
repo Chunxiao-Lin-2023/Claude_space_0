@@ -9,7 +9,7 @@ const { chromium } = require('playwright'); const OUT = process.env.OUT || '/tmp
   await p.evaluate(() => (SET.mode = 'classic', SET.map = 'town', SET.bconf = 0, $('soloBtn').click())); await p.waitForFunction(() => W && W.t > 0.5);
   const simWait = s => p.evaluate(s => new Promise(r => { const t0 = W.t; const f = () => W.t - t0 >= s ? r() : setTimeout(f, 30); f(); }), s);
   let s = await p.evaluate(() => ({ lv: [1, 2, 3, 4, 5, 6, 7].map(n => BAL.nightLv(n)), cnt: [1, 2, 3, 4, 5].map(n => BAL.nightSpawn(BAL.lvN(n))), hp: [1, 2, 3, 4].map(n => +BAL.hpMul(BAL.lvN(n)).toFixed(3)) }));
-  check('night level goes up every two nights; count / health / speed step with it', s.lv.join() === '1,1,2,2,3,3,4' && s.cnt[0] === s.cnt[1] && s.cnt[2] === s.cnt[3] && s.cnt[2] > s.cnt[1] && s.hp[0] === s.hp[1] && s.hp[2] > s.hp[1], JSON.stringify(s));
+  check('night level goes up every night (round 34b); count / health climb with it', s.lv.join() === '1,2,3,4,5,6,7' && s.cnt.every((c, i) => !i || c > s.cnt[i - 1]) && s.hp.every((h, i) => !i || h > s.hp[i - 1]), JSON.stringify(s));
   // tank
   const spots = await p.evaluate(() => { window.__dbg.god = true; W.phase = 'day'; W.clock = 999; W.zs.length = 0; W.spawnQ = []; const me = W.p[0]; for (const k in W.res) W.res[k] = 999;
     let room = null; for (let r = 2; r < 60 && !room; r++) for (let dy = -r; dy <= r && !room; dy++) for (let dx = -r; dx <= r; dx++) { const x = W.radio.x + dx, y = W.radio.y + dy; if (!inMap(x, y)) continue; if (skyTop(x, y) >= 1 && !W.blk[ci(x, y, 0)] && support(x, y, 0) && !W.blk[ci(x, y, 1)]) { room = { x, y, L: 0 }; break; } }
