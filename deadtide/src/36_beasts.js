@@ -22,16 +22,14 @@ function flyerStep(z, Z, dt) {
   else if (z.conf > 0 || !tp) { z.dv = null; if (z.wa == null || rand() < dt * 0.8) z.wa = rand() * Math.PI * 2; gx = z.x + Math.cos(z.wa) * 3; gy = z.y + Math.sin(z.wa) * 3; gz = cruise(); }
   else if (D) {
     D.t += dt; const ex = zExposed(tp);
-    if (D.ph === 0) { // a short hover and a cry: the tell
-      z.kt = 1; spd = 0; gz = z.z + 0.3; z.face += angDiff(z.face, Math.atan2(tp.y - z.y, tp.x - z.x)) * Math.min(1, dt * 10);
-      if (!ex) z.dv = null; else if (D.t > 0.35) { D.ph = 1; D.t = 0; }
-    } else if (D.ph === 1) { // the dive: homes in on you
-      z.kt = 2; z.atk = 0.3; spd = z.spd * F.spd; vzMax = 9; gx = tp.x; gy = tp.y; gz = flyAimZ(tp);
-      const d3 = Math.hypot(tp.x - z.x, tp.y - z.y, gz - z.z);
-      if (d3 < (tp.r || 0.3) + z.r + 0.25 + (inMech(tp) ? 0.7 : 0)) {
-        hurtPlayer(tp, Z.dmg * W.D.dmg, z); if (F.drain) z.hp = Math.min(z.max, z.hp + F.drain);
-        emit({ k: 'sfx', n: 'peck', x: z.x, y: z.y }); D.ph = 2; D.t = 0; D.a = Math.atan2(z.y - tp.y, z.x - tp.x) + (rand() - 0.5) * 1.4;
-      } else if (D.t > 1.6 || !ex) { D.ph = 2; D.t = 0; D.a = z.face + Math.PI + (rand() - 0.5); }
+    if (D.ph === 0) { // (round 36) a hover and a cry, then it dives at the spot you were in when it cried (marked on the ground): step aside and it misses
+      z.kt = 1; spd = 0; gz = z.z + 0.3; z.face += angDiff(z.face, Math.atan2(D.y - z.y, D.x - z.x)) * Math.min(1, dt * 10);
+      if (D.t > 0.55) { D.ph = 1; D.t = 0; }
+    } else if (D.ph === 1) { // the dive: straight at the marked spot, no homing; whoever is there when it arrives gets pecked
+      z.kt = 2; z.atk = 0.3; spd = z.spd * F.spd; vzMax = 9; gx = D.x; gy = D.y; gz = D.z;
+      for (const p of W.p) { if (p.gone || p.dead || D.hit) continue; const az = flyAimZ(p); if (Math.hypot(p.x - z.x, p.y - z.y, az - z.z) < (p.r || 0.3) + z.r + 0.12 + (inMech(p) ? 0.7 : 0) && zExposed(p)) {
+        D.hit = 1; hurtPlayer(p, Z.dmg * W.D.dmg, z); if (F.drain) z.hp = Math.min(z.max, z.hp + F.drain); emit({ k: 'sfx', n: 'peck', x: z.x, y: z.y }); } }
+      if (D.hit || Math.hypot(D.x - z.x, D.y - z.y, D.z - z.z) < 0.3 || D.t > 1.4) { D.ph = 2; D.t = 0; D.a = z.face + (rand() - 0.5) * 1.4; } // carries on past and pulls up
     } else { // pull up and away, then back to circling
       spd = z.spd * 1.1; gx = z.x + Math.cos(D.a) * 3; gy = z.y + Math.sin(D.a) * 3; gz = cruise() + 0.6;
       if (D.t > 0.8) { z.dv = null; z.dvCD = F.cd * (0.75 + rand() * 0.5); z.fa = Math.atan2(z.y - tp.y, z.x - tp.x); }
@@ -41,9 +39,9 @@ function flyerStep(z, Z, dt) {
     if (dist < R + 3) z.fa += dir * z.spd / R * dt * 0.8; else z.fa = Math.atan2(z.y - tp.y, z.x - tp.x);
     gx = tp.x + Math.cos(z.fa) * R; gy = tp.y + Math.sin(z.fa) * R;
     gz = Math.max(cruise(), flyFloor(tp.x, tp.y) + F.alt, inAirZ(tp) != null ? inAirZ(tp) + 0.4 : 0);
-    if (z.dvCD <= 0 && zExposed(tp) && dist < F.dive && los(z.x, z.y, z.z, tp.x, tp.y, flyAimZ(tp))) {
+    if (z.dvCD <= 0 && zExposed(tp) && dist < F.dive && zSeen(z) && los(z.x, z.y, z.z, tp.x, tp.y, flyAimZ(tp))) {
       let busy = 0; for (const o of W.zs) if (o !== z && o.fk && o.fk === z.fk && o.dv && o.hp > 0) busy++;
-      if (busy < 2) { z.dv = { ph: 0, t: 0 }; emit({ k: 'sfx', n: z.k === 'bat' ? 'screech' : 'caw', x: z.x, y: z.y }); } // the flock takes turns, two at a time
+      if (busy < 2) { const az = flyAimZ(tp); z.dv = { ph: 0, t: 0, x: tp.x, y: tp.y, z: az }; emit({ k: 'sfx', n: z.k === 'bat' ? 'screech' : 'caw', x: z.x, y: z.y }); emit({ k: 'fdive', x: r2(tp.x), y: r2(tp.y), z: r2(az - (inAirZ(tp) != null ? 0.6 : inMech(tp) ? 2.2 : 0.95)) }); } // the flock takes turns, two at a time
       else z.dvCD = 0.4 + rand() * 0.6;
     }
   }
@@ -69,6 +67,12 @@ function zSpotNear(x, y, L, rmin, rmax, tries) {
   return null;
 }
 const SHIELD_R = 3.2;
+// (round 36) counters for people on foot: any blast close by shows a cloaked 隐身者 (and slows it), a 爆破弹 (blast grenade) shatters a 护盾者's bubble outright
+function eliteCounter(x, y, R, blast) {
+  for (const z of W.zs) { if (z.hp <= 0 || !ZT[z.k].elite) continue; const d = Math.hypot(z.x - x, z.y - y);
+    if (z.ck && d < R + 3) { z.ck = 0; z.ckT = 5; z.limp = Math.max(z.limp || 0, 2); emit({ k: 'elx', a: 'reveal', id: z.id, x: r2(z.x), y: r2(z.y), z: r2(z.z) }); }
+    if (blast && z.k === 'warden' && z.sh > 0 && d < R + SHIELD_R) { z.sh = 0; z.shT = ZT.warden.elite.cd; z.stun = Math.max(z.stun || 0, 1.2); emit({ k: 'elx', a: 'break', id: z.id, x: r2(z.x), y: r2(z.y), z: r2(z.z) }); } }
+}
 // (round 35) a 护盾者's bubble covers the zombies near it: hits from outside go into the bubble; you can shoot from inside it
 function shieldFor(z, p) {
   for (const w of W.wardens || []) {
@@ -89,13 +93,13 @@ function eliteStep(z, Z, dt) {
   if (E.k === 'cloak') {
     if (z.ckT > 0) z.ckT -= dt;
     let near = 1e9, tp = null; for (const p of W.p) { if (!standingP(p) || Math.abs(p.z - z.z) > 1.2) continue; const d = Math.hypot(p.x - z.x, p.y - z.y); if (d < near) { near = d; tp = p; } }
-    if (z.burn > 0 && z.ck) { z.ck = 0; z.ckT = 2; emit({ k: 'elx', a: 'reveal', id: z.id, x: r2(z.x), y: r2(z.y), z: r2(z.z) }); }
+    if ((z.burn > 0 || W.cz && W.cz.length && cloudAt(z.x, z.y, z.z) & 1) && z.ck) { /* (round 36) a slow field shows it too */ z.ck = 0; z.ckT = 2; emit({ k: 'elx', a: 'reveal', id: z.id, x: r2(z.x), y: r2(z.y), z: r2(z.z) }); }
     if (z.ck && tp && near < 1.7 && z.stun <= 0 && los(z.x, z.y, z.z + 0.8, tp.x, tp.y, tp.z + 0.8)) { // the ambush: out of thin air, a heavy blow
       z.ck = 0; z.ckT = 4; z.face = Math.atan2(tp.y - z.y, tp.x - z.x); z.atk = 0.3; z.cd = Z.cd;
       hurtPlayer(tp, 24 * W.D.dmg, z); knock(tp, Math.cos(z.face) * 5, Math.sin(z.face) * 5);
       emit({ k: 'elx', a: 'ambush', id: z.id, x: r2(z.x), y: r2(z.y), z: r2(z.z) }); return false;
     }
-    if (!z.ck && !(z.ckT > 0) && !(z.burn > 0) && near > 3) { z.ck = 1; emit({ k: 'elx', a: 'cloak', id: z.id, x: r2(z.x), y: r2(z.y), z: r2(z.z) }); }
+    if (!z.ck && !(z.ckT > 0) && !(z.burn > 0) && near > 4) { z.ck = 1; emit({ k: 'elx', a: 'cloak', id: z.id, x: r2(z.x), y: r2(z.y), z: r2(z.z) }); }
     return false;
   }
   if (z.sleep || z.climbing) return false;
@@ -105,7 +109,7 @@ function eliteStep(z, Z, dt) {
   if (E.k === 'blink') {
     if (S) {
       S.t += dt; z.moving = false;
-      if (S.ph === 0) { z.kt = 1; if (tp) z.face = Math.atan2(tp.y - z.y, tp.x - z.x); if (S.t >= 0.6) { const ox = z.x, oy = z.y, oz = z.z; z.x = S.x; z.y = S.y; z.L = S.L; z.z = surfZ(z.x, z.y, z.L); S.ph = 1; S.t = 0; if (tp) z.face = Math.atan2(tp.y - z.y, tp.x - z.x); emit({ k: 'elx', a: 'blink1', id: z.id, x: r2(ox), y: r2(oy), z: r2(oz), tx: r2(z.x), ty: r2(z.y), tz: r2(z.z) }); } return true; }
+      if (S.ph === 0) { z.kt = 1; if (tp) z.face = Math.atan2(tp.y - z.y, tp.x - z.x); if (S.t >= 0.8) { /* (round 36) tell 0.6 → 0.8 s */ const ox = z.x, oy = z.y, oz = z.z; z.x = S.x; z.y = S.y; z.L = S.L; z.z = surfZ(z.x, z.y, z.L); S.ph = 1; S.t = 0; if (tp) z.face = Math.atan2(tp.y - z.y, tp.x - z.x); emit({ k: 'elx', a: 'blink1', id: z.id, x: r2(ox), y: r2(oy), z: r2(oz), tx: r2(z.x), ty: r2(z.y), tz: r2(z.z) }); } return true; }
       z.kt = 2; z.atk = 0.3; if (tp) z.face += angDiff(z.face, Math.atan2(tp.y - z.y, tp.x - z.x)) * Math.min(1, dt * 6);
       if (S.t >= 0.32) { // the slash
         for (const p of W.p) { if (!standingP(p) || Math.abs(p.z - z.z) > 1.1) continue; const dx = p.x - z.x, dy = p.y - z.y, d = Math.hypot(dx, dy); if (d < 1.8 && (d < 0.6 || Math.cos(angDiff(Math.atan2(dy, dx), z.face)) > 0.1)) { hurtPlayer(p, 20 * W.D.dmg, z); knock(p, dx / (d || 1) * 4, dy / (d || 1) * 4); } }
@@ -113,7 +117,7 @@ function eliteStep(z, Z, dt) {
       }
       return true;
     }
-    if (tp && z.eCD <= 0 && z.stun <= 0 && !(z.conf > 0) && td > 2.6 && td < 13 && los(z.x, z.y, z.z + 1, tp.x, tp.y, tp.z + 1)) {
+    if (tp && z.eCD <= 0 && z.stun <= 0 && !(z.conf > 0) && td > 2.6 && td < 13 && zSeen(z) && los(z.x, z.y, z.z + 1, tp.x, tp.y, tp.z + 1)) {
       const back = tp.aim + Math.PI; let to = null;
       for (const da of [0, 0.6, -0.6, 1.2, -1.2, 1.9, -1.9]) { const px = tp.x + Math.cos(back + da) * 1.35, py = tp.y + Math.sin(back + da) * 1.35, cx = Math.floor(px), cy = Math.floor(py);
         if (inMap(cx, cy) && navNode(cx, cy, tp.L) && !solidFor(W.blk[ci(cx, cy, tp.L)], 'z') && los(px, py, tp.z + 0.8, tp.x, tp.y, tp.z + 0.8)) { to = { x: px, y: py, L: tp.L }; break; } }
@@ -128,13 +132,14 @@ function eliteStep(z, Z, dt) {
       if (S.t >= 1.1) { // up they come
         const n = W.night || 1, pool = n < 5 ? ['crawler', 'walker', 'runner'] : ['crawler', 'runner', 'dog', 'climber'], cnt = 2 + (n >= 6 ? 1 : 0) + (rand() < 0.5 ? 1 : 0), pts = [];
         let awake = 0; for (const o of W.zs) if (!o.sleep && o.hp > 0) awake++;
-        for (let k = 0; k < cnt && awake < BAL.zCap() + 6; k++) { const at = zSpotNear(z.x, z.y, z.L, 1, 2.6); if (!at) continue; const q = spawnZombie(pool[Math.floor(rand() * pool.length)], 0); q.x = at.x; q.y = at.y; q.L = at.L; q.z = surfZ(q.x, q.y, q.L); q.stun = 0.6; q.rage = 4; pts.push([r2(q.x), r2(q.y), r2(q.z)]); awake++; }
+        z.mins = (z.mins || []).filter(id => W.zs.some(o => o.id === id && o.hp > 0)); /* (round 36) at most 6 of its own up at once */
+        for (let k = 0; k < cnt && awake < BAL.zCap() + 6 && z.mins.length < 6; k++) { const at = zSpotNear(z.x, z.y, z.L, 1, 2.6); if (!at) continue; const q = spawnZombie(pool[Math.floor(rand() * pool.length)], 0); q.x = at.x; q.y = at.y; q.L = at.L; q.z = surfZ(q.x, q.y, q.L); q.stun = 0.6; q.rage = 4; z.mins.push(q.id); pts.push([r2(q.x), r2(q.y), r2(q.z)]); awake++; }
         for (const o of W.zs) if (o !== z && o.hp > 0 && Math.hypot(o.x - z.x, o.y - z.y) < 5) o.rage = Math.max(o.rage || 0, 4);
         emit({ k: 'elx', a: 'call1', id: z.id, x: r2(z.x), y: r2(z.y), z: r2(z.z), p: pts }); z.es = null; z.eCD = E.cd * (0.8 + rand() * 0.4);
       }
       return true;
     }
-    if (tp && z.eCD <= 0 && z.stun <= 0 && td < 14) { z.es = { ph: 0, t: 0 }; z.kt = 1; emit({ k: 'elx', a: 'call0', id: z.id, x: r2(z.x), y: r2(z.y), z: r2(z.z) }); emit({ k: 'sfx', n: 'groan', x: z.x, y: z.y }); return true; }
+    if (tp && z.eCD <= 0 && z.stun <= 0 && td < 14 && zSeen(z)) { z.es = { ph: 0, t: 0 }; z.kt = 1; emit({ k: 'elx', a: 'call0', id: z.id, x: r2(z.x), y: r2(z.y), z: r2(z.z) }); emit({ k: 'sfx', n: 'groan', x: z.x, y: z.y }); return true; }
     return false;
   }
   return false;

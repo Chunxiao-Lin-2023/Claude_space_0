@@ -335,7 +335,7 @@ function kaijuStep(z, dt) {
     z.ks = null; return false;
   }
   z.kt = 0; z.kc = 0;
-  if (!tgt || z.kcd > 0 || z.stun > 0 || z.sleep) return false;
+  if (!tgt || z.kcd > 0 || z.stun > 0 || z.sleep || !zSeen(z)) return false; // (round 36) no skills from out of sight
   const d = Math.hypot(tgt.x - z.x, tgt.y - z.y);
   if (T.kaiju === 'acid' && d < 7) { z.ks = { k: 'breath', t: 0 }; emit({ k: 'sfx', n: 'scream', x: z.x, y: z.y }); return true; }
   if (T.kaiju === 'tail') { if (d < 3.8) { z.ks = { k: 'sweep', t: 0 }; return true; } if (d > 4.5 && d < 14) { z.ks = { k: 'charge', t: 0, a: Math.atan2(tgt.y - z.y, tgt.x - z.x), hit: [] }; emit({ k: 'sfx', n: 'smash', x: z.x, y: z.y }); return true; } }

@@ -67,7 +67,7 @@ function genMap(seed) {
   const [RX, RY] = RADIO_XY, radioDist0 = (x, y) => Math.max(Math.abs(x - RX), Math.abs(y - RY));
   const inTown = (x, y, pad) => TOWN_HOUSES.some(([x0, y0, x1, y1]) => x >= x0 - pad && x <= x1 + pad && y >= y0 - pad && y <= y1 + pad);
   // hills (kept away from the base and the town)
-  const hill = (cx, cy, rad, top) => { for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) { if (inTown(x, y, 2) || Math.max(Math.abs(x - RX), Math.abs(y - RY)) <= BUILD_R + 1) continue; const d = d2(x, y, cx, cy) / rad + (noise(x, y, 5) - 0.5) * 0.45; if (d < 1) { G[col(x, y)] = Math.max(G[col(x, y)], 1); tt[col(x, y)] = TT.hill; } if (top && d < 0.48) G[col(x, y)] = 2; } };
+  const hill = (cx, cy, rad, top) => { for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) { if (inTown(x, y, 2) || Math.max(Math.abs(x - RX), Math.abs(y - RY)) <= BUILD_R + 1) continue; const d = d2(x, y, cx, cy) / rad + (noise(x, y, 5) - 0.5) * 0.45; if (d < 1) { G[col(x, y)] = Math.max(G[col(x, y)], 1); tt[col(x, y)] = TT.hill; } if (top && d < 0.58) G[col(x, y)] = 2; } }; /* (round 36) a broader second tier on the tall hills (was 0.48) */
   for (const h of M.hills || []) hill(...h);
   // river (west), lake (south-west of town), farm pond (north)
   const riverC = M.river ? M.river.c : null;
@@ -113,8 +113,8 @@ function genMap(seed) {
       if (G[col(hx, hy)] !== g + 1 || G[col(bx, by)] !== g || tt[col(x, y)] === TT.water || tt[col(bx, by)] === TT.water) continue;
       const sx = x + dy, sy = y + dx, ox = x - dy, oy = y - dx;
       if (!inMap(sx, sy) || !inMap(ox, oy) || G[col(sx, sy)] !== g || G[col(ox, oy)] !== g) continue;
-      if (ramps.some(q => d2(q[0], q[1], x, y) < 9)) continue;
-      if (r() < 0.12 + pass * 0.3) { ramps.push([x, y]); blk[ci(x, y, g)] = 28; bdir[ci(x, y, g)] = d; tt[col(x, y)] = TT.dirt; }
+      if (ramps.some(q => d2(q[0], q[1], x, y) < 36)) continue; /* (round 36) fewer ramps, at least 6 apart (was 3): the terraces are a real edge to hold */
+      if (r() < 0.08 + pass * 0.25) { ramps.push([x, y]); blk[ci(x, y, g)] = 28; bdir[ci(x, y, g)] = d; tt[col(x, y)] = TT.dirt; }
     }
   }
   // camp: starter house (9 x 9, half second floor) with the workbench

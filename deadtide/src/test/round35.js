@@ -12,7 +12,7 @@ const { chromium } = require('playwright');
     window.spot = open => { const R = W.radio; for (let r = 4; r < 60; r++) for (let k = 0; k < 64; k++) { const a = k / 64 * 6.28, x = Math.floor(R.x + Math.cos(a) * r), y = Math.floor(R.y + Math.sin(a) * r); if (!inMap(x, y)) continue; const L = gAt(x, y); if (!standable(x, y, L, 'p') || W.blk[ci(x, y, L)]) continue;
       let clear = true; if (open) { for (let dy = -3; dy <= 3 && clear; dy++) for (let dx = -3; dx <= 3; dx++) if (!inMap(x + dx, y + dy) || skyTop(x + dx, y + dy) > gAt(x + dx, y + dy) + 0 || W.blk[ci(x + dx, y + dy, gAt(x + dx, y + dy))]) { clear = false; break; } } else clear = skyTop(x, y) > L + 1 && houseInterior(x, y);
       if (clear) return { x: x + 0.5, y: y + 0.5, L }; } return null; };
-    window.put = (o) => { const me = W.p[ME]; me.ride = false; me.mform = 0; me.down = false; me.dead = false; me.hp = me.maxHp; me.invT = 0; me.x = o.x; me.y = o.y; me.L = o.L; me.z = pZ(me); me.rx = me.x; me.ry = me.y; W.zs.length = 0; W.wardens = []; W.spawnQ = []; W.phase = 'day'; W.clock = 999; window.__dbg.god = false; };
+    window.put = (o) => { const me = W.p[ME]; me.ride = false; me.mform = 0; me.down = false; me.dead = false; me.hp = me.maxHp; me.invT = 0; me.x = o.x; me.y = o.y; me.L = o.L; me.z = pZ(me); me.rx = me.x; me.ry = me.y; W.zs.length = 0; W.wardens = []; W.spawnQ = []; W.phase = 'day'; W.clock = 999; window.__dbg.god = false; visTick(); };
     window.run = (sec, f) => { for (let k = 0; k < sec * 60; k++) { stepZombies(1 / 60); if (f) f(k); } };
   });
   // spawn rules
@@ -62,10 +62,26 @@ const { chromium } = require('playwright');
   s = await p.evaluate(() => { const o = spot(true); put(o); const me = W.p[ME]; W.edges = { 0: [[Math.floor(o.x) + 8, Math.floor(o.y), o.L]] }; const z = spawnZombie('shade', 0); z.x = o.x + 8; z.y = o.y; z.z = surfZ(z.x, z.y, z.L); visTick();
     const out = { ck: z.ck, seenFar: zSeen(z) }; hurtZombie(z, 1, me); out.shown = !z.ck && zSeen(z); z.ckT = 0; me.x = o.x - 6; run(0.2); out.recloak = z.ck;
     me.x = o.x; z.x = o.x + 1.4; z.y = o.y; const hp0 = me.hp; run(0.2, () => { me.invT = 0; }); out.ambush = hp0 - me.hp; out.after = z.ck; return out; });
-  check('隐身者: invisible from afar while cloaked, a hit reveals it, it re-cloaks away from you and ambushes up close', s.ck && !s.seenFar && s.shown && s.recloak && s.ambush >= 20 && !s.after, JSON.stringify(s));
+  check('隐身者: invisible from afar while cloaked, a hit reveals it, it re-cloaks away from you and ambushes up close', s.ck && !s.seenFar && s.shown && s.recloak && s.ambush >= 15 && !s.after, JSON.stringify(s));
+  // (round 36) counters: step out of a bird's marked dive spot and it misses; a blast grenade pops the bubble; a blast shows a cloaked one; kaiju / elites hit people on foot softer; no skills from out of sight
+  s = await p.evaluate(() => { const o = spot(true); put(o); const me = W.p[ME]; const out = {}; W.edges = { 0: [[Math.floor(o.x) + 5, Math.floor(o.y), o.L]] };
+    const c = spawnZombie('crow', 0); c.fk = 77; const hp0 = me.hp; let marked = null; const em = window.emit; window.emit = e => { if (e.k === 'fdive' && !marked) marked = e; em(e); };
+    run(12, k => { me.invT = 0; if (c.dv && c.dv.ph === 0 && c.dv.t < 0.05) { me.x = c.dv.x + (me.x > c.dv.x ? 2.2 : -2.2); me.rx = me.x; } if (!c.dv && marked) { me.x = o.x; me.rx = me.x; } });
+    window.emit = em; out.marked = !!marked; out.dodgeHurt = hp0 - me.hp;
+    put(o); const w = spawnZombie('warden', 0); w.x = o.x + 5; w.y = o.y; w.z = surfZ(w.x, w.y, w.L); gSpecial(3, w.x + 1, w.y, w.z + 0.3, me); out.popped = w.sh === 0;
+    put(o); const sh = spawnZombie('shade', 0); sh.x = o.x + 6; sh.y = o.y; sh.z = surfZ(sh.x, sh.y, sh.L); explode(sh.x + 2, sh.y, sh.z + 0.3, me, 2, 1); out.shown = !sh.ck;
+    put(o); const b = spawnZombie('blinker', 0); const h1 = me.hp; hurtPlayer(me, 20, b); out.foot = Math.round(h1 - me.hp);
+    put(o); const far = spawnZombie('runner', 0); far.x = o.x + 30; far.y = o.y; far.L = o.L; far.z = surfZ(far.x, far.y, far.L); visTick(); far.lgCD = 0; far.spCD = 0; for (let k = 0; k < 30; k++) zSkill(far, ZT.runner, 1 / 60); out.blind = !far.lg && !(far.spr > 0);
+    return out; });
+  check('counters: a bird dives at a marked spot and misses if you step aside; 爆破弹 pops the bubble; a blast shows the 隐身者; on foot kaiju / 能力者 hit ×0.65; no skills from out of sight', s.marked && s.dodgeHurt === 0 && s.popped && s.shown && s.foot === 13 && s.blind, JSON.stringify(s));
+  // (round 36) 工蜂 passive: what it flattens is gathered (and doesn't grow back); another mech's flattening grows back at dawn
+  s = await p.evaluate(() => { const o = spot(true); put(o); const me = W.p[ME]; me.vehs |= 8 | 4; me.ride = true; me.mform = 1; me.mtr = 0; me.mh = []; me.bat = 120; const out = {};
+    for (const v of [3, 2]) { me.veh = v; const i = ci(Math.floor(o.x) + 1, Math.floor(o.y), o.L); setCell(i, 22, W.slab[i], 0, 'test'); W.scar = []; const w0 = W.res.wood; act('crush', i); out[v] = { gone: !W.blk[i], wood: W.res.wood - w0, scar: W.scar.length }; }
+    me.ride = false; me.mform = 0; return out; });
+  check('工蜂 flattens a tree into wood (no regrowth); 赤刃 just flattens it (grows back)', s[3].gone && s[3].wood >= 3 && s[3].scar === 0 && s[2].gone && s[2].scar === 1, JSON.stringify(s));
   // net bits, loot
   s = await p.evaluate(() => { const o = spot(true); put(o); const w = spawnZombie('warden', 0), sh = spawnZombie('shade', 0), cr = spawnZombie('crow', 0); const S = makeSnap(), f = id => { for (let k = 0; k < S.z.length; k += 9) if (S.z[k] === id) return S.z[k + 8]; };
-    const p0 = W.res.parts; killZombie(w, W.p[ME]); return { shield: !!(f(w.id) & 32768), cloak: !!(f(sh.id) & 65536), kind: ZKEYS[S.z[S.z.indexOf(cr.id) + 1]], loot: W.res.parts - p0 }; });
+    const p0 = W.res.parts; killZombie(w, W.p[ME]); return { shield: !!(f(w.id) & 32768), cloak: !!(f(sh.id) & 65536), kind: (() => { for (let k = 0; k < S.z.length; k += 9) if (S.z[k] === cr.id) return ZKEYS[S.z[k + 1]]; })(), loot: W.res.parts - p0 }; });
   check('snapshot carries the bubble and cloak; a dead 能力者 drops parts', s.shield && s.cloak && s.kind === 'crow' && s.loot >= 6, JSON.stringify(s));
   // mech aiming: melee turns to a zombie off to the side and steps in; guns lock onto one 45° off your aim; the marker shows the pick
   s = await p.evaluate(() => { const o = spot(true); put(o); const me = W.p[ME]; window.__dbg.god = true; const out = {};

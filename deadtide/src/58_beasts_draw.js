@@ -138,3 +138,53 @@ function mprjDraw(r, x, y, z) {
   else { const dx = r.e[0] - r.x, dy = r.e[1] - r.y, dz = r.e[2] - r.z; m.rotation.set(0, -Math.atan2(dy, dx), Math.atan2(dz, Math.hypot(dx, dy))); if (m.userData.fl) m.userData.fl.scale.set(0.8 + Math.random() * 0.5, 1, 1); }
 }
 function mprjFree(r) { if (!r.m) return; r.m.visible = false; (MPRJ[r.kd] || (MPRJ[r.kd] = [])).push(r.m); r.m = null; if (r.fake) debrisFx(r.e[0], r.e[1], r.e[2] + 0.1, '#b8893a', 4); }
+
+/* ---------- (round 36) mech effects: slash arcs, shock rings, muzzle blasts, casings, battle damage ---------- */
+// short-lived additive meshes (arcs / rings / flashes), pooled per shape, animated by fxTick every frame
+const FXM = { live: [], pool: {} };
+function fxMesh(kind) {
+  const q = FXM.pool[kind] || (FXM.pool[kind] = []); let m = q.pop();
+  if (!m) { const mat = new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 1, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
+    const geo = kind === 'arc' ? new THREE.RingGeometry(0.55, 1, 28, 1, -1.15, 2.3).rotateX(-Math.PI / 2) : kind === 'ring' ? new THREE.RingGeometry(0.82, 1, 40).rotateX(-Math.PI / 2) : kind === 'disc' ? new THREE.CircleGeometry(1, 24).rotateX(-Math.PI / 2) : new THREE.SphereGeometry(1, 10, 8);
+    m = new THREE.Mesh(geo, mat); m.renderOrder = 5; SCN.add(m); m.userData.kind = kind; }
+  m.visible = true; return m;
+}
+// o: { kind, x, y, z, s0, s1 (scale over life), life, col, op, yaw, roll, pitch }
+function fxAdd(o) { const m = fxMesh(o.kind); m.material.color.set(o.col || '#ffffff'); m.position.set(o.x, o.z, o.y); m.rotation.set(o.roll || 0, -(o.yaw || 0), o.pitch || 0, 'YXZ'); FXM.live.push(Object.assign({ m, t: 0, op: 0.9 }, o)); }
+function fxTick(dt) {
+  for (const f of FXM.live) { f.t += dt; const k = Math.min(1, f.t / f.life), s = lerp(f.s0, f.s1, 1 - (1 - k) * (1 - k)); f.m.scale.set(s, f.sy != null ? f.sy : s, s); f.m.material.opacity = f.op * (1 - k * k); if (k >= 1) { f.m.visible = false; FXM.pool[f.m.userData.kind].push(f.m); f.dead = 1; } }
+  if (FXM.live.length) FXM.live = FXM.live.filter(f => !f.dead);
+}
+// a blow lands (mhit): slash arcs for blades / kicks, shock ring + crack for the ground smashes, sparks on what it hit
+function mechHitFx(e, q) {
+  if (!q || !inMech(q)) return; const M = mechOf(q), a = q._mA != null && q._mAT > 0 ? q._mA : q.aim, c = q._mcombo || 0, s = (MECH_DIM[M.style] || {}).s || 1;
+  if (M.atk === 'chop' || M.atk === 'kick') { // a bright crescent along the swing, tilted by the move
+    const ax = (q.rx != null ? q.rx : q.x), ay = (q.ry != null ? q.ry : q.y), az = (q.zv != null ? q.zv : q.z) + (M.atk === 'kick' ? 0.5 : 1.3) * s, R = M.reach * 0.95;
+    const roll = M.atk === 'kick' ? 0.15 : c === 0 ? 0.75 : c === 1 ? 0.12 : 1.45, col = M.atk === 'kick' ? '#ffe680' : '#ffb060';
+    fxAdd({ kind: 'arc', x: ax, y: ay, z: az, yaw: a, roll: (q._mpS ? 1 : -1) * roll, s0: R * 0.7, s1: R * 0.95, life: 0.22, col, op: 0.65 });
+    fxAdd({ kind: 'arc', x: ax, y: ay, z: az, yaw: a, roll: (q._mpS ? 1 : -1) * roll, s0: R * 0.55, s1: R * 0.8, life: 0.16, col: '#fff4d8', op: 0.35 });
+  }
+  if (e.g) { // ground smash: a dust shock ring, a scorch / crack on the floor, a little screen kick
+    fxAdd({ kind: 'ring', x: e.x, y: e.y, z: e.z + 0.06, s0: 0.3, s1: (e.r || 1) * 1.25, life: 0.35, col: M.glow || '#ffd27a', op: 0.75 });
+    fxAdd({ kind: 'disc', x: e.x, y: e.y, z: e.z + 0.05, s0: 0.2, s1: (e.r || 1) * 0.9, life: 0.18, col: '#fff0c0', op: 0.45 });
+    if ((e.r || 1) > 1.2) addDecal(e.x, e.y, e.z, (e.r || 1) * 0.45, '#2a2622');
+  }
+}
+// a mech shot leaves the barrel (mrkt): muzzle blast and smoke, brass casings from the cannon, a back-blast from the rocket pods
+function mechShotFx(e) {
+  const dx = e.e[0] - e.x, dy = e.e[1] - e.y, a = Math.atan2(dy, dx);
+  if (e.kd === 'cannon' || e.kd === 'rocket' || e.kd === 'fist') {
+    fxAdd({ kind: 'ball', x: e.x, y: e.y, z: e.z, s0: 0.15, s1: e.kd === 'cannon' ? 0.55 : 0.4, life: 0.1, col: e.kd === 'fist' ? '#9fe8ff' : '#ffd27a', op: 1 });
+    for (let k = 0; k < (e.kd === 'cannon' ? 7 : 4); k++) addP({ x: e.x, y: e.y, z: e.z, vx: Math.cos(a) * frnd(1, 3) + frnd(-0.6, 0.6), vy: Math.sin(a) * frnd(1, 3) + frnd(-0.6, 0.6), vz: frnd(0, 0.8), g: -0.4, col: '#8a8478', s: frnd(0.1, 0.18), life: 0.7, smoke: 1 });
+  }
+  if (e.kd === 'cannon') addP({ x: e.x - Math.cos(a) * 0.6, y: e.y - Math.sin(a) * 0.6, z: e.z, vx: -Math.sin(a) * 2.5, vy: Math.cos(a) * 2.5, vz: 2.2, g: 9, col: '#d8b048', s: 0.07, life: 1.0, floor: e.z - 2.2 }); // an ejected casing
+  if (e.kd === 'rocket') for (let k = 0; k < 4; k++) addP({ x: e.x, y: e.y, z: e.z, vx: -Math.cos(a) * frnd(1.5, 3), vy: -Math.sin(a) * frnd(1.5, 3), vz: frnd(0.2, 1), g: -0.2, col: k % 2 ? '#ffb060' : '#a09a90', s: 0.12, life: 0.45, smoke: k % 2 ? 0 : 1 });
+  if (e.kd === 'parcel' || e.kd === 'bigparcel') for (let k = 0; k < 3; k++) addP({ x: e.x, y: e.y, z: e.z, vx: frnd(-1, 1), vy: frnd(-1, 1), vz: frnd(0.5, 1.5), g: 3, col: '#e8d9a8', s: 0.05, life: 0.5 });
+}
+// battle damage: under 35% hull a mech smokes and throws sparks (more as it gets worse); low energy makes its reactor flicker
+function mechDamageFx(p, mm, dt) {
+  const J = mm.userData.J, M = mechOf(p); if (!M || !J) return; const f = clamp(mhpOf(p) / M.hp, 0, 1), px = p.rx != null ? p.rx : p.x, py = p.ry != null ? p.ry : p.y, pz = (p.zv != null ? p.zv : p.z), s = (MECH_DIM[M.style] || {}).s || 1;
+  if (f < 0.35) { const w = 1 - f / 0.35; if (FXR() < dt * (4 + 14 * w)) addP({ x: px + frnd(-0.3, 0.3), y: py + frnd(-0.3, 0.3), z: pz + frnd(1.4, 2.4) * s, vx: frnd(-0.3, 0.3), vy: frnd(-0.3, 0.3), vz: frnd(0.6, 1.2), g: -0.3, col: w > 0.6 ? '#2a2a2a' : '#5a5650', s: frnd(0.12, 0.22), life: 1.1, smoke: 1 });
+    if (FXR() < dt * (1 + 6 * w)) for (let k = 0; k < 4; k++) addP({ x: px + frnd(-0.35, 0.35), y: py + frnd(-0.35, 0.35), z: pz + frnd(0.8, 2.2) * s, vx: frnd(-2.5, 2.5), vy: frnd(-2.5, 2.5), vz: frnd(0.5, 3), g: 9, col: k % 2 ? '#ffe080' : '#ff9a3a', s: 0.04, life: 0.45, floor: pz }); }
+  const low = (p.bat || 0) < BAL.mechLow; if (J.core) J.core.visible = !low || (W.t * 7 % 1) > 0.35;
+}
