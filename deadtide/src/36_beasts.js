@@ -24,10 +24,10 @@ function flyerStep(z, Z, dt) {
     D.t += dt; const ex = zExposed(tp);
     if (D.ph === 0) { // (round 36) a hover and a cry, then it dives at the spot you were in when it cried (marked on the ground): step aside and it misses
       z.kt = 1; spd = 0; gz = z.z + 0.3; z.face += angDiff(z.face, Math.atan2(D.y - z.y, D.x - z.x)) * Math.min(1, dt * 10);
-      if (D.t > 0.55) { D.ph = 1; D.t = 0; }
+      if (D.t > 0.42) { D.ph = 1; D.t = 0; } // (round 36b) tell 0.55 → 0.42 s
     } else if (D.ph === 1) { // the dive: straight at the marked spot, no homing; whoever is there when it arrives gets pecked
       z.kt = 2; z.atk = 0.3; spd = z.spd * F.spd; vzMax = 9; gx = D.x; gy = D.y; gz = D.z;
-      for (const p of W.p) { if (p.gone || p.dead || D.hit) continue; const az = flyAimZ(p); if (Math.hypot(p.x - z.x, p.y - z.y, az - z.z) < (p.r || 0.3) + z.r + 0.12 + (inMech(p) ? 0.7 : 0) && zExposed(p)) {
+      for (const p of W.p) { if (p.gone || p.dead || D.hit) continue; const az = flyAimZ(p); if (Math.hypot(p.x - z.x, p.y - z.y, az - z.z) < (p.r || 0.3) + z.r + 0.22 + (inMech(p) ? 0.7 : 0) && zExposed(p)) {
         D.hit = 1; hurtPlayer(p, Z.dmg * W.D.dmg, z); if (F.drain) z.hp = Math.min(z.max, z.hp + F.drain); emit({ k: 'sfx', n: 'peck', x: z.x, y: z.y }); } }
       if (D.hit || Math.hypot(D.x - z.x, D.y - z.y, D.z - z.z) < 0.3 || D.t > 1.4) { D.ph = 2; D.t = 0; D.a = z.face + (rand() - 0.5) * 1.4; } // carries on past and pulls up
     } else { // pull up and away, then back to circling
@@ -39,9 +39,9 @@ function flyerStep(z, Z, dt) {
     if (dist < R + 3) z.fa += dir * z.spd / R * dt * 0.8; else z.fa = Math.atan2(z.y - tp.y, z.x - tp.x);
     gx = tp.x + Math.cos(z.fa) * R; gy = tp.y + Math.sin(z.fa) * R;
     gz = Math.max(cruise(), flyFloor(tp.x, tp.y) + F.alt, inAirZ(tp) != null ? inAirZ(tp) + 0.4 : 0);
-    if (z.dvCD <= 0 && zExposed(tp) && dist < F.dive && zSeen(z) && los(z.x, z.y, z.z, tp.x, tp.y, flyAimZ(tp))) {
+    if (z.dvCD <= 0 && zExposed(tp) && dist < F.dive && zSeen(z) && W.phase !== 'day' && los(z.x, z.y, z.z, tp.x, tp.y, flyAimZ(tp))) {
       let busy = 0; for (const o of W.zs) if (o !== z && o.fk && o.fk === z.fk && o.dv && o.hp > 0) busy++;
-      if (busy < 2) { const az = flyAimZ(tp); z.dv = { ph: 0, t: 0, x: tp.x, y: tp.y, z: az }; emit({ k: 'sfx', n: z.k === 'bat' ? 'screech' : 'caw', x: z.x, y: z.y }); emit({ k: 'fdive', x: r2(tp.x), y: r2(tp.y), z: r2(az - (inAirZ(tp) != null ? 0.6 : inMech(tp) ? 2.2 : 0.95)) }); } // the flock takes turns, two at a time
+      if (busy < 3) { const az = flyAimZ(tp), lead = 0.55, lx = clamp(tp.x + (tp.vx || 0) * lead, 1, MW - 1), ly = clamp(tp.y + (tp.vy || 0) * lead, 1, MH - 1); z.dv = { ph: 0, t: 0, x: lx, y: ly, z: az }; /* (round 36b) three at a time, aimed where you're heading: turn or stop to dodge */ emit({ k: 'sfx', n: z.k === 'bat' ? 'screech' : 'caw', x: z.x, y: z.y }); emit({ k: 'fdive', x: r2(lx), y: r2(ly), z: r2(az - (inAirZ(tp) != null ? 0.6 : inMech(tp) ? 2.2 : 0.95)) }); } // the flock takes turns, two at a time
       else z.dvCD = 0.4 + rand() * 0.6;
     }
   }
@@ -117,7 +117,7 @@ function eliteStep(z, Z, dt) {
       }
       return true;
     }
-    if (tp && z.eCD <= 0 && z.stun <= 0 && !(z.conf > 0) && td > 2.6 && td < 13 && zSeen(z) && los(z.x, z.y, z.z + 1, tp.x, tp.y, tp.z + 1)) {
+    if (tp && z.eCD <= 0 && z.stun <= 0 && !(z.conf > 0) && td > 2.6 && td < 13 && zSeen(z) && W.phase !== 'day' && los(z.x, z.y, z.z + 1, tp.x, tp.y, tp.z + 1)) {
       const back = tp.aim + Math.PI; let to = null;
       for (const da of [0, 0.6, -0.6, 1.2, -1.2, 1.9, -1.9]) { const px = tp.x + Math.cos(back + da) * 1.35, py = tp.y + Math.sin(back + da) * 1.35, cx = Math.floor(px), cy = Math.floor(py);
         if (inMap(cx, cy) && navNode(cx, cy, tp.L) && !solidFor(W.blk[ci(cx, cy, tp.L)], 'z') && los(px, py, tp.z + 0.8, tp.x, tp.y, tp.z + 0.8)) { to = { x: px, y: py, L: tp.L }; break; } }
@@ -139,7 +139,7 @@ function eliteStep(z, Z, dt) {
       }
       return true;
     }
-    if (tp && z.eCD <= 0 && z.stun <= 0 && td < 14 && zSeen(z)) { z.es = { ph: 0, t: 0 }; z.kt = 1; emit({ k: 'elx', a: 'call0', id: z.id, x: r2(z.x), y: r2(z.y), z: r2(z.z) }); emit({ k: 'sfx', n: 'groan', x: z.x, y: z.y }); return true; }
+    if (tp && z.eCD <= 0 && z.stun <= 0 && td < 14 && zSeen(z) && W.phase !== 'day') { z.es = { ph: 0, t: 0 }; z.kt = 1; emit({ k: 'elx', a: 'call0', id: z.id, x: r2(z.x), y: r2(z.y), z: r2(z.z) }); emit({ k: 'sfx', n: 'groan', x: z.x, y: z.y }); return true; }
     return false;
   }
   return false;

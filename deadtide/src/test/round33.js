@@ -37,7 +37,7 @@ const { chromium } = require('playwright');
   // the bike: almost full fire rate, no mud slow-down, no engine noise; the motorbike is loud
   s = await p.evaluate(() => { const me = W.p[0]; me.ride = true; me.veh = 1; const bk = rideK(me).rate; me.veh = 2; const mo = rideK(me).rate; me.ride = false;
     return { bk, mo, quiet: !VEH[1].noise && VEH[1].quiet, mud: !!VEH[1].mud, motoNoise: VEH[2].noise > 0 }; });
-  check('bike: shoots at ~full rate (moto 2.5x slower), mud-proof, silent; motorbike makes engine noise', s.bk < 1.3 && s.mo === 2.5 && s.quiet && s.mud && s.motoNoise, JSON.stringify(s));
+  check('bike: shoots at full rate (moto 2.1x slower since round 36b), mud-proof, silent; motorbike makes engine noise', s.bk <= 1.1 && s.mo === 2.1 && s.quiet && s.mud && s.motoNoise, JSON.stringify(s));
   check('no page errors', !errs.length, errs.join(' | '));
   console.log(ok ? 'ALL PASS' : 'SOME FAIL'); await b.close();
 })();

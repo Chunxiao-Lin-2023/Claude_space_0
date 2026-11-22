@@ -40,7 +40,7 @@ const { chromium } = require('playwright');
     q.aimPt = { x: q.x + 4, y: q.y + 1, z: 0.7 }; q.wpn = 0; q.cdW = WPN.map(() => 0); q.fireCD = 0; q.mag[0] = 12; q.inp.fire = 1; stepActions(q, 0.016); q.inp.fire = 0; const cd = +q.cdW[0].toFixed(2);
     doAct(a, 'ride'); return { on, follow, gap, cd, base: WPN[0].rate, offAfter: q.pass }; });
   check('a teammate can ride on the back of the motorbike and is carried along', s.on === 0 && s.follow > 1.5 && s.gap < 0.6, JSON.stringify(s));
-  check('the pillion rider shoots at 70% rate; when the driver gets off so do they', Math.abs(s.cd - s.base * 1.43) < 0.06 && s.offAfter === -1, JSON.stringify(s));
+  check('the pillion rider shoots at ~77% rate (round 36b); when the driver gets off so do they', Math.abs(s.cd - s.base * 1.3) < 0.06 && s.offAfter === -1, JSON.stringify(s));
   // both down -> game over
   r = await p.evaluate(() => { for (const q of W.p) { q.meds = 0; q.selfRev = false; q.lives = 0; q.invT = 0; hurtPlayer(q, 999); } return W.over; });
   check('when nobody is left standing and no respawns are left it is game over', r === 'lose' || (await p.evaluate(() => W.over)) === 'lose', String(r));

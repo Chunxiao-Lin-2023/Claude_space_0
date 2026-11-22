@@ -66,7 +66,7 @@ Object.assign(MODES.siege, {
           const facing = Math.cos(angDiff(z.face || 0, Math.atan2(p.y - z.y, p.x - z.x))) > 0 ? 1 : 0.45;
           gain = Math.max(gain, (d < 1.2 ? 4 : Math.pow(1 - d / SIEGE.sleepR, 1.5) * SIEGE.noticeRate) * facing * (p.ride ? 1.6 : 1));
         }
-        z.aw = Math.max(0, (z.aw || 0) + (gain > 0 ? gain : -SIEGE.noticeDecay) * st);
+        z.aw = Math.max(0, (z.aw || 0) + (gain > 0 ? gain * (W.phase === 'day' ? BAL.day.notice : 1) : -SIEGE.noticeDecay) * st); // (round 36b) slower to notice you by day
         let wake = z.aw >= 1;
         if (!wake) for (const e of W.noise) { const d = Math.hypot(e.x - z.x, e.y - z.y); if (d < e.r && (d < e.r * SIEGE.wallMuffle || los(e.x, e.y, (e.z || 0) + 1, z.x, z.y, z.z + 1))) { wake = true; break; } }
         if (wake) siegeWake(z);

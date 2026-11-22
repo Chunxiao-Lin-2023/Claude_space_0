@@ -36,7 +36,7 @@ const rand = (a = 0, b = 1) => a + W.rng() * (b - a);
 const activeP = () => W.p.filter(p => !p.gone);
 const standingP = p => !p.gone && !p.dead && !p.down;
 // shooting from a vehicle (round 20): the driver fires at 40% the rate, a pillion rider at 70% (same accuracy as on foot)
-const rideK = p => p.ride ? { rate: VEH[p.veh] && VEH[p.veh].quiet ? 1.2 : 2.5, spread: 1 } : p.pass != null && p.pass >= 0 ? { rate: 1.43, spread: 1 } : { rate: 1, spread: 1 }; // only the rate drops; aim stays as true as on foot
+const rideK = p => p.ride ? { rate: VEH[p.veh] && VEH[p.veh].quiet ? 1.1 : 2.1, spread: 1 } : p.pass != null && p.pass >= 0 ? { rate: 1.3, spread: 1 } : { rate: 1, spread: 1 }; /* (round 36b) firing from a vehicle, a little quicker: cooldown driver ×2.5 → ×2.1, bicycle ×1.2 → ×1.1, back seat ×1.43 → ×1.3 */ // only the rate drops; aim stays as true as on foot
 function emit(e) { if (!W) return; e.q = ++W.seq; /* NB: `q`, not `s` — cell events carry the slab id in `s` */ fxEvent(e); if (NETROLE === 'host') netSendCtl({ t: 'ev', e }); }
 function say(text, col) { emit({ k: 'say', text, col: col || '' }); }
 const pZ = p => surfZ(p.x, p.y, p.L);
@@ -325,7 +325,7 @@ function stepMove(p, dt) {
   }
   if (p.dash) { const D = p.dash, f = Math.min(dt, D.T - D.t) / D.T; moveEnt(p, D.dx * f, D.dy * f, 'p', true); D.t += dt; if (D.t >= D.T) p.dash = null; p.z = pZ(p); p.anim += dt * 8; return; }
   if (p.L > 0 && p.L > skyTop(p.x, p.y)) { p.L = skyTop(p.x, p.y); p.z = pZ(p); } // (round 31) knocked down mid-air, or a save made in flight: fall to what is below
-  const spd = BAL.pSpeed * (p.down ? 0.22 : 1) * (p.medT > 0 ? 0.45 : 1) * (p.build ? 0.9 : 1) * (inMud(p.x, p.y, p.L) && !(p.ride && VEH[p.veh] && VEH[p.veh].mud) ? MUD_SLOW : 1) * (p.ride && VEH[p.veh] ? (inMech(p) ? mechOf(p).spd : VEH[p.veh].spd) : 1) * (p.mtr > 0 ? 0 : 1); // (round 34b) standing still while it transforms
+  const spd = BAL.pSpeed * (p.down ? 0.22 : 1) * (p.medT > 0 && !p.ride ? 0.45 : 1) * (p.build ? 0.9 : 1) * (inMud(p.x, p.y, p.L) && !(p.ride && VEH[p.veh] && VEH[p.veh].mud) ? MUD_SLOW : 1) * (p.ride && VEH[p.veh] ? (inMech(p) ? mechOf(p).spd : VEH[p.veh].spd) : 1) * (p.mtr > 0 ? 0 : 1); // (round 34b) standing still while it transforms
   const tx = I.mx * k * spd, ty = I.my * k * spd, a = Math.min(1, dt * 14);
   p.vx = lerp(p.vx, tx, a); p.vy = lerp(p.vy, ty, a);
   p.kbx *= Math.max(0, 1 - dt * 6); p.kby *= Math.max(0, 1 - dt * 6);
@@ -719,6 +719,7 @@ function killZombie(z, p) {
 function hurtPlayer(p, dmg, src) {
   if (p.gone || p.dead || (p.invT || 0) > 0) return; // invT: just respawned
   if (src && src.k && ZT[src.k] && (ZT[src.k].kaiju || ZT[src.k].elite) && !inMech(p)) dmg *= BAL.bigFoot; // (round 36) kaiju / 能力者 hit people on foot softer (they're tuned against mechs)
+  if (W.phase === 'day' && src && src.k && ZT[src.k]) dmg *= BAL.day.dmg; // (round 36b) softer bites by day
   if (DBG && DBG.god) return;
   if (inMech(p)) { // (round 34b) the hull takes the hit (by how armoured that mech is); a little still gets through to you; at zero it falls back into a vehicle
     const M = mechOf(p); p.mh = p.mh || []; p.mh[p.veh] = Math.max(0, mhpOf(p) - dmg * M.armor); emit({ k: 'phurt', p: p.i, d: 0 });
@@ -807,7 +808,7 @@ function doAct(p, a, v) {
     case 'craft': doCraft(p, v); break;
     case 'build': doBuild(p, v.x, v.y, v.l, v.b, v.d); break;
     case 'demo': doDemolish(p, v.x, v.y, v.l); break;
-    case 'crush': if (inMech(p) && typeof v === 'number' && v >= 0 && v < NC && MECH_CRUSH.has(W.blk[v]) && !(W.mine && W.mine.has(v)) && Math.hypot(cx_(v) + 0.5 - p.x, cy_(v) + 0.5 - p.y) < 2.6) { const r = B[W.blk[v]].res, g = GATHER[W.blk[v]]; if (p.veh === 3 && g) { const n = Math.max(1, Math.round(rand(g.n[0], g.n[1]) * BAL.workerGather)); W.res[g.res] += n; taskAdd('gather'); emit({ k: 'loot', p: p.i, x: cx_(v) + 0.5, y: cy_(v) + 0.5, z: cl_(v) * FH + 1, text: '+' + n + ' ' + RES.find(q => q.k === g.res).name }); setCell(v, 0, W.slab[v], null, 'mine'); } /* (round 36) 工蜂's passive: what it flattens is gathered (and so doesn't grow back) */ else { mechScar(v); setCell(v, 0, W.slab[v], null, 'brk'); if (r && rand() < 0.5) W.res[r] = (W.res[r] || 0) + 1; } emit({ k: 'sfx', n: 'bash', x: cx_(v) + 0.5, y: cy_(v) + 0.5 }); } break; // (round 34d) a mech flattens what is in its way
+    case 'crush': if (inMech(p) && typeof v === 'number' && v >= 0 && v < NC && MECH_CRUSH.has(W.blk[v]) && !(W.mine && W.mine.has(v)) && Math.hypot(cx_(v) + 0.5 - p.x, cy_(v) + 0.5 - p.y) < 2.6) { const r = B[W.blk[v]].res, g = GATHER[W.blk[v]]; if (p.veh === 3 && g) { mechScar(v, null, null, BAL.workerRegrow); const n = Math.max(1, Math.round(rand(g.n[0], g.n[1]) * BAL.workerGather)); W.res[g.res] += n; taskAdd('gather'); emit({ k: 'loot', p: p.i, x: cx_(v) + 0.5, y: cy_(v) + 0.5, z: cl_(v) * FH + 1, text: '+' + n + ' ' + RES.find(q => q.k === g.res).name }); setCell(v, 0, W.slab[v], null, 'mine'); } /* (round 36) 工蜂's passive: what it flattens is gathered (and so doesn't grow back) */ else { mechScar(v); setCell(v, 0, W.slab[v], null, 'brk'); if (r && rand() < 0.5) W.res[r] = (W.res[r] || 0) + 1; } emit({ k: 'sfx', n: 'bash', x: cx_(v) + 0.5, y: cy_(v) + 0.5 }); } break; // (round 34d) a mech flattens what is in its way
     case 'xform': { const to = p.mform === 1 ? 0 : 1, why = xformDeny(p, to); if (why) emit({ k: 'deny', p: p.i, why }); else startXform(p, to); } break; // (round 34b)
     case 'vdef': if (v >= 1 && ownsVeh(p, v) && p.ride && v !== p.veh && (p.mform === 1 || p.mtr > 0)) { emit({ k: 'deny', p: p.i, why: '先变回载具再换车' }); break; } if (v >= 1 && ownsVeh(p, v) && p.ride && VEH[v].outdoor && v !== p.veh && skyTop(p.x, p.y) > p.L) { emit({ k: 'deny', p: p.i, why: VEH[v].name + '太大，只能在室外开' }); break; } if (v >= 1 && ownsVeh(p, v) && p.ride && (airborne(p) || VEH[v].fly) && v !== p.veh) { emit({ k: 'deny', p: p.i, why: airborne(p) ? '先落地再换车' : '先下车，再坐旋翼机起飞' }); break; } if (v >= 1 && ownsVeh(p, v)) { p.veh = v; if (p.ride && !vehSeats(p)) for (const q of W.p) if (q.pass === p.i) q.pass = -1; } break; // pick the default vehicle (switches the one you're on too)
     case 'pad': if (v && inMap(v.x, v.y) && v.l >= 0 && v.l < ML) { const i = ci(v.x, v.y, v.l); if (W.blk[i] === 56) { setCell(i, 0, W.slab[i], null, 'demo'); emit({ k: 'sfx', n: 'jump', x: v.x + 0.5, y: v.y + 0.5 }); } } break;
@@ -1016,10 +1017,10 @@ function startNight() {
   emit({ k: 'night', n, lv: BAL.nightLv(n), up: n > 1 && BAL.nightLv(n) > BAL.nightLv(n - 1) ? 1 : 0, blood: blood ? 1 : 0, count: q.length, from: front.map(s => names[s]).join('、') });
 }
 // (round 35) what a mech flattened (rocks, bushes, fences, trees…) grows / gets put back at dawn, unless something now stands there
-function mechScar(i, b, d) { (W.scar = W.scar || []).push([i, b != null ? b : W.blk[i], d != null ? d : W.bdir[i]]); if (W.scar.length > 3000) W.scar.shift(); }
+function mechScar(i, b, d, ch) { (W.scar = W.scar || []).push([i, b != null ? b : W.blk[i], d != null ? d : W.bdir[i], ch == null ? 1 : ch]); if (W.scar.length > 3000) W.scar.shift(); }
 function scarRegrow() {
   if (!W.scar || !W.scar.length) return; let n = 0;
-  for (const [i, b, d] of W.scar) { if (W.blk[i]) continue; const x = cx_(i) + 0.5, y = cy_(i) + 0.5, L = cl_(i);
+  for (const [i, b, d, ch] of W.scar) { if (W.blk[i] || ch < 1 && rand() >= ch) continue; /* (round 36b) what 工蜂 gathered comes back 60% of the time */ const x = cx_(i) + 0.5, y = cy_(i) + 0.5, L = cl_(i);
     if (W.p.some(p => !p.gone && p.L === L && Math.abs(p.x - x) < 0.9 && Math.abs(p.y - y) < 0.9) || W.zs.some(z => z.L === L && Math.abs(z.x - x) < 0.8 && Math.abs(z.y - y) < 0.8)) continue;
     setCell(i, b, W.slab[i], d, 'grow'); n++; }
   W.scar = [];

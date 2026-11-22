@@ -205,8 +205,8 @@ const ZT = {
   kdig: { name: '掘地兽', hp: 2300, spd: 0.9, r: 0.8, h: 2.5, dmg: 40, bdmg: 220, cd: 1.4, sc: 1, kb: 8, kaiju: 'dig', skin: '#7a5a3a' },
   armored: { name: '防暴尸', hp: 260, spd: 0.9, r: 0.36, h: 1.26, dmg: 12, bdmg: 16, cd: 1.1, sc: 1.3, armor: 0.3, lunge: { r: 2.8, cd: 5, dmg: 12 } }, // a shield-first lunge
   // (round 35) flyers: flocks that cruise over walls and roofs, circle you and dive in for a peck (36_beasts); a roof over your head keeps them off
-  crow: { name: '尸鸦', hp: 22, spd: 4.2, r: 0.3, h: 0.5, dmg: 5, bdmg: 0, cd: 1, sc: 1, fly: { alt: 1.9, orbit: 3.2, dive: 7, cd: 3.4, spd: 1.8 } },
-  bat: { name: '尸蝠', hp: 34, spd: 3.7, r: 0.32, h: 0.5, dmg: 6, bdmg: 0, cd: 1, sc: 1, fly: { alt: 2.2, orbit: 2.6, dive: 8, cd: 2.7, spd: 2.0, drain: 8 } }, // a bite heals it
+  crow: { name: '尸鸦', hp: 22, spd: 4.2, r: 0.3, h: 0.5, dmg: 6, bdmg: 0, cd: 1, sc: 1, fly: { alt: 1.9, orbit: 3.2, dive: 8, cd: 2.4, spd: 2.0 } }, /* (round 36b) peck 5 → 6, dive every 3.4 → 2.4 s, dive speed ×1.8 → ×2.0 */
+  bat: { name: '尸蝠', hp: 34, spd: 3.7, r: 0.32, h: 0.5, dmg: 7, bdmg: 0, cd: 1, sc: 1, fly: { alt: 2.2, orbit: 2.6, dive: 9, cd: 2.0, spd: 2.2, drain: 8 } }, /* (round 36b) bite 6 → 7, 2.7 → 2.0 s, ×2.0 → ×2.2 */ // a bite heals it
   // (round 35) 能力者: rare elites, each with one strong telegraphed skill (36_beasts), a coloured aura and a name over the head
   blinker: { name: '闪影者', hp: 520, spd: 1.55, r: 0.3, h: 1.3, dmg: 14, bdmg: 12, cd: 0.8, sc: 1.2, look: 'runner', skin: '#7a66aa', elite: { k: 'blink', cd: 6.5, col: '#b47aff', tip: '会瞬移到你身后再砍一刀，看到紫光就闪开' } },
   caller: { name: '唤尸者', hp: 650, spd: 0.85, r: 0.32, h: 1.3, dmg: 12, bdmg: 10, cd: 1.0, sc: 1.28, look: 'screamer', skin: '#5e8268', elite: { k: 'call', cd: 11, col: '#6aff9a', tip: '会从地下叫出一群丧尸，打断它（晕住）就叫不出来' } },
@@ -348,12 +348,12 @@ const BAL = {
   slowR: 3.6, slowT: 8, slowMul: 0.3,                           // slow grenade: a sticky field, zombies inside crawl at 30%
   smokeR: 3.8, smokeT: 10, smokeConf: 1.2,                      // smoke: zombies in the cloud lose you, wander and don't bite (and for 1.2 s after leaving)
   blastR: 4.4, blastDmg: 70, blastKB: 24, blastStun: 1.6,       // blast: little damage, throws everything out of the way (clears a path)
-  tankDmg: 120, tankR: 2.3, tankRate: 1.6, tankRange: 20, tankCap: 200, tankStart: 100, // (round 31) tank cannon: a shell that bursts where it hits
+  tankDmg: 120, tankR: 2.3, tankRate: 1.45, /* (round 36b) 1.6 → 1.45 */ tankRange: 20, tankCap: 200, tankStart: 100, // (round 31) tank cannon: a shell that bursts where it hits
   mechBat: 120, mechLow: 20, mechPass: 0.1, mechRegen: 0.015, batRegen: 0.4, xformT: 1.0, // (round 34b) mech energy (s), low warning, share of a hit the pilot still feels, hull / energy coming back while not a mech (/s), transform time
-  gyroDmg: 12, gyroRate: 0.12, gyroSpread: 0.06, gyroRange: 22, gyroCap: 500, gyroStart: 250, // (round 30) gyrocopter chin gun: its own ammo, bought in the shop
+  gyroDmg: 12, gyroRate: 0.11, /* (round 36b) 0.12 → 0.11 */ gyroSpread: 0.06, gyroRange: 22, gyroCap: 500, gyroStart: 250, // (round 30) gyrocopter chin gun: its own ammo, bought in the shop
   flyHover: 2.2, flyClimb: 0.8, flyDrop: 0.6, fuelLow: 10, refuelT: 4, // (round 29) gyrocopter: cruise 2.2 floors over whatever is below, climb / descend rate (of the take-off curve per second), warn at 10 s of fuel, 4 s to refuel indoors
   zSlope: 0.45, zSlopeC: 0.7, // (round 36) zombie speed going UP a hill slope (climbers barely mind)
-  workerGather: 0.6, // (round 36) 工蜂 passive: flattening a tree / rock / scrap / logs / bush gathers it, at this share of a normal gather
+  workerGather: 0.6, workerRegrow: 0.6, // (round 36b) and 60% of what it gathered grows back at dawn // (round 36) 工蜂 passive: flattening a tree / rock / scrap / logs / bush gathers it, at this share of a normal gather
   bigFoot: 0.65, // (round 36) kaiju / 能力者 damage to someone not in a mech
   vis: { foot: 18, floor: 3.5, night: 0.85, mech: 20, fly: 28 }, /* (round 35) 12 / 2.5 / 0.75 / 14 / 20 → 16 / 3 / 0.8 / 18 / 26; (round 36) → 18 / 3.5 / 0.85 / 20 / 28 */ // (round 34d) how far you see zombies (shared with your teammate): on foot, + per floor up, × at night; vehicles have their own (VEH[].vis)
   nadeRange: 12, nadeDmg: 220, nadeR: 3.0, nadeFuse: 1.9, nadeLand: 0.35, nadeMin: 0.3, // (round 18: radius 2.8 -> 3.4, damage at the edge 35% -> 50%, goes off 0.35 s after landing where you aimed)
@@ -371,7 +371,8 @@ const BAL = {
   zCap: () => TOUCHY ? 95 : 140,  // most zombies alive at once; the rest of the horde waits its turn
   nightMin: n => Math.min(330, 150 + Math.max(0, n - 1) * 15), // a night lasts at least this long; small groups keep coming until then (round 34b: 150 + 6n → from night 2 +15 s a night, up to 330)
   nightTrickleCD: 7, nightTrickleMax: 8,
-  dayStragglers: 8, dayStragglerCD: 10,
+  dayStragglers: 6, dayStragglerCD: 14, // (round 36b) quieter days: 8 / 10 s → 6 / 14 s
+  day: { spd: 0.8, dmg: 0.75, notice: 0.7 }, // (round 36b) by day zombies are sluggish: slower, bite softer, no pounces / sprints / skills, sleepers slower to notice you
   burnSpread: 2.5, burnSpreadR: 1.15, // burning zombies set fire to others this close, about 2.5 times a second (was: same cell only, 1.2 / s)
   barrelR: 3.2, barrelDmg: 240, barrelBurn: 3, // red oil barrels go up when shot
   burnDps: 28, blastR: 2.3, blastDmgP: 32, blastDmgB: 160, screamR: 9, screamCD: 9, rageMul: 1.45,

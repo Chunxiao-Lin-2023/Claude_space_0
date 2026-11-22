@@ -347,7 +347,9 @@ body.touch #phase{font-size:12px;line-height:1.3;text-align:center}
 body.touch #hTL .hcard{padding:5px 8px}
 body.touch .hcard{background:rgba(14,16,20,.62)}
 @media (min-width:501px){body.touch #hTC{min-width:0;max-width:max(200px,calc(100vw - 560px - var(--sa-l) - var(--sa-r)))}}
-@media (pointer:coarse) and (max-height:500px){body.touch #objp{display:none!important}body.touch #hTL{width:160px}body.touch .items{font-size:11px}body.touch .res b{font-size:14px}}
+@media (pointer:coarse) and (max-height:500px){body.touch #pcards{padding:3px 7px}body.touch #pcards .nm{font-size:10px}body.touch #pcards .bar{height:4px}body.touch #pcards .pbar{gap:1px}
+  body.touch #hTC{left:calc(176px + var(--sa-l));transform:none;align-items:flex-start;max-width:calc(100vw - 176px - 380px - var(--sa-l) - var(--sa-r));background:rgba(14,16,20,.38)}body.touch .hcard{background:rgba(14,16,20,.42)}
+  body.touch #objp{display:none!important}body.touch #hTL{width:160px}body.touch .items{font-size:11px}body.touch .res b{font-size:14px}}
 </style>
 <body>
 <div id="lowhp"></div>
@@ -446,7 +448,7 @@ body.touch .hcard{background:rgba(14,16,20,.62)}
 </div>
 
 <div id="craft" class="modal hidden">
-  <div class="card shop"><h3>商店</h3><div class="ctabs" id="ctabs"></div><div class="lbl" id="cres"></div><div class="clist" id="clist"></div><button id="craftClose" class="ghost">关闭 <span class="kbd">(C)</span></button></div>
+  <div class="card shop"><h3>商店</h3><div class="ctabs" id="ctabs"></div><div class="lbl" id="cres"></div><div class="clist" id="clist"></div><button id="craftClose" class="ghost">关闭 <span class="kbd">(C)</span></button><div class="bmhint" style="text-align:center;margin-top:4px">点旁边空白处也能关闭</div></div>
 </div>
 <div id="kit" class="modal hidden">
   <div class="card kitc"><h3>装备</h3>

@@ -12,7 +12,7 @@ const { chromium } = require('playwright');
     window.spot = open => { const R = W.radio; for (let r = 4; r < 60; r++) for (let k = 0; k < 64; k++) { const a = k / 64 * 6.28, x = Math.floor(R.x + Math.cos(a) * r), y = Math.floor(R.y + Math.sin(a) * r); if (!inMap(x, y)) continue; const L = gAt(x, y); if (!standable(x, y, L, 'p') || W.blk[ci(x, y, L)]) continue;
       let clear = true; if (open) { for (let dy = -3; dy <= 3 && clear; dy++) for (let dx = -3; dx <= 3; dx++) if (!inMap(x + dx, y + dy) || skyTop(x + dx, y + dy) > gAt(x + dx, y + dy) + 0 || W.blk[ci(x + dx, y + dy, gAt(x + dx, y + dy))]) { clear = false; break; } } else clear = skyTop(x, y) > L + 1 && houseInterior(x, y);
       if (clear) return { x: x + 0.5, y: y + 0.5, L }; } return null; };
-    window.put = (o) => { const me = W.p[ME]; me.ride = false; me.mform = 0; me.down = false; me.dead = false; me.hp = me.maxHp; me.invT = 0; me.x = o.x; me.y = o.y; me.L = o.L; me.z = pZ(me); me.rx = me.x; me.ry = me.y; W.zs.length = 0; W.wardens = []; W.spawnQ = []; W.phase = 'day'; W.clock = 999; window.__dbg.god = false; visTick(); };
+    window.put = (o) => { const me = W.p[ME]; me.ride = false; me.mform = 0; me.down = false; me.dead = false; me.hp = me.maxHp; me.invT = 0; me.x = o.x; me.y = o.y; me.L = o.L; me.z = pZ(me); me.rx = me.x; me.ry = me.y; W.zs.length = 0; W.wardens = []; W.spawnQ = []; W.phase = 'night'; W.nightT = 0; W.clock = 999; window.__dbg.god = false; visTick(); };
     window.run = (sec, f) => { for (let k = 0; k < sec * 60; k++) { stepZombies(1 / 60); if (f) f(k); } };
   });
   // spawn rules
@@ -76,9 +76,9 @@ const { chromium } = require('playwright');
   check('counters: a bird dives at a marked spot and misses if you step aside; 爆破弹 pops the bubble; a blast shows the 隐身者; on foot kaiju / 能力者 hit ×0.65; no skills from out of sight', s.marked && s.dodgeHurt === 0 && s.popped && s.shown && s.foot === 13 && s.blind, JSON.stringify(s));
   // (round 36) 工蜂 passive: what it flattens is gathered (and doesn't grow back); another mech's flattening grows back at dawn
   s = await p.evaluate(() => { const o = spot(true); put(o); const me = W.p[ME]; me.vehs |= 8 | 4; me.ride = true; me.mform = 1; me.mtr = 0; me.mh = []; me.bat = 120; const out = {};
-    for (const v of [3, 2]) { me.veh = v; const i = ci(Math.floor(o.x) + 1, Math.floor(o.y), o.L); setCell(i, 22, W.slab[i], 0, 'test'); W.scar = []; const w0 = W.res.wood; act('crush', i); out[v] = { gone: !W.blk[i], wood: W.res.wood - w0, scar: W.scar.length }; }
+    for (const v of [3, 2]) { me.veh = v; const i = ci(Math.floor(o.x) + 1, Math.floor(o.y), o.L); setCell(i, 22, W.slab[i], 0, 'test'); W.scar = []; const w0 = W.res.wood; act('crush', i); out[v] = { gone: !W.blk[i], wood: W.res.wood - w0, scar: W.scar.length, ch: W.scar.length ? W.scar[0][3] : null }; }
     me.ride = false; me.mform = 0; return out; });
-  check('工蜂 flattens a tree into wood (no regrowth); 赤刃 just flattens it (grows back)', s[3].gone && s[3].wood >= 3 && s[3].scar === 0 && s[2].gone && s[2].scar === 1, JSON.stringify(s));
+  check('工蜂 flattens a tree into wood (60% chance it grows back); 赤刃 just flattens it (grows back)', s[3].gone && s[3].wood >= 3 && s[3].scar === 1 && s[3].ch === 0.6 && s[2].gone && s[2].scar === 1 && s[2].ch === 1, JSON.stringify(s));
   // net bits, loot
   s = await p.evaluate(() => { const o = spot(true); put(o); const w = spawnZombie('warden', 0), sh = spawnZombie('shade', 0), cr = spawnZombie('crow', 0); const S = makeSnap(), f = id => { for (let k = 0; k < S.z.length; k += 9) if (S.z[k] === id) return S.z[k + 8]; };
     const p0 = W.res.parts; killZombie(w, W.p[ME]); return { shield: !!(f(w.id) & 32768), cloak: !!(f(sh.id) & 65536), kind: (() => { for (let k = 0; k < S.z.length; k += 9) if (S.z[k] === cr.id) return ZKEYS[S.z[k + 1]]; })(), loot: W.res.parts - p0 }; });
@@ -99,6 +99,9 @@ const { chromium } = require('playwright');
     const X = ELX.get(w.id), G = ELX.get(sh.id); me.vehs |= 4; me.veh = 2; me.ride = true; me.mform = 1; me.aim = Math.atan2(w.y - me.y, w.x - me.x); frame(t + 40); const mk = !!(MLOCK && MLOCK.visible); me.ride = false; me.mform = 0;
     return { mk, fly: FLY.size, elx: ELX.size, bub: !!(X && X.bub && X.bub.visible), ghost: !!(G && G.ghost.visible), labels: document.querySelectorAll('#ov .elt').length }; });
   check('drawn: birds (and a falling corpse), aura rings, the blue bubble, the cloaked shimmer, names over 能力者 heads', s.fly >= 2 && s.elx >= 4 && s.bub && s.ghost && s.labels >= 3 && s.mk, JSON.stringify(s));
+  // (round 36b) the shop closes with a tap outside its card (like the map), not with a tap on the card
+  s = await p.evaluate(() => { const M = document.getElementById('craft'), card = M.querySelector('.card'); M.classList.remove('hidden'); card.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); const stays = !M.classList.contains('hidden'); M.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); return { stays, closed: M.classList.contains('hidden') }; });
+  check('shop: a tap on the card keeps it open, a tap beside it closes it', s.stays && s.closed, JSON.stringify(s));
   check('no page errors', !errs.length, errs.join(' | '));
   console.log(ok ? 'ALL PASS' : 'SOME FAIL'); await b.close();
 })();

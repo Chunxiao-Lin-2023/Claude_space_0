@@ -50,7 +50,7 @@ const UA = 'Mozilla/5.0 (iPad; CPU OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (
     check('keys card has no 空格 / jump row', !s);
     // 6. brute: charge with a tell, then a slam up close
     s = await p.evaluate(cl => { const me = W.p[0], x = Math.floor(me.x) + 14, y = Math.floor(me.y), L = gAt(x, y); __clr(x, y, L, 8); window.__dbg.god = false; me.hp = me.maxHp = 1000; me.x = x + 0.5; me.y = y + 0.5; me.L = L; me.z = surfZ(me.x, me.y, L);
-      W.zs.length = 0; const z = spawnZombie('brute', 0); z.x = me.x + 6; z.y = me.y; z.L = L; z.z = me.z; z.chgCD = 0; z.stun = 0; window.__bz = z; window.__tl = []; return 1; }, clearAround);
+      W.zs.length = 0; W.phase = 'night'; W.nightT = 0; W.strayT = 1e9; W.spawnQ = []; const z = spawnZombie('brute', 0); /* round 36b: brutes only charge by night */ z.x = me.x + 6; z.y = me.y; z.L = L; z.z = me.z; z.chgCD = 0; z.stun = 0; window.__bz = z; window.__tl = []; return 1; }, clearAround);
     for (let k = 0; k < 14; k++) { await simWait(0.12); await p.evaluate(() => __tl.push(__bz.tl || 0)); }
     s = await p.evaluate(() => ({ tl: __tl.join(''), hp: W.p[0].hp | 0 }));
     check('brute: red lane tell (1) then a rush (2) that hits hard', /1/.test(s.tl) && /2/.test(s.tl) && s.hp <= 1000 - 30, JSON.stringify(s));

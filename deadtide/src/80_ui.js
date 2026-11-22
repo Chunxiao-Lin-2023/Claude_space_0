@@ -238,7 +238,7 @@ function hudTick(dt) {
     u.firstElementChild.textContent = useOK ? (INP.useLatch ? '再点停' : '交互') : ''; u.lastElementChild.textContent = useOK ? shortUse(tgt.name) : me.ride || me.pass >= 0 ? '下车' : '交互';
     if (useOK) ptxt = tgt.name + (INP.useLatch ? ' · 进行中' : ''); else if (me.down && me.meds > 0) ptxt = '点「自救」用医疗包站起来';
     const md = $('tMed'), canMed = me.meds > 0 && !me.dead && me.medT <= 0 && (me.down || me.hp < me.maxHp); // (round 23c) its own key left of the context key
-    md.classList.toggle('hidden', !!me.dead || !!me.ride || me.pass >= 0); md.classList.toggle('dim', !canMed); md.classList.toggle('hot', canMed && (me.down || me.hp < me.maxHp * 0.7));
+    md.classList.toggle('hidden', !!me.dead); /* (round 36b) usable on a vehicle / in a mech too (it was hidden there, so mid-fight on a bike you couldn't heal) */ md.classList.toggle('dim', !canMed); md.classList.toggle('hot', canMed && (me.down || me.hp < me.maxHp * 0.7));
     md.firstElementChild.textContent = me.down ? '自救' : '医疗'; $('tMedN').textContent = '×' + me.meds;
     $('tWpn').firstElementChild.textContent = w.sn || w.name; $('tWpn').lastElementChild.textContent = w.inf ? '∞' : me.mag[wi] + '/' + me.ammo[wi];
     $('tWpn').classList.toggle('dim', me.down || me.owned.filter(Boolean).length < 2);
@@ -472,6 +472,8 @@ function initUI() {
   $('modeBtn').onclick = () => { sfx('click'); openModeSel(); }; $('lModeBtn').onclick = () => { sfx('click'); openModeSel(); }; $('msOk').onclick = () => { sfx('click'); closeModeSel(); }; uiModeLbl();
   $('mini').addEventListener('pointerdown', e => { e.stopPropagation(); e.preventDefault(); toggleBigMap(true); });
   $('bigmap').addEventListener('pointerdown', e => { e.stopPropagation(); e.preventDefault(); toggleBigMap(false); });
+  // (round 36b) the shop and the gear panel close like the map: tap / click anywhere outside the card
+  for (const [id, close] of [['craft', () => closeCraft()], ['kit', () => closeKit()]]) $(id).addEventListener('pointerdown', e => { if (e.target !== e.currentTarget) return; e.stopPropagation(); e.preventDefault(); close(); });
   $('keys').addEventListener('pointerdown', e => { e.stopPropagation(); if (!e.target.closest('.kh')) return; SET.keysOff = !SET.keysOff; saveSet(); UI.keysK = ''; if (W && W.p[ME]) uiKeys(W.p[ME]); sfx('click'); });
   $('pAssist').onclick = () => { SET.assist = ((SET.assist == null ? 1 : SET.assist) + 1) % 3; saveSet(); $('pAssist').textContent = '辅助瞄准：' + assistLv().name; sfx('click'); };
   $('pQual').onclick = () => { const o = ['auto', 0, 1, 2], i = o.indexOf(SET.q == null ? 'auto' : SET.q); SET.q = o[(i + 1) % 4]; if (SET.q === 'auto') SET.qa = 0; saveSet(); applyQual(); $('pQual').textContent = qualLabel(); sfx('click'); };

@@ -70,7 +70,7 @@ function stepZombies(dt) {
     if (!(pf[i] < Infinity)) { let nd = 1e9; for (const p of W.p) if (standingP(p)) nd = Math.min(nd, Math.abs(p.x - z.x) + Math.abs(p.y - z.y)); if (nd > NAV_PR * 0.75) field = NAV_FAR || (NAV_FAR = new Float32Array(NC).fill(Infinity)); } // (round 33) out past the players' field: walk straight at the nearest player
     // spitter: lob acid at a visible player in range
     let hold = false;
-    if (z.k === 'spitter' && !(z.conf > 0) && zSeen(z)) { /* (round 36) only once you can see it */
+    if (z.k === 'spitter' && !(z.conf > 0) && zSeen(z) && W.phase !== 'day') { /* (round 36) only once you can see it */
       z.spitT -= dt;
       let tp = null, td = 1e9;
       for (const p of W.p) { if (p.gone || p.dead) continue; const d = d2(p.x, p.y, z.x, z.y); if (d < Z.range && d < td && los(z.x, z.y, z.z + 0.9, p.x, p.y, p.z + 0.6)) { td = d; tp = p; } }
@@ -89,7 +89,7 @@ function stepZombies(dt) {
       z.scrT = (z.scrT == null ? 2 + rand() * 3 : z.scrT) - dt;
       let tp = null, td = 1e9; for (const p of W.p) { if (!standingP(p)) continue; const d = d2(p.x, p.y, z.x, z.y); if (d < td) { td = d; tp = p; } }
       if (tp && td < 6.5) { hold = true; z.face = Math.atan2(tp.y - z.y, tp.x - z.x); }
-      if (tp && td < BAL.screamR * 1.3 && z.scrT <= 0 && zSeen(z) && los(z.x, z.y, z.z + 0.9, tp.x, tp.y, tp.z + 0.6)) {
+      if (tp && td < BAL.screamR * 1.3 && z.scrT <= 0 && zSeen(z) && W.phase !== 'day' && los(z.x, z.y, z.z + 0.9, tp.x, tp.y, tp.z + 0.6)) {
         z.scrT = BAL.screamCD; z.scr = 1.3;
         for (const o of zs) if (o !== z && o.hp > 0 && d2(o.x, o.y, z.x, z.y) < BAL.screamR) o.rage = 5;
         if (W.phase === 'night') for (let k = 0; k < 2; k++) spawnZombie('walker', Math.floor(rand() * 4));
@@ -120,7 +120,7 @@ function stepZombies(dt) {
           z.slam = null; z.slamCD = BAL.slamCD; emit({ k: 'sfx', n: 'smash', x: z.x, y: z.y }); emit({ k: 'slam', x: r2(z.x), y: r2(z.y), z: r2(z.z), r: BAL.slamR });
         }
       } else {
-        let tp = null, td = 1e9; const onSt = B[W.blk[ci(Math.floor(z.x), Math.floor(z.y), z.L)]].stairs || !zSeen(z); /* (round 36) and not from out of sight */ for (const p of W.p) { if (!standingP(p) || onSt || p.L !== z.L || Math.abs(p.z - z.z) > 0.9) continue; const d = d2(p.x, p.y, z.x, z.y); if (d < td) { td = d; tp = p; } } // (round 35) only at someone on its own floor: on the stairs it used to see you upstairs and charge off along the floor below
+        let tp = null, td = 1e9; const onSt = B[W.blk[ci(Math.floor(z.x), Math.floor(z.y), z.L)]].stairs || !zSeen(z) || W.phase === 'day'; /* (round 36) and not from out of sight */ for (const p of W.p) { if (!standingP(p) || onSt || p.L !== z.L || Math.abs(p.z - z.z) > 0.9) continue; const d = d2(p.x, p.y, z.x, z.y); if (d < td) { td = d; tp = p; } } // (round 35) only at someone on its own floor: on the stairs it used to see you upstairs and charge off along the floor below
         if (tp && td < BAL.slamR - 0.5 && z.slamCD <= 0) { z.slam = { t: 0 }; hold = true; z.tl = 3; z.face = Math.atan2(tp.y - z.y, tp.x - z.x); emit({ k: 'sfx', n: 'groan', x: z.x, y: z.y }); }
         else if (tp && z.chgCD <= 0 && td > BAL.chgMin && td < BAL.chgMax && los(z.x, z.y, z.z + 1, tp.x, tp.y, tp.z + 0.8) && zLineClear(z, tp.x, tp.y)) { z.chg = { ph: 0, t: 0, a: Math.atan2(tp.y - z.y, tp.x - z.x), hit: [], L: z.L }; /* (round 35) only down a clear lane on its floor */ hold = true; z.tl = 1; z.face = z.chg.a; emit({ k: 'sfx', n: 'groan', x: z.x, y: z.y }); }
       }
@@ -141,7 +141,7 @@ function stepZombies(dt) {
           tx = bx + 0.5 + px * side * off + fx * 0.35; ty = by + 0.5 + py * side * off + fy * 0.35;
         } else { tx = bx + 0.5; ty = by + 0.5;
           // (round 34d) cut the corner: if the step after this one is diagonal from here and both side cells are open, head straight for it (no staircase walking)
-          if (bl === z.L && !(DBG && DBG.noCut)) { let v2 = Infinity, b2x = -1, b2y = -1; navNbrs(bx, by, bl, climbT, (nx, ny, nl) => { if (nl !== bl) return; const v = field[ci(nx, ny, nl)]; if (v < v2) { v2 = v; b2x = nx; b2y = ny; } });
+          if (bl === z.L && !(DBG && DBG.noCut)) { let v2 = Infinity, b2x = -1, b2y = -1; navNbrs(bx, by, bl, climbT, (nx, ny, nl) => { if (nl !== bl) return; const v = field[ci(nx, ny, nl)] - (Math.abs(nx - cx) === 1 && Math.abs(ny - cy) === 1 ? 0.05 : 0); if (v < v2) { v2 = v; b2x = nx; b2y = ny; } }); /* (round 36b) on open ground both ways round are equal: take the diagonal, not an L */
             if (b2x >= 0 && Math.abs(b2x - cx) === 1 && Math.abs(b2y - cy) === 1 && v2 < field[ci(bx, by, bl)] && navNode(b2x, cy, z.L) && navNode(cx, b2y, z.L) && !W.blk[ci(b2x, cy, z.L)] && !W.blk[ci(cx, b2y, z.L)] && !W.blk[ci(b2x, b2y, z.L)] && zLineClear(z, b2x + 0.5, b2y + 0.5) && !(z.squeeze > 0)) { tx = b2x + 0.5; ty = b2y + 0.5; } }
         }
       }
@@ -168,7 +168,7 @@ function stepZombies(dt) {
     let mx = 0, my = 0;
     if (tx != null && z.stun <= 0) {
       const dx = tx - z.x, dy = ty - z.y, d = Math.hypot(dx, dy);
-      let rg = (z.rage > 0 ? BAL.rageMul : 1) * (z.spr > 0 && Z.sprint ? Z.sprint.mul : 1);
+      let rg = (z.rage > 0 ? BAL.rageMul : 1) * (z.spr > 0 && Z.sprint ? Z.sprint.mul : 1) * (W.phase === 'day' ? BAL.day.spd : 1); // (round 36b) sluggish by day
       { const bi = ci(cx, cy, z.L), bb = W.blk[bi]; if (bb && B[bb].stairs && B[bb].nat) { const D = DIRS[W.bdir[bi]]; if (dx * D[0] + dy * D[1] > 0.05 * d) rg *= climbT ? BAL.zSlopeC : BAL.zSlope; } } // (round 36) uphill on a slope is slow going for zombies (high ground is worth holding)
       const hd = z.g && herd.get(z.g); if (hd && hd.n >= 3 && field === pf) rg *= clamp(1 + (field[i] - hd.s / hd.n) * 0.06, 0.78, 1.22);
       if (d > 0.02) { mx = dx / d * z.spd * slow * rg; my = dy / d * z.spd * slow * rg; z.face = Math.atan2(dy, dx); }
@@ -214,7 +214,7 @@ function zSkill(z, Z, dt) {
     if (f >= 1) { z.lg = null; z.z = surfZ(z.x, z.y, z.L); z.lgCD = Z.lunge.cd * (0.8 + rand() * 0.4); }
     return true;
   }
-  if (z.stun > 0 || z.conf > 0 || !zSeen(z)) return false; // (round 36) pounce / sprint / ranged only once it is in your sight
+  if (z.stun > 0 || z.conf > 0 || !zSeen(z) || W.phase === 'day') return false; // (round 36) pounce / sprint / ranged only once it is in your sight; (36b) and not by day
   let tgt = null, td = 1e9; for (const p of W.p) { if (p.gone || p.dead || p.down || inAirZ(p) != null) continue; const d = Math.hypot(p.x - z.x, p.y - z.y); if (d < td && Math.abs(p.z - z.z) < 1.5) { td = d; tgt = p; } }
   if (!tgt) return false;
   if (Z.lunge && z.lgCD <= 0 && td > 1.4 && td < Z.lunge.r && los(z.x, z.y, z.z + 0.6, tgt.x, tgt.y, tgt.z + 0.6)) {

@@ -350,7 +350,9 @@ body.touch #phase{font-size:12px;line-height:1.3;text-align:center}
 body.touch #hTL .hcard{padding:5px 8px}
 body.touch .hcard{background:rgba(14,16,20,.62)}
 @media (min-width:501px){body.touch #hTC{min-width:0;max-width:max(200px,calc(100vw - 560px - var(--sa-l) - var(--sa-r)))}}
-@media (pointer:coarse) and (max-height:500px){body.touch #objp{display:none!important}body.touch #hTL{width:160px}body.touch .items{font-size:11px}body.touch .res b{font-size:14px}}
+@media (pointer:coarse) and (max-height:500px){body.touch #pcards{padding:3px 7px}body.touch #pcards .nm{font-size:10px}body.touch #pcards .bar{height:4px}body.touch #pcards .pbar{gap:1px}
+  body.touch #hTC{left:calc(176px + var(--sa-l));transform:none;align-items:flex-start;max-width:calc(100vw - 176px - 380px - var(--sa-l) - var(--sa-r));background:rgba(14,16,20,.38)}body.touch .hcard{background:rgba(14,16,20,.42)}
+  body.touch #objp{display:none!important}body.touch #hTL{width:160px}body.touch .items{font-size:11px}body.touch .res b{font-size:14px}}
 </style>
 <style>
 /* TitleKit — shared start screen for every game in the Claude_space_0 hub.
@@ -642,7 +644,7 @@ body.touch .hcard{background:rgba(14,16,20,.62)}
 </div>
 
 <div id="craft" class="modal hidden">
-  <div class="card shop"><h3>商店</h3><div class="ctabs" id="ctabs"></div><div class="lbl" id="cres"></div><div class="clist" id="clist"></div><button id="craftClose" class="ghost">关闭 <span class="kbd">(C)</span></button></div>
+  <div class="card shop"><h3>商店</h3><div class="ctabs" id="ctabs"></div><div class="lbl" id="cres"></div><div class="clist" id="clist"></div><button id="craftClose" class="ghost">关闭 <span class="kbd">(C)</span></button><div class="bmhint" style="text-align:center;margin-top:4px">点旁边空白处也能关闭</div></div>
 </div>
 <div id="kit" class="modal hidden">
   <div class="card kitc"><h3>装备</h3>
@@ -5039,8 +5041,8 @@ const ZT = {
   kdig: { name: '掘地兽', hp: 2300, spd: 0.9, r: 0.8, h: 2.5, dmg: 40, bdmg: 220, cd: 1.4, sc: 1, kb: 8, kaiju: 'dig', skin: '#7a5a3a' },
   armored: { name: '防暴尸', hp: 260, spd: 0.9, r: 0.36, h: 1.26, dmg: 12, bdmg: 16, cd: 1.1, sc: 1.3, armor: 0.3, lunge: { r: 2.8, cd: 5, dmg: 12 } }, // a shield-first lunge
   // (round 35) flyers: flocks that cruise over walls and roofs, circle you and dive in for a peck (36_beasts); a roof over your head keeps them off
-  crow: { name: '尸鸦', hp: 22, spd: 4.2, r: 0.3, h: 0.5, dmg: 5, bdmg: 0, cd: 1, sc: 1, fly: { alt: 1.9, orbit: 3.2, dive: 7, cd: 3.4, spd: 1.8 } },
-  bat: { name: '尸蝠', hp: 34, spd: 3.7, r: 0.32, h: 0.5, dmg: 6, bdmg: 0, cd: 1, sc: 1, fly: { alt: 2.2, orbit: 2.6, dive: 8, cd: 2.7, spd: 2.0, drain: 8 } }, // a bite heals it
+  crow: { name: '尸鸦', hp: 22, spd: 4.2, r: 0.3, h: 0.5, dmg: 6, bdmg: 0, cd: 1, sc: 1, fly: { alt: 1.9, orbit: 3.2, dive: 8, cd: 2.4, spd: 2.0 } }, /* (round 36b) peck 5 → 6, dive every 3.4 → 2.4 s, dive speed ×1.8 → ×2.0 */
+  bat: { name: '尸蝠', hp: 34, spd: 3.7, r: 0.32, h: 0.5, dmg: 7, bdmg: 0, cd: 1, sc: 1, fly: { alt: 2.2, orbit: 2.6, dive: 9, cd: 2.0, spd: 2.2, drain: 8 } }, /* (round 36b) bite 6 → 7, 2.7 → 2.0 s, ×2.0 → ×2.2 */ // a bite heals it
   // (round 35) 能力者: rare elites, each with one strong telegraphed skill (36_beasts), a coloured aura and a name over the head
   blinker: { name: '闪影者', hp: 520, spd: 1.55, r: 0.3, h: 1.3, dmg: 14, bdmg: 12, cd: 0.8, sc: 1.2, look: 'runner', skin: '#7a66aa', elite: { k: 'blink', cd: 6.5, col: '#b47aff', tip: '会瞬移到你身后再砍一刀，看到紫光就闪开' } },
   caller: { name: '唤尸者', hp: 650, spd: 0.85, r: 0.32, h: 1.3, dmg: 12, bdmg: 10, cd: 1.0, sc: 1.28, look: 'screamer', skin: '#5e8268', elite: { k: 'call', cd: 11, col: '#6aff9a', tip: '会从地下叫出一群丧尸，打断它（晕住）就叫不出来' } },
@@ -5182,12 +5184,12 @@ const BAL = {
   slowR: 3.6, slowT: 8, slowMul: 0.3,                           // slow grenade: a sticky field, zombies inside crawl at 30%
   smokeR: 3.8, smokeT: 10, smokeConf: 1.2,                      // smoke: zombies in the cloud lose you, wander and don't bite (and for 1.2 s after leaving)
   blastR: 4.4, blastDmg: 70, blastKB: 24, blastStun: 1.6,       // blast: little damage, throws everything out of the way (clears a path)
-  tankDmg: 120, tankR: 2.3, tankRate: 1.6, tankRange: 20, tankCap: 200, tankStart: 100, // (round 31) tank cannon: a shell that bursts where it hits
+  tankDmg: 120, tankR: 2.3, tankRate: 1.45, /* (round 36b) 1.6 → 1.45 */ tankRange: 20, tankCap: 200, tankStart: 100, // (round 31) tank cannon: a shell that bursts where it hits
   mechBat: 120, mechLow: 20, mechPass: 0.1, mechRegen: 0.015, batRegen: 0.4, xformT: 1.0, // (round 34b) mech energy (s), low warning, share of a hit the pilot still feels, hull / energy coming back while not a mech (/s), transform time
-  gyroDmg: 12, gyroRate: 0.12, gyroSpread: 0.06, gyroRange: 22, gyroCap: 500, gyroStart: 250, // (round 30) gyrocopter chin gun: its own ammo, bought in the shop
+  gyroDmg: 12, gyroRate: 0.11, /* (round 36b) 0.12 → 0.11 */ gyroSpread: 0.06, gyroRange: 22, gyroCap: 500, gyroStart: 250, // (round 30) gyrocopter chin gun: its own ammo, bought in the shop
   flyHover: 2.2, flyClimb: 0.8, flyDrop: 0.6, fuelLow: 10, refuelT: 4, // (round 29) gyrocopter: cruise 2.2 floors over whatever is below, climb / descend rate (of the take-off curve per second), warn at 10 s of fuel, 4 s to refuel indoors
   zSlope: 0.45, zSlopeC: 0.7, // (round 36) zombie speed going UP a hill slope (climbers barely mind)
-  workerGather: 0.6, // (round 36) 工蜂 passive: flattening a tree / rock / scrap / logs / bush gathers it, at this share of a normal gather
+  workerGather: 0.6, workerRegrow: 0.6, // (round 36b) and 60% of what it gathered grows back at dawn // (round 36) 工蜂 passive: flattening a tree / rock / scrap / logs / bush gathers it, at this share of a normal gather
   bigFoot: 0.65, // (round 36) kaiju / 能力者 damage to someone not in a mech
   vis: { foot: 18, floor: 3.5, night: 0.85, mech: 20, fly: 28 }, /* (round 35) 12 / 2.5 / 0.75 / 14 / 20 → 16 / 3 / 0.8 / 18 / 26; (round 36) → 18 / 3.5 / 0.85 / 20 / 28 */ // (round 34d) how far you see zombies (shared with your teammate): on foot, + per floor up, × at night; vehicles have their own (VEH[].vis)
   nadeRange: 12, nadeDmg: 220, nadeR: 3.0, nadeFuse: 1.9, nadeLand: 0.35, nadeMin: 0.3, // (round 18: radius 2.8 -> 3.4, damage at the edge 35% -> 50%, goes off 0.35 s after landing where you aimed)
@@ -5205,7 +5207,8 @@ const BAL = {
   zCap: () => TOUCHY ? 95 : 140,  // most zombies alive at once; the rest of the horde waits its turn
   nightMin: n => Math.min(330, 150 + Math.max(0, n - 1) * 15), // a night lasts at least this long; small groups keep coming until then (round 34b: 150 + 6n → from night 2 +15 s a night, up to 330)
   nightTrickleCD: 7, nightTrickleMax: 8,
-  dayStragglers: 8, dayStragglerCD: 10,
+  dayStragglers: 6, dayStragglerCD: 14, // (round 36b) quieter days: 8 / 10 s → 6 / 14 s
+  day: { spd: 0.8, dmg: 0.75, notice: 0.7 }, // (round 36b) by day zombies are sluggish: slower, bite softer, no pounces / sprints / skills, sleepers slower to notice you
   burnSpread: 2.5, burnSpreadR: 1.15, // burning zombies set fire to others this close, about 2.5 times a second (was: same cell only, 1.2 / s)
   barrelR: 3.2, barrelDmg: 240, barrelBurn: 3, // red oil barrels go up when shot
   burnDps: 28, blastR: 2.3, blastDmgP: 32, blastDmgB: 160, screamR: 9, screamCD: 9, rageMul: 1.45,
@@ -6210,7 +6213,7 @@ const rand = (a = 0, b = 1) => a + W.rng() * (b - a);
 const activeP = () => W.p.filter(p => !p.gone);
 const standingP = p => !p.gone && !p.dead && !p.down;
 // shooting from a vehicle (round 20): the driver fires at 40% the rate, a pillion rider at 70% (same accuracy as on foot)
-const rideK = p => p.ride ? { rate: VEH[p.veh] && VEH[p.veh].quiet ? 1.2 : 2.5, spread: 1 } : p.pass != null && p.pass >= 0 ? { rate: 1.43, spread: 1 } : { rate: 1, spread: 1 }; // only the rate drops; aim stays as true as on foot
+const rideK = p => p.ride ? { rate: VEH[p.veh] && VEH[p.veh].quiet ? 1.1 : 2.1, spread: 1 } : p.pass != null && p.pass >= 0 ? { rate: 1.3, spread: 1 } : { rate: 1, spread: 1 }; /* (round 36b) firing from a vehicle, a little quicker: cooldown driver ×2.5 → ×2.1, bicycle ×1.2 → ×1.1, back seat ×1.43 → ×1.3 */ // only the rate drops; aim stays as true as on foot
 function emit(e) { if (!W) return; e.q = ++W.seq; /* NB: `q`, not `s` — cell events carry the slab id in `s` */ fxEvent(e); if (NETROLE === 'host') netSendCtl({ t: 'ev', e }); }
 function say(text, col) { emit({ k: 'say', text, col: col || '' }); }
 const pZ = p => surfZ(p.x, p.y, p.L);
@@ -6499,7 +6502,7 @@ function stepMove(p, dt) {
   }
   if (p.dash) { const D = p.dash, f = Math.min(dt, D.T - D.t) / D.T; moveEnt(p, D.dx * f, D.dy * f, 'p', true); D.t += dt; if (D.t >= D.T) p.dash = null; p.z = pZ(p); p.anim += dt * 8; return; }
   if (p.L > 0 && p.L > skyTop(p.x, p.y)) { p.L = skyTop(p.x, p.y); p.z = pZ(p); } // (round 31) knocked down mid-air, or a save made in flight: fall to what is below
-  const spd = BAL.pSpeed * (p.down ? 0.22 : 1) * (p.medT > 0 ? 0.45 : 1) * (p.build ? 0.9 : 1) * (inMud(p.x, p.y, p.L) && !(p.ride && VEH[p.veh] && VEH[p.veh].mud) ? MUD_SLOW : 1) * (p.ride && VEH[p.veh] ? (inMech(p) ? mechOf(p).spd : VEH[p.veh].spd) : 1) * (p.mtr > 0 ? 0 : 1); // (round 34b) standing still while it transforms
+  const spd = BAL.pSpeed * (p.down ? 0.22 : 1) * (p.medT > 0 && !p.ride ? 0.45 : 1) * (p.build ? 0.9 : 1) * (inMud(p.x, p.y, p.L) && !(p.ride && VEH[p.veh] && VEH[p.veh].mud) ? MUD_SLOW : 1) * (p.ride && VEH[p.veh] ? (inMech(p) ? mechOf(p).spd : VEH[p.veh].spd) : 1) * (p.mtr > 0 ? 0 : 1); // (round 34b) standing still while it transforms
   const tx = I.mx * k * spd, ty = I.my * k * spd, a = Math.min(1, dt * 14);
   p.vx = lerp(p.vx, tx, a); p.vy = lerp(p.vy, ty, a);
   p.kbx *= Math.max(0, 1 - dt * 6); p.kby *= Math.max(0, 1 - dt * 6);
@@ -6893,6 +6896,7 @@ function killZombie(z, p) {
 function hurtPlayer(p, dmg, src) {
   if (p.gone || p.dead || (p.invT || 0) > 0) return; // invT: just respawned
   if (src && src.k && ZT[src.k] && (ZT[src.k].kaiju || ZT[src.k].elite) && !inMech(p)) dmg *= BAL.bigFoot; // (round 36) kaiju / 能力者 hit people on foot softer (they're tuned against mechs)
+  if (W.phase === 'day' && src && src.k && ZT[src.k]) dmg *= BAL.day.dmg; // (round 36b) softer bites by day
   if (DBG && DBG.god) return;
   if (inMech(p)) { // (round 34b) the hull takes the hit (by how armoured that mech is); a little still gets through to you; at zero it falls back into a vehicle
     const M = mechOf(p); p.mh = p.mh || []; p.mh[p.veh] = Math.max(0, mhpOf(p) - dmg * M.armor); emit({ k: 'phurt', p: p.i, d: 0 });
@@ -6981,7 +6985,7 @@ function doAct(p, a, v) {
     case 'craft': doCraft(p, v); break;
     case 'build': doBuild(p, v.x, v.y, v.l, v.b, v.d); break;
     case 'demo': doDemolish(p, v.x, v.y, v.l); break;
-    case 'crush': if (inMech(p) && typeof v === 'number' && v >= 0 && v < NC && MECH_CRUSH.has(W.blk[v]) && !(W.mine && W.mine.has(v)) && Math.hypot(cx_(v) + 0.5 - p.x, cy_(v) + 0.5 - p.y) < 2.6) { const r = B[W.blk[v]].res, g = GATHER[W.blk[v]]; if (p.veh === 3 && g) { const n = Math.max(1, Math.round(rand(g.n[0], g.n[1]) * BAL.workerGather)); W.res[g.res] += n; taskAdd('gather'); emit({ k: 'loot', p: p.i, x: cx_(v) + 0.5, y: cy_(v) + 0.5, z: cl_(v) * FH + 1, text: '+' + n + ' ' + RES.find(q => q.k === g.res).name }); setCell(v, 0, W.slab[v], null, 'mine'); } /* (round 36) 工蜂's passive: what it flattens is gathered (and so doesn't grow back) */ else { mechScar(v); setCell(v, 0, W.slab[v], null, 'brk'); if (r && rand() < 0.5) W.res[r] = (W.res[r] || 0) + 1; } emit({ k: 'sfx', n: 'bash', x: cx_(v) + 0.5, y: cy_(v) + 0.5 }); } break; // (round 34d) a mech flattens what is in its way
+    case 'crush': if (inMech(p) && typeof v === 'number' && v >= 0 && v < NC && MECH_CRUSH.has(W.blk[v]) && !(W.mine && W.mine.has(v)) && Math.hypot(cx_(v) + 0.5 - p.x, cy_(v) + 0.5 - p.y) < 2.6) { const r = B[W.blk[v]].res, g = GATHER[W.blk[v]]; if (p.veh === 3 && g) { mechScar(v, null, null, BAL.workerRegrow); const n = Math.max(1, Math.round(rand(g.n[0], g.n[1]) * BAL.workerGather)); W.res[g.res] += n; taskAdd('gather'); emit({ k: 'loot', p: p.i, x: cx_(v) + 0.5, y: cy_(v) + 0.5, z: cl_(v) * FH + 1, text: '+' + n + ' ' + RES.find(q => q.k === g.res).name }); setCell(v, 0, W.slab[v], null, 'mine'); } /* (round 36) 工蜂's passive: what it flattens is gathered (and so doesn't grow back) */ else { mechScar(v); setCell(v, 0, W.slab[v], null, 'brk'); if (r && rand() < 0.5) W.res[r] = (W.res[r] || 0) + 1; } emit({ k: 'sfx', n: 'bash', x: cx_(v) + 0.5, y: cy_(v) + 0.5 }); } break; // (round 34d) a mech flattens what is in its way
     case 'xform': { const to = p.mform === 1 ? 0 : 1, why = xformDeny(p, to); if (why) emit({ k: 'deny', p: p.i, why }); else startXform(p, to); } break; // (round 34b)
     case 'vdef': if (v >= 1 && ownsVeh(p, v) && p.ride && v !== p.veh && (p.mform === 1 || p.mtr > 0)) { emit({ k: 'deny', p: p.i, why: '先变回载具再换车' }); break; } if (v >= 1 && ownsVeh(p, v) && p.ride && VEH[v].outdoor && v !== p.veh && skyTop(p.x, p.y) > p.L) { emit({ k: 'deny', p: p.i, why: VEH[v].name + '太大，只能在室外开' }); break; } if (v >= 1 && ownsVeh(p, v) && p.ride && (airborne(p) || VEH[v].fly) && v !== p.veh) { emit({ k: 'deny', p: p.i, why: airborne(p) ? '先落地再换车' : '先下车，再坐旋翼机起飞' }); break; } if (v >= 1 && ownsVeh(p, v)) { p.veh = v; if (p.ride && !vehSeats(p)) for (const q of W.p) if (q.pass === p.i) q.pass = -1; } break; // pick the default vehicle (switches the one you're on too)
     case 'pad': if (v && inMap(v.x, v.y) && v.l >= 0 && v.l < ML) { const i = ci(v.x, v.y, v.l); if (W.blk[i] === 56) { setCell(i, 0, W.slab[i], null, 'demo'); emit({ k: 'sfx', n: 'jump', x: v.x + 0.5, y: v.y + 0.5 }); } } break;
@@ -7190,10 +7194,10 @@ function startNight() {
   emit({ k: 'night', n, lv: BAL.nightLv(n), up: n > 1 && BAL.nightLv(n) > BAL.nightLv(n - 1) ? 1 : 0, blood: blood ? 1 : 0, count: q.length, from: front.map(s => names[s]).join('、') });
 }
 // (round 35) what a mech flattened (rocks, bushes, fences, trees…) grows / gets put back at dawn, unless something now stands there
-function mechScar(i, b, d) { (W.scar = W.scar || []).push([i, b != null ? b : W.blk[i], d != null ? d : W.bdir[i]]); if (W.scar.length > 3000) W.scar.shift(); }
+function mechScar(i, b, d, ch) { (W.scar = W.scar || []).push([i, b != null ? b : W.blk[i], d != null ? d : W.bdir[i], ch == null ? 1 : ch]); if (W.scar.length > 3000) W.scar.shift(); }
 function scarRegrow() {
   if (!W.scar || !W.scar.length) return; let n = 0;
-  for (const [i, b, d] of W.scar) { if (W.blk[i]) continue; const x = cx_(i) + 0.5, y = cy_(i) + 0.5, L = cl_(i);
+  for (const [i, b, d, ch] of W.scar) { if (W.blk[i] || ch < 1 && rand() >= ch) continue; /* (round 36b) what 工蜂 gathered comes back 60% of the time */ const x = cx_(i) + 0.5, y = cy_(i) + 0.5, L = cl_(i);
     if (W.p.some(p => !p.gone && p.L === L && Math.abs(p.x - x) < 0.9 && Math.abs(p.y - y) < 0.9) || W.zs.some(z => z.L === L && Math.abs(z.x - x) < 0.8 && Math.abs(z.y - y) < 0.8)) continue;
     setCell(i, b, W.slab[i], d, 'grow'); n++; }
   W.scar = [];
@@ -7408,7 +7412,7 @@ function stepZombies(dt) {
     if (!(pf[i] < Infinity)) { let nd = 1e9; for (const p of W.p) if (standingP(p)) nd = Math.min(nd, Math.abs(p.x - z.x) + Math.abs(p.y - z.y)); if (nd > NAV_PR * 0.75) field = NAV_FAR || (NAV_FAR = new Float32Array(NC).fill(Infinity)); } // (round 33) out past the players' field: walk straight at the nearest player
     // spitter: lob acid at a visible player in range
     let hold = false;
-    if (z.k === 'spitter' && !(z.conf > 0) && zSeen(z)) { /* (round 36) only once you can see it */
+    if (z.k === 'spitter' && !(z.conf > 0) && zSeen(z) && W.phase !== 'day') { /* (round 36) only once you can see it */
       z.spitT -= dt;
       let tp = null, td = 1e9;
       for (const p of W.p) { if (p.gone || p.dead) continue; const d = d2(p.x, p.y, z.x, z.y); if (d < Z.range && d < td && los(z.x, z.y, z.z + 0.9, p.x, p.y, p.z + 0.6)) { td = d; tp = p; } }
@@ -7427,7 +7431,7 @@ function stepZombies(dt) {
       z.scrT = (z.scrT == null ? 2 + rand() * 3 : z.scrT) - dt;
       let tp = null, td = 1e9; for (const p of W.p) { if (!standingP(p)) continue; const d = d2(p.x, p.y, z.x, z.y); if (d < td) { td = d; tp = p; } }
       if (tp && td < 6.5) { hold = true; z.face = Math.atan2(tp.y - z.y, tp.x - z.x); }
-      if (tp && td < BAL.screamR * 1.3 && z.scrT <= 0 && zSeen(z) && los(z.x, z.y, z.z + 0.9, tp.x, tp.y, tp.z + 0.6)) {
+      if (tp && td < BAL.screamR * 1.3 && z.scrT <= 0 && zSeen(z) && W.phase !== 'day' && los(z.x, z.y, z.z + 0.9, tp.x, tp.y, tp.z + 0.6)) {
         z.scrT = BAL.screamCD; z.scr = 1.3;
         for (const o of zs) if (o !== z && o.hp > 0 && d2(o.x, o.y, z.x, z.y) < BAL.screamR) o.rage = 5;
         if (W.phase === 'night') for (let k = 0; k < 2; k++) spawnZombie('walker', Math.floor(rand() * 4));
@@ -7458,7 +7462,7 @@ function stepZombies(dt) {
           z.slam = null; z.slamCD = BAL.slamCD; emit({ k: 'sfx', n: 'smash', x: z.x, y: z.y }); emit({ k: 'slam', x: r2(z.x), y: r2(z.y), z: r2(z.z), r: BAL.slamR });
         }
       } else {
-        let tp = null, td = 1e9; const onSt = B[W.blk[ci(Math.floor(z.x), Math.floor(z.y), z.L)]].stairs || !zSeen(z); /* (round 36) and not from out of sight */ for (const p of W.p) { if (!standingP(p) || onSt || p.L !== z.L || Math.abs(p.z - z.z) > 0.9) continue; const d = d2(p.x, p.y, z.x, z.y); if (d < td) { td = d; tp = p; } } // (round 35) only at someone on its own floor: on the stairs it used to see you upstairs and charge off along the floor below
+        let tp = null, td = 1e9; const onSt = B[W.blk[ci(Math.floor(z.x), Math.floor(z.y), z.L)]].stairs || !zSeen(z) || W.phase === 'day'; /* (round 36) and not from out of sight */ for (const p of W.p) { if (!standingP(p) || onSt || p.L !== z.L || Math.abs(p.z - z.z) > 0.9) continue; const d = d2(p.x, p.y, z.x, z.y); if (d < td) { td = d; tp = p; } } // (round 35) only at someone on its own floor: on the stairs it used to see you upstairs and charge off along the floor below
         if (tp && td < BAL.slamR - 0.5 && z.slamCD <= 0) { z.slam = { t: 0 }; hold = true; z.tl = 3; z.face = Math.atan2(tp.y - z.y, tp.x - z.x); emit({ k: 'sfx', n: 'groan', x: z.x, y: z.y }); }
         else if (tp && z.chgCD <= 0 && td > BAL.chgMin && td < BAL.chgMax && los(z.x, z.y, z.z + 1, tp.x, tp.y, tp.z + 0.8) && zLineClear(z, tp.x, tp.y)) { z.chg = { ph: 0, t: 0, a: Math.atan2(tp.y - z.y, tp.x - z.x), hit: [], L: z.L }; /* (round 35) only down a clear lane on its floor */ hold = true; z.tl = 1; z.face = z.chg.a; emit({ k: 'sfx', n: 'groan', x: z.x, y: z.y }); }
       }
@@ -7479,7 +7483,7 @@ function stepZombies(dt) {
           tx = bx + 0.5 + px * side * off + fx * 0.35; ty = by + 0.5 + py * side * off + fy * 0.35;
         } else { tx = bx + 0.5; ty = by + 0.5;
           // (round 34d) cut the corner: if the step after this one is diagonal from here and both side cells are open, head straight for it (no staircase walking)
-          if (bl === z.L && !(DBG && DBG.noCut)) { let v2 = Infinity, b2x = -1, b2y = -1; navNbrs(bx, by, bl, climbT, (nx, ny, nl) => { if (nl !== bl) return; const v = field[ci(nx, ny, nl)]; if (v < v2) { v2 = v; b2x = nx; b2y = ny; } });
+          if (bl === z.L && !(DBG && DBG.noCut)) { let v2 = Infinity, b2x = -1, b2y = -1; navNbrs(bx, by, bl, climbT, (nx, ny, nl) => { if (nl !== bl) return; const v = field[ci(nx, ny, nl)] - (Math.abs(nx - cx) === 1 && Math.abs(ny - cy) === 1 ? 0.05 : 0); if (v < v2) { v2 = v; b2x = nx; b2y = ny; } }); /* (round 36b) on open ground both ways round are equal: take the diagonal, not an L */
             if (b2x >= 0 && Math.abs(b2x - cx) === 1 && Math.abs(b2y - cy) === 1 && v2 < field[ci(bx, by, bl)] && navNode(b2x, cy, z.L) && navNode(cx, b2y, z.L) && !W.blk[ci(b2x, cy, z.L)] && !W.blk[ci(cx, b2y, z.L)] && !W.blk[ci(b2x, b2y, z.L)] && zLineClear(z, b2x + 0.5, b2y + 0.5) && !(z.squeeze > 0)) { tx = b2x + 0.5; ty = b2y + 0.5; } }
         }
       }
@@ -7506,7 +7510,7 @@ function stepZombies(dt) {
     let mx = 0, my = 0;
     if (tx != null && z.stun <= 0) {
       const dx = tx - z.x, dy = ty - z.y, d = Math.hypot(dx, dy);
-      let rg = (z.rage > 0 ? BAL.rageMul : 1) * (z.spr > 0 && Z.sprint ? Z.sprint.mul : 1);
+      let rg = (z.rage > 0 ? BAL.rageMul : 1) * (z.spr > 0 && Z.sprint ? Z.sprint.mul : 1) * (W.phase === 'day' ? BAL.day.spd : 1); // (round 36b) sluggish by day
       { const bi = ci(cx, cy, z.L), bb = W.blk[bi]; if (bb && B[bb].stairs && B[bb].nat) { const D = DIRS[W.bdir[bi]]; if (dx * D[0] + dy * D[1] > 0.05 * d) rg *= climbT ? BAL.zSlopeC : BAL.zSlope; } } // (round 36) uphill on a slope is slow going for zombies (high ground is worth holding)
       const hd = z.g && herd.get(z.g); if (hd && hd.n >= 3 && field === pf) rg *= clamp(1 + (field[i] - hd.s / hd.n) * 0.06, 0.78, 1.22);
       if (d > 0.02) { mx = dx / d * z.spd * slow * rg; my = dy / d * z.spd * slow * rg; z.face = Math.atan2(dy, dx); }
@@ -7552,7 +7556,7 @@ function zSkill(z, Z, dt) {
     if (f >= 1) { z.lg = null; z.z = surfZ(z.x, z.y, z.L); z.lgCD = Z.lunge.cd * (0.8 + rand() * 0.4); }
     return true;
   }
-  if (z.stun > 0 || z.conf > 0 || !zSeen(z)) return false; // (round 36) pounce / sprint / ranged only once it is in your sight
+  if (z.stun > 0 || z.conf > 0 || !zSeen(z) || W.phase === 'day') return false; // (round 36) pounce / sprint / ranged only once it is in your sight; (36b) and not by day
   let tgt = null, td = 1e9; for (const p of W.p) { if (p.gone || p.dead || p.down || inAirZ(p) != null) continue; const d = Math.hypot(p.x - z.x, p.y - z.y); if (d < td && Math.abs(p.z - z.z) < 1.5) { td = d; tgt = p; } }
   if (!tgt) return false;
   if (Z.lunge && z.lgCD <= 0 && td > 1.4 && td < Z.lunge.r && los(z.x, z.y, z.z + 0.6, tgt.x, tgt.y, tgt.z + 0.6)) {
@@ -7610,10 +7614,10 @@ function flyerStep(z, Z, dt) {
     D.t += dt; const ex = zExposed(tp);
     if (D.ph === 0) { // (round 36) a hover and a cry, then it dives at the spot you were in when it cried (marked on the ground): step aside and it misses
       z.kt = 1; spd = 0; gz = z.z + 0.3; z.face += angDiff(z.face, Math.atan2(D.y - z.y, D.x - z.x)) * Math.min(1, dt * 10);
-      if (D.t > 0.55) { D.ph = 1; D.t = 0; }
+      if (D.t > 0.42) { D.ph = 1; D.t = 0; } // (round 36b) tell 0.55 → 0.42 s
     } else if (D.ph === 1) { // the dive: straight at the marked spot, no homing; whoever is there when it arrives gets pecked
       z.kt = 2; z.atk = 0.3; spd = z.spd * F.spd; vzMax = 9; gx = D.x; gy = D.y; gz = D.z;
-      for (const p of W.p) { if (p.gone || p.dead || D.hit) continue; const az = flyAimZ(p); if (Math.hypot(p.x - z.x, p.y - z.y, az - z.z) < (p.r || 0.3) + z.r + 0.12 + (inMech(p) ? 0.7 : 0) && zExposed(p)) {
+      for (const p of W.p) { if (p.gone || p.dead || D.hit) continue; const az = flyAimZ(p); if (Math.hypot(p.x - z.x, p.y - z.y, az - z.z) < (p.r || 0.3) + z.r + 0.22 + (inMech(p) ? 0.7 : 0) && zExposed(p)) {
         D.hit = 1; hurtPlayer(p, Z.dmg * W.D.dmg, z); if (F.drain) z.hp = Math.min(z.max, z.hp + F.drain); emit({ k: 'sfx', n: 'peck', x: z.x, y: z.y }); } }
       if (D.hit || Math.hypot(D.x - z.x, D.y - z.y, D.z - z.z) < 0.3 || D.t > 1.4) { D.ph = 2; D.t = 0; D.a = z.face + (rand() - 0.5) * 1.4; } // carries on past and pulls up
     } else { // pull up and away, then back to circling
@@ -7625,9 +7629,9 @@ function flyerStep(z, Z, dt) {
     if (dist < R + 3) z.fa += dir * z.spd / R * dt * 0.8; else z.fa = Math.atan2(z.y - tp.y, z.x - tp.x);
     gx = tp.x + Math.cos(z.fa) * R; gy = tp.y + Math.sin(z.fa) * R;
     gz = Math.max(cruise(), flyFloor(tp.x, tp.y) + F.alt, inAirZ(tp) != null ? inAirZ(tp) + 0.4 : 0);
-    if (z.dvCD <= 0 && zExposed(tp) && dist < F.dive && zSeen(z) && los(z.x, z.y, z.z, tp.x, tp.y, flyAimZ(tp))) {
+    if (z.dvCD <= 0 && zExposed(tp) && dist < F.dive && zSeen(z) && W.phase !== 'day' && los(z.x, z.y, z.z, tp.x, tp.y, flyAimZ(tp))) {
       let busy = 0; for (const o of W.zs) if (o !== z && o.fk && o.fk === z.fk && o.dv && o.hp > 0) busy++;
-      if (busy < 2) { const az = flyAimZ(tp); z.dv = { ph: 0, t: 0, x: tp.x, y: tp.y, z: az }; emit({ k: 'sfx', n: z.k === 'bat' ? 'screech' : 'caw', x: z.x, y: z.y }); emit({ k: 'fdive', x: r2(tp.x), y: r2(tp.y), z: r2(az - (inAirZ(tp) != null ? 0.6 : inMech(tp) ? 2.2 : 0.95)) }); } // the flock takes turns, two at a time
+      if (busy < 3) { const az = flyAimZ(tp), lead = 0.55, lx = clamp(tp.x + (tp.vx || 0) * lead, 1, MW - 1), ly = clamp(tp.y + (tp.vy || 0) * lead, 1, MH - 1); z.dv = { ph: 0, t: 0, x: lx, y: ly, z: az }; /* (round 36b) three at a time, aimed where you're heading: turn or stop to dodge */ emit({ k: 'sfx', n: z.k === 'bat' ? 'screech' : 'caw', x: z.x, y: z.y }); emit({ k: 'fdive', x: r2(lx), y: r2(ly), z: r2(az - (inAirZ(tp) != null ? 0.6 : inMech(tp) ? 2.2 : 0.95)) }); } // the flock takes turns, two at a time
       else z.dvCD = 0.4 + rand() * 0.6;
     }
   }
@@ -7703,7 +7707,7 @@ function eliteStep(z, Z, dt) {
       }
       return true;
     }
-    if (tp && z.eCD <= 0 && z.stun <= 0 && !(z.conf > 0) && td > 2.6 && td < 13 && zSeen(z) && los(z.x, z.y, z.z + 1, tp.x, tp.y, tp.z + 1)) {
+    if (tp && z.eCD <= 0 && z.stun <= 0 && !(z.conf > 0) && td > 2.6 && td < 13 && zSeen(z) && W.phase !== 'day' && los(z.x, z.y, z.z + 1, tp.x, tp.y, tp.z + 1)) {
       const back = tp.aim + Math.PI; let to = null;
       for (const da of [0, 0.6, -0.6, 1.2, -1.2, 1.9, -1.9]) { const px = tp.x + Math.cos(back + da) * 1.35, py = tp.y + Math.sin(back + da) * 1.35, cx = Math.floor(px), cy = Math.floor(py);
         if (inMap(cx, cy) && navNode(cx, cy, tp.L) && !solidFor(W.blk[ci(cx, cy, tp.L)], 'z') && los(px, py, tp.z + 0.8, tp.x, tp.y, tp.z + 0.8)) { to = { x: px, y: py, L: tp.L }; break; } }
@@ -7725,7 +7729,7 @@ function eliteStep(z, Z, dt) {
       }
       return true;
     }
-    if (tp && z.eCD <= 0 && z.stun <= 0 && td < 14 && zSeen(z)) { z.es = { ph: 0, t: 0 }; z.kt = 1; emit({ k: 'elx', a: 'call0', id: z.id, x: r2(z.x), y: r2(z.y), z: r2(z.z) }); emit({ k: 'sfx', n: 'groan', x: z.x, y: z.y }); return true; }
+    if (tp && z.eCD <= 0 && z.stun <= 0 && td < 14 && zSeen(z) && W.phase !== 'day') { z.es = { ph: 0, t: 0 }; z.kt = 1; emit({ k: 'elx', a: 'call0', id: z.id, x: r2(z.x), y: r2(z.y), z: r2(z.z) }); emit({ k: 'sfx', n: 'groan', x: z.x, y: z.y }); return true; }
     return false;
   }
   return false;
@@ -8069,7 +8073,7 @@ function kaijuStep(z, dt) {
     z.ks = null; return false;
   }
   z.kt = 0; z.kc = 0;
-  if (!tgt || z.kcd > 0 || z.stun > 0 || z.sleep || !zSeen(z)) return false; // (round 36) no skills from out of sight
+  if (!tgt || z.kcd > 0 || z.stun > 0 || z.sleep || !zSeen(z) || W.phase === 'day') return false; // (round 36) no skills from out of sight
   const d = Math.hypot(tgt.x - z.x, tgt.y - z.y);
   if (T.kaiju === 'acid' && d < 7) { z.ks = { k: 'breath', t: 0 }; emit({ k: 'sfx', n: 'scream', x: z.x, y: z.y }); return true; }
   if (T.kaiju === 'tail') { if (d < 3.8) { z.ks = { k: 'sweep', t: 0 }; return true; } if (d > 4.5 && d < 14) { z.ks = { k: 'charge', t: 0, a: Math.atan2(tgt.y - z.y, tgt.x - z.x), hit: [] }; emit({ k: 'sfx', n: 'smash', x: z.x, y: z.y }); return true; } }
@@ -8153,7 +8157,7 @@ Object.assign(MODES.siege, {
           const facing = Math.cos(angDiff(z.face || 0, Math.atan2(p.y - z.y, p.x - z.x))) > 0 ? 1 : 0.45;
           gain = Math.max(gain, (d < 1.2 ? 4 : Math.pow(1 - d / SIEGE.sleepR, 1.5) * SIEGE.noticeRate) * facing * (p.ride ? 1.6 : 1));
         }
-        z.aw = Math.max(0, (z.aw || 0) + (gain > 0 ? gain : -SIEGE.noticeDecay) * st);
+        z.aw = Math.max(0, (z.aw || 0) + (gain > 0 ? gain * (W.phase === 'day' ? BAL.day.notice : 1) : -SIEGE.noticeDecay) * st); // (round 36b) slower to notice you by day
         let wake = z.aw >= 1;
         if (!wake) for (const e of W.noise) { const d = Math.hypot(e.x - z.x, e.y - z.y); if (d < e.r && (d < e.r * SIEGE.wallMuffle || los(e.x, e.y, (e.z || 0) + 1, z.x, z.y, z.z + 1))) { wake = true; break; } }
         if (wake) siegeWake(z);
@@ -12126,7 +12130,7 @@ function hudTick(dt) {
     u.firstElementChild.textContent = useOK ? (INP.useLatch ? '再点停' : '交互') : ''; u.lastElementChild.textContent = useOK ? shortUse(tgt.name) : me.ride || me.pass >= 0 ? '下车' : '交互';
     if (useOK) ptxt = tgt.name + (INP.useLatch ? ' · 进行中' : ''); else if (me.down && me.meds > 0) ptxt = '点「自救」用医疗包站起来';
     const md = $('tMed'), canMed = me.meds > 0 && !me.dead && me.medT <= 0 && (me.down || me.hp < me.maxHp); // (round 23c) its own key left of the context key
-    md.classList.toggle('hidden', !!me.dead || !!me.ride || me.pass >= 0); md.classList.toggle('dim', !canMed); md.classList.toggle('hot', canMed && (me.down || me.hp < me.maxHp * 0.7));
+    md.classList.toggle('hidden', !!me.dead); /* (round 36b) usable on a vehicle / in a mech too (it was hidden there, so mid-fight on a bike you couldn't heal) */ md.classList.toggle('dim', !canMed); md.classList.toggle('hot', canMed && (me.down || me.hp < me.maxHp * 0.7));
     md.firstElementChild.textContent = me.down ? '自救' : '医疗'; $('tMedN').textContent = '×' + me.meds;
     $('tWpn').firstElementChild.textContent = w.sn || w.name; $('tWpn').lastElementChild.textContent = w.inf ? '∞' : me.mag[wi] + '/' + me.ammo[wi];
     $('tWpn').classList.toggle('dim', me.down || me.owned.filter(Boolean).length < 2);
@@ -12360,6 +12364,8 @@ function initUI() {
   $('modeBtn').onclick = () => { sfx('click'); openModeSel(); }; $('lModeBtn').onclick = () => { sfx('click'); openModeSel(); }; $('msOk').onclick = () => { sfx('click'); closeModeSel(); }; uiModeLbl();
   $('mini').addEventListener('pointerdown', e => { e.stopPropagation(); e.preventDefault(); toggleBigMap(true); });
   $('bigmap').addEventListener('pointerdown', e => { e.stopPropagation(); e.preventDefault(); toggleBigMap(false); });
+  // (round 36b) the shop and the gear panel close like the map: tap / click anywhere outside the card
+  for (const [id, close] of [['craft', () => closeCraft()], ['kit', () => closeKit()]]) $(id).addEventListener('pointerdown', e => { if (e.target !== e.currentTarget) return; e.stopPropagation(); e.preventDefault(); close(); });
   $('keys').addEventListener('pointerdown', e => { e.stopPropagation(); if (!e.target.closest('.kh')) return; SET.keysOff = !SET.keysOff; saveSet(); UI.keysK = ''; if (W && W.p[ME]) uiKeys(W.p[ME]); sfx('click'); });
   $('pAssist').onclick = () => { SET.assist = ((SET.assist == null ? 1 : SET.assist) + 1) % 3; saveSet(); $('pAssist').textContent = '辅助瞄准：' + assistLv().name; sfx('click'); };
   $('pQual').onclick = () => { const o = ['auto', 0, 1, 2], i = o.indexOf(SET.q == null ? 'auto' : SET.q); SET.q = o[(i + 1) % 4]; if (SET.q === 'auto') SET.qa = 0; saveSet(); applyQual(); $('pQual').textContent = qualLabel(); sfx('click'); };
