@@ -457,7 +457,7 @@ function mechTick(p, mm, dt) {
   if (sk === 'dash' && sT < 0.55) { const f = sT < 0.4 ? 1 : 1 - (sT - 0.4) / 0.15; lean = 0.5 * f; armUp = [-0.6 * f, -0.6 * f]; elb = [0.2, 0.2]; crouch = 0.12 * f; aL = 0.6 * f; aR = -0.5 * f; kL = 0.5 * f + 0.18; kR = 0.9 * f + 0.18; }
   if (sk === 'leap' && sT < 1.3) { if (sT < 0.15) crouch = ease(sT / 0.15) * 0.3; flame = air || sT < 1.05 ? 1 : 0; }
   if (air) { aL = 0.5; aR = 0.1; kL = 1.2; kR = 0.7; armUp = [0.5, 0.5]; flame = 1; }
-  if (pT >= 0) { const s = p._mpS ? 1 : 0, f = pT < 0.35 ? ease(pT / 0.35) : 1, back = pT < 0.25 ? f : 1 - (pT - 0.25) / 0.75; const reach = Math.sin(Math.min(1, pT / 0.45) * Math.PI);
+  if (pT >= 0) { const s = p._mpS ? 1 : 0, f = pT < 0.35 ? ease(pT / 0.35) : 1, back = pT < 0.25 ? f : 1 - (pT - 0.25) / 0.75; const reach = Math.sin(Math.min(1, pT * 1.15) * Math.PI); // out fast, back a little slower
     armUp[s] = Math.max(armUp[s], 1.55 * reach); elb[s] = 0.9 * (1 - reach) + 0.05; twist = (s ? -1 : 1) * 0.35 * reach; lean = Math.max(lean, 0.12 * reach); void back; }
   // legs: two-segment pose, hips drop to keep the feet on the ground
   const legH = (a, k) => L.th * Math.cos(a) + L.sh * Math.cos(a - k) + L.ft;
@@ -469,7 +469,7 @@ function mechTick(p, mm, dt) {
   J.head.rotation.z = lean * 0.5;
   // arms: swing against the legs unless busy
   J.arms.forEach((A, n) => { const sw = (n ? 1 : -1) * Math.sin(ph) * 0.32 * amp; A.sh.rotation.z = lerp(A.sh.rotation.z, armUp[n] > 0.01 || armUp[n] < -0.01 ? armUp[n] : sw, Math.min(1, dt * 18)); A.el.rotation.z = lerp(A.el.rotation.z, elb[n], Math.min(1, dt * 18)); A.sh.rotation.x = A.s * 0.08; });
-  for (const b of J.blades) b.rotation.z = lerp(b.rotation.z, pT >= 0 || sk === 'dash' && sT < 0.55 ? 1.45 : 0.1, Math.min(1, dt * 16)); // blades swing out to strike
+  for (const b of J.blades) b.rotation.z = lerp(b.rotation.z, pT >= 0 || sk === 'dash' && sT < 0.55 ? 0 : -2.9, Math.min(1, dt * 16)); // blades fold back along the forearm, flick out past the fist to strike
   // reactor pulse; thrusters
   const pulse = 0.85 + Math.sin(W.t * 4 + p.i) * 0.15; J.coreHalo.scale.set(1, pulse, pulse);
   for (const f of J.flames) { f.visible = flame > 0 || sp > 3.2; f.scale.y = (flame ? 1.4 : 0.6) * (0.85 + FXR() * 0.3); }

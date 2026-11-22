@@ -121,7 +121,7 @@ const UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/6
     await tch('touchStart', [{ x: 150, y: 280, id: 1 }]);
     await tch('touchMove', [{ x: 250, y: 280, id: 1 }]); await p.waitForTimeout(100);
     const s1 = await p.evaluate(() => ({ ox: INP.move.ox, x: INP.move.x, hint: getComputedStyle(document.getElementById('stickHint')).display }));
-    await tch('touchMove', [{ x: 160, y: 280, id: 1 }]); await p.waitForTimeout(100);
+    await tch('touchMove', [{ x: 160, y: 280, id: 1 }]); await p.waitForTimeout(500); /* (round 34) pointer moves arrive with the next frame; the big map makes headless frames slow */
     const s2 = await p.evaluate(() => ({ ox: INP.move.ox, x: INP.move.x }));
     await tch('touchEnd', []);
     ok('base follows the thumb past the ring', s1.ox > 150 + 10 && s1.x > 1.1, JSON.stringify(s1));

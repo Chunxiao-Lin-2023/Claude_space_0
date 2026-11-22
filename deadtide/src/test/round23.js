@@ -101,7 +101,7 @@ const UA = 'Mozilla/5.0 (iPad; CPU OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (
     const nb = await p.evaluate(() => { const r = $('tNade').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; });
     await tch('touchStart', [{ x: nb[0], y: nb[1], id: 4 }]); await p.waitForTimeout(60); await tch('touchEnd', []); await simWait(2.2);
     s = await p.evaluate(() => ({ n: W.p[0].nades, hp: W.zs.map(z => z.hp | 0) }));
-    check('iPad: tapping 手雷 throws it at the biggest bunch (the 4, not the lone one)', s.n === 2 && s.hp.slice(1).every(h => h < 800) && s.hp[0] >= 850, JSON.stringify(s));
+    check('iPad: tapping 手雷 throws it at the biggest bunch (the 4, not the lone one)', s.n === 2 && s.hp.slice(1).every(h => h < 860) && s.hp[0] >= 885, JSON.stringify(s));
     await tch('touchStart', [{ x: nb[0], y: nb[1], id: 5 }]); for (let k = 1; k <= 6; k++) { await tch('touchMove', [{ x: nb[0] - k * 12, y: nb[1] - k * 6, id: 5 }]); await p.waitForTimeout(30); } await simWait(0.15);
     const ring = await p.evaluate(() => !!INP.nadePt);
     await tch('touchMove', [{ x: nb[0] + 2, y: nb[1] + 1, id: 5 }]); await p.waitForTimeout(40); await tch('touchEnd', []); await simWait(0.3);

@@ -449,6 +449,7 @@ function drawPlayers(vl, dt) {
     const st = Math.sign(Math.sin(ph)); if (amp > 0.55 && st !== p._st && !down && !ride) addP({ x: p.x - Math.cos(p._ly) * 0.1, y: p.y - Math.sin(p._ly) * 0.1, z: zv + 0.03, vx: frnd(-0.3, 0.3), vy: frnd(-0.3, 0.3), vz: 0.25, g: -0.2, col: '#8a7e6a', s: 0.07, life: 0.45, smoke: 1 }); p._st = st;
     // torso: lean into the run, breathe when idle, flinch when hit, slump when down
     const breath = Math.sin(W.t * 2.2 + i) * 0.012;
+    if (i !== ME && p.hurtT > 0) p.hurtT = Math.max(0, p.hurtT - dt); // (round 34) a teammate's hit flash fades here too (it only ever faded in your own stepMove, so a teammate who got hit stayed red)
     const hurt = p.hurtT > 0 ? p.hurtT / 0.3 : 0;
     m.torso.rotation.z = -0.1 * amp + hurt * 0.35 + (down ? -0.45 : 0) + (p.medT > 0 ? -0.2 : 0) + (down || p.build || p.medT > 0 ? 0 : SK.lean * (1 - amp * 0.5) * (p._rdy == null ? 1 : p._rdy));
     m.torso.rotation.x = ride ? 0 : Math.sin(ph) * 0.05 * amp;

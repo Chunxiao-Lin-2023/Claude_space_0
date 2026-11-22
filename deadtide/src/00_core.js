@@ -128,7 +128,7 @@ const VEH = [null,
   { k: 'mech', name: '机甲', spd: 1.0, ram: 1, gun: 'mech', outdoor: 1, noise: 9, mech: 1, tag: '三人高的战斗机甲，直接冲进尸群肉搏。所有伤害由机甲装甲吸收（只吃 60%），装甲打光就把你弹出来，要回商店修；电池一次 150 秒，用完弹出，下机后在商店充电。开火 = 出拳，手雷键 = 机甲技能（有冷却）。太大进不了楼' }, // (round 34)
 ];
 const NVEH = VEH.length - 1;
-const MECH_ON = false;
+const MECH_ON = true;
 const KAIJU_ON = MECH_ON; // (round 34) kaiju come with the mechs
 // (round 34) the three mechs (VEH[7], which one = p.mk): hull hp, punch damage / interval / reach / arc / knockback, walking speed, skill + cooldown
 const MECHS = [
