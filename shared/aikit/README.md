@@ -16,7 +16,8 @@ Co-op games are host-authoritative: only the host calls Claude, so guests never 
 ## API
 - `AIKit.available()` — on and a backend exists. `AIKit.backend()` — label for the UI.
 - `AIKit.call({ system, user, tool:{name, description, schema}, want:'quick'|'smart', maxTokens, timeout })` → the tool's
-  input object (forced tool use, so output is always structured). Calls are serialized; timeouts 12 s / 20 s.
+  input object. Haiku 5.5 gets forced `tool_choice`; Sonnet/Opus 5.5 reject forced tool use (400), so they get `auto`
+  plus an instruction, and a JSON object in plain text is accepted as a fallback. Sonnet may omit fields — validate. Calls are serialized; timeouts 12 s / 20 s.
 - Tiers (`cfg().tier`): `eco` all Haiku 5.5, `bal` Haiku + Sonnet 5.5 for `want:'smart'`, `best` all Sonnet.
 - `AIKit.usage()` — calls and estimated USD (this session / all time), from the response `usage` and list prices.
 - `AIKit.panelHTML(note)` + `AIKit.bind(root, onChange)` — drop-in settings block (on/off, key, tier, test, usage).

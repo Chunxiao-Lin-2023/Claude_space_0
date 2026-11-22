@@ -206,8 +206,8 @@ function msgHTML(e) {
   return `<div class="msg k-${e.k} ${mine ? 'mine' : ''} ${e.broke ? 'brk' : ''} ${e.k === 'contra' ? 'contra' : ''} ${e.i > U.seenI ? 'new' : ''}" data-i="${e.i}">${sealH(who)}<div class="bd"><div class="hd2">${hd}${tag}</div><div class="tx">${body}</div></div></div>`;
 }
 /* 自己刚打的话：Claude 还在理解时先显示出来，不会像没发出去 */
-const pendFree = r => [G.freeCur].concat(G.freeQ || []).filter(f => f && f.role === r && f.pid == null && !f.say).map(f => `<div class="msg mine pendfree"><div class="bd"><div class="hd2">${esc(roleName(r))}${f.to ? ' → ' + esc(roleName(f.to)) : ''}</div><div class="tx">${esc(f.text)}</div><div class="small mut">Claude 在理解你的话 <span class="dots"><i></i><i></i><i></i></span></div></div></div>`).join('');
-const logHTML = filter => '<div class="log" onclick="finishTyping()">' + G.log.filter(filter || (() => true)).map(msgHTML).join('') + '</div>';
+const pendFree = r => [G.freeCur].concat(G.freeQ || []).filter(f => f && f.role === r && f.pid == null && !f.say).map(f => `<div class="msg mine pendfree">${sealH(r)}<div class="bd"><div class="hd2">${esc(roleName(r))}${f.to ? ' → ' + esc(roleName(f.to)) : ''}</div><div class="tx">${esc(f.text)}</div><div class="small mut">Claude 在理解你的话 <span class="dots"><i></i><i></i><i></i></span></div></div></div>`).join('');
+const logHTML = (filter, tail) => '<div class="log" onclick="finishTyping()">' + G.log.filter(filter || (() => true)).map(msgHTML).join('') + (tail || '') + '</div>';
 function gIntro() {
   const sc = S(), r = myRole(), mine = G.introStyle[r], opts = (sc.intros || {})[r] || [];
   const pick = mine ? '' : `<div class="card" style="max-width:820px;margin:12px auto"><h3>轮到你介绍自己</h3><p class="mut small">怎么开场，大家会记住。</p><div class="optl">${opts.map((o, i) => `<button onclick="act({t:'intro',i:${i}})"><span class="k k-evade">${esc(o.label)}</span>${esc(o.say)}</button>`).join('')}</div></div>`;
@@ -273,7 +273,7 @@ function gDisc() {
   const rd = G.ready[r];
   const free = G.ai ? `<div class="freebar"><input id="freeq" maxlength="120" autocomplete="off" placeholder="${t && t !== r ? '直接打字问' + esc(sc.roles[t].name) + '，或者说“把柴刀给他看”…' : '直接打字：问谁、问什么，或者出示什么…'}" onkeydown="if(event.key==='Enter')UI.free()"><button onclick="UI.free()">发送</button></div>` : '';
   return `<div class="seats">${seats}<button class="sm ghost logtg" onclick="UI.logAll()">${U.logAll ? '只看本轮' : '全部记录'}</button></div>
-  <div class="main">${logHTML(filt)}${pendFree(r)}</div>${free}
+  <div class="main">${logHTML(filt, pendFree(r))}</div>${free}
   <div class="bar">${btns}
     <button onclick="UI.listen()" class="${more ? '' : 'ghost'}">${more ? '👂 听大家说' : '👂 大家在等你'}</button>
     <span class="sp"></span>${humanRoles(G).length > 1 ? `<span class="mut small">${humanRoles(G).filter(x => x !== r).map(x => (G.ready[x] ? '✓ ' : '… ') + esc(sc.roles[x].name)).join(' ')}</span>` : ''}

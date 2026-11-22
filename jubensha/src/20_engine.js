@@ -18,7 +18,7 @@ function logPush(g, e) { e.i = g.nid++; e.ph = g.phase; g.log.push(e); if (g.log
 function reveal(g, ids, by) {
   const sc = SCRIPTS[g.sid]; const added = [];
   for (const id of ids || []) if (!g.pub.includes(id)) {
-    g.pub.push(id); added.push(id);
+    g.pub.push(id); added.push(id); (g.pubAt = g.pubAt || {})[id] = g.nid;
     for (const r in g.own) { const k = g.own[r].indexOf(id); if (k >= 0) g.own[r].splice(k, 1); }
     if (sc.facts[id]) logPush(g, { k: 'fact', who: by, ref: id, text: sc.facts[id].text });
   }
@@ -319,7 +319,7 @@ function apply(g, a, seat) {
     case 'show': if (disc && (g.pub.includes(a.id) || g.own[role].includes(a.id)) && sc.suspects.includes(a.to) && a.to !== role) { if (ownText(a.q)) logPush(g, { k: 'say', who: role, to: a.to, text: ownText(a.q), own: 1 }); showTo(g, role, a.to, a.id); g.acts++; } break;
     case 'free': { /* 自由打字但不属于任何话题：记下原话，对方只回一句不含事实的话 */
       const q = ownText(a.q); if (!disc || !q) return;
-      if (a.to && sc.suspects.includes(a.to) && a.to !== role) { logPush(g, { k: 'ask', who: role, to: a.to, text: q, own: 1 }); if (g.seats.includes(a.to)) addPrompt(g, { to: a.to, from: role, topic: '_', q }); else logPush(g, { k: 'ans', who: a.to, to: role, text: rnd(g, sc.idle[a.to]), kind: 'evade', free: 1 }); }
+      if (a.to && sc.suspects.includes(a.to) && a.to !== role) { logPush(g, { k: 'ask', who: role, to: a.to, text: q, own: 1 }); if (g.seats.includes(a.to)) addPrompt(g, { to: a.to, from: role, topic: '_', q }); else logPush(g, { k: 'ans', who: a.to, to: role, text: rnd(g, (sc.dodge || sc.idle)[a.to]), kind: 'evade', free: 1, q }); }
       else logPush(g, { k: 'say', who: role, text: q, own: 1, kind: a.kind || 'truth' });
       g.acts++; break;
     }

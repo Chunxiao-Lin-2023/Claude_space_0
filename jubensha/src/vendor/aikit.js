@@ -30,6 +30,7 @@ const AIKit = (() => {
   if (isArtifact()) setTimeout(loadSample, 0);
   function available() { const c = cfg(); if (!c.on) return false; return isArtifact() ? !!sample : !!c.key; }
   function backend() { return isArtifact() ? (sample ? 'claude.ai 账号' : '不可用') : cfg().key ? '你的 API 密钥' : '未设置密钥'; }
+  const forced = m => /haiku/.test(m);
   function model(want) { const t = cfg().tier; return MODELS[t === 'eco' ? 'quick' : t === 'best' ? 'smart' : (want === 'smart' ? 'smart' : 'quick')]; }
   function track(m, u) {
     const p = PRICE[m] || PRICE[MODELS.quick]; if (!u) return;
@@ -53,14 +54,17 @@ const AIKit = (() => {
       const r = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST', signal: ctl.signal,
         headers: { 'content-type': 'application/json', 'x-api-key': cfg().key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-        body: JSON.stringify({ model: m, max_tokens: maxTokens || 400, system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }],
-          messages: [{ role: 'user', content: user }], tools: [{ name: tool.name, description: tool.description || tool.name, input_schema: tool.schema }], tool_choice: { type: 'tool', name: tool.name } })
+        /* Haiku 支持强制调用工具；Sonnet/Opus 5.5 不支持（400），改成 auto + 明确要求，再从文字里兜底解析 JSON */
+        body: JSON.stringify({ model: m, max_tokens: maxTokens || 400, system: [{ type: 'text', text: system + (forced(m) ? '' : '\n\n必须调用 ' + tool.name + ' 工具给出结果，不要直接回复文字。'), cache_control: { type: 'ephemeral' } }],
+          messages: [{ role: 'user', content: user }], tools: [{ name: tool.name, description: tool.description || tool.name, input_schema: tool.schema }], tool_choice: forced(m) ? { type: 'tool', name: tool.name } : { type: 'auto' } })
       });
       const j = await r.json().catch(() => ({}));
       if (!r.ok) { const msg = (j.error && j.error.message) || ('HTTP ' + r.status); const e = new Error(r.status === 401 ? '密钥无效（401）' : r.status === 429 ? '调用太频繁或额度用完（429）' : msg); e.status = r.status; throw e; }
       track(m, j.usage);
-      const b = (j.content || []).find(x => x.type === 'tool_use'); if (!b) throw new Error('没有拿到结构化结果');
-      return b.input;
+      const b = (j.content || []).find(x => x.type === 'tool_use'); if (b) return b.input;
+      const txt = (j.content || []).filter(x => x.type === 'text').map(x => x.text).join('\n'), mm = txt.match(/\{[\s\S]*\}/);
+      if (mm) try { return JSON.parse(mm[0]); } catch (e) { }
+      throw new Error('没有拿到结构化结果');
     } catch (e) { session.fails++; if (e.name === 'AbortError') throw new Error('超时'); throw e; }
     finally { clearTimeout(to); }
   }

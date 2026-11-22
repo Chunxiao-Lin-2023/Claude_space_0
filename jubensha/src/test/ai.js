@@ -53,7 +53,7 @@ const mock = async route => {
   MODE = 'names'; await P.fill('#freeq', '村长，村里平时都怎么过日子？'); await P.click('.freebar button'); await idle(P);
   R.routeNameNormalized = await lastAsk();
   MODE = 'noto'; const n0 = await P.evaluate(() => __dbg.G.log.length); await P.fill('#freeq', '你那晚在哪？'); await P.click('.freebar button'); await idle(P); await P.waitForTimeout(300);
-  R.noTargetHandsBack = await P.evaluate(n0 => 'log+' + (__dbg.G.log.length - n0) + ' input=' + document.querySelector('#freeq').value + ' toast=' + [...document.querySelectorAll('.toast')].map(t => t.textContent.slice(0, 12)).join('/'), n0);
+  R.groupQuestionGetsAnswer = await lastAsk();
   await P.fill('#freeq', ''); MODE = 'ok';
   R.costTracked = await P.evaluate(() => JSON.stringify(AIKit.usage().session));
   await P.evaluate(() => UI.modal('ai')); await P.screenshot({ path: '/tmp/jbs/51_ai_settings.png' }); await P.evaluate(() => UI.close());

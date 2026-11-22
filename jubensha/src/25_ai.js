@@ -46,7 +46,9 @@ function transcript(g, upto, n) {
   for (const e of g.log) { if (e.i >= upto) break; if (['sys', 'idle'].includes(e.k) || e.v === 'p') continue; out.push(e.k === 'fact' ? '（' + e.text + '）' : roleName(e.who) + (e.to ? ' → ' + roleName(e.to) : '') + '：' + e.text); }
   return out.slice(-(n || 12)).join('\n');
 }
-const pubFacts = g => g.pub.map(id => { const sc = SCRIPTS[g.sid]; return sc.clues[id] ? '【线索】' + sc.clues[id].title + '：' + sc.clues[id].text.replace(/\n+/g, ' ').slice(0, 90) : sc.facts[id] ? '【证词/推论】' + sc.facts[id].text : ''; }).filter(Boolean);
+/* 已公开信息只算到这一句之前：问话的 AI 不能提前知道对方答案里才会公开的事 */
+const pubBefore = (g, upto) => g.pub.filter(id => upto == null || !(g.pubAt && g.pubAt[id] >= upto));
+const pubFacts = (g, upto) => pubBefore(g, upto).map(id => { const sc = SCRIPTS[g.sid]; return sc.clues[id] ? '【线索】' + sc.clues[id].title + '：' + sc.clues[id].text.replace(/\n+/g, ' ').slice(0, 90) : sc.facts[id] ? '【证词/推论】' + sc.facts[id].text : ''; }).filter(Boolean);
 const TIME_RE = /([0-9一二三四五六七八九十两]{1,3})\s*点\s*(半|一刻|[0-9一二三四五六七八九十]{1,3}\s*分?)?/g;
 const CN = { 一: 1, 二: 2, 两: 2, 三: 3, 四: 4, 五: 5, 六: 6, 七: 7, 八: 8, 九: 9, 十: 10 };
 const cnNum = s => /^\d+$/.test(s) ? +s : s.length === 1 ? CN[s] : s[0] === '十' ? 10 + (CN[s[1]] || 0) : (CN[s[0]] || 0) * 10 + (s[2] ? CN[s[2]] : 0);
@@ -56,31 +58,43 @@ function aiCheck(g, e, text, orig) {
   const sc = SCRIPTS[g.sid];
   if (!text || typeof text !== 'string') return '空';
   text = text.trim();
-  const max = Math.min(220, Math.max(40, orig.length * 2 + 30)); if (text.length > max) return '太长';
+  const max = e.free ? 70 : Math.min(220, Math.max(e.k === 'ask' ? 60 : 40, orig.length * 2 + 30)); if (text.length > max) return '太长';
   if (/AI|人工智能|模型|Claude|剧本|玩家|游戏|系统提示/i.test(text)) return '出戏';
-  const pub = new Set(g.pub);
-  for (const s of sc.secrets || []) for (const w of s.words) if (text.includes(w) && !orig.includes(w) && !s.ok.some(id => pub.has(id))) return '泄露：' + w;
-  const allowed = times(orig + pubFacts(g).join(' '));
+  const pub = new Set(pubBefore(g, e.i));
+  for (const s of sc.secrets || []) for (const w of s.words) if (text.includes(w) && !orig.includes(w) && !(e.q || '').includes(w) && !s.ok.some(id => pub.has(id))) return '泄露：' + w;
+  const allowed = times(orig + pubFacts(g, e.i).join(' '));
   for (const t of times(text)) if (!allowed.has(t)) return '编造时间：' + t;
   if (e.who === sc.killer && sc.confess && sc.confess.test(text) && !sc.confess.test(orig)) return '认罪';
+  if (e.k === 'ask' && !/[？?]/.test(text)) return '提问没有问号';
+  if (e.free) { if (times(text).size) return '编造时间'; if (/我(可|也|从来|根本|压根|又|都)?(没|没有|不|从没|从来没)(有|去|见|看|拿|碰|杀|动|进|出|在)|我(有|见过|看到|去过|拿过)/.test(text)) return '自由回答里不许承认或否认事实'; }
   return null;
 }
 async function voiceOne(g, e) {
   const sc = SCRIPTS[g.sid], R = sc.roles[e.who], orig = e.text;
   const smart = e.broke || e.k === 'final' || e.k === 'contra';
-  const system = [
+  const system = e.free ? [
+    `你在一场中文剧本杀里扮演「${R.name}」（${R.title}）。说话风格：${(sc.voice || {})[e.who] || ''}`,
+    '别人问了你一个问题，这个问题你没有可以说的东西。你要用这个人物的口吻回一句话：回应这个问题本身（表态、反问、把话推回去、说这不关自己的事、让对方去问别人都行），听起来像真人在对话。',
+    '【硬性规则】',
+    '1. 不说任何事实：不承认也不否认任何事（不说“我没有…”“我有…”“我见过/没见过…”“我去过/没去过…”），不提时间、地点、物品、线索。',
+    '2. 不提没出现在“已公开信息”里的人名和东西。' + (e.who === sc.killer ? '你绝不承认杀了人。' : ''),
+    '3. 不提 AI、模型、游戏、剧本、玩家；只用中文；不写旁白。',
+    '4. 最多 30 个字，一两句话。',
+    `人物自我介绍（只用来把握语气）：${R.intro}`
+  ].join('\n') : [
     `你在一场中文剧本杀里扮演「${R.name}」（${R.title}）。说话风格：${(sc.voice || {})[e.who] || ''}`,
     '你要做的只有一件事：把给你的“原句”用这个人物的口吻重新说出来，并自然地接上刚才的对话。',
     '【硬性规则】',
-    '1. 只说原句里已有的事实。可以换说法、加语气、回应对方刚才的话，但不能新增任何事实、时间、地点、人物、物品或动作。',
+    '1. 只说原句里已有的事实。可以换说法、加语气、回应对方刚才的话，但不能新增任何事实、时间、地点、人物、物品或动作。口头禅偶尔用一次就够，别每句都用。',
     '2. 原句是回避，就继续回避；原句是谎话，就照样说谎，不改口、不暗示真相。' + (e.who === sc.killer ? '你绝不承认自己杀了人，也不承认去过死者家里找到他。' : ''),
     '3. 不提任何没出现在原句或“已公开信息”里的线索和人名。',
     '4. 不提 AI、模型、游戏、剧本、玩家；只用中文；不写旁白，除非原句里本来有括号动作。',
     `5. 长度不超过原句的两倍，最多 ${Math.min(150, orig.length * 2 + 20)} 个字。`,
+    e.k === 'final' ? '6. 原句里「」引用的是证据名，可能被截断了；用自己的话把那条证据说完整、说成一句通顺的理由（内容只能来自“已公开信息”），不要照抄省略号。' : e.k === 'ask' ? '6. 这是一句提问：问的必须还是原句那个问题（可以加称呼、语气或一句铺垫），不能换成别的问题，不能替对方说出还没说过的事，结尾是问号。' : '',
     `人物自我介绍（只用来把握语气）：${R.intro}`
   ].join('\n');
   const label = { ans: '回答', say: '主动发言', final: '最终陈述（投票前的最后一句）', intro: '自我介绍', contra: '指出对方的矛盾', ask: '提问' }[e.k];
-  const user = `【已公开信息】\n${pubFacts(g).slice(-24).join('\n') || '（无）'}\n\n【刚才的对话】\n${transcript(g, e.i, 10) || '（刚开始）'}\n\n【这一句】类型：${label}${e.kind ? '；性质：' + (KIND_LABEL[e.kind] || e.kind) : ''}${e.to ? '；说给：' + roleName(e.to) : ''}\n原句：${orig}`;
+  const user = e.free ? `【已公开信息】\n${pubFacts(g, e.i).slice(-24).join('\n') || '（无）'}\n\n【刚才的对话】\n${transcript(g, e.i, 8) || '（刚开始）'}\n\n【${roleName(e.to)}问你】${e.q || ''}` : `【已公开信息】\n${pubFacts(g, e.i).slice(-24).join('\n') || '（无）'}\n\n【刚才的对话】\n${transcript(g, e.i, 10) || '（刚开始）'}\n\n【这一句】类型：${label}${e.kind ? '；性质：' + (KIND_LABEL[e.kind] || e.kind) : ''}${e.to ? '；说给：' + roleName(e.to) : ''}\n原句：${orig}`;
   try {
     const v = await AIKit.call({ system, user, want: smart ? 'smart' : 'quick', maxTokens: 300, tool: { name: 'say', description: '说出这一句', schema: { type: 'object', properties: { line: { type: 'string', description: '人物说出口的这一句' } }, required: ['line'] } } });
     if (!G || G !== g) return;
@@ -106,6 +120,23 @@ function localRoute(g, f, R, tops, items) {
   const item = /给.{0,6}看|出示|拿出|你看这|看看这/.test(t) ? items.find(id => sc.clues[id] && t.includes(sc.clues[id].title.replace(/[（(].*$/, '').replace(/^(一张|一把|一根|桌上的|墙上的|卧室的)/, ''))) : null;
   return { to, topic, item: item || null, act: item ? 'show' : to ? 'ask' : 'say' };
 }
+/* 讨论里的提问交给 Claude 归类的请求（单独拿出来，方便测试归类准确率） */
+function routeReq(g, f, R, tops, items) {
+  const sc = SCRIPTS[g.sid], scope = sc.topicScope || {};
+  const tdesc = t => t.startsWith('about_') ? '问他怎么看' + sc.roles[t.slice(6)].name + '、和' + sc.roles[t.slice(6)].name + '是什么关系' : (scope[t] || topicQ(sc, t));
+  return {
+    want: AIJ.routeWant || 'quick', maxTokens: 300, timeout: 9000,
+    system: '你是剧本杀的裁判助手，把玩家打的一句话归类成一个游戏动作。只能从给定的选项里选。to/topic/item 只能填给定的英文 id。',
+    user: '【可以问的人】' + R.map(r => r + '=' + sc.roles[r].name + '（' + sc.roles[r].title + '）').join('，') +
+      '\n【话题】（topic 只在玩家问的正是这件事时才选；问的是别的具体东西——比如谁有枪、那两个字是什么、某件物品怎么回事、灰土哪来的——一律 topic=none）\n' + tops.map(t => t + '：' + tdesc(t)).join('\n') +
+      '\n【可以出示的线索/证词】\n' + items.map(id => id + '：' + (sc.clues[id] ? sc.clues[id].title : sc.facts[id].text.slice(0, 30))).join('\n') +
+      '\n\n【玩家打的话】' + f.text +
+      '\n\n规则：问某人某件事 → act=ask；拿出某条线索/证词给某人看 → act=show；不是问题、只是对所有人说的推理 → act=say。' +
+      '\n问“你们/大家/有没有人”这种问所有人的问题，也算 ask，to 选最该回答的那个人。' + (f.to ? '玩家选中了 ' + f.to + '：除非话里明确点了别人的名字，to 就填 ' + f.to + '。' : ''),
+    tool: { name: 'route', schema: { type: 'object', properties: { act: { type: 'string', enum: ['ask', 'show', 'say'] }, to: { type: 'string', enum: R.concat(['none']) }, topic: { type: 'string', enum: tops.concat(['none']) }, item: { type: 'string', enum: items.length ? items.concat(['none']) : ['none'] } }, required: ['act', 'to', 'topic', 'item'] } }
+  };
+}
+const QRE = /[？?]|吗|呢|谁|什么|哪|怎么|为什么|为啥|是不是|有没有|几点|多少|难道/;
 async function handleFree(f) {
   const g = G, sc = SCRIPTS[g.sid], seat = g.seats.indexOf(f.role); if (seat < 0) return;
   const msg = (t, back) => { g.freeCur = null; g.freeMsg = g.freeMsg || {}; g.freeMsg[f.role] = { n: g.nid++, text: t, back: back ? f.text : '' }; save(); netSend(); render(); };
@@ -139,25 +170,18 @@ async function handleFree(f) {
       const R = sc.suspects.filter(r => r !== f.role), tops = sc.topics.filter(x => !x.when || x.when(mkP(g))).map(x => x.id).concat(sc.suspects.map(x => 'about_' + x));
       const items = (g.own[f.role] || []).concat(g.pub);
       let v = null;
-      try { v = await callC({
-        want: 'quick', maxTokens: 300, timeout: 9000,
-        system: '你是剧本杀的裁判助手，把玩家打的一句话归类成一个游戏动作。只能从给定的选项里选。to/topic/item 只能填给定的英文 id。',
-        user: '【可以问的人】' + R.map(r => r + '=' + sc.roles[r].name).join('，') + (f.to ? '（玩家当前选中了 ' + f.to + '）' : '') +
-          '\n【话题】\n' + tops.map(t => t + '：' + topicQ(sc, t)).join('\n') +
-          '\n【可以出示的线索/证词】\n' + items.map(id => id + '：' + (sc.clues[id] ? sc.clues[id].title : sc.facts[id].text.slice(0, 30))).join('\n') +
-          '\n\n【玩家打的话】' + f.text + '\n\n规则：问某人某件事 → act=ask；拿出某条线索/证词给某人看 → act=show；都不是（闲聊、自言自语、对所有人说的推理）→ act=say。',
-        tool: { name: 'route', schema: { type: 'object', properties: { act: { type: 'string', enum: ['ask', 'show', 'say'] }, to: { type: 'string', enum: R.concat(['none']) }, topic: { type: 'string', enum: tops.concat(['none']) }, item: { type: 'string', enum: items.length ? items.concat(['none']) : ['none'] } }, required: ['act', 'to', 'topic', 'item'] } }
-      }); } catch (err) { v = null; }
+      try { v = await callC(routeReq(g, f, R, tops, items)); } catch (err) { v = null; }
       /* Claude 的结果先规范化（名字→id），再用本地规则兜底：Claude 失败或没给出对象时问题也不会石沉大海 */
       const L = localRoute(g, f, R, tops, items);
       const nTo = x => { if (!x) return null; if (R.includes(x)) return x; return R.find(r => x === sc.roles[r].name || x === sc.roles[r].seal || String(x).includes(sc.roles[r].name)) || null; };
       const to = (v && nTo(v.to)) || L.to || (f.to && R.includes(f.to) ? f.to : null);
-      const act = v && v.act ? v.act : L.act, topic = v && tops.includes(v.topic) ? v.topic : L.topic, item = v && items.includes(v.item) ? v.item : L.item;
+      const act = v && v.act ? v.act : L.act, topic = v ? (tops.includes(v.topic) ? v.topic : null) : L.topic, item = v ? (items.includes(v.item) ? v.item : null) : L.item;
       if (act === 'show' && to && item) apply(g, { t: 'show', to, id: item, q: f.text }, seat);
-      else if ((act === 'ask' || act === 'show') && !to) return msg('没听出你在问谁：先点一下座位上的人，或者在话里带上名字（比如“张村民，你那晚在哪？”）。', 1);
+      else if (act === 'show' && !to) return msg('没听出你在问谁：先点一下座位上的人，或者在话里带上名字（比如“张村民，你那晚在哪？”）。', 1);
       else if (act !== 'say' && to && topic) apply(g, { t: 'ask', to, topic, q: f.text }, seat);
       else if (act !== 'say' && to) apply(g, { t: 'free', to, q: f.text }, seat);
-      else if (to && /[？?吗呢]\s*$/.test(f.text)) apply(g, topic ? { t: 'ask', to, topic, q: f.text } : { t: 'free', to, q: f.text }, seat);
+      else if (to && (f.to === to || QRE.test(f.text))) apply(g, topic ? { t: 'ask', to, topic, q: f.text } : { t: 'free', to, q: f.text }, seat);
+      else if (!to && (act === 'ask' || QRE.test(f.text))) { const ais = R.filter(r => !g.seats.includes(r)), who = ais[Math.floor(Math.random() * ais.length)] || R[0]; apply(g, topic ? { t: 'ask', to: who, topic, q: f.text } : { t: 'free', to: who, q: f.text }, seat); }
       else {
         apply(g, { t: 'free', q: f.text, kind: 'truth' }, seat);
         if (!g.freeSayHint) { g.freeSayHint = 1; msg('这句话大家都听到了。想让某个人回答，就先点他的座位，或者在话里带上他的名字。'); }
