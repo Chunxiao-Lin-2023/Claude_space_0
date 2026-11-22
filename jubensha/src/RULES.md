@@ -1,10 +1,13 @@
 # 剧本杀 · 开发守则
 
+> 做新剧本、或者改了引擎/AI/界面之后：先读、再更新 [`SCRIPT_GUIDE.md`](SCRIPT_GUIDE.md)（字段参考、制作流程、设计规则、平衡目标、试玩清单、踩过的坑）。
+
 ## 结构
-- `00_core.js` 状态 `G`、存档、阶段表、AI 发言预算（`AI_BUDGET`）和行动点（`AP`）
-- `10_<剧本>.js` 剧本数据（每本一份）。原文放在 `text/*.txt`，构建时注入 `TEXT`
+- `00_core.js` 状态 `G`、存档、阶段表、难度表 `DIFF`（AI 发言预算、行动点、提示扣分、反驳/嫁祸开关）
+- `1N_<剧本>.js` 剧本数据（每本一份，可拆两个文件）。原文放在 `text/*.txt`，构建时注入 `TEXT`。字段说明见 `SCRIPT_GUIDE.md`
 - `20_engine.js` 规则引擎：`apply(G, action, seat)` 是唯一改状态的入口；联机时只在房主上跑
-- `30_ui.js` 画面与弹窗；`40_art.js` 程序绘制；`45_audio.js` 合成音效；`50_net.js` PeerJS；`90_main.js` 入口
+- `25_ai.js` Claude 扮演 AI 玩家（只在单机/房主运行）；`vendor/aikit.js`、`vendor/titlekit.js` 是 `shared/` 的副本
+- `30_ui.js` 画面与弹窗；`40_art.js` 程序绘制（每本剧本的平面图/线索图挂在 `SCRIPTS.<sid>.art`）；`45_audio.js` 合成音效；`50_net.js` PeerJS；`90_main.js` 入口
 - `python3 build.py [--deploy]` → `out/index.html`、`out/test.html`（带 `window.__dbg`）、`out/artifact.html`；`--deploy` 写 `../index.html`
 - `check.js` 在构建时检查剧本数据：引用的线索/证词/话题/角色都要存在，非凶手不能有谎话，第一题答案必须是凶手
 
@@ -47,9 +50,9 @@ AI 反驳把推论打到 ×0.6，真人反驳打到 ×0.4；无辜 AI 会回击�
 `test/solo.js` 会跑三种局并打印 AI 的嫌疑分：
 - 侦探局按正常思路打 → AI 投王村长，满分
 - 凶手局“消极”（总选第一个说法）→ 应该被投出
-- 凶手局“聪明”（藏借条和床板、在地洞上撒谎、嫁祸张村民、反驳推论）→ 应该有机会脱身（目前 8 对 9.1，险胜）
+- 凶手局“聪明”（藏借条和床板、在地洞上撒谎、嫁祸张村民、反驳推论）→ 应该有机会脱身（目前标准难度 王 6 对 张 10.1，偏宽松）
 - 无辜玩家（胡调研）照实说 → AI 应该投王村长
-改 `sus`、`AI_BUDGET`、`talk` 顺序之后三条都要再看一遍。
+改 `sus`、`DIFF`、`talk` 顺序之后都要再跑 `node test/balance.js`，目标见 `SCRIPT_GUIDE.md` 第 5 节。
 
 ## 界面守则（沿用 wanmeiol/src/OPTIMIZATIONS.md 的剧情类规则）
 - 一次一个画面，各阶段配色不同（读本/答卷=纸、搜证=夜色青、讨论=烛光、真相=暗红）；同一画面重画不重放淡入（`body.same`）
