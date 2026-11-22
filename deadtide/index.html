@@ -351,7 +351,7 @@ body.touch #hTL .hcard{padding:5px 8px}
 body.touch .hcard{background:rgba(14,16,20,.62)}
 @media (min-width:501px){body.touch #hTC{min-width:0;max-width:max(200px,calc(100vw - 560px - var(--sa-l) - var(--sa-r)))}}
 @media (pointer:coarse) and (max-height:500px){body.touch #pcards{padding:3px 7px}body.touch #pcards .nm{font-size:10px}body.touch #pcards .bar{height:4px}body.touch #pcards .pbar{gap:1px}
-  body.touch #hTC{left:calc(176px + var(--sa-l));transform:none;align-items:flex-start;max-width:calc(100vw - 176px - 380px - var(--sa-l) - var(--sa-r));background:rgba(14,16,20,.38)}body.touch .hcard{background:rgba(14,16,20,.42)}
+  body.touch #hTC{left:calc(176px + var(--sa-l));transform:none;align-items:flex-start;max-width:calc(100vw - 176px - 300px - var(--sa-l) - var(--sa-r));background:rgba(14,16,20,.38)}body.touch .hcard{background:rgba(14,16,20,.42)}
   body.touch #objp{display:none!important}
   body.touch #hTC{flex-direction:row;align-items:center;gap:6px;padding:3px 8px;flex-wrap:nowrap}body.touch #phase{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px;min-width:0}
   body.touch #readyBtn{min-height:28px;padding:2px 8px;font-size:12px;flex:none}
@@ -5080,7 +5080,7 @@ const ZT = {
   shade: { name: '隐身者', hp: 420, spd: 1.5, r: 0.3, h: 1.25, dmg: 12, bdmg: 10, cd: 0.9, sc: 1.2, look: 'walker', skin: '#50505e', elite: { k: 'cloak', cd: 6, col: '#c0c0e0', tip: '隐身摸到你身边偷袭，留意空气里的扭曲，附近炸一下就现形' } },
 };
 const ELITES = ['blinker', 'caller', 'warden', 'shade'];
-const BUILD_TAG = '第 36 轮之四'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
+const BUILD_TAG = '第 36 轮之五'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
 // aim assist (SET.assist): fire-button lock range (x weapon range), lock-on time before it fires, spread while auto-aimed, mouse/finger magnet
 const PORT = 1.25; // firing port: your own shots pass a wall / door you built if it is this close to you
 const ASSIST = [{ name: '关', range: 0, acq: 0, spread: 1, mag: 0 }, { name: '标准', range: 0.75, acq: 0.3, spread: 1.5, mag: 1 }, { name: '强', range: 1, acq: 0, spread: 1, mag: 1 }];
@@ -12111,12 +12111,12 @@ function hudTick(dt) {
   if (W.phase === 'day') {
     const m = Math.max(0, Math.ceil(W.clock)); ph.className = '';
     const nl = BAL.nightLv(W.night + 1), up = W.night > 0 && nl > BAL.nightLv(W.night); /* (round 31) the next night's level */
-    ph.innerHTML = (W.night ? '第 ' + (W.night + 1) + ' 夜前' : '第一个白天') + (UI.phoneTop ? `<span class="sub">${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')} 后入夜</span>` : `<span class="sub">${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')} 后入夜 · 今夜 Lv ${nl}${up ? '（升级）' : ''}</span>`);
+    ph.innerHTML = (UI.phoneTop ? (W.night ? '第' + (W.night + 1) + '夜前' : '白天') : W.night ? '第 ' + (W.night + 1) + ' 夜前' : '第一个白天') + (UI.phoneTop ? `<span class="sub">${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')} 后入夜</span>` : `<span class="sub">${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')} 后入夜 · 今夜 Lv ${nl}${up ? '（升级）' : ''}</span>`);
   } else if (W.phase === 'night') {
     const left = W.zs.length + (NETROLE === 'guest' ? (W.spawnLeft || 0) : W.spawnQ.length);
     ph.className = isBlood(W.night) ? 'blood' : 'night';
     const rest = Math.max(0, Math.ceil(BAL.nightMin(W.night) - W.nightT));
-    ph.innerHTML = '第 ' + W.night + ' 夜 · Lv ' + BAL.nightLv(W.night) + (isBlood(W.night) ? ' · 血月' : '') + (UI.phoneTop ? `<span class="sub">${rest > 0 ? '天亮 ' + Math.floor(rest / 60) + ':' + String(rest % 60).padStart(2, '0') + ' · ' : ''}剩 ${left}</span>` : `<span class="sub">剩余 ${left} 只${rest > 0 ? ' · 天亮还要 ' + Math.floor(rest / 60) + ':' + String(rest % 60).padStart(2, '0') : ''} · ${W.night}/${BAL.nights}</span>`); /* (round 36d) phones: the time to dawn first, short */
+    ph.innerHTML = (UI.phoneTop ? '第' + W.night + '夜' + (isBlood(W.night) ? '·血月' : '') : '第 ' + W.night + ' 夜 · Lv ' + BAL.nightLv(W.night) + (isBlood(W.night) ? ' · 血月' : '')) + (UI.phoneTop ? `<span class="sub">${rest > 0 ? '天亮 ' + Math.floor(rest / 60) + ':' + String(rest % 60).padStart(2, '0') + ' · ' : ''}剩 ${left}</span>` : `<span class="sub">剩余 ${left} 只${rest > 0 ? ' · 天亮还要 ' + Math.floor(rest / 60) + ':' + String(rest % 60).padStart(2, '0') : ''} · ${W.night}/${BAL.nights}</span>`); /* (round 36d) phones: the time to dawn first, short */
   } else ph.textContent = W.phase === 'win' ? '获救' : '失守';
   // tasks: a one-line summary that opens on tap, and pops open for a few seconds when something changes
   if (UI.tkv !== W.tkv) {

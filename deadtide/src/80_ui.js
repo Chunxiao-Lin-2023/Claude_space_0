@@ -188,12 +188,12 @@ function hudTick(dt) {
   if (W.phase === 'day') {
     const m = Math.max(0, Math.ceil(W.clock)); ph.className = '';
     const nl = BAL.nightLv(W.night + 1), up = W.night > 0 && nl > BAL.nightLv(W.night); /* (round 31) the next night's level */
-    ph.innerHTML = (W.night ? '第 ' + (W.night + 1) + ' 夜前' : '第一个白天') + (UI.phoneTop ? `<span class="sub">${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')} 后入夜</span>` : `<span class="sub">${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')} 后入夜 · 今夜 Lv ${nl}${up ? '（升级）' : ''}</span>`);
+    ph.innerHTML = (UI.phoneTop ? (W.night ? '第' + (W.night + 1) + '夜前' : '白天') : W.night ? '第 ' + (W.night + 1) + ' 夜前' : '第一个白天') + (UI.phoneTop ? `<span class="sub">${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')} 后入夜</span>` : `<span class="sub">${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')} 后入夜 · 今夜 Lv ${nl}${up ? '（升级）' : ''}</span>`);
   } else if (W.phase === 'night') {
     const left = W.zs.length + (NETROLE === 'guest' ? (W.spawnLeft || 0) : W.spawnQ.length);
     ph.className = isBlood(W.night) ? 'blood' : 'night';
     const rest = Math.max(0, Math.ceil(BAL.nightMin(W.night) - W.nightT));
-    ph.innerHTML = '第 ' + W.night + ' 夜 · Lv ' + BAL.nightLv(W.night) + (isBlood(W.night) ? ' · 血月' : '') + (UI.phoneTop ? `<span class="sub">${rest > 0 ? '天亮 ' + Math.floor(rest / 60) + ':' + String(rest % 60).padStart(2, '0') + ' · ' : ''}剩 ${left}</span>` : `<span class="sub">剩余 ${left} 只${rest > 0 ? ' · 天亮还要 ' + Math.floor(rest / 60) + ':' + String(rest % 60).padStart(2, '0') : ''} · ${W.night}/${BAL.nights}</span>`); /* (round 36d) phones: the time to dawn first, short */
+    ph.innerHTML = (UI.phoneTop ? '第' + W.night + '夜' + (isBlood(W.night) ? '·血月' : '') : '第 ' + W.night + ' 夜 · Lv ' + BAL.nightLv(W.night) + (isBlood(W.night) ? ' · 血月' : '')) + (UI.phoneTop ? `<span class="sub">${rest > 0 ? '天亮 ' + Math.floor(rest / 60) + ':' + String(rest % 60).padStart(2, '0') + ' · ' : ''}剩 ${left}</span>` : `<span class="sub">剩余 ${left} 只${rest > 0 ? ' · 天亮还要 ' + Math.floor(rest / 60) + ':' + String(rest % 60).padStart(2, '0') : ''} · ${W.night}/${BAL.nights}</span>`); /* (round 36d) phones: the time to dawn first, short */
   } else ph.textContent = W.phase === 'win' ? '获救' : '失守';
   // tasks: a one-line summary that opens on tap, and pops open for a few seconds when something changes
   if (UI.tkv !== W.tkv) {
