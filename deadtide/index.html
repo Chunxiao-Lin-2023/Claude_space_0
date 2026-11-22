@@ -17,6 +17,7 @@ canvas#cv{position:fixed;inset:0;width:100%;height:100%;display:block;cursor:cro
 #ov{position:fixed;inset:0;z-index:4;pointer-events:none;overflow:hidden}
 #hpov{position:fixed;inset:0;z-index:4;pointer-events:none;overflow:hidden}
 #ov .kxp{position:absolute;transform:translate(-50%,-100%);font:700 13px/1 system-ui,sans-serif;color:#1a1408;background:#ffe14a;padding:3px 7px;border-radius:10px;box-shadow:0 0 12px rgba(255,225,74,.8);animation:kxpP .45s ease-in-out infinite alternate;white-space:nowrap;pointer-events:none}.kxp b{font-weight:800;margin-left:3px}@keyframes kxpP{from{transform:translate(-50%,-100%) scale(1)}to{transform:translate(-50%,-100%) scale(1.12)}}
+.elt.kj{font-size:13px}.elt.kj i{width:90px!important;height:5px!important}
 .elt{position:absolute;transform:translate(-50%,-100%);font-size:11px;font-weight:800;text-shadow:0 0 3px #000,0 1px 3px #000;white-space:nowrap;text-align:center;pointer-events:none}
 #ov .elt i{display:block;width:40px;height:4px;margin:2px auto 0;background:rgba(0,0,0,.6);border-radius:2px;overflow:hidden}#ov .elt b{display:block;height:100%}
 #ov .zmk{position:absolute;transform:translate(-50%,-100%);font-weight:900;text-shadow:0 0 3px #000,0 1px 3px #000,0 0 6px #000;pointer-events:none;font-family:system-ui,sans-serif}
@@ -719,7 +720,7 @@ body:not(.touch) #hTL .items{flex-wrap:wrap;gap:1px 10px}body:not(.touch):not([d
       <details><summary>载具</summary><b>自行车</b>快 70%，没有发动机（攻楼时不会吵醒楼里的丧尸，别的车会），泥地不减速，骑着开枪射速几乎不降；<b>摩托车</b>快 90%，后座带一个队友；<b>货运三轮</b>坐在车上就能搜东西（够得更远、时间减半、材料 +50%）；<b>装甲车</b>受到的伤害只剩 35%，撞开挡路的丧尸，后座带一个队友；<b>旋翼机</b>会飞，越过屋顶和尸群（丧尸咬不到，喷吐者还能打到），只能在地面或楼顶起飞（头顶不能有屋顶），一箱油飞 60 秒，没满随时能加（商店「载具」栏一键加满，或在有屋顶的房间里按 <kbd>F</kbd>），飞着用机头下的机枪打（机上自己的子弹，商店「武器 · 弹药」里买，最多存 500 发），手里的枪不能用，手雷能扔；后座能带一个队友（上去后旋翼空转约 1 秒，队友这时按 <kbd>T</kbd> 上来），后座的人能开枪；再按 <kbd>T</kbd> 降落，没油会自己降落；<b>坦克</b>自带炮塔，开火打炮弹（打到哪炸到哪，120 伤害、半径 2.3，1.6 秒一发；炮弹在商店「武器 · 弹药」栏买，车里最多 200 发），受到的伤害只剩 20%，撞开丧尸，但慢、太大进不了楼（有屋顶的地方开不进去）。<b>变形成机甲</b>：骑车时按 <kbd>X</kbd>（触屏：骑车时「刀」键变成「变形」），1 秒后载具站起来变成机甲，再按变回。每种载具一台：自行车→疾风（最快，低踢、滑铲）、摩托→赤刃（臂刃下劈、冲斩）、三轮→工蜂（扔快递、快递雨，能搜刮）、装甲车→铁卫（下砸拳 / 跺脚 / 拳头炮、震地，最耐打）、旋翼机→苍隼（火箭弹，技能键起飞 / 降落一直飞）、坦克→重炮（手臂炮、齐射用炮弹）。机甲会把路上的石头、灌木、栅栏踩平。开火 = 出拳，手雷键 = 技能；装甲打光或电用完会变回载具，装甲和电下车后慢慢恢复，商店「载具」栏能马上修好 / 充满；屋顶下站不起来。在商店「载具」栏或「装备」里选一辆当默认：<kbd>T</kbd> / 点「载具」就上这辆，再按下车；<kbd>Shift</kbd>+<kbd>T</kbd> / 长按「载具」换车。车上也能开枪，只是射速慢（司机 40%、后座 70%；自行车 80%），准度不变。<br><b>怪兽</b>：第 5 夜起隔夜出现（第 11 夜起两只），血很厚，每种有自己的大招，放之前地上会有红色范围提示、身上发光——<b>裂颚兽</b>喷酸（扇形）、<b>钢尾兽</b>甩尾（一圈）或低头冲锋（一条线）、<b>掘地兽</b>钻地从你脚下冒出来还带爬行尸。蓄力时用震地、爆破手雷等把它震晕能打断。</details>
       <details><summary>白天和永久任务</summary>出门砍树（木材）、采石（砖石），搜汽车、补给箱和废墟瓦砾（钢材、零件、弹药），离家越远收获越多；回来盖楼；在任何建筑里（或营地工作台）都能造枪、买弹药（按 C / 点「商店」）。河上只有两座桥，丧尸也只能从桥上过河。每 5 夜一次血月。<br>右上角「任务」小条点开是永久任务（击杀、搜索、建造、砍树采石、手雷击杀、整夜无人倒下……），每完成一档拿一个永久提升：生命上限、背包（弹药上限）、医疗包上限、手雷上限、复活次数。</details>
       <details><summary>飞行丧尸和能力者</summary>第 2 夜起有<b>尸鸦</b>群：飞过墙和屋顶在头顶盘旋，尖叫一声后朝地上红圈俯冲（走开就扑空），有时会沿一条红线低空扫过来（往旁边躲）；第 3 夜起混着大个的<b>尸鹫</b>，在高处往你要走到的地方丢酸液（红圈，别停在里面）；第 4 夜起有<b>尸蝠</b>，咬到可能扒在你身上吸血，用刀把它打下来。躲进有屋顶的楼里它们就够不着。第 3 夜起每晚有<b>能力者</b>（头顶有名字），每个都有破解办法，破解后它会露出<b>破绽</b>（黄色标签，几秒内受到双倍伤害）：<b>闪影者</b>瞬移到你身后（紫光），出现后有一拍才砍——这时打它就能反击，或者马上走开让它砍空；<b>唤尸者</b>会躲着你、从地下叫丧尸，追上去打，叫的时候打够伤害就打断，它死了叫出来的也跟着倒；<b>护盾者</b>给周围丧尸套护盾，站进护盾里打才打得动，但它会把里面的人震出去（红圈），震之前狠打它能连护盾一起打碎，爆破弹也能；<b>隐身者</b>摸过来时地上有淡淡的红点，偷袭前会闪一下——转身面对它（或打它）就能反击，背对就挨刀。打死能力者掉零件、钢材和特殊手雷。</details>
-      <details><summary>怪兽</summary>第 5 夜起隔夜来一只（第 11 夜起两只，每只血少一些）。每个大招都有红色预警，放完会露出<b>破绽</b>（双倍伤害）：喷完酸会喘气、甩尾后站不稳、冲锋撞到结实的墙会晕 3 秒、钻地冒出来会卡住、扑击落地会僵住；预警时打出足够伤害（或用机甲重击 / 爆炸晕住）能直接<b>打断</b>。裂颚兽会远距离<b>扑过来</b>（落点有红圈），钢尾兽会<b>扔巨石</b>（能砸墙），掘地兽会放一排<b>地刺</b>（红线）。怪兽能撞烂木墙木门，砖墙以上的楼里它进不来，但会用远程招数打你。血少于一半会<b>暴怒</b>：吼一声把人震开，技能更快。</details>
+      <details><summary>怪兽</summary>第 5 夜起隔夜来一只（第 11 夜起两只，每只血少一些）。每个大招都有红色预警，放完会露出<b>破绽</b>（双倍伤害）：喷完酸会喘气、甩尾后站不稳、冲锋撞到结实的墙会晕 3 秒、钻地冒出来会卡住、扑击落地会僵住；预警时打出足够伤害（或用机甲重击 / 爆炸晕住）能直接<b>打断</b>。裂颚兽会远距离<b>扑过来</b>（落点有红圈），钢尾兽会<b>扔巨石</b>（能砸墙），掘地兽会放一排<b>地刺</b>（红线）。怪兽能撞烂木墙木门，砖墙以上的楼里它进不来，但会用远程招数打你。血少于一半会<b>暴怒</b>：吼一声把人震开，技能更快。第 7 夜起还可能来会飞的<b>翼龙兽</b>：在高空盘旋（枪、火箭、旋翼机打得到），沿红线<b>俯冲</b>后会落地僵住（这时近身打），往你要去的地方<b>洒酸</b>（落在屋顶上会腐蚀屋顶），人聚在它下面时会<b>扇风</b>把人吹开；预警时打出足够伤害能把它<b>打下来</b>，在地上躺 3 秒。</details>
       <details><summary>视野和复活</summary>只看得到你和队友视野里的丧尸（画面和地图都是）：步行 18 格，越高看得越远，夜里看得近；装甲车只有 13 格，旋翼机在天上 26 格。丧尸在你们的视野外不会扑、冲、吐、叫或放技能。血少于 30% 屏幕四周会泛红、有心跳声。队友死了，你在任何建筑里或营地按交互键就能让他在你身边复活。</details>
       <details><summary>爬梯和翻越</summary>朝梯子走就爬上去，往下要继续推一下；丧尸爬梯子很慢（攀爬者除外）。没有跳键：走路碰到沙袋、拒马、掩体、栅栏、瓦砾和一人高的墙会自己翻过去，朝一格宽的空隙走会自己跳过去；丧尸不会翻，只能砸。</details>
       <details><summary>视角</summary>滚轮或 ＋/－ 缩放，Q / E 或 ⟲⟳ 转镜头。楼层视图默认跟随你所在的层，上面的楼层会自动隐藏；▲▼ 手动看别的层，「跟随我所在的层」恢复。</details>
@@ -5062,15 +5063,15 @@ const NW = WPN.length;
 /* ---------- zombies (speeds in tiles/s) ---------- */
 const ZT = {
   walker: { name: '游荡者', hp: 70, spd: 1.0, r: 0.31, h: 1.2, dmg: 12, bdmg: 12, cd: 1.0, sc: 1.2 },
-  runner: { name: '疾跑者', hp: 55, spd: 3.1, r: 0.29, h: 1.14, dmg: 6, bdmg: 7, cd: 0.6, sc: 1.14, lunge: { r: 3.4, cd: 4, dmg: 9 }, sprint: { cd: 7, t: 1.2, mul: 1.45 } }, // (round 34d) pounces and bursts of speed; bite 8 → 6
-  climber: { name: '攀爬者', hp: 70, spd: 2.3, r: 0.29, h: 0.84, dmg: 6, bdmg: 8, cd: 0.7, sc: 1.08, climb: 1, lunge: { r: 3, cd: 5, dmg: 8 }, sprint: { cd: 8, t: 1.2, mul: 1.4 } },
+  runner: { name: '疾跑者', hp: 45, /* (round 36m) fast ones are frailer: 55 → 45 */ spd: 3.1, r: 0.29, h: 1.14, dmg: 6, bdmg: 7, cd: 0.6, sc: 1.14, lunge: { r: 3.4, cd: 4, dmg: 9 }, sprint: { cd: 7, t: 1.2, mul: 1.45 } }, // (round 34d) pounces and bursts of speed; bite 8 → 6
+  climber: { name: '攀爬者', hp: 50, /* (round 36m) fast ones are frailer: 70 → 50 */ spd: 2.3, r: 0.29, h: 0.84, dmg: 6, bdmg: 8, cd: 0.7, sc: 1.08, climb: 1, lunge: { r: 3, cd: 5, dmg: 8 }, sprint: { cd: 8, t: 1.2, mul: 1.4 } },
   spitter: { name: '喷吐者', hp: 170, spd: 0.9, r: 0.36, h: 1.26, dmg: 8, bdmg: 8, cd: 1.0, sc: 1.26, range: 9, spitCD: 2.6, sprint: { cd: 9, t: 1.0, mul: 1.6 } }, // spits more often; backs off at a run
   brute: { name: '重锤', hp: 800, spd: 1.0, r: 0.44, h: 1.74, dmg: 24, bdmg: 75, cd: 1.6, sc: 1.74, kb: 6, charge: 1, sprint: { cd: 9, t: 1.5, mul: 1.5 } }, // (round 23) faster, plus a telegraphed charge and a ground slam
   boss: { name: '巨尸', hp: 2600, spd: 0.65, r: 0.69, h: 2.64, dmg: 45, bdmg: 220, cd: 2.0, sc: 2.64, kb: 9 },
-  dog: { name: '尸犬', hp: 40, spd: 3.7, r: 0.27, h: 0.66, dmg: 6, bdmg: 3, cd: 0.5, sc: 1.2, lunge: { r: 3.6, cd: 3, dmg: 8 } },
+  dog: { name: '尸犬', hp: 32, /* (round 36m) fast ones are frailer: 40 → 32 */ spd: 3.7, r: 0.27, h: 0.66, dmg: 6, bdmg: 3, cd: 0.5, sc: 1.2, lunge: { r: 3.6, cd: 3, dmg: 8 } },
   crawler: { name: '爬行尸', hp: 60, spd: 0.75, r: 0.3, h: 0.46, dmg: 11, bdmg: 9, cd: 0.9, sc: 1.2 },
   bloater: { name: '爆尸', hp: 200, spd: 0.75, r: 0.4, h: 1.32, dmg: 8, bdmg: 10, cd: 1.1, sc: 1.32, blast: 1, lob: { r: 7, cd: 5 } }, // lobs a glob of bile
-  screamer: { name: '尖叫者', hp: 150, spd: 1.5, r: 0.3, h: 1.26, dmg: 7, bdmg: 6, cd: 0.9, sc: 1.26, scream: 1, sonic: { r: 6, cd: 6, dmg: 7 }, sprint: { cd: 8, t: 1.2, mul: 1.5 } }, // a shriek that knocks you back
+  screamer: { name: '尖叫者', hp: 120, /* (round 36m) fast ones are frailer: 150 → 120 */ spd: 1.5, r: 0.3, h: 1.26, dmg: 7, bdmg: 6, cd: 0.9, sc: 1.26, scream: 1, sonic: { r: 6, cd: 6, dmg: 7 }, sprint: { cd: 8, t: 1.2, mul: 1.5 } }, // a shriek that knocks you back
   leaper: { name: '飞扑尸王', hp: 2300, spd: 1.15, r: 0.5, h: 2.1, dmg: 30, bdmg: 60, cd: 1.2, sc: 2.0, kb: 7, boss: 1, look: 'boss', skin: '#7a4a3a' },
   digger: { name: '掘地尸王', hp: 2700, spd: 0.95, r: 0.55, h: 2.0, dmg: 34, bdmg: 90, cd: 1.4, sc: 2.0, kb: 8, boss: 1, look: 'brute', skin: '#6a6048' },
   summoner: { name: '召唤尸王', hp: 2100, spd: 0.72, r: 0.5, h: 2.3, dmg: 22, bdmg: 40, cd: 1.4, sc: 2.2, boss: 1, look: 'boss', skin: '#5a5470' },
@@ -5078,6 +5079,7 @@ const ZT = {
   // (round 34) kaiju: walking monsters about 40-80% of a mech, each with its own telegraphed skill; from night 5 (level 3)
   kjaw: { name: '裂颚兽', hp: 2000, spd: 0.95, r: 0.85, h: 3.2, dmg: 30, /* (round 36l) hp 2600 → 2000, bite 42 → 30 */ bdmg: 260, cd: 1.4, sc: 1, kb: 8, kaiju: 'acid', skin: '#4a6a3a' },
   ktail: { name: '钢尾兽', hp: 2300, spd: 1.0, r: 0.9, h: 2.8, dmg: 32, /* (round 36l) 3000 → 2300, 45 → 32 */ bdmg: 300, cd: 1.6, sc: 1, kb: 10, kaiju: 'tail', skin: '#5a5a66' },
+  kwing: { name: '翼龙兽', hp: 1700, spd: 3.0, r: 1.0, h: 1.4, dmg: 0, bdmg: 0, cd: 2, sc: 1, kb: 8, kaiju: 'wing', fly: { alt: 5.2, orbit: 6.5, dive: 16, cd: 4, spd: 4.4 } }, // (round 36m) the flying kaiju: swoops along a marked line and lands (an opening), rains acid on you (roofs too), flaps a gust; hit it hard in a tell and it crashes down
   kdig: { name: '掘地兽', hp: 1800, spd: 0.9, r: 0.8, h: 2.5, dmg: 28, /* (round 36l) 2300 → 1800, 40 → 28 */ bdmg: 220, cd: 1.4, sc: 1, kb: 8, kaiju: 'dig', skin: '#7a5a3a' },
   armored: { name: '防暴尸', hp: 260, spd: 0.9, r: 0.36, h: 1.26, dmg: 12, bdmg: 16, cd: 1.1, sc: 1.3, armor: 0.3, lunge: { r: 2.8, cd: 5, dmg: 12 } }, // a shield-first lunge
   // (round 35) flyers: flocks that cruise over walls and roofs, circle you and dive in for a peck (36_beasts); a roof over your head keeps them off
@@ -5091,12 +5093,12 @@ const ZT = {
   shade: { name: '隐身者', hp: 420, spd: 1.5, r: 0.3, h: 1.25, dmg: 12, bdmg: 10, cd: 0.9, sc: 1.2, look: 'walker', skin: '#50505e', elite: { k: 'cloak', cd: 6, col: '#c0c0e0', tip: '隐身摸到你身边偷袭，留意空气里的扭曲，附近炸一下就现形' } },
 };
 const ELITES = ['blinker', 'caller', 'warden', 'shade'];
-const BUILD_TAG = '第 36 轮之十二'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
+const BUILD_TAG = '第 36 轮之十三'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
 // aim assist (SET.assist): fire-button lock range (x weapon range), lock-on time before it fires, spread while auto-aimed, mouse/finger magnet
 const PORT = 1.25; // firing port: your own shots pass a wall / door you built if it is this close to you
 const ASSIST = [{ name: '关', range: 0, acq: 0, spread: 1, mag: 0 }, { name: '标准', range: 0.75, acq: 0.3, spread: 1.5, mag: 1 }, { name: '强', range: 1, acq: 0, spread: 1, mag: 1 }];
 const assistLv = () => ASSIST[SET.assist == null ? 1 : SET.assist] || ASSIST[1];
-const ZKEYS = ['walker', 'runner', 'climber', 'spitter', 'brute', 'boss', 'dog', 'crawler', 'bloater', 'screamer', 'armored', 'leaper', 'digger', 'summoner', 'venom', 'kjaw', 'ktail', 'kdig', 'crow', 'bat', 'blinker', 'caller', 'warden', 'shade', 'vult']; // order is the net id
+const ZKEYS = ['walker', 'runner', 'climber', 'spitter', 'brute', 'boss', 'dog', 'crawler', 'bloater', 'screamer', 'armored', 'leaper', 'digger', 'summoner', 'venom', 'kjaw', 'ktail', 'kdig', 'crow', 'bat', 'blinker', 'caller', 'warden', 'shade', 'vult', 'kwing']; // order is the net id
 
 /* ---------- scavenging / gathering ---------- */
 // vanish: searched once and gone (restocked at random places every dawn); otherwise a fixture that refills sometimes
@@ -7255,7 +7257,7 @@ function startNight() {
   // (round 35) flocks of crows from night 2 (bats too from night 4), one 能力者 elite from night 3 (one more every 3 nights, at most 4)
   if (n >= 2) for (let f = 0, nf = Math.min(5, 1 + Math.floor((n - 2) / 2)); f < nf; f++) { const bat = n >= 4 && rand() < 0.45, k = bat ? 'bat' : 'crow', sz = bat ? 3 + Math.floor(rand() * 3) : 4 + Math.floor(rand() * 4), side = front[Math.floor(rand() * front.length)], E = W.edges[side] || [], at = E.length ? Math.floor(rand() * E.length) : -1, t0 = dur * (0.15 + rand() * 0.7), fk = W.gid = (W.gid || 0) + 1; for (let j = 0; j < sz; j++) q.push({ t: t0 + j * 0.25, k, side, at, f: 0, fk }); if (n >= 3 && !bat && rand() < 0.6) for (let j = 0, nv = n >= 7 ? 2 : 1; j < nv; j++) q.push({ t: t0 + 0.4 + j * 0.5, k: 'vult', side, at, f: 0, fk }); } /* (round 36l) 尸鹫 bombers ride with crow flocks from night 3 */
   if (n >= 3) for (let e = 0, ne = Math.min(4, 1 + Math.floor((n - 3) / 3)); e < ne; e++) q.push({ t: dur * (0.25 + rand() * 0.55), k: ELITES[Math.floor(rand() * ELITES.length)], side: front[e % front.length] });
-  if (KAIJU_ON && n >= 5 && n % 2 === 1) for (let k = 0; k < (n >= 11 ? 2 : 1); k++) q.push({ t: dur * (0.35 + k * 0.3), k: ['kjaw', 'ktail', 'kdig'][Math.floor(rand() * 3)], side: front[k % front.length], km: n >= 11 ? BAL.kaijuPair : 1 }); // (round 34) a kaiju every other night from night 5 (two from night 11)
+  if (KAIJU_ON && n >= 5 && n % 2 === 1) for (let k = 0; k < (n >= 11 ? 2 : 1); k++) q.push({ t: dur * (0.35 + k * 0.3), k: (n >= 7 ? ['kjaw', 'ktail', 'kdig', 'kwing'] : ['kjaw', 'ktail', 'kdig'])[Math.floor(rand() * (n >= 7 ? 4 : 3))], side: front[k % front.length], km: n >= 11 ? BAL.kaijuPair : 1 }); // (round 34) a kaiju every other night from night 5 (two from night 11)
   q.sort((a, b) => a.t - b.t);
   W.spawnQ = q;
   const names = ['东', '南', '西', '北'];
@@ -7435,7 +7437,7 @@ function stepZombies(dt) {
     z.cd -= dt; z.hitT -= dt; z.atk -= dt; z.anim += dt;
     if (z.stun > 0) z.stun -= dt;
     if (ZT[z.k].boss && bossStep(z, dt)) continue;
-    if (ZT[z.k].kaiju && kaijuStep(z, dt)) continue; // (round 34)
+    if (ZT[z.k].kaiju && !ZT[z.k].fly && kaijuStep(z, dt)) continue; // (round 34)
     if ((Z.lunge || Z.sprint || Z.lob || Z.sonic) && zSkill(z, Z, dt)) continue; // (round 34d) pounce / sprint / ranged
     if (z.rage > 0) z.rage -= dt;
     if (z.scr > 0) z.scr -= dt;
@@ -7444,7 +7446,7 @@ function stepZombies(dt) {
       z.burn -= dt; hurtZombie(z, BAL.burnDps * dt, W.p[z.burnBy] || null, 0, 0, true); if (z.hp <= 0) continue;
       if (rand() < dt * BAL.burnSpread) { const fx = Math.floor(z.x), fy = Math.floor(z.y); for (let gy = fy - 2; gy <= fy + 2; gy++) for (let gx = fx - 2; gx <= fx + 2; gx++) { const a = inMap(gx, gy) && grid.get(ci(gx, gy, z.L)); if (a) for (const o of a) if (o !== z && o.hp > 0 && !(o.burn > 0) && Math.hypot(o.x - z.x, o.y - z.y) < BAL.burnSpreadR) { o.burn = 2.5; o.burnBy = z.burnBy; } } }
     }
-    if (Z.fly) { flyerStep(z, Z, dt); continue; } // (round 35) birds / bats: their own flight (36_beasts)
+    if (Z.fly) { if (Z.kaiju) wingStep(z, Z, dt); else flyerStep(z, Z, dt); continue; } // (round 35) birds / bats: their own flight (36_beasts); (round 36m) 翼龙兽 (40_modes)
     if (Z.elite && eliteStep(z, Z, dt)) continue; // (round 35) 能力者: a skill in progress
     if (z.sleep) { z.moving = false; z.st = 'walk'; continue; } // a sleeper in a building: still until something wakes it (41_siege)
     z.st = 'walk';
@@ -8130,6 +8132,61 @@ function bossStep(z, dt) {
   return false;
 }
 /* ---------- (round 34) kaiju skills (host): every one is telegraphed (z.kt 1 = winding up, 2 = doing it) ---------- */
+// (round 36m) 翼龙兽, the flying kaiju: circles high over you; a swoop along a marked line (then it lands — an opening you can hit up close),
+// an acid rain on the spots you are heading for (it splashes on roofs too and eats into them), a wing gust that blows people away when they crowd under it.
+// Enough damage in a tell (8% of its health) or a hard stun knocks it out of the sky: 3 s on the ground, open. Berserk at half health (a flock of crows comes).
+function wingStep(z, Z, dt) {
+  const F = Z.fly, D = W.D.dmg || 1, CDK = z.rage2 ? 0.6 : 1; z.st = 'walk'; z.atk = 0; z.moving = true;
+  z.kcd = (z.kcd == null ? 2.5 : z.kcd) - dt; if (z.xpT > 0) z.xpT -= dt;
+  let tp = null, td = 1e9; for (const p of W.p) { if (p.gone || p.dead || p.down) continue; const d = Math.hypot(p.x - z.x, p.y - z.y) * (zExposed(p) ? 1 : 1.4); if (d < td) { td = d; tp = p; } }
+  const ground = () => flyFloor(z.x, z.y), cruise = () => Math.max(ground(), flyFloor(z.x + Math.cos(z.face) * 2, z.y + Math.sin(z.face) * 2)) + F.alt;
+  if (!z.rage2 && z.hp < z.max * 0.5) { z.rage2 = 1; z.spd *= 1.2; z.kcd = Math.min(z.kcd, 1); const fk = W.gid = (W.gid || 0) + 1; for (let k = 0; k < 5; k++) { const c = spawnZombie('crow', 0); c.x = z.x + (rand() - 0.5) * 3; c.y = z.y + (rand() - 0.5) * 3; c.z = z.z; c.L = z.L; c.fk = fk; }
+    emit({ k: 'kroar', id: z.id, x: r2(z.x), y: r2(z.y), z: r2(z.z) }); emit({ k: 'sfx', n: 'screech', x: z.x, y: z.y }); say(Z.name + '暴怒了！叫来了鸦群'); }
+  let S = z.ks;
+  if (S && z.kt === 1 && (z.stun > 0.3 || (S.dm || 0) >= z.max * 0.08)) { z.ks = S = null; z.gnd = 3; zExpose(z, 3, 'fall'); emit({ k: 'sfx', n: 'clank', x: z.x, y: z.y }); } // shot out of the sky
+  if (z.gnd > 0) { z.gnd -= dt; z.kt = 0; const g = ground(); z.z += (g - z.z) * Math.min(1, dt * 7); z.z = Math.max(z.z, g); z.L = clamp(Math.floor((z.z + 0.2) / FH), 0, ML - 1); if (z.gnd > 0) return; z.kcd = Math.max(z.kcd, 1.5); } // on the ground: open, then it takes off again
+  let gx = z.x, gy = z.y, gz = cruise(), spd = z.spd, vzMax = 3.5;
+  if (S) {
+    S.t += dt;
+    if (S.k === 'swoop') {
+      if (S.t < 0.9) { z.kt = 1; spd = 0; gz = z.z + 0.2; z.face += angDiff(z.face, Math.atan2(S.y - z.y, S.x - z.x)) * Math.min(1, dt * 8); }
+      else { z.kt = 2; vzMax = 10; spd = z.spd * F.spd; const toEnd = Math.hypot(S.x2 - z.x, S.y2 - z.y); gx = S.x2; gy = S.y2; gz = Math.max(S.hz, ground() + 0.6);
+        for (const p of W.p) { if (p.gone || p.dead || S.hit.includes(p.i) || !zExposed(p)) continue; if (Math.hypot(p.x - z.x, p.y - z.y, flyAimZ(p) - z.z) < 1.8 + (inMech(p) ? 0.6 : 0)) { S.hit.push(p.i); hurtPlayer(p, 30 * D, z); knock(p, Math.cos(z.face) * 12, Math.sin(z.face) * 12); emit({ k: 'sfx', n: 'smash', x: p.x, y: p.y }); } }
+        if (toEnd < 0.7 || S.t > 3.2) { z.ks = null; z.kt = 0; z.gnd = 1.7; zExpose(z, 1.7, 'land'); z.kcd = 5 * CDK; emit({ k: 'slam', x: r2(z.x), y: r2(z.y), z: r2(ground()), r: 2 }); } }
+    } else if (S.k === 'rain') {
+      z.kt = S.t < 0.6 ? 1 : 2; spd = z.spd * 0.4; if (tp) { gx = tp.x + Math.cos(z.fa || 0) * 4; gy = tp.y + Math.sin(z.fa || 0) * 4; }
+      if (S.t >= 0.6 && !S.g) { S.g = []; const ps = W.p.filter(p => !p.gone && !p.dead && !p.down), n = z.rage2 ? 5 : 3;
+        for (let k = 0; k < n && ps.length; k++) { const p = ps[k % ps.length], j = k === 0 ? 0 : 2.2, a = rand() * Math.PI * 2, x = clamp(p.x + (p.vx || 0) * 1.0 + Math.cos(a) * j * rand(), 1, MW - 1), y = clamp(p.y + (p.vy || 0) * 1.0 + Math.sin(a) * j * rand(), 1, MH - 1), h = flyFloor(x, y);
+          S.g.push({ x, y, h }); emit({ k: 'ktell', s: 'disc', x: r2(x), y: r2(y), z: r2(h), r: 1.7, t: 1.0 }); } emit({ k: 'sfx', n: 'screech', x: z.x, y: z.y }); }
+      if (S.t >= 1.6) { for (const G of S.g || []) { for (const p of W.p) { if (p.gone || p.dead) continue; const pz = inAirZ(p) != null ? inAirZ(p) : p.z; if (Math.hypot(p.x - G.x, p.y - G.y) < 1.7 && Math.abs(pz - G.h) < 2) hurtPlayer(p, 18 * D, z); }
+          const top = Math.round(G.h / FH) - 1; if (top >= 0) { const x0 = Math.floor(G.x), y0 = Math.floor(G.y); for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { if (!inMap(x0 + dx, y0 + dy)) continue; const i = ci(x0 + dx, y0 + dy, top); if (W.blk[i] && B[W.blk[i]].brk) damageCell(i, dx || dy ? 50 : 120); } } // eats into roofs
+          emit({ k: 'vbomb', x: r2(G.x), y: r2(G.y), z: r2(G.h) }); }
+        z.ks = null; z.kt = 0; z.kcd = 5 * CDK; }
+    } else if (S.k === 'gust') {
+      z.kt = S.t < 0.7 ? 1 : 2; spd = 0; gz = Math.max(ground() + 3, z.z - 0.5);
+      if (S.t >= 0.7 && !S.done) { S.done = 1; for (const p of W.p) { if (p.gone || p.dead) continue; const ex = p.x - z.x, ey = p.y - z.y, e = Math.hypot(ex, ey); if (e < 6 && (inAirZ(p) != null ? inAirZ(p) : p.z) < z.z + 1) { hurtPlayer(p, 10 * D, z); knock(p, ex / (e || 1) * 13, ey / (e || 1) * 13); } }
+        emit({ k: 'kroar', id: z.id, x: r2(z.x), y: r2(z.y), z: r2(ground() + 2) }); emit({ k: 'sfx', n: 'mdash', x: z.x, y: z.y }); }
+      if (S.t >= 1.1) { z.ks = null; z.kt = 0; z.kcd = 4 * CDK; }
+    }
+  } else if (tp) { // circle high over the target
+    z.kt = 0; if (z.fa == null) z.fa = rand() * Math.PI * 2; const R = F.orbit, dist = Math.hypot(tp.x - z.x, tp.y - z.y);
+    if (dist < R + 4) z.fa += z.spd / R * dt * 0.7; else z.fa = Math.atan2(z.y - tp.y, z.x - tp.x);
+    gx = tp.x + Math.cos(z.fa) * R; gy = tp.y + Math.sin(z.fa) * R; gz = Math.max(cruise(), flyFloor(tp.x, tp.y) + F.alt, inAirZ(tp) != null ? inAirZ(tp) + 1.5 : 0);
+    if (z.kcd <= 0 && z.stun <= 0 && zSeen(z) && W.phase !== 'day' && dist < F.dive) {
+      const under = W.p.some(p => !p.gone && !p.dead && Math.hypot(p.x - z.x, p.y - z.y) < 5), ex = zExposed(tp), r = rand();
+      if (under && r < 0.45) { z.ks = { k: 'gust', t: 0 }; emit({ k: 'ktell', s: 'disc', x: r2(z.x), y: r2(z.y), z: r2(ground()), r: 6, t: 0.7 }); }
+      else if (ex && r < 0.65) { const lx = clamp(tp.x + (tp.vx || 0) * 0.6, 1, MW - 1), ly = clamp(tp.y + (tp.vy || 0) * 0.6, 1, MH - 1), a = Math.atan2(ly - z.y, lx - z.x), x2 = clamp(lx + Math.cos(a) * 5, 1, MW - 1), y2 = clamp(ly + Math.sin(a) * 5, 1, MH - 1);
+        z.ks = { k: 'swoop', t: 0, x: lx, y: ly, x2, y2, hz: flyAimZ(tp), hit: [] }; emit({ k: 'ktell', s: 'line', x: r2(z.x), y: r2(z.y), z: r2(flyFloor(lx, ly)), x2: r2(x2), y2: r2(y2), w: 2.2, t: 0.9 }); emit({ k: 'sfx', n: 'screech', x: z.x, y: z.y }); }
+      else { z.ks = { k: 'rain', t: 0 }; }
+    }
+  }
+  // fly (the same steering as the small flyers)
+  const dx = gx - z.x, dy = gy - z.y, d = Math.hypot(dx, dy); let mx = 0, my = 0; if (d > 0.05 && spd > 0) { const v = Math.min(spd, d / Math.max(dt, 1e-3)); mx = dx / d * v; my = dy / d * v; }
+  if (z.kt !== 1 && Math.hypot(mx, my) > 0.1) z.face += angDiff(z.face, Math.atan2(my, mx)) * Math.min(1, dt * 5);
+  z.kbx = (z.kbx || 0) * Math.max(0, 1 - dt * 5); z.kby = (z.kby || 0) * Math.max(0, 1 - dt * 5);
+  z.x = clamp(z.x + (mx + z.kbx) * dt, 1, MW - 1.01); z.y = clamp(z.y + (my + z.kby) * dt, 1, MH - 1.01);
+  z.z += clamp((gz - z.z) * 3, -vzMax, vzMax) * dt; z.z = Math.max(z.z, ground() + 0.25); z.L = clamp(Math.floor((z.z - 1.0) / FH), 0, ML - 1);
+}
 function kaijuStep(z, dt) {
   // (round 36l) kaiju fights are about reading and punishing: every big move has a tell and leaves an opening (破绽, damage ×2) —
   // after a breath it pants, a sweep leaves it off balance, a charge into a wall knocks it silly (3 s), a burrow leaves it stuck half out, a pounce lands heavy;
@@ -8988,9 +9045,9 @@ function drawOverlay() {
   let html = '';
   // (round 34d) a health bar over every survivor (an orange hull line under it in a mech); it pulses red when low
   hpBars();
-  for (const z of W.zs) { const T = ZT[z.k]; if (!T || !T.elite || z.hp <= 0 || z.ck || z.ckF || z.sleep || !zSeen(z) || lcHide(Math.floor(z.x), Math.floor(z.y), z.L)) continue; // (round 35) 能力者: name and health over the head
+  for (const z of W.zs) { const T = ZT[z.k]; if (!T || !(T.elite || T.kaiju) || z.hp <= 0 || z.ck || z.ckF || z.sleep || !zSeen(z) || (!(T.kaiju && T.fly) && lcHide(Math.floor(z.x), Math.floor(z.y), z.L))) continue; // (round 35) 能力者: name and health over the head
     const [sx, sy, sz] = w2s(z.x, z.y, z.z + T.h * T.sc / 1.2 + 0.55); if (sz > 1 || sx < -60 || sx > VW + 60 || sy < -30 || sy > VH + 30) continue;
-    html += `<div class="elt" style="left:${sx | 0}px;top:${sy | 0}px;color:${T.elite.col}">${T.name}<i><b style="width:${clamp(z.hp / (z.max || 100), 0, 1) * 100 | 0}%;background:${T.elite.col}"></b></i></div>`; }
+    const ec = T.elite ? T.elite.col : '#ff8a5a'; /* (round 36m) kaiju get a name and health bar too */ html += `<div class="elt${T.kaiju ? ' kj' : ''}" style="left:${sx | 0}px;top:${sy | 0}px;color:${ec}">${T.name}<i><b style="width:${clamp(z.hp / (z.max || 100), 0, 1) * 100 | 0}%;background:${ec}"></b></i></div>`; }
   html += kxpLabels(); // (round 36l) 破绽 labels
   for (const f of RND.floats) { const [sx, sy] = w2s(f.x, f.y, f.z); html += `<div class="fl" style="left:${sx | 0}px;top:${sy | 0}px;opacity:${clamp(2.2 - f.t, 0, 1).toFixed(2)};color:${f.col}">${f.text}</div>`; }
   // 尸城求生: sleepers show a "z", a growing "?" while they're noticing you, a "!" as they wake
@@ -9601,9 +9658,10 @@ function drawZombies(vl, dt) {
     const corpse = !!z.corpse, L = z.L != null ? z.L : Math.floor((z.z + 0.1) / FH);
     if (z.hidden && !corpse) continue;
     if (!corpse && !zSeen(z)) continue; // (round 34d) out of everyone's sight
-    if (L > vl || lcHide(Math.floor(z.x), Math.floor(z.y), L)) continue;
+    const sky = ZT[z.k] && ZT[z.k].kaiju && ZT[z.k].fly; /* (round 36m) the flying kaiju is drawn over the floor cut-away */
+    if (!sky && (L > vl || lcHide(Math.floor(z.x), Math.floor(z.y), L))) continue;
     drawn++;
-    if (ZT[z.k] && ZT[z.k].kaiju) { drawKaiju(z, corpse, dt); continue; } // (round 34)
+    if (ZT[z.k] && ZT[z.k].kaiju && !ZT[z.k].fly) { drawKaiju(z, corpse, dt); continue; } // (round 34)
     if (ZT[z.k] && ZT[z.k].fly) { drawFlyer(z, corpse, dt); continue; } // (round 35) birds / bats
     if (ZT[z.k] && ZT[z.k].elite && !corpse) { drawElite(z, dt); if (z.ck || z.ckF) continue; } // (round 35) aura etc.; cloaked: only the shimmer
     rigZombie(z, corpse, dt, dk);
@@ -11065,24 +11123,26 @@ function drawModeFx() {
 // a 唤尸者's summoning circle, and a 隐身者's shimmer while it is cloaked (then nothing else is drawn).
 const FLY = new Map(), ELX = new Map();
 function mkFlyer(k) {
-  const bat = k === 'bat', vult = k === 'vult', g = new THREE.Group(), J = { k, wings: [] };
-  const body = lam(bat ? '#4a3838' : vult ? '#4a3a2c' : '#1d1d24'), dark = lam(bat ? '#2c2222' : vult ? '#c9b89a' : '#0d0d12'), /* (round 36l) 尸鹫: brown with a pale ruff */ beakM = lam('#8a7a58'), memb = lam(bat ? '#5c4242' : '#24242c', { side: THREE.DoubleSide });
-  const eyeM = new THREE.MeshBasicMaterial({ color: bat ? '#ffcf3a' : '#ff3a2a' });
+  const ptero = k === 'kwing', bat = k === 'bat', vult = k === 'vult', g = new THREE.Group(), J = { k, wings: [] }; /* (round 36m) 翼龙兽: a pterosaur — long beak, a swept-back crest, membrane wings, a long tail with a vane */
+  const body = lam(bat ? '#4a3838' : ptero ? '#6a4a5c' : vult ? '#4a3a2c' : '#1d1d24'), dark = lam(bat ? '#2c2222' : ptero ? '#2e1e28' : vult ? '#c9b89a' : '#0d0d12'), /* (round 36l) 尸鹫: brown with a pale ruff */ beakM = lam('#8a7a58'), memb = lam(bat ? '#5c4242' : ptero ? '#9a5868' : '#24242c', { side: THREE.DoubleSide });
+  const eyeM = new THREE.MeshBasicMaterial({ color: bat || ptero ? '#ffb030' : '#ff3a2a' });
   const B = kjGrp(g, 0, 0.25, 0); J.body = B;
   kjPart(B, kjBlob(0.12, bat ? 1.15 : 1.7, bat ? 0.95 : 0.85, bat ? 0.9 : 0.8, 5), body);
   if (!bat) kjPart(B, kjBlob(0.08, 1.4, 0.6, 0.9, 11), dark, -0.03, -0.06, 0); // a darker belly
   const H = kjGrp(B, bat ? 0.13 : 0.21, bat ? 0.04 : 0.06, 0); J.head = H;
   kjPart(H, kjBlob(0.08, 1.05, 0.95, 0.95, 7), body);
   if (bat) { for (const s of [1, -1]) kjPart(H, new THREE.ConeGeometry(0.03, 0.11, 4), dark, -0.01, 0.1, s * 0.04, 0.25 * s, 0, 0); kjPart(H, kjBlob(0.04, 1.2, 0.7, 0.9, 2), dark, 0.07, -0.02, 0); for (const s of [1, -1]) kjPart(H, new THREE.ConeGeometry(0.008, 0.03, 3), lam('#e8e0d0'), 0.08, -0.05, s * 0.015, Math.PI, 0, 0); }
+  else if (ptero) { kjPart(H, new THREE.ConeGeometry(0.035, 0.3, 6).rotateZ(-Math.PI / 2), lam('#c8a878'), 0.22, -0.02, 0); kjPart(H, new THREE.ConeGeometry(0.03, 0.26, 4).rotateZ(Math.PI / 2 + 0.5).scale(1, 1, 0.3), memb, -0.13, 0.08, 0); }
   else { kjPart(H, new THREE.ConeGeometry(0.028, 0.13, 5).rotateZ(-Math.PI / 2), beakM, 0.12, -0.01, 0); kjPart(H, boxG(0.05, 0.02, 0.06), dark, -0.04, 0.07, 0, 0, 0, 0.3); } // beak, ragged crest
   for (const s of [1, -1]) kjPart(H, new THREE.IcosahedronGeometry(bat ? 0.016 : 0.018, 0), eyeM, 0.055, 0.025, s * 0.042);
   // tail: a fan of feathers (crow) / a stub (bat)
-  if (!bat) { const T = kjGrp(B, -0.18, 0.01, 0); J.tail = T; for (let k = -2; k <= 2; k++) kjPart(T, boxG(0.2, 0.012, 0.04, -0.1, 0, 0), body, 0, 0, k * 0.022, 0, k * 0.16, 0); }
+  if (ptero) { const T = kjGrp(B, -0.18, 0.01, 0); J.tail = T; kjPart(T, new THREE.ConeGeometry(0.03, 0.5, 5).rotateZ(Math.PI / 2), body, -0.25, 0, 0); kjPart(T, new THREE.OctahedronGeometry(0.06, 0).scale(1, 1.3, 0.3), memb, -0.5, 0.02, 0); }
+  else if (!bat) { const T = kjGrp(B, -0.18, 0.01, 0); J.tail = T; for (let k = -2; k <= 2; k++) kjPart(T, boxG(0.2, 0.012, 0.04, -0.1, 0, 0), body, 0, 0, k * 0.022, 0, k * 0.16, 0); }
   else kjPart(B, new THREE.ConeGeometry(0.03, 0.12, 4).rotateZ(Math.PI / 2), dark, -0.16, 0, 0);
   // wings: an inner and an outer part on each side; crows get fanned feathers, bats a stretched membrane between finger bones
   for (const s of [1, -1]) {
-    const W0 = kjGrp(B, 0.02, 0.05, s * 0.07), O = kjGrp(W0, 0, 0, s * (bat ? 0.24 : 0.22));
-    if (bat) {
+    const W0 = kjGrp(B, 0.02, 0.05, s * 0.07), O = kjGrp(W0, 0, 0, s * (bat || ptero ? 0.24 : 0.22));
+    if (bat || ptero) {
       const mem = (pts) => { const sh = new THREE.Shape(); sh.moveTo(pts[0][0], pts[0][1]); for (const q of pts.slice(1)) sh.lineTo(q[0], q[1]); const geo = new THREE.ShapeGeometry(sh).rotateX(Math.PI / 2); if (s < 0) geo.scale(1, 1, -1); return geo; };
       kjPart(W0, mem([[0.06, 0], [0.04, 0.24], [-0.14, 0.22], [-0.16, 0]]), memb);
       kjPart(O, mem([[0.04, 0], [0.12, 0.26], [-0.02, 0.16], [-0.12, 0.3], [-0.14, 0.08], [-0.14, 0]]), memb);
@@ -11100,13 +11160,13 @@ function drawFlyer(z, corpse, dt) {
   const key = (corpse ? 'c' : 'z') + (z.id != null ? z.id : z.seed) + z.k; let K = FLY.get(key);
   if (!K) { if (!FLYSH) FLYSH = new THREE.MeshBasicMaterial({ color: '#000000', transparent: true, opacity: 0.3, depthWrite: false });
     const g = mkFlyer(z.k), sh = new THREE.Mesh(new THREE.CircleGeometry(0.22, 12).rotateX(-Math.PI / 2), FLYSH.clone()); SCN.add(g); SCN.add(sh); K = { g, J: g.userData.J, sh }; FLY.set(key, K); }
-  K.seen = 1; const g = K.g, J = K.J, bat = z.k === 'bat', t = W.t, S = bat ? 1.55 : z.k === 'vult' ? 2.3 : 1.4; g.visible = K.sh.visible = true;
+  K.seen = 1; const g = K.g, J = K.J, bat = z.k === 'bat', t = W.t, S = bat ? 1.55 : z.k === 'vult' ? 2.3 : z.k === 'kwing' ? 6.0 : 1.4; g.visible = K.sh.visible = true;
   if (z._f == null) { z._f = z.face || 0; z._ph = (z.seed || 0) % 7; z._roll = 0; z._pz = z.z; }
   const kt = corpse ? 0 : z.kt || 0, f0 = z._f; z._f = angLerp(z._f, z.face || 0, Math.min(1, dt * 7));
   const turn = dt > 0 ? angDiff(f0, z._f) / dt : 0; z._roll = lerp(z._roll, clamp(-turn * 0.18, -0.7, 0.7), Math.min(1, dt * 5));
   const vz = dt > 0 ? (z.z - z._pz) / dt : 0; z._pz = z.z;
   // flap: cruising beats, a fast flutter while hovering for the dive, wings tucked back in the dive, gliding as it pulls up
-  const rate = kt === 1 ? 22 : kt === 2 ? 0 : (bat ? 14 : 9) * (vz > 0.4 ? 1.4 : 1); z._ph += dt * rate;
+  const rate = (kt === 1 ? 22 : kt === 2 ? 0 : (bat ? 14 : 9) * (vz > 0.4 ? 1.4 : 1)) * (z.k === 'kwing' ? 0.4 : 1); z._ph += dt * rate;
   const amp = corpse ? 0 : kt === 2 ? 0.1 : kt === 1 ? 0.75 : vz < -0.5 ? 0.25 : 0.62, tuck = kt === 2 ? 1 : 0;
   for (const Wg of J.wings) { const lift = Math.sin(z._ph) * amp + (corpse ? -0.1 : 0.12), lo = Math.sin(z._ph - 0.7) * amp * 0.8;
     Wg.g.rotation.x = -Wg.s * lift; Wg.g.rotation.y = lerp(Wg.g.rotation.y, -Wg.s * (tuck ? 0.95 : 0.05), Math.min(1, dt * 12)); Wg.o.rotation.x = -Wg.s * (lo * 0.7 + (tuck ? -0.3 : 0)); Wg.o.rotation.y = -Wg.s * (tuck ? 0.6 : 0); }
