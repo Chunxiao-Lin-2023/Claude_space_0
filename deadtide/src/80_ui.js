@@ -347,7 +347,7 @@ function togglePause(force) {
   if (!$('craft').classList.contains('hidden')) { closeCraft(); return; }
   if (!$('kit').classList.contains('hidden')) { closeKit(); return; }
   el.classList.toggle('hidden', !open);
-  $('pauseT').textContent = NETROLE === 'solo' ? '暂停' : '菜单（游戏继续中）'; $('pQual').textContent = qualLabel(); $('pAssist').textContent = '辅助瞄准：' + assistLv().name;
+  $('pauseT').innerHTML = (NETROLE === 'solo' ? '暂停' : '菜单（游戏继续中）') + ' <small style="font-size:11px;opacity:.6;font-weight:400">版本：' + BUILD_TAG + '</small>'; $('pQual').textContent = qualLabel(); $('pAssist').textContent = '辅助瞄准：' + assistLv().name;
   $('pHub').classList.toggle('hidden', !HUB);
   STATE.paused = open && NETROLE === 'solo';
 }
