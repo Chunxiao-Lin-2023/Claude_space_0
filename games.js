@@ -7,6 +7,17 @@
    cover:  可省略，省略时显示标题色块 */
 window.GAMES = [
   {
+    id: 'deadtide',
+    title: '尸潮堡垒',
+    sub: '2.5D 盖楼守夜 · 丧尸生存 · 六种模式',
+    desc: '3D 斜俯视丧尸生存：六种模式与六张地图自由组合，白天搜刮建造，夜里死守尸潮，还有四只尸王。可双人联机。',
+    url: 'deadtide/',
+    cover: 'covers/deadtide.webp',
+    status: 'dev',
+    tags: ['单人', '双人联机', 'iPad', '3D'],
+    hue: 24
+  },
+  {
     id: 'jubensha',
     title: '剧本杀 · 夜半推理馆',
     sub: '人吃人 · 1–2 人 + AI · 45–60 分钟',
@@ -103,18 +114,8 @@ window.GAMES = [
     cover: 'covers/lasttower.webp',
     status: 'dev',
     tags: ['单人', '双人联机', 'iPad'],
-    hue: 8
-  },
-  {
-    id: 'deadtide',
-    title: '尸潮堡垒',
-    sub: '2.5D 盖楼守夜 · 丧尸生存 · 六种模式',
-    desc: '3D 斜俯视丧尸生存：六种模式与六张地图自由组合，白天搜刮建造，夜里死守尸潮，还有四只尸王。可双人联机。',
-    url: 'deadtide/',
-    cover: 'covers/deadtide.webp',
-    status: 'dev',
-    tags: ['单人', '双人联机', 'iPad', '3D'],
-    hue: 24
+    hue: 8,
+    hidden: true /* superseded by deadtide (尸潮堡垒); still playable at lasttower/ */
   },
   {
     id: 'baixi',
