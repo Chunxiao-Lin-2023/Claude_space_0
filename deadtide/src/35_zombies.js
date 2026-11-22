@@ -23,6 +23,7 @@ function stepZombies(dt) {
     z.cd -= dt; z.hitT -= dt; z.atk -= dt; z.anim += dt;
     if (z.stun > 0) z.stun -= dt;
     if (ZT[z.k].boss && bossStep(z, dt)) continue;
+    if (ZT[z.k].kaiju && kaijuStep(z, dt)) continue; // (round 34)
     if (z.rage > 0) z.rage -= dt;
     if (z.scr > 0) z.scr -= dt;
     // burning: damage over time, and the fire jumps to zombies right next to it
@@ -146,7 +147,7 @@ function stepZombies(dt) {
     for (const p of W.p) {
       if (p.gone || p.dead || Math.abs(p.z - z.z) > 0.8 || z.conf > 0) continue;
       const d = d2(p.x, p.y, z.x, z.y);
-      if (d < p.r + z.r + 0.28) {
+      if (d < p.r + z.r + 0.28 + (inMech(p) ? 0.7 : 0)) { /* (round 34) a mech is big: they claw at its legs */
         z.st = 'attack'; z.atk = 0.3; z.face = Math.atan2(p.y - z.y, p.x - z.x); tx = null;
         if (z.cd <= 0) { z.cd = Z.cd; hurtPlayer(p, Z.dmg * W.D.dmg, z); if (Z.kb) knock(p, (p.x - z.x) / (d || 1) * Z.kb, (p.y - z.y) / (d || 1) * Z.kb); }
         break;

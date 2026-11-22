@@ -134,7 +134,7 @@ function onKeyPress(k) {
   if (k === 'i') return openKit();
   if (k === 'x' && !me.build) return switchMelee();
   if (k === 'v') return doKnife();
-  if (k === 'g') { if (KD('Shift')) return cycleGren(1); if (gCount(me, me.gt || 0) > 0 && !me.down) INP.nadeAim = { pc: 1 }; else toast('没有' + GREN[me.gt || 0].name + '了：按 5–8 换别的手雷'); return; } // hold G: the landing ring follows the cursor; let go to throw
+  if (k === 'g') { if (KD('Shift') && !inMech(me)) return cycleGren(1); if ((gCount(me, me.gt || 0) > 0 || inMech(me)) && !me.down) INP.nadeAim = { pc: 1 }; else toast('没有' + GREN[me.gt || 0].name + '了：按 5–8 换别的手雷'); return; } // hold G: the landing ring follows the cursor; let go to throw
   if (k === 'h') return act('med');
   if (k === 'n') return toggleReady();
   if (k === 'c') return openCraft();
@@ -467,7 +467,7 @@ bindBtn('bcOk', () => confirmPlan()); bindBtn('bcNo', () => cancelPlan());
   el.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); audioInit(); if (!inGame()) return; const me = W.p[ME];
     if (!$('wpick').classList.contains('hidden')) { toggleWpick(false); return; }
     const r = el.getBoundingClientRect(); UI.gk = { id: e.pointerId, x: e.clientX, y: e.clientY, ring: false, tm: setTimeout(() => { const k = UI.gk; if (k && !k.ring && !(INP.nadeAim && INP.nadeAim.drag)) { k.ring = true; INP.nadeAim = null; INP.nadePt = null; toggleWpick(true, 'g'); } }, 380) };
-    if (gCount(me, me.gt || 0) > 0 && !me.down) INP.nadeAim = { id: e.pointerId, ox: r.left + r.width / 2, oy: r.top + r.height / 2, dx: 0, dy: 0, drag: false, t: me.gt || 0 };
+    if ((gCount(me, me.gt || 0) > 0 || inMech(me)) && !me.down) INP.nadeAim = { id: e.pointerId, ox: r.left + r.width / 2, oy: r.top + r.height / 2, dx: 0, dy: 0, drag: false, t: me.gt || 0 };
     el.classList.add('on'); try { el.setPointerCapture(e.pointerId); } catch (_) { } });
   el.addEventListener('pointermove', e => { const k = UI.gk; if (k && k.id === e.pointerId && k.ring) { e.preventDefault(); wpickHover(e.clientX, e.clientY); return; }
     const A = INP.nadeAim; if (!A || A.id !== e.pointerId) return; e.preventDefault(); A.dx = e.clientX - A.ox; A.dy = e.clientY - A.oy; if (Math.hypot(A.dx, A.dy) > 16) A.drag = true; });
@@ -495,7 +495,7 @@ function nadeAuto(me) {
 }
 function nadeRelease() {
   const me = W.p[ME], pt = inGame() ? nadeAimPt(me) : null; INP.nadeAim = null; INP.nadePt = null; if (!inGame() || me.down) return;
-  const t = me.gt || 0; if (gCount(me, t) <= 0) return;
+  const t = me.gt || 0; if (gCount(me, t) <= 0 && !inMech(me)) return; // (round 34) in a mech this is the skill
   if (pt) act('nade', { x: +pt.x.toFixed(2), y: +pt.y.toFixed(2), z: pt.z != null ? +pt.z.toFixed(2) : null, t }); else act('nade', { t });
 }
 bindBtn('tMed', () => { if (!inGame()) return; const me = W.p[ME]; if (me.meds <= 0) toast('没有医疗包了（搜补给、或商店 → 道具）'); else if (!me.down && me.hp >= me.maxHp) toast('血是满的'); else act('med'); });

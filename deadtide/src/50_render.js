@@ -389,7 +389,7 @@ function applyTime(dk) {
 function updateCamera(dt) {
   const me = W.p[ME];
   let fx = W.radio.x + 0.5, fy = W.radio.y + 0.5, fz = 0;
-  if (me && !me.gone) { const t = me.dead ? (W.p.find(p => !p.dead && !p.gone) || me) : me; fx = t.x; fy = t.y; fz = t.zv != null ? t.zv : t.z; }
+  if (me && !me.gone) { const t = me.dead ? (W.p.find(p => !p.dead && !p.gone) || me) : me; fx = t.rx != null ? t.rx : t.x; fy = t.ry != null ? t.ry : t.y; fz = t.zv != null ? t.zv : t.z; }
   if (W.demo) { fx = W.radio.x + 0.5 + Math.sin(W.t * 0.08) * 6; fy = W.radio.y + 3 + Math.cos(W.t * 0.06) * 4; fz = 0; }
   const k = Math.min(1, dt * 6);
   CAM.tx = lerp(CAM.tx, fx + (CAM.lookX || 0), k); CAM.ty = lerp(CAM.ty, fy + (CAM.lookY || 0), k); CAM.tz = lerp(CAM.tz, fz, k);
@@ -630,7 +630,7 @@ function fxEvent(e) {
     case 'hit': if (e.a) { for (let k = 0; k < 6; k++) addP({ x: e.x, y: e.y, z: e.z, vx: frnd(-3, 3), vy: frnd(-3, 3), vz: frnd(0.5, 3), col: k % 2 ? '#ffe9a0' : '#ffffff', s: 0.035, life: 0.25, floor: e.z - 1 }); if (thr('clank', 0.06)) sfx('clank', e.x, e.y); break; }
       bloodFx(e.x, e.y, e.z, e.h ? 9 : 5, e.g); if (Math.random() < 0.45) addDecal(e.x + frnd(-0.3, 0.3), e.y + frnd(-0.3, 0.3), e.z - 0.6, frnd(0.08, 0.16), e.g ? '#3c5a14' : null); if (thr('flesh', 0.05)) sfx(e.h ? 'head' : 'flesh', e.x, e.y); break;
     case 'zdie':
-      RND.corpses.push({ corpse: 1, x: e.x, y: e.y, z: e.z, k: e.t, face: e.f, t: 0, seed: e.id * 7, L: Math.floor((e.z + 0.1) / FH) }); if (RND.corpses.length > 60) RND.corpses.shift();
+      RND.corpses.push({ corpse: 1, x: e.x, y: e.y, z: e.z, k: e.t, face: e.f, t: 0, seed: e.id * 7, id: e.id, L: Math.floor((e.z + 0.1) / FH) }); if (RND.corpses.length > 60) RND.corpses.shift();
       bloodFx(e.x, e.y, e.z + 0.6, 10, e.t === 'spitter'); addDecal(e.x, e.y, e.z, (e.t === 'boss' ? 0.9 : e.t === 'brute' ? 0.6 : 0.32) + Math.random() * 0.15, e.t === 'spitter' ? '#3c5a14' : null);
       if (thr('zdie', 0.12)) sfx(e.t === 'brute' || e.t === 'boss' ? 'bigdie' : 'zdie', e.x, e.y);
       if (guest) { const z = W.zs.find(z => z.id === e.id); if (z) z.hp = 0; }
@@ -663,6 +663,14 @@ function fxEvent(e) {
     case 'respawn': uiMsg(W.p[e.p].name + ' 回来了' + '（在据点）', '#8fe39a'); break;
     case 'task': sfx('craft'); uiMsg('任务完成：' + e.txt + '  奖励 ' + e.rt, '#ffd76a'); toast('任务完成 · ' + e.rt, '#ffd76a'); break;
     case 'tp': if (guest && e.p === ME) { const p = W.p[ME]; p.x = e.x; p.y = e.y; p.L = e.l; p.vx = p.vy = 0; } break;
+    case 'kacid': for (let k = 0; k < 10; k++) { const a = e.a + frnd(-0.45, 0.45), v = frnd(5, 9); addP({ x: e.x + Math.cos(e.a) * 1.4, y: e.y + Math.sin(e.a) * 1.4, z: e.z, vx: Math.cos(a) * v, vy: Math.sin(a) * v, vz: frnd(-1.5, 0.5), g: -3, col: k % 3 ? '#9dff3a' : '#5f9a20', s: 0.1, life: 0.8, floor: e.z - 3 }); } if (thr('kacid', 0.3)) sfx('acid', e.x, e.y); break; // (round 34) kaiju acid breath
+    case 'mmove': if (guest && e.p === ME) { const p = W.p[ME]; if (e.m.dash) p.dash = e.m.dash; if (e.m.jmp) p.jmp = e.m.jmp; } break; // (round 34) a mech dash / leap the host started for this screen's survivor
+    case 'mpunch': { const q = W.p[e.o]; if (!q) break; q._mpT = 0; q._mpS = e.s; sfx(e.h ? 'smash' : 'swap', q.x, q.y); if (e.h) { const a = q.aim, x = q.x + Math.cos(a) * 2, y = q.y + Math.sin(a) * 2; for (let k = 0; k < 6; k++) addP({ x, y, z: q.z + 1.2, vx: frnd(-2, 2), vy: frnd(-2, 2), vz: frnd(0.5, 2), col: k % 2 ? '#ffd27a' : '#7a1010', s: 0.07, life: 0.35 }); } break; }
+    case 'mskill': { const q = W.p[e.o]; if (q) { q._msT = 0; q._msK = e.t; }
+      if (e.t === 'slam') { shake(e.x, e.y, 0.6); debrisFx(e.x, e.y, e.z + 0.2, '#9a8a70', 26); for (let k = 0; k < 36; k++) { const a = k / 36 * Math.PI * 2; addP({ x: e.x + Math.cos(a) * 0.8, y: e.y + Math.sin(a) * 0.8, z: e.z + 0.1, vx: Math.cos(a) * 7, vy: Math.sin(a) * 7, vz: 0.4, g: -0.3, col: '#a89878', s: 0.13, life: 0.55, smoke: 1 }); } sfx('collapse', e.x, e.y); }
+      else if (e.t === 'dash') { sfx('swap', e.x, e.y); for (let k = 0; k < 16; k++) addP({ x: e.x + Math.cos(e.a) * k * 0.5, y: e.y + Math.sin(e.a) * k * 0.5, z: e.z + 1.3, vx: frnd(-0.3, 0.3), vy: frnd(-0.3, 0.3), vz: 0.2, g: -0.1, col: '#ffb060', s: 0.08, life: 0.35 }); }
+      else { sfx('jump', e.x, e.y); shake(e.x, e.y, 0.25); for (let k = 0; k < 18; k++) { const a = k / 18 * Math.PI * 2; addP({ x: e.x + Math.cos(a) * 0.6, y: e.y + Math.sin(a) * 0.6, z: e.z + 0.1, vx: Math.cos(a) * 4, vy: Math.sin(a) * 4, vz: 0.6, g: -0.2, col: '#bfc8d0', s: 0.12, life: 0.5, smoke: 1 }); } }
+      break; }
     case 'kb': if (guest && e.p === ME) { const p = W.p[ME]; p.kbx += e.x; p.kby += e.y; } break;
     case 'night': sfx(e.blood ? 'blood' : 'night'); banner((e.blood ? '第 ' + e.n + ' 夜 · 血月' : '第 ' + e.n + ' 夜') + (e.lv ? ' · Lv ' + e.lv : ''), (e.up ? '尸潮升到 Lv ' + e.lv + '：更多、更硬、更快 · ' : '') + (e.blood ? '尸潮从四面八方涌来，巨尸出没' : '尸潮从' + e.from + '边来了') + '，守住堡垒', e.blood ? '#ff5a4a' : e.up ? '#ff9a5a' : '#ffd27a'); break; // (round 31) level every two nights
     case 'dawn': document.getElementById('over').classList.add('hidden'); sfx('dawn'); banner('天亮了', '撑过了第 ' + e.n + ' 夜 · 新的任务已刷新（点上方「今日任务」展开）', '#ffe7b0'); break;

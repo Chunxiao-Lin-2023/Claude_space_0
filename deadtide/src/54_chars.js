@@ -96,8 +96,10 @@ function drawZombies(vl, dt) {
     if (z.hidden && !corpse) continue;
     if (L > vl || lcHide(Math.floor(z.x), Math.floor(z.y), L)) continue;
     drawn++;
+    if (ZT[z.k] && ZT[z.k].kaiju) { drawKaiju(z, corpse, dt); continue; } // (round 34)
     rigZombie(z, corpse, dt, dk);
   }
+  kaijuSweep();
   for (const k in ZPOOL) { const q = ZPOOL[k]; q.m.count = q.n; q.m.instanceMatrix.needsUpdate = true; if (q.m.instanceColor) q.m.instanceColor.needsUpdate = true; }
 }
 function rigZombie(z, corpse, dt, dk) {
@@ -389,21 +391,30 @@ function drawPlayers(vl, dt) {
   W.p.forEach((p, i) => {
     const m = OBJ.pl[i]; if (!m.g.visible) return;
     if (!m.veh) { m.veh = mkVehicles(); m.g.add(m.veh); }
-    let zv = (p.zv != null ? p.zv : p.z) + (p.jz || 0), gx = p.x, gy = p.y;
+    let zv = (p.zv != null ? p.zv : p.z) + (p.rjz != null ? p.rjz : p.jz || 0), gx = p.rx != null ? p.rx : p.x, gy = p.ry != null ? p.ry : p.y; // (round 34) rx / ry: drawn between sim steps
     // (round 26) the back-seat rider is drawn glued to the driver as drawn on this screen (their own reported position lags behind over the network)
     const drv = p.pass != null && p.pass >= 0 && !p.down && !p.dead ? W.p[p.pass] : null;
-    if (drv && drv.ride && !drv.gone && drv._ly != null) { gx = drv.x - Math.cos(drv._ly) * PILLION; gy = drv.y - Math.sin(drv._ly) * PILLION; zv = (drv.zv != null ? drv.zv : drv.z) + (drv.jz || 0) - Math.sin(drv._pitch || 0) * PILLION; } // (round 30) a nose-down aircraft lifts the back seat
+    if (drv && drv.ride && !drv.gone && drv._ly != null) { gx = (drv.rx != null ? drv.rx : drv.x) - Math.cos(drv._ly) * PILLION; gy = (drv.ry != null ? drv.ry : drv.y) - Math.sin(drv._ly) * PILLION; zv = (drv.zv != null ? drv.zv : drv.z) + (drv.jz || 0) - Math.sin(drv._pitch || 0) * PILLION; } // (round 30) a nose-down aircraft lifts the back seat
     m.g.position.set(gx, zv, gy);
+    if (inMech(p) && !p.dead && !p.down) { // (round 34) in a mech: draw the mech, hide the pilot
+      if (!m.mech || m.mech.userData.J.k !== (p.mk || 0)) { if (m.mech) m.g.remove(m.mech); m.mech = mkMech(p.mk || 0); m.g.add(m.mech); }
+      m.mech.visible = true; m.lower.visible = m.upper.visible = false; m.veh.visible = false; m.g.rotation.set(0, 0, 0);
+      if (p._px == null || p._ly == null) { p._px = gx; p._py = gy; p._ly = p.aim; p._spd = 0; }
+      const mvx = gx - p._px, mvy = gy - p._py; p._spd = lerp(p._spd || 0, dt > 0 ? Math.min(8, Math.hypot(mvx, mvy) / dt) : 0, Math.min(1, dt * 10)); p._px = gx; p._py = gy;
+      if (p._spd > 0.4 && Math.hypot(mvx, mvy) > 1e-4) p._ly = angLerp(p._ly, Math.atan2(mvy, mvx), Math.min(1, dt * 6)); else if (p._spd < 0.25) p._ly = angLerp(p._ly, p.aim, Math.min(1, dt * 2));
+      p._uy = p.aim; m.mech.rotation.y = -p._ly; mechTick(p, m.mech, dt); return;
+    }
+    if (m.mech) m.mech.visible = false; m.lower.visible = m.upper.visible = true;
     const vr = drv && drv.ride ? drv : p.ride && !p.down && !p.dead ? p : null; // (round 27) whose vehicle this player is on
     if (p.dead) m.g.rotation.set(-1.45, 0, 0); else if (vr && vr._ly != null && (vr._roll || vr._pitch)) rideBank(m, vr._ly, vr._roll, vr._pitch); else m.g.rotation.set(0, 0, 0); // a dead player lies flat until respawn / rescue
     // smoothing state
-    if (p._uy == null) { p._uy = p.aim; p._ly = p.aim; p._ph = 0; p._kick = 0; p._spd = 0; p._px = p.x; p._py = p.y; p._st = 0; }
-    const sp = dt > 0 ? Math.min(8, Math.hypot(p.x - p._px, p.y - p._py) / dt) : 0, mvx = p.x - p._px, mvy = p.y - p._py; p._px = p.x; p._py = p.y;
+    if (p._uy == null) { p._uy = p.aim; p._ly = p.aim; p._ph = 0; p._kick = 0; p._spd = 0; p._px = gx; p._py = gy; p._st = 0; }
+    const sp = dt > 0 ? Math.min(8, Math.hypot(gx - p._px, gy - p._py) / dt) : 0, mvx = gx - p._px, mvy = gy - p._py; p._px = gx; p._py = gy;
     p._spd = lerp(p._spd, sp, Math.min(1, dt * 10));
     const amp = clamp(p._spd / BAL.pSpeed, 0, 1.1), moving = p._spd > 0.4;
     p._uy = angLerp(p._uy, p.aim, Math.min(1, dt * 22));
     let back = false;
-    if (moving) {
+    if (moving && Math.hypot(mvx, mvy) > 1e-4) { // (round 34) a frame with no movement (no sim step ran) must not turn you toward atan2(0, 0) = east
       const md = Math.atan2(mvy, mvx); back = !p.ride && Math.cos(angDiff(md, p._uy)) < -0.35;
       p._ly = angLerp(p._ly, back ? md + Math.PI : md, Math.min(1, dt * (p.ride ? 8 : 12)));
     } else if (!p.ride) p._ly = angLerp(p._ly, p._uy, Math.min(1, dt * 5));
@@ -543,3 +554,101 @@ function addDecal(x, y, z, s, col) {
   RND.decals.push({ x, y, z: fz, s, col: col || (hash2(cx, cy) < 0.5 ? '#4a0606' : '#5e0b08'), r: frnd(0, 6.28), e: frnd(0.6, 1), t: 0 });
   if (RND.decals.length > 210) RND.decals.shift();
 }
+
+/* ---------- (round 34) kaiju: one mesh each (only a few are ever alive), built from parts and animated by hand ---------- */
+const KAIJU = new Map();
+function kjPart(par, geo, mat, x, y, z, rx, ry, rz) { const m = new THREE.Mesh(geo, mat); m.position.set(x || 0, y || 0, z || 0); m.rotation.set(rx || 0, ry || 0, rz || 0); m.castShadow = !mat.transparent && mat.type !== 'MeshBasicMaterial'; par.add(m); return m; }
+const kjBlob = (r, sx, sy, sz, seed) => jitterG(new THREE.IcosahedronGeometry(r, 1).scale(sx, sy, sz), r * 0.08, seed || 3);
+const kjGrp = (par, x, y, z) => { const q = new THREE.Group(); q.position.set(x || 0, y || 0, z || 0); par.add(q); return q; };
+function mkKaiju(k) {
+  const T = ZT[k], g = new THREE.Group(), J = { k, legs: [], tail: [], spin: 0 };
+  const skin = lam(T.skin), dark = lam(tmpC.set(T.skin).multiplyScalar(0.55).getStyle()), bone = lam('#d8ceb4'), plate = lam('#6c707a'), claw = lam('#2a2622');
+  const glowC = k === 'kjaw' ? '#9dff3a' : k === 'ktail' ? '#ff6a2a' : '#ffd23a', glow = new THREE.MeshBasicMaterial({ color: glowC }), glowA = new THREE.MeshBasicMaterial({ color: glowC, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false });
+  const tellM = new THREE.MeshBasicMaterial({ color: '#ff3a2a', transparent: true, opacity: 0.22, depthWrite: false, side: THREE.DoubleSide });
+  J.glowA = glowA;
+  const body = kjGrp(g, 0, 0, 0); J.body = body;
+  const leg = (x, z, hy, th, sh, fat, s, quad) => { // hip at (x, hy, z); thigh, shin, foot with three claws
+    const hip = kjGrp(body, x, hy, z); kjPart(hip, kjBlob(fat, 1, 1.5, 1, 7), skin, 0, -th * 0.45, 0);
+    const kn = kjGrp(hip, 0, -th, 0); kjPart(kn, kjBlob(fat * 0.7, 1, 1.6, 1, 9), dark, quad ? 0 : -0.05, -sh * 0.45, 0);
+    const ft = kjGrp(kn, 0, -sh, 0); kjPart(ft, new THREE.BoxGeometry(fat * 1.6, 0.14, fat * 1.2), dark, fat * 0.3, -0.04, 0);
+    for (let c = -1; c <= 1; c++) kjPart(ft, new THREE.ConeGeometry(0.05, 0.22, 5).rotateZ(-Math.PI / 2), claw, fat * 1.15, -0.06, c * fat * 0.4);
+    J.legs.push({ hip, kn, ft, s, th, sh });
+  };
+  const tail = (x, y, n, r0, len, droop) => { let par = body, px = x, py = y; for (let i = 0; i < n; i++) { const seg = kjGrp(par, px, py, 0); const r = r0 * (1 - i / (n + 1)); kjPart(seg, kjBlob(r, 1.6, 1, 1, 11 + i), i % 2 ? skin : dark, -len * 0.5, 0, 0); J.tail.push(seg); par = seg; px = -len; py = -droop; } return par; };
+  if (k === 'kjaw') { // a towering biped: split jaws, glowing throat, a crest of spines
+    J.hipY = 1.55;
+    const tor = kjGrp(body, 0, 1.75, 0); J.tor = tor; tor.rotation.z = 0.25;
+    kjPart(tor, kjBlob(0.75, 1.5, 1.05, 1.0, 5), skin, 0, 0.1, 0); kjPart(tor, kjBlob(0.55, 1.2, 0.8, 0.9, 6), lam('#8aa070'), 0.25, -0.15, 0); // body, pale belly
+    for (let i = 0; i < 7; i++) kjPart(tor, new THREE.ConeGeometry(0.08, 0.45 - Math.abs(i - 3) * 0.06, 5), bone, -0.7 + i * 0.25, 0.85 - Math.abs(i - 3) * 0.05, 0, 0, 0, 0.3); // spines
+    const nk = kjGrp(tor, 0.95, 0.45, 0); nk.rotation.z = 0.4; J.neck = nk; kjPart(nk, kjBlob(0.36, 1.6, 1, 1, 8), skin, 0.25, 0, 0);
+    J.throat = kjPart(nk, kjBlob(0.22, 1.4, 0.8, 0.8, 4), glowA, 0.3, -0.2, 0);
+    const hd = kjGrp(nk, 0.65, 0.05, 0); J.head = hd; kjPart(hd, kjBlob(0.34, 1.5, 0.75, 0.9, 12), skin, 0.25, 0.08, 0);
+    for (const s of [-1, 1]) { kjPart(hd, new THREE.SphereGeometry(0.06, 6, 4), glow, 0.38, 0.2, s * 0.22); kjPart(hd, new THREE.ConeGeometry(0.06, 0.4, 5), bone, 0.05, 0.3, s * 0.18, s * 0.5, 0, 0.6); }
+    const uj = kjGrp(hd, 0.3, 0.05, 0); J.uj = uj; kjPart(uj, new THREE.BoxGeometry(0.75, 0.14, 0.42), dark, 0.38, 0, 0); for (let t = 0; t < 6; t++) kjPart(uj, new THREE.ConeGeometry(0.03, 0.12, 4).rotateZ(Math.PI), bone, 0.12 + t * 0.11, -0.1, (t % 2 ? 1 : -1) * 0.17);
+    J.lj = []; for (const s of [-1, 1]) { const lj = kjGrp(hd, 0.25, -0.08, s * 0.08); kjPart(lj, new THREE.BoxGeometry(0.72, 0.11, 0.2), dark, 0.36, 0, s * 0.06); for (let t = 0; t < 5; t++) kjPart(lj, new THREE.ConeGeometry(0.028, 0.11, 4), bone, 0.12 + t * 0.12, 0.08, s * 0.1); J.lj.push({ g: lj, s }); } // the lower jaw splits in two
+    for (const s of [-1, 1]) { const ar = kjGrp(tor, 0.6, -0.2, s * 0.55); ar.rotation.z = -0.8; kjPart(ar, kjBlob(0.14, 1, 2.4, 1, 2), skin, 0, -0.25, 0); for (let c = -1; c <= 1; c++) kjPart(ar, new THREE.ConeGeometry(0.03, 0.2, 4).rotateZ(Math.PI), claw, 0.04, -0.6, c * 0.06); J.arms = (J.arms || []).concat(ar); }
+    for (const s of [-1, 1]) leg(-0.15, s * 0.5, J.hipY, 0.85, 0.8, 0.26, s);
+    tail(-1.0, 1.65, 5, 0.42, 0.55, 0.06);
+    J.tell = kjPart(g, new THREE.CircleGeometry(7.5, 20, -0.5, 1.0).rotateX(-Math.PI / 2), tellM, 0, 0.04, 0);
+  } else if (k === 'ktail') { // a low, armoured four-legger with a mace on the end of a long tail
+    J.hipY = 1.0;
+    const tor = kjGrp(body, 0, 1.25, 0); J.tor = tor;
+    kjPart(tor, kjBlob(0.8, 1.7, 0.75, 1.15, 5), skin, 0, 0, 0);
+    for (let i = 0; i < 5; i++) for (const s of [-1, 0, 1]) kjPart(tor, new THREE.BoxGeometry(0.36, 0.12, 0.34), plate, -0.9 + i * 0.42, 0.55 - Math.abs(s) * 0.12, s * 0.42, s * 0.35, 0, 0);
+    for (let i = 0; i < 5; i++) kjPart(tor, new THREE.ConeGeometry(0.07, 0.3, 5), bone, -0.85 + i * 0.42, 0.72, 0);
+    const hd = kjGrp(tor, 1.3, -0.15, 0); J.head = hd; kjPart(hd, kjBlob(0.38, 1.4, 0.8, 1, 9), dark, 0.2, 0, 0); kjPart(hd, new THREE.BoxGeometry(0.5, 0.1, 0.62), plate, 0.15, 0.28, 0);
+    for (const s of [-1, 1]) { kjPart(hd, new THREE.ConeGeometry(0.07, 0.5, 5), bone, 0.3, 0.3, s * 0.3, s * 0.9, 0, -0.6); kjPart(hd, new THREE.SphereGeometry(0.05, 6, 4), glow, 0.55, 0.08, s * 0.18); }
+    J.uj = kjGrp(hd, 0.45, -0.12, 0); kjPart(J.uj, new THREE.BoxGeometry(0.4, 0.1, 0.4), dark, 0.1, 0, 0);
+    for (const sx of [1, -1]) for (const s of [-1, 1]) leg(sx * 0.75, s * 0.75, J.hipY, 0.55, 0.5, 0.24, s * sx, 1);
+    const end = tail(-1.25, 1.3, 7, 0.4, 0.5, -0.02);
+    const mace = kjGrp(end, -0.55, 0, 0); kjPart(mace, kjBlob(0.34, 1, 1, 1, 13), plate, 0, 0, 0); for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2; kjPart(mace, new THREE.ConeGeometry(0.06, 0.32, 5), bone, Math.cos(a) * 0.3, Math.sin(a) * 0.3, 0, 0, 0, a - Math.PI / 2); }
+    J.tell = kjPart(g, new THREE.RingGeometry(0.2, 4.2, 28).rotateX(-Math.PI / 2), tellM, 0, 0.04, 0);
+    J.lane = kjPart(g, new THREE.PlaneGeometry(12, 1.9).rotateX(-Math.PI / 2).translate(6, 0, 0), tellM, 0, 0.05, 0);
+  } else { // kdig: a hunched digger: shovel claws, a drill horn, a row of glowing eyes
+    J.hipY = 0.85;
+    const tor = kjGrp(body, 0, 1.35, 0); J.tor = tor; tor.rotation.z = 0.35;
+    kjPart(tor, kjBlob(0.75, 1.3, 1.0, 1.1, 5), skin, 0, 0, 0);
+    for (let i = 0; i < 5; i++) kjPart(tor, new THREE.TorusGeometry(0.62 - i * 0.04, 0.07, 5, 12, Math.PI).rotateY(Math.PI / 2), dark, -0.6 + i * 0.28, 0.1, 0, 0, 0, 0);
+    const hd = kjGrp(tor, 0.85, 0.1, 0); J.head = hd; kjPart(hd, kjBlob(0.4, 1.2, 0.85, 1, 9), plate, 0.1, 0, 0);
+    J.drill = kjGrp(hd, 0.5, 0.05, 0); kjPart(J.drill, new THREE.ConeGeometry(0.2, 0.7, 7).rotateZ(-Math.PI / 2), bone, 0.3, 0, 0); for (let i = 0; i < 3; i++) kjPart(J.drill, new THREE.TorusGeometry(0.17 - i * 0.05, 0.02, 4, 10).rotateY(Math.PI / 2), claw, 0.1 + i * 0.18, 0, 0);
+    for (let i = 0; i < 4; i++) for (const s of [-1, 1]) kjPart(hd, new THREE.SphereGeometry(0.045, 6, 4), glow, 0.38 - i * 0.07, 0.22 - i * 0.03, s * (0.14 + i * 0.05));
+    J.arms = []; for (const s of [-1, 1]) { const ar = kjGrp(tor, 0.55, -0.25, s * 0.7); kjPart(ar, kjBlob(0.2, 1, 2, 1, 4), skin, 0, -0.3, 0); const hand = kjGrp(ar, 0, -0.7, 0); kjPart(hand, new THREE.BoxGeometry(0.45, 0.12, 0.5), claw, 0.15, 0, 0); for (let c = 0; c < 4; c++) kjPart(hand, new THREE.ConeGeometry(0.05, 0.35, 4).rotateZ(-Math.PI / 2), bone, 0.5, -0.02, (c - 1.5) * 0.12); J.arms.push(ar); } // shovel claws
+    for (const s of [-1, 1]) leg(-0.3, s * 0.55, J.hipY, 0.48, 0.42, 0.22, s);
+    tail(-0.9, 1.1, 3, 0.3, 0.42, 0.12);
+  }
+  g.userData.J = J; return g;
+}
+function drawKaiju(z, corpse, dt) {
+  const key = (corpse ? 'c' : 'z') + (z.id != null ? z.id : z.seed) + z.k; let K = KAIJU.get(key);
+  if (!K) { const g = mkKaiju(z.k); SCN.add(g); K = { g, J: g.userData.J }; KAIJU.set(key, K); }
+  K.seen = 1; const g = K.g, J = K.J, T = ZT[z.k]; g.visible = !z.hidden || corpse;
+  if (z._f == null) { z._f = z.face || 0; z._px = z.x; z._py = z.y; z._spd = 0; z._ph = 0; }
+  const sp = dt > 0 ? Math.min(10, Math.hypot(z.x - z._px, z.y - z._py) / dt) : 0; z._px = z.x; z._py = z.y; z._spd = lerp(z._spd, sp, Math.min(1, dt * 6)); z._f = angLerp(z._f, z.face || 0, Math.min(1, dt * 6));
+  z._ph += dt * (1 + z._spd * 1.6);
+  const amp = corpse ? 0 : clamp(z._spd / 1.2, 0, 1.3), ph = z._ph, kt = corpse ? 0 : z.kt || 0, atk = !corpse && z.atk > 0, t = W.t;
+  g.position.set(z.x, z.z - (corpse ? Math.max(0, z.t - 3) * 0.4 : 0), z.y); g.rotation.set(0, -z._f, 0);
+  if (corpse) { g.rotation.x = Math.min(1.4, z.t * 2) * 0.95; if (z.t > 7) g.visible = false; }
+  // legs: walk cycle (quadrupeds: diagonal pairs)
+  J.legs.forEach((L, n) => { const off = J.legs.length > 2 ? ((n === 0 || n === 3) ? 0 : Math.PI) : n * Math.PI, a = Math.sin(ph + off) * 0.5 * amp, k = 0.2 + Math.max(0, Math.cos(ph + off)) * 0.7 * amp; L.hip.rotation.z = a; L.kn.rotation.z = -k; L.ft.rotation.z = k - a; });
+  J.body.position.y = Math.abs(Math.sin(ph)) * 0.06 * amp;
+  // tail sway (whips round during a sweep)
+  const sweep = z.k === 'ktail' && kt === 2 && !z.kc;
+  J.tail.forEach((s, i) => { s.rotation.y = Math.sin(t * 2.2 - i * 0.6) * 0.12 * (1 + amp) + (z.k === 'ktail' && kt === 1 && !z.kc ? -0.25 : 0); s.rotation.z = (z.k === 'ktail' && kt === 1 && !z.kc ? 0.12 : 0) + Math.sin(t * 1.3 - i * 0.5) * 0.03; });
+  if (sweep) J.spin += dt * 14; else J.spin = 0; J.body.rotation.y = sweep ? J.spin : lerp(J.body.rotation.y, 0, Math.min(1, dt * 10));
+  // head / jaws: bite when attacking, open wide for the breath
+  const bite = atk ? Math.max(0, Math.sin(t * 9)) : 0;
+  if (J.uj) J.uj.rotation.z = (z.k === 'kjaw' ? (kt ? 0.45 : bite * 0.3) : bite * 0.2);
+  if (J.lj) J.lj.forEach(L => { L.g.rotation.z = -(kt ? 0.6 : bite * 0.4); L.g.rotation.y = L.s * (kt ? 0.45 : bite * 0.2); });
+  if (J.neck) J.neck.rotation.z = 0.4 + (kt === 1 ? 0.5 : kt === 2 ? -0.25 : 0) + Math.sin(ph) * 0.04;
+  if (J.head && z.k === 'ktail') J.head.rotation.z = z.kc ? -0.35 : atk ? -bite * 0.3 : 0;
+  if (J.drill) J.drill.rotation.x += dt * (atk ? 30 : 6);
+  if (J.arms) J.arms.forEach((a, n) => { a.rotation.z = (z.k === 'kdig' ? -0.6 + (atk ? Math.sin(t * 10 + n * 3) * 0.8 : Math.sin(ph + n * Math.PI) * 0.3 * amp) : -0.8 + (atk ? bite * 0.6 : 0)); });
+  if (J.tor) J.tor.rotation.z = (z.k === 'kjaw' ? 0.25 : z.k === 'kdig' ? 0.35 : 0) + (z.kc && kt === 1 ? -0.15 : 0) + (z.k === 'ktail' && kt === 1 && !z.kc ? -0.1 : 0);
+  // glow: brighter while winding up; hit flash
+  J.glowA.opacity = kt ? 0.9 : 0.35 + Math.sin(t * 3) * 0.1; if (J.throat) J.throat.scale.setScalar(kt ? 1.4 : 1);
+  // telegraphs on the ground: the breath cone, the sweep ring, the charge lane
+  if (J.tell) { J.tell.visible = kt === 1 && !z.kc || (z.k === 'kjaw' && kt === 2); J.tell.material.opacity = kt === 1 ? 0.18 + Math.sin(t * 16) * 0.08 : 0.1; }
+  if (J.lane) J.lane.visible = !!z.kc && kt === 1;
+  const s = z.hitT > 0 ? 1.03 : 1; g.scale.setScalar(s);
+}
+function kaijuSweep() { for (const [k, K] of KAIJU) { if (!K.seen) { K.g.visible = false; if (k[0] === 'c' ? !RND.corpses.some(c => 'c' + (c.id != null ? c.id : c.seed) + c.k === k) : !W.zs.some(z => 'z' + z.id + z.k === k)) { K.g.parent && K.g.parent.remove(K.g); KAIJU.delete(k); } } K.seen = 0; } }

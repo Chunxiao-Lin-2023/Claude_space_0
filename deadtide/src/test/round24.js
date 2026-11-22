@@ -17,7 +17,7 @@ const UA = 'Mozilla/5.0 (iPad; CPU OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (
     let s = await p.evaluate(() => { const me = W.p[0]; SET.shopTab = 'item'; openCraft(); const cards = [...document.querySelectorAll('#clist .sc:not(.mini)')].map(e => e.querySelector('b').textContent);
       for (const id of ['nade', 'gslow', 'gsmoke', 'gblast', 'med']) { const c = CRAFT.find(q => q.id === id); for (let k = 0; k < 20 && !craftBlocked(me, c); k++) doAct(me, 'craft', id); } closeCraft();
       return { cards, n: [me.nades, ...me.gn, me.meds], start: livesFor('normal', 'classic') }; });
-    check('item tab sells 4 grenade types + medkit; carry 15 frag / 8 of each special / 8 medkits', s.cards.length === 5 && s.n.join() === '15,8,8,8,8', JSON.stringify(s));
+    check('item tab sells 4 grenade types + medkit; carry 10 frag (15 before round 34) / 8 of each special / 8 medkits', s.cards.length === 5 && s.n.join() === '10,8,8,8,8', JSON.stringify(s));
     // 2. PC: 5–8 pick, Shift+G cycles, bar chips follow
     await p.keyboard.press('7'); await simWait(0.1); const g7 = await p.evaluate(() => W.p[0].gt);
     await p.keyboard.down('Shift'); await p.keyboard.press('g'); await p.keyboard.up('Shift'); await simWait(0.1); const gs = await p.evaluate(() => W.p[0].gt);

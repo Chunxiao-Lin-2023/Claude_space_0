@@ -27,7 +27,7 @@ const { chromium } = require('playwright');
   check('task pill: collapsed at start (one short line), opens as a dropdown without moving the ready button, closes again', s.closed && s.h0 < 40 && s.open && s.rbSame && s.closedAgain && /任务/.test(s.txt), JSON.stringify(s));
   // ammo caps
   s = await p.evaluate(() => ({ rifle: ammoCap(2), shot: ammoCap(1), snipe: ammoCap(3), gl: ammoCap(6), tank: BAL.tankCap, tankS: BAL.tankStart, gyro: BAL.gyroCap, gyroS: BAL.gyroStart }));
-  check('ammo caps: guns 500 (grenade launcher 100), gyrocopter 500 (comes with 250), tank 200 (comes with 100)', s.rifle === 500 && s.shot === 500 && s.snipe === 500 && s.gl === 100 && s.tank === 200 && s.tankS === 100 && s.gyro === 500 && s.gyroS === 250, JSON.stringify(s));
+  check('ammo caps: guns 500 (grenade launcher 60 since round 34), gyrocopter 500 (comes with 250), tank 200 (comes with 100)', s.rifle === 500 && s.shot === 500 && s.snipe === 500 && s.gl === 60 && s.tank === 200 && s.tankS === 100 && s.gyro === 500 && s.gyroS === 250, JSON.stringify(s));
   // swapping guns: the half-empty one reloads in the holster; drawing an empty gun starts its reload
   s = await p.evaluate(() => { const me = W.p[0]; W.zs.length = 0; W.spawnQ = []; me.owned = WPN.map(() => 1); me.ammo = WPN.map(() => 100); me.wpn = 2; me.mag[2] = 11; me.mag[1] = 0; me.reloadT = 0; me.rlBg = WPN.map(() => 0);
     doAct(me, 'wpn', 1); const bg = me.rlBg[2], drawRl = me.reloadT > 0 && me.reloadW === 1; return { bg, drawRl }; });

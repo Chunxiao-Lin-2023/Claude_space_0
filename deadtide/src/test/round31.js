@@ -26,7 +26,7 @@ const { chromium } = require('playwright'); const OUT = process.env.OUT || '/tmp
   await p.evaluate(({ x, y, L }) => { W.zs.length = 0; for (const [dx, dy] of [[7, 0], [7.6, 0.8], [6.6, -0.9]]) { const z = putZombie('walker', x + dx, y + dy, L); z.sleep = 0; z.hp = z.max = 400; z.stun = 99; z.mz = 1; } const z0 = W.zs[0]; window.__s0 = { shl: W.p[0].shl, mag: W.p[0].mag[W.p[0].wpn] }; window.__dbg.aimAt = () => ({ x: z0.x, y: z0.y, z: z0.z + 0.8, zb: z0 }); }, spots.open);
   await p.mouse.move(500, 320); await p.mouse.down(); await p.waitForTimeout(60); await p.mouse.up(); await simWait(0.5);
   s = await p.evaluate(() => { window.__dbg.aimAt = null; const me = W.p[0]; return { lost: W.zs.map(z => Math.round(400 - z.hp)), shl: window.__s0.shl - me.shl, mag: window.__s0.mag - me.mag[me.wpn] }; });
-  check('the cannon shell bursts on the knot: the one aimed at takes about 150, the others splash damage; one shell used, your own gun untouched', s.shl === 1 && s.mag === 0 && s.lost[0] >= 100 && s.lost.filter(v => v > 0).length >= 2, JSON.stringify(s));
+  check('the cannon shell bursts on the knot: the one aimed at takes about 120 (150 before round 34), the others splash damage; one shell used, your own gun untouched', s.shl === 1 && s.mag === 0 && s.lost[0] >= 100 && s.lost.filter(v => v > 0).length >= 2, JSON.stringify(s));
   // can't drive into a building
   s = await p.evaluate(() => { const me = W.p[0]; let ox = null;
     for (let r = 2; r < 70 && !ox; r++) for (let dy = -r; dy <= r && !ox; dy++) for (let dx = -r; dx <= r && !ox; dx++) { const x = W.radio.x + dx, y = W.radio.y + dy; if (!inMap(x, y) || skyTop(x, y) < 1 || W.blk[ci(x, y, 0)] || !support(x, y, 0)) continue;

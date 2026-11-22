@@ -164,7 +164,8 @@ function hudTick(dt) {
   $('wRes').textContent = me.build ? '' : '/ ' + (w.inf ? '∞' : me.ammo[wi]);
   const rl = me.reloadT > 0 ? 1 - me.reloadT / WPN[me.reloadW != null ? me.reloadW : wi].reload : me.reloadVis > 0 ? 1 - me.reloadVis / w.reload : me.medT > 0 ? 1 - me.medT / (me.selfRev ? 3 : BAL.healTime) : 0;
   $('wRl').style.width = (rl * 100) + '%';
-  $('iNadeL').textContent = GREN[me.gt || 0].sn; $('iNade').textContent = gCount(me, me.gt || 0); $('iMed').textContent = me.meds; $('iKill').textContent = me.kills; $('iLife').textContent = me.lives != null ? me.lives : '-';
+  if (inMech(me)) { $('iNadeL').textContent = mechOf(me).sn; $('iNade').textContent = (me.mcd || 0) > 0 ? Math.ceil(me.mcd) + 's' : '✓'; } else { $('iNadeL').textContent = GREN[me.gt || 0].sn; $('iNade').textContent = gCount(me, me.gt || 0); } // (round 34) in a mech the grenade key is its skill $('iMed').textContent = me.meds; $('iKill').textContent = me.kills; $('iLife').textContent = me.lives != null ? me.lives : '-';
+  { const mw = $('iMechW'), im = inMech(me); mw.classList.toggle('hidden', !im); if (im) { const M = mechOf(me); $('iMech').textContent = '装甲 ' + Math.round(me.mhp || 0) + ' · 电 ' + Math.floor(me.bat || 0) + 's · ' + M.sn + ((me.mcd || 0) > 0 ? ' ' + Math.ceil(me.mcd) + 's' : ' 好了'); mw.classList.toggle('low', (me.bat || 0) < BAL.mechLow || (me.mhp || 0) < M.hp * 0.25); } } // (round 34)
   { const sw = $('iShlW'), ht = ownsVeh(me, 6); sw.classList.toggle('hidden', !ht); if (ht) $('iShl').textContent = me.shl || 0; } // (round 31) tank shells
   { const fw = $('iFuelW'), has = ownsVeh(me, 5); fw.classList.toggle('hidden', !has); if (has) { const f = Math.ceil(me.fuel || 0); $('iFuel').textContent = f + ' 秒 · 弹 ' + (me.gam || 0); fw.style.color = f < BAL.fuelLow ? '#ff7a6a' : airborne(me) ? '#9fe0ff' : ''; } } // (round 29) gyrocopter fuel
   uiKeys(me);
@@ -239,7 +240,7 @@ function hudTick(dt) {
     md.firstElementChild.textContent = me.down ? '自救' : '医疗'; $('tMedN').textContent = '×' + me.meds;
     $('tWpn').firstElementChild.textContent = w.sn || w.name; $('tWpn').lastElementChild.textContent = w.inf ? '∞' : me.mag[wi] + '/' + me.ammo[wi];
     $('tWpn').classList.toggle('dim', me.down || me.owned.filter(Boolean).length < 2);
-    const gt = me.gt || 0, gc = gCount(me, gt), tn = $('tNade'); $('tNadeN').textContent = gc; tn.classList.toggle('empty', !gc); if (tn.firstChild.nodeValue !== GREN[gt].sn) tn.firstChild.nodeValue = GREN[gt].sn; // (round 24) shows the picked grenade type
+    const gt = me.gt || 0, im = inMech(me), gc = im ? ((me.mcd || 0) > 0 ? Math.ceil(me.mcd) : '✓') : gCount(me, gt), tn = $('tNade'), lb = im ? mechOf(me).sn : GREN[gt].sn; $('tNadeN').textContent = gc; tn.classList.toggle('empty', im ? (me.mcd || 0) > 0 : !gc); if (tn.firstChild.nodeValue !== lb) tn.firstChild.nodeValue = lb; // (round 24) shows the picked grenade type
     const sv = $('tShove'); if (sv.dataset.m !== String(me.melee === 1 && me.shield ? 1 : 0)) { sv.dataset.m = me.melee === 1 && me.shield ? 1 : 0; sv.textContent = me.melee === 1 && me.shield ? '盾' : '刀'; } sv.classList.toggle('sw', !!me.shield);
     $('tFire').style.setProperty('--rl', rl);
     $('tLLbl').textContent = ((me.build && BUILD_HOVER ? BUILD_HOVER.L : buildL()) + 1) + 'F';
@@ -303,8 +304,10 @@ function renderCraft() {
     h += `<div class="sgrp">墙、陷阱、地雷、机枪塔、跳板这些<b>放置类道具不在商店里</b>：随时随地点「道具」（电脑按 B）拿出来放，放一个扣一份材料</div>`;
   } else if (tab === 'veh') {
     h = `<div class="sgrp">选一辆当默认：T（触屏点「载具」）就上这辆；Shift+T / 长按「载具」换车</div>`;
-    h += CRAFT.filter(c => c.cat === 'veh').map(c => { const v = c.veh, own = (me.vehs || 0) >> v & 1, def = own && me.veh === v;
-      return `<div class="sc${own ? ' own' : ''}"><div class="sh"><b>${c.name}</b><em>${def ? '默认 ✓' : own ? '已有' : '速度 ×' + VEH[v].spd}</em></div><small>${c.desc}</small><div class="sb">${own ? (def ? '<span class="sfree">按 T 上车</span>' : `<button class="sbtn vdef" data-v="${v}"><b>设为默认</b><span>T 就上这辆</span></button>`) : shopBtn(c, '造')}</div></div>`; }).join('');
+    h += CRAFT.filter(c => c.cat === 'veh').map(c => { const v = c.veh, mOther = c.mk != null && ownsVeh(me, 7) && (me.mk || 0) !== c.mk, own = ((me.vehs || 0) >> v & 1) && !mOther, def = own && me.veh === v; // (round 34) three mech models share VEH[7]
+      if (mOther) return `<div class="sc"><div class="sh"><b>${c.name}</b><em>换成这台</em></div><small>${c.desc}（会替换你现在的「${mechOf(me).name}」）</small><div class="sb">${shopBtn(c, '换')}</div></div>`;
+      return `<div class="sc${own ? ' own' : ''}"><div class="sh"><b>${c.name}</b><em>${def ? '默认 ✓' : own ? '已有' : '速度 ×' + (c.mk != null ? MECHS[c.mk].spd : VEH[v].spd)}</em></div><small>${c.desc}</small><div class="sb">${own ? (def ? '<span class="sfree">按 T 上车</span>' : `<button class="sbtn vdef" data-v="${v}"><b>设为默认</b><span>T 就上这辆</span></button>`) : shopBtn(c, '造')}</div></div>`; }).join('');
+    if (ownsVeh(me, 7)) { const M = mechOf(me), fx = CRAFT.find(c => c.mfix), bt = CRAFT.find(c => c.mbat); h += `<div class="sc own"><div class="sh"><b>机甲维护 · ${M.name}</b><em>装甲 ${Math.round(me.mhp || 0)} / ${M.hp} · 电 ${Math.floor(me.bat || 0)} / ${BAL.mechBat} 秒</em></div><small>要先从机甲上下来。装甲打光或没电时机甲会把你弹出来</small><div class="sb">${shopBtn(fx, '修满装甲')}${shopBtn(bt, '充满电')}</div></div>`; } // (round 34)
     if (ownsVeh(me, 5)) { const f = CRAFT.find(c => c.fuel); h += `<div class="sc own"><div class="sh"><b>旋翼机油箱</b><em>油 ${Math.floor(me.fuel || 0)} / ${VEH[5].fuel} 秒</em></div><small>在这里直接加满（免费、马上满）；也可以在有屋顶的房间里按 F 加。机枪子弹在「武器 · 弹药」栏买</small><div class="sb">${shopBtn(f, '加满油')}</div></div>`; } // (round 30)
   } else {
     h = CRAFT.filter(c => c.cat === 'upg').map(c => `<div class="sc"><div class="sh"><b>${c.name}</b><em>${W.upg} / 5 级</em></div><small>${c.desc}</small><div class="sb">${shopBtn(c, '升级')}</div></div>`).join('');

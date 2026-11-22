@@ -124,9 +124,20 @@ const VEH = [null,
   { k: 'cargo', name: '货运三轮', spd: 1.45, search: 1, noise: 5, tag: '搜刮用：坐在车上就能搜（够得更远、时间减半），搜到的材料 +50%' },
   { k: 'armor', name: '装甲车', spd: 1.3, seats: 2, armor: 0.35, ram: 1, noise: 8, tag: '保护用：受到的伤害只剩 35%，撞开挡路的丧尸，后座能带一个队友' },
   { k: 'gyro', name: '旋翼机', spd: 1.9, fly: 1, fuel: 60, seats: 2, gun: 'chin', noise: 9, tag: '会飞：越过屋顶和尸群。只能从地面或楼顶起飞（头顶不能有屋顶）；一箱油飞 60 秒，没满就能加：商店「载具」栏一键加满，或在有屋顶的房间里按 F；飞着用机头下的机枪打（机上自己的子弹，商店里买），手里的枪不能用；后座能带一个队友，队友能开枪' }, // (round 29)
-  { k: 'tank', name: '坦克', spd: 1.0, armor: 0.2, ram: 1, gun: 'cannon', outdoor: 1, noise: 10, tag: '自带炮塔：开火打炮弹（落点爆炸 150，半径 2.6），炮弹商店里买；受到的伤害只剩 20%，撞开丧尸；慢，太大进不了楼' }, // (round 31)
+  { k: 'tank', name: '坦克', spd: 1.0, armor: 0.2, ram: 1, gun: 'cannon', outdoor: 1, noise: 10, tag: '自带炮塔：开火打炮弹（落点爆炸 120，半径 2.3），炮弹商店里买；受到的伤害只剩 20%，撞开丧尸；慢，太大进不了楼' }, // (round 31)
+  { k: 'mech', name: '机甲', spd: 1.0, ram: 1, gun: 'mech', outdoor: 1, noise: 9, mech: 1, tag: '三人高的战斗机甲，直接冲进尸群肉搏。所有伤害由机甲装甲吸收（只吃 60%），装甲打光就把你弹出来，要回商店修；电池一次 150 秒，用完弹出，下机后在商店充电。开火 = 出拳，手雷键 = 机甲技能（有冷却）。太大进不了楼' }, // (round 34)
 ];
 const NVEH = VEH.length - 1;
+const MECH_ON = false;
+const KAIJU_ON = MECH_ON; // (round 34) kaiju come with the mechs
+// (round 34) the three mechs (VEH[7], which one = p.mk): hull hp, punch damage / interval / reach / arc / knockback, walking speed, skill + cooldown
+const MECHS = [
+  { k: 'bastion', name: '铁卫', hp: 2400, dmg: 95, rate: 0.75, reach: 2.5, arc: 1.25, kb: 7, spd: 1.05, skill: 'slam', sn: '震地', cd: 12, col: ['#55606c', '#2c333b', '#e2b93b'], glow: '#5fe0ff', tag: '最结实：装甲 2400，重拳 95；技能「震地」：砸地面，周围 4.5 格的丧尸受 220 伤害并被震晕 1.6 秒（冷却 12 秒）' },
+  { k: 'edge', name: '赤刃', hp: 1700, dmg: 70, rate: 0.42, reach: 2.7, arc: 1.05, kb: 4, spd: 1.45, skill: 'dash', sn: '冲斩', cd: 10, col: ['#a8262a', '#2a1d20', '#e8e2d6'], glow: '#ffa040', tag: '最快：装甲 1700，臂刃 70（出手快）；技能「冲斩」：朝目标冲出 8 格，路上的丧尸受 180 伤害（冷却 10 秒）' },
+  { k: 'falcon', name: '苍隼', hp: 1500, dmg: 62, rate: 0.55, reach: 2.4, arc: 1.15, kb: 5, spd: 1.3, skill: 'leap', sn: '跃击', cd: 9, col: ['#dfe6ee', '#3a5a7a', '#59b8ff'], glow: '#9fe8ff', tag: '会飞：装甲 1500，拳 62；技能「跃击」：喷气飞起，越过屋顶落到 12 格内的目标点，落地冲击 3 格内 150 伤害（冷却 9 秒）' },
+];
+const inMech = p => !!(p && p.ride && p.veh === 7);
+const mechOf = p => MECHS[(p && p.mk) || 0] || MECHS[0];
 const PILLION = 0.38;                                   // how far behind the driver the back-seat rider sits
 // (round 24) grenade types: 0 frag (p.nades), 1–3 in p.gn[t - 1]
 const GREN = [
@@ -139,7 +150,7 @@ const gCount = (p, t) => t ? ((p.gn || [])[t - 1] || 0) : p.nades;
 const gCap = t => t ? BAL.gnCap : BAL.nadeCap;
 // blueprints (尸城求生): what you can build / make from the start, and what has to be found first
 const BP_BASE = [1, 4, 6, 7, 12, 53, 56];
-const BP_LIST = [2, 3, 5, 8, 13, 14, 9, 15, 51, 52, 57, 58, 59, 'bike', 'moto', 'cargo', 'armor', 'gyro', 'tank'];
+const BP_LIST = [2, 3, 5, 8, 13, 14, 9, 15, 51, 52, 57, 58, 59, 'bike', 'moto', 'cargo', 'armor', 'gyro', 'tank', ...(MECH_ON ? ['mech'] : [])];
 const bpName = k => typeof k === 'number' ? B[k].name : (VEH.find(v => v && v.k === k) || { name: k }).name;
 const SLAB_BRIDGE = 11; // slab id for the pre-built bridges (not buildable)
 defB(11, { key: 'bridge', slab: 1, nat: 1, col: '#7e5a36' });
@@ -162,7 +173,7 @@ const WPN = [
   { k: 'sniper', sn: '狙击', name: '狙击枪', dmg: 220, rate: 1.05, mag: 5, reload: 2.1, spread: 0.004, range: 45, pellets: 1, pierce: 5, kick: 4, shake: 0.4, stun: 0.5, laser: 1, hs: 2.5, loot: 4, tag: '打精英：一枪 220（爆头 ×2.5）穿 5 只，最远，但慢' },
   { k: 'crossbow', sn: '弩', name: '弩', dmg: 110, rate: 0.75, mag: 6, reload: 1.5, spread: 0.008, range: 26, pellets: 1, pierce: 3, kick: 0.6, shake: 0.06, pin: 1.1, hs: 2.0, loot: 6, tag: '几乎没声音：一箭 110 穿 3 只、把丧尸钉住，偷偷清楼用' },
   { k: 'flamer', sn: '喷火', name: '喷火器', dmg: 12, rate: 0.07, mag: 80, reload: 2.2, spread: 0.5, range: 5.6, pellets: 1, flame: 1, burn: 3.5, kick: 0, shake: 0.02, loot: 40, tag: '堵门神器：近距离扇形喷火，着火会传给旁边的' },
-  { k: 'launcher', sn: '榴弹', name: '榴弹发射器', blastR: 3.0, dmg: 220, rate: 0.9, mag: 4, reload: 2.6, spread: 0.015, range: 22, pellets: 1, gl: 1, kick: 0, shake: 0.3, loot: 2, tag: '炸一片：落地就炸，半径 3，扎堆时用' },
+  { k: 'launcher', sn: '榴弹', name: '榴弹发射器', blastR: 2.6, dmg: 160, rate: 0.9, mag: 4, reload: 2.6, spread: 0.015, range: 22, pellets: 1, gl: 1, kick: 0, shake: 0.3, loot: 2, tag: '炸一片：落地就炸，半径 2.6，扎堆时用' },
 ];
 const NW = WPN.length;
 
@@ -182,13 +193,17 @@ const ZT = {
   digger: { name: '掘地尸王', hp: 2700, spd: 0.95, r: 0.55, h: 2.0, dmg: 34, bdmg: 90, cd: 1.4, sc: 2.0, kb: 8, boss: 1, look: 'brute', skin: '#6a6048' },
   summoner: { name: '召唤尸王', hp: 2100, spd: 0.72, r: 0.5, h: 2.3, dmg: 22, bdmg: 40, cd: 1.4, sc: 2.2, boss: 1, look: 'boss', skin: '#5a5470' },
   venom: { name: '毒液尸王', hp: 2300, spd: 0.85, r: 0.52, h: 2.1, dmg: 26, bdmg: 50, cd: 1.3, sc: 2.1, range: 12, boss: 1, look: 'bloater', skin: '#7a9a3a' },
+  // (round 34) kaiju: walking monsters about 40-80% of a mech, each with its own telegraphed skill; from night 5 (level 3)
+  kjaw: { name: '裂颚兽', hp: 2600, spd: 0.95, r: 0.85, h: 3.2, dmg: 70, bdmg: 260, cd: 1.4, sc: 1, kb: 8, kaiju: 'acid', skin: '#4a6a3a' },
+  ktail: { name: '钢尾兽', hp: 3000, spd: 1.0, r: 0.9, h: 2.8, dmg: 75, bdmg: 300, cd: 1.6, sc: 1, kb: 10, kaiju: 'tail', skin: '#5a5a66' },
+  kdig: { name: '掘地兽', hp: 2300, spd: 0.9, r: 0.8, h: 2.5, dmg: 65, bdmg: 220, cd: 1.4, sc: 1, kb: 8, kaiju: 'dig', skin: '#7a5a3a' },
   armored: { name: '防暴尸', hp: 260, spd: 0.9, r: 0.36, h: 1.26, dmg: 15, bdmg: 16, cd: 1.1, sc: 1.3, armor: 0.3 },
 };
 // aim assist (SET.assist): fire-button lock range (x weapon range), lock-on time before it fires, spread while auto-aimed, mouse/finger magnet
 const PORT = 1.25; // firing port: your own shots pass a wall / door you built if it is this close to you
 const ASSIST = [{ name: '关', range: 0, acq: 0, spread: 1, mag: 0 }, { name: '标准', range: 0.75, acq: 0.3, spread: 1.5, mag: 1 }, { name: '强', range: 1, acq: 0, spread: 1, mag: 1 }];
 const assistLv = () => ASSIST[SET.assist == null ? 1 : SET.assist] || ASSIST[1];
-const ZKEYS = ['walker', 'runner', 'climber', 'spitter', 'brute', 'boss', 'dog', 'crawler', 'bloater', 'screamer', 'armored', 'leaper', 'digger', 'summoner', 'venom']; // order is the net id
+const ZKEYS = ['walker', 'runner', 'climber', 'spitter', 'brute', 'boss', 'dog', 'crawler', 'bloater', 'screamer', 'armored', 'leaper', 'digger', 'summoner', 'venom', 'kjaw', 'ktail', 'kdig']; // order is the net id
 
 /* ---------- scavenging / gathering ---------- */
 // vanish: searched once and gone (restocked at random places every dawn); otherwise a fixture that refills sometimes
@@ -221,7 +236,7 @@ const PERM = [
 const PERK = { hp: ['生命上限 +10', 10], bag: ['背包：弹药上限 +25%', 0.25], med: ['医疗包上限 +2', 2], nade: ['手雷上限 +3（特殊手雷各 +2）', 3], life: ['复活次数 +1', 1] };
 const perkLv = k => (typeof W !== 'undefined' && W && W.perk && W.perk[k]) || 0;
 // carry limits grow with the upgrades (read through getters so every place that checks a cap sees the current one)
-const ammoCap = wi => Math.round((WPN[wi].gl ? 100 : 500) * (1 + PERK.bag[1] * perkLv('bag'))); // (round 33) 500 rounds a gun (grenade launcher 100), +25% per backpack upgrade
+const ammoCap = wi => Math.round((WPN[wi].gl ? 60 : 500) * (1 + PERK.bag[1] * perkLv('bag'))); // (round 33) 500 rounds a gun (grenade launcher 100), +25% per backpack upgrade
 /* ---------- daily tasks (before round 32): three are rolled every dawn (and at the start) and last until the next dawn ---------- */
 // need(d, W) -> target count for upcoming night d; min = first night it can appear; rw = reward pool keys
 const TASKS = {
@@ -291,6 +306,13 @@ const CRAFT = [
   { id: 'armor', cat: 'veh', name: '装甲车', desc: VEH[4].tag, cost: { steel: 24, parts: 16 }, veh: 4, bp: 'armor' },
   { id: 'gyro', cat: 'veh', name: '旋翼机', desc: VEH[5].tag, cost: { steel: 20, parts: 24 }, veh: 5, bp: 'gyro' },
   { id: 'tank', cat: 'veh', name: '坦克', desc: VEH[6].tag, cost: { steel: 40, parts: 30 }, veh: 6, bp: 'tank' },
+  ...(MECH_ON ? [ // (round 34) switched on once the mech is finished
+  { id: 'mech0', cat: 'veh', name: '机甲 · 铁卫', desc: MECHS[0].tag, cost: { steel: 70, parts: 50 }, veh: 7, mk: 0, bp: 'mech' }, // (round 34)
+  { id: 'mech1', cat: 'veh', name: '机甲 · 赤刃', desc: MECHS[1].tag, cost: { steel: 60, parts: 55 }, veh: 7, mk: 1, bp: 'mech' },
+  { id: 'mech2', cat: 'veh', name: '机甲 · 苍隼', desc: MECHS[2].tag, cost: { steel: 55, parts: 60 }, veh: 7, mk: 2, bp: 'mech' },
+  { id: 'mfix', cat: 'fuel', name: '修理机甲装甲', desc: '', cost: { steel: 10, parts: 10 }, mfix: 1 },
+  { id: 'mbat', cat: 'fuel', name: '给机甲充满电', desc: '', cost: { parts: 6 }, mbat: 1 },
+  ] : []),
   { id: 'upg', cat: 'upg', name: '强化弹头', desc: '全队伤害 +12%（最多 5 级）', cost: { parts: 8 }, upg: 1 },
 ];
 
@@ -311,14 +333,15 @@ const BAL = {
   ramDmg: 30, ramCD: 0.7, ramSpd: 2.2,                         // armoured car: hitting a zombie at speed
   cargoSearch: 0.5, cargoLoot: 1.5, cargoReach: 2.3,           // cargo trike: search time x, loot x, reach from the seat
   knifeDmg: 55, knifeKB: 2.5, knifeCD: 0.5, knifeRange: 2.3, knifeLunge: 1.3, knifeBack: 2, // melee (was a shove: 18 dmg, KB 6, CD 0.55, 1.3 cone)
-  nadeCap: 15, medCap: 8, gnCap: 8,                            // (round 24) carry: frag grenades / medkits / each special grenade (was 10 / 5 in 23d)
+  nadeCap: 10, medCap: 8, gnCap: 8,                            // (round 24) carry: frag grenades / medkits / each special grenade (was 10 / 5 in 23d)
   slowR: 3.6, slowT: 8, slowMul: 0.3,                           // slow grenade: a sticky field, zombies inside crawl at 30%
   smokeR: 3.8, smokeT: 10, smokeConf: 1.2,                      // smoke: zombies in the cloud lose you, wander and don't bite (and for 1.2 s after leaving)
   blastR: 4.4, blastDmg: 70, blastKB: 24, blastStun: 1.6,       // blast: little damage, throws everything out of the way (clears a path)
-  tankDmg: 150, tankR: 2.6, tankRate: 1.6, tankRange: 20, tankCap: 200, tankStart: 100, // (round 31) tank cannon: a shell that bursts where it hits
+  tankDmg: 120, tankR: 2.3, tankRate: 1.6, tankRange: 20, tankCap: 200, tankStart: 100, // (round 31) tank cannon: a shell that bursts where it hits
+  mechBat: 150, mechHull: 0.6, mechLow: 25, // (round 34) mech battery (s), share of damage the hull takes, low-battery warning
   gyroDmg: 12, gyroRate: 0.12, gyroSpread: 0.06, gyroRange: 22, gyroCap: 500, gyroStart: 250, // (round 30) gyrocopter chin gun: its own ammo, bought in the shop
   flyHover: 2.2, flyClimb: 0.8, flyDrop: 0.6, fuelLow: 10, refuelT: 4, // (round 29) gyrocopter: cruise 2.2 floors over whatever is below, climb / descend rate (of the take-off curve per second), warn at 10 s of fuel, 4 s to refuel indoors
-  nadeRange: 12, nadeDmg: 286, nadeR: 3.4, nadeFuse: 1.6, nadeLand: 0.35, nadeMin: 0.5, // (round 18: radius 2.8 -> 3.4, damage at the edge 35% -> 50%, goes off 0.35 s after landing where you aimed)
+  nadeRange: 12, nadeDmg: 220, nadeR: 3.0, nadeFuse: 1.6, nadeLand: 0.35, nadeMin: 0.3, // (round 18: radius 2.8 -> 3.4, damage at the edge 35% -> 50%, goes off 0.35 s after landing where you aimed)
   headshot: 1.6,
   radioHp: 1500, radioDmg: 0.5,
   startRes: { wood: 90, stone: 30, steel: 20, parts: 8 },
@@ -356,4 +379,4 @@ let W = null, ME = 0, NETROLE = null;
 const STATE = { mode: 'title', paused: false };
 const HUB = /\/deadtide\/(index\.html)?$/.test(location.pathname);
 // (round 32) carry limits grow with the permanent upgrades: read through getters, so every place that checks a cap sees the current one
-for (const [k, base, per, perk] of [['pMaxHp', 100, 10, 'hp'], ['medCap', 8, 2, 'med'], ['nadeCap', 15, 3, 'nade'], ['gnCap', 8, 2, 'nade']]) Object.defineProperty(BAL, k, { get: () => base + per * perkLv(perk), configurable: true });
+for (const [k, base, per, perk] of [['pMaxHp', 100, 10, 'hp'], ['medCap', 8, 2, 'med'], ['nadeCap', 10, 3, 'nade'], ['gnCap', 8, 2, 'nade']]) Object.defineProperty(BAL, k, { get: () => base + per * perkLv(perk), configurable: true });

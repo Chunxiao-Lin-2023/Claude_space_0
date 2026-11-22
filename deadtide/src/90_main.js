@@ -31,7 +31,7 @@ function demoStep(dt) {
   updateFields(dt); stepZombies(dt); stepProj(dt);
   if (W.demoT > 120) startDemo();
 }
-function smoothZ(dt) { for (const p of W.p) { if (p.zv == null) p.zv = p.z; if (p.z < p.zv - 0.05) p.zv = Math.max(p.z, p.zv - 7 * dt); else p.zv = lerp(p.zv, p.z, Math.min(1, dt * 20)); } }
+function smoothZ(dt) { for (const p of W.p) { const z = p.rz != null ? p.rz : p.z; if (p.zv == null) p.zv = z; if (z < p.zv - 0.05) p.zv = Math.max(z, p.zv - 7 * dt); else p.zv = lerp(p.zv, z, Math.min(1, dt * 20)); } }
 function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min(0.05, (now - (LAST || now)) / 1000); LAST = now;
@@ -42,10 +42,14 @@ function frame(now) {
       if (!STATE.paused) {
         if (NETROLE === 'guest') {
           const n = Math.ceil(dt / (1 / 60)); for (let k = 0; k < n; k++) stepMove(W.p[ME], dt / n);
+          for (const p of W.p) { p.rx = p.x; p.ry = p.y; p.rz = p.z; p.rjz = p.jz || 0; }
           guestPredictFire(dt); guestNetTick(dt);
         } else {
-          ACC += dt * sp; let n = 0;
-          while (ACC >= 1 / 60 && n++ < 8 * Math.max(1, sp)) { simStep(1 / 60); ACC -= 1 / 60; }
+          ACC += dt * sp; let n = 0; const me = W.p[ME];
+          while (ACC >= 1 / 60 && n++ < 8 * Math.max(1, sp)) { if (me) { me._ox = me.x; me._oy = me.y; me._oz = me.z; me._ojz = me.jz || 0; } simStep(1 / 60); ACC -= 1 / 60; }
+          // (round 34) the sim steps at a fixed 60 Hz; draw your own survivor between the last two steps so a 120 Hz screen (or an uneven frame) doesn't stutter
+          const al = clamp(ACC * 60, 0, 1);
+          for (const p of W.p) { if (p === me && me._ox != null && Math.abs(p.x - me._ox) + Math.abs(p.y - me._oy) < 1.5) { p.rx = lerp(me._ox, p.x, al); p.ry = lerp(me._oy, p.y, al); p.rz = lerp(me._oz, p.z, al); p.rjz = lerp(me._ojz, p.jz || 0, al); } else { p.rx = p.x; p.ry = p.y; p.rz = p.z; p.rjz = p.jz || 0; } }
           if (NETROLE === 'host') hostNetTick(dt);
         }
       }
