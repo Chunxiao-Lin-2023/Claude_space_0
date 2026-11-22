@@ -75,7 +75,8 @@ input:focus{border-color:var(--amber)}
 #tasks{position:relative;display:flex;flex-direction:column;align-items:center;width:100%;font-size:11.5px;color:var(--sub);text-align:left;cursor:pointer;pointer-events:auto}
 /* (round 33) the task list folds into a small pill; opened, it drops down over the scene instead of pushing the 准备入夜 button down */
 #tasks .tklist{position:absolute;top:calc(100% + 4px);left:50%;transform:translateX(-50%);width:min(300px,82vw);display:none;flex-direction:column;gap:4px;padding:8px 10px;background:rgba(14,16,20,.88);border:1px solid rgba(255,255,255,.12);border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.4);z-index:30}
-#tasks.open .tklist{display:flex}
+#tasks.open .tklist{display:flex;max-height:min(62vh,420px);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y}
+#tasks .tkhd{font-size:11px;color:#9fe0ff;line-height:1.35;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,.1)}
 #tasks .tksum{display:inline-block;padding:2px 10px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1)}
 #tasks .tksum.ping{animation:tkping 1.2s ease-out 2}@keyframes tkping{0%{background:rgba(255,215,106,.55)}100%{background:rgba(255,255,255,.06)}}
 #tasks .tkhide{display:block;text-align:center;font-size:11px;color:#9aa0a6;margin-top:2px}
@@ -377,6 +378,14 @@ body:not(.touch) #hTL .items{flex-wrap:wrap;gap:1px 10px}body:not(.touch):not([d
 .shop .sc small{grid-area:d;font-size:11px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .shop .sc .sb{grid-area:b;flex-direction:column;margin:0;gap:4px}.shop .sbtn{min-height:34px;padding:3px 9px;flex:none;min-width:118px}.shop .sbtn b{font-size:12.5px}.shop .sbtn span{font-size:11px}
 .shop .sfree{padding:0;white-space:nowrap}
+/* (round 36f) no hint lines on the cards — long-press (right-click) one for its details; medkit on top, the four grenades in one row; the vehicle tab opens with fuel / ammo / mech upkeep */
+.modal .card.shop{position:relative}.shop .sc[data-k],.shop .sres{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.shop .sc{grid-template-areas:"h b"}.shop .sc.smed{grid-column:1/-1;border-color:#5a8a5a;background:rgba(80,140,80,.12)}
+.sgrid2{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.sgrid2 .sc{grid-template-columns:1fr;grid-template-areas:"h" "b";gap:4px}.sgrid2 .sc .sh{justify-content:space-between}.sgrid2 .sbtn{min-width:0!important;width:100%}
+.stop{grid-column:1/-1;display:flex;flex-direction:column;gap:5px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+.sres{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:5px 8px;border-left:3px solid var(--amber);background:rgba(255,190,90,.07);border-radius:4px;font-size:13px}.sres b{font-size:14px;min-width:3.5em}.sres span{white-space:nowrap;color:#e8dcc6}.sres span.lo{color:#ff8a7a;font-weight:700}.sres .sbtn{min-width:0!important;min-height:30px;margin-left:auto}.sres .sbtn+.sbtn{margin-left:0}
+.stip{position:absolute;left:12px;right:12px;z-index:6;background:#211d19;border:1px solid var(--amber);border-radius:8px;padding:10px 12px;box-shadow:0 8px 24px rgba(0,0,0,.6);font-size:13px;line-height:1.5;display:flex;flex-direction:column;gap:6px}.stip>b{font-size:15px;color:var(--amber)}.stip i{font-style:normal;font-size:11px;color:#9a8e7c;text-align:right}.stip .sbtn{align-self:flex-start}
+@media (max-width:600px){.sgrid2{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .squick{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:2px 0 6px;border-bottom:1px solid var(--line)}.squick i{font-style:normal;font-size:12px;color:var(--amber);margin-right:2px}
 .squick .sbtn{flex:none;min-width:0;min-height:32px;padding:2px 8px;gap:8px}
 @media (max-height:520px){.modal .card.shop{padding:8px 10px;gap:6px}.shop .shead h3{font-size:16px}.ctabs button{min-height:30px;font-size:13px}.shop .sc small{display:none}.shop .sc{padding:4px 7px}.shop .sbtn{min-height:30px;min-width:100px}.clist{gap:5px}}
@@ -432,7 +441,7 @@ body:not(.touch) #hTL .items{flex-wrap:wrap;gap:1px 10px}body:not(.touch):not([d
   <div id="tFire" class="fight" data-g="点=一发 · 按住=连射 · 拖=选目标"><i></i><span>射击</span></div>
   <button id="tReload" class="tb fight old">换弹</button>
   <button id="tNade" class="tb fight" data-g="点=扔向尸堆 · 拖=瞄准">手雷<small id="tNadeN">1</small></button>
-  <button id="tShove" class="tb fight" data-g="点=近战 · 滑一下=刀/盾">刀</button>
+  <button id="tShove" class="tb fight" data-g="点=近战（刀）">刀</button>
   <button id="tJump" class="tb fight old">跳</button>
   <button id="tWpn" class="tb fight" data-g="点=换枪 · 拖=选枪"><b>手枪</b><span>∞</span></button>
   <button id="tUse" class="tb fight" data-g="交互"><b></b><span>交互</span></button>
@@ -478,14 +487,13 @@ body:not(.touch) #hTL .items{flex-wrap:wrap;gap:1px 10px}body:not(.touch):not([d
 </div>
 
 <div id="craft" class="modal hidden">
-  <div class="card shop"><div class="shead"><h3>商店</h3><div class="lbl" id="cres"></div></div><div class="ctabs" id="ctabs"></div><div class="clist" id="clist"></div><button id="craftClose" class="ghost">关闭 <span class="kbd">(C)</span></button><div class="bmhint" style="text-align:center;margin-top:4px">点旁边空白处也能关闭</div></div>
+  <div class="card shop"><div class="shead"><h3>商店</h3><div class="lbl" id="cres"></div></div><div class="ctabs" id="ctabs"></div><div class="clist" id="clist"></div><div id="stip" class="stip hidden"></div><button id="craftClose" class="ghost">关闭 <span class="kbd">(C)</span></button><div class="bmhint" style="text-align:center;margin-top:4px">长按（右键）物品看详情 · 点旁边空白处关闭</div></div>
 </div>
 <div id="kit" class="modal hidden">
   <div class="card kitc"><h3>装备</h3>
     <div class="lbl">快捷武器（先点一个格子，再点下面的枪放进去）<span class="kbd"> · 电脑按 1–4 切换，Z 切回上一把</span><span class="tch"> · 触屏点武器键换下一把，拖武器键选</span></div>
     <div class="kslots" id="kslots"></div><div class="kwpn" id="kwpn"></div>
     <div class="lbl">默认载具（T / 「载具」就上这辆）</div><div class="kveh" id="kveh"></div>
-    <div class="lbl">近战（右键 / V，触屏「刀 / 盾」键；X 切换）</div><div class="kveh" id="kshield"></div>
     <button id="kitClose" class="ghost">关闭 <span class="kbd">(I)</span></button></div>
 </div>
 <div id="modesel" class="modal hidden"><div class="card mscard"><h3>选择模式</h3><div class="mgrid" id="mGrid"></div><h3>选择地图 <small id="mapHint" class="lbl"></small></h3><div class="mapgrid" id="mapGrid"></div><button id="msOk" class="primary">确定</button></div></div>

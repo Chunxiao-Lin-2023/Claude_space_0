@@ -31,7 +31,7 @@ function noise(dur, vol, ft = 'lowpass', f0 = 2000, f1 = f0, Q = 1, delay = 0) {
   const g = C.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
   s.connect(f); f.connect(g); g.connect(AU.master); s.start(t, Math.random() * 0.5); s.stop(t + dur + 0.05);
 }
-const LIM = { pistol: 0.04, rifle: 0.05, shotgun: 0.05, flesh: 0.05, bash: 0.08, zdie: 0.08, brk: 0.05, build: 0.04, groan: 1.2 };
+const LIM = { gyro: 0.05, mstep: 0.12, mclang: 0.06, pistol: 0.04, rifle: 0.05, shotgun: 0.05, flesh: 0.05, bash: 0.08, zdie: 0.08, brk: 0.05, build: 0.04, groan: 1.2 };
 function sfx(n, x, y) {
   if (!AU.ctx || SET.mute || (W && W.demo)) return;
   const now = AU.ctx.currentTime; if (LIM[n] && AU.last[n] && now - AU.last[n] < LIM[n]) return; AU.last[n] = now;
@@ -39,13 +39,13 @@ function sfx(n, x, y) {
   if (x != null && W && W.p[ME]) { const me = W.p[ME]; v = clamp(1 - d2(x, y, me.x, me.y) / 30, 0.12, 1); }
   const r = 1 + (Math.random() - 0.5) * 0.16, hurt = W && W.p[ME] ? 1 + (1 - W.p[ME].hp / W.p[ME].maxHp) * 0.3 : 1;
   switch (n) {
-    case 'pistol': noise(0.12, 0.5 * v, 'bandpass', 2400 * r, 600, 0.8); tone('square', 180 * r, 60, 0.08, 0.18 * v); break;
-    case 'shotgun': noise(0.32, 0.8 * v, 'lowpass', 3000 * r, 300, 0.7); tone('sawtooth', 110 * r, 40, 0.18, 0.3 * v, 0, 800); break;
-    case 'rifle': noise(0.09, 0.45 * v, 'bandpass', 3000 * r, 900, 0.9); tone('square', 150 * r, 70, 0.06, 0.14 * v); break;
-    case 'sniper': noise(0.5, 0.85 * v, 'lowpass', 5000 * r, 200, 0.6); tone('sawtooth', 220 * r, 50, 0.3, 0.3 * v, 0, 1500); noise(0.6, 0.15 * v, 'bandpass', 900, 300, 2, 0.12); break;
-    case 'crossbow': tone('triangle', 420 * r, 120, 0.12, 0.25 * v); noise(0.08, 0.25 * v, 'highpass', 2500, 2500, 1); break;
-    case 'flamer': noise(0.3, 0.32 * v, 'lowpass', 900 * r, 400, 0.7); noise(0.25, 0.12 * v, 'bandpass', 2400, 1800, 2); break;
-    case 'launcher': noise(0.25, 0.6 * v, 'lowpass', 700 * r, 150, 0.7); tone('sine', 140 * r, 60, 0.2, 0.4 * v); break;
+    case 'pistol': noise(0.05, 0.42 * v, 'bandpass', 3200 * r, 1800, 1.2); noise(0.16, 0.32 * v, 'lowpass', 1500 * r, 260, 0.8); tone('sine', 150 * r, 55, 0.09, 0.3 * v); noise(0.35, 0.05 * v, 'lowpass', 700, 200, 0.7, 0.06); break; // (round 36f) a dry pop: crack + body + thump + a short room tail
+    case 'shotgun': noise(0.07, 0.6 * v, 'bandpass', 2400 * r, 1200, 0.9); noise(0.38, 0.75 * v, 'lowpass', 2400 * r, 180, 0.7); tone('sine', 95 * r, 38, 0.24, 0.55 * v); noise(0.6, 0.1 * v, 'lowpass', 500, 120, 0.7, 0.1); noise(0.05, 0.12 * v, 'highpass', 3000, 3000, 2, 0.32); tone('triangle', 520, 380, 0.04, 0.05 * v, 0.34); break; // (round 36f) a big boom, then the pump clacks
+    case 'rifle': noise(0.04, 0.4 * v, 'bandpass', 3800 * r, 2200, 1.4); noise(0.11, 0.3 * v, 'lowpass', 1900 * r, 400, 0.9); tone('sine', 130 * r, 60, 0.06, 0.22 * v); break; // (round 36f) a tight snap for the fast fire
+    case 'sniper': noise(0.04, 0.75 * v, 'highpass', 4500 * r, 2500, 0.8); noise(0.4, 0.75 * v, 'lowpass', 3500 * r, 160, 0.6); tone('sine', 110 * r, 40, 0.3, 0.5 * v); noise(0.9, 0.16 * v, 'lowpass', 900, 120, 0.6, 0.14); noise(0.6, 0.08 * v, 'lowpass', 600, 100, 0.6, 0.42); break; // (round 36f) a sharp crack that rolls away, with an echo
+    case 'crossbow': tone('triangle', 260 * r, 110, 0.09, 0.22 * v); noise(0.05, 0.22 * v, 'bandpass', 1800, 900, 2); noise(0.18, 0.1 * v, 'bandpass', 3500, 6000, 3, 0.02); break; // (round 36f) a twang and the bolt hissing off
+    case 'flamer': noise(0.34, 0.3 * v, 'lowpass', 1200 * r, 350, 0.6); noise(0.3, 0.1 * v, 'bandpass', 2200, 1400, 1.5); tone('sine', 70 * r, 55, 0.3, 0.12 * v); break; // (round 36f) a roaring whoosh
+    case 'launcher': noise(0.08, 0.35 * v, 'bandpass', 900 * r, 500, 1.5); tone('sine', 180 * r, 70, 0.18, 0.45 * v); noise(0.3, 0.25 * v, 'lowpass', 600, 150, 0.7); break; // (round 36f) a hollow 'thoonk'
     case 'scream': tone('sawtooth', 900 * r, 1500, 0.7, 0.18 * v, 0, 2400); tone('square', 640 * r, 1200, 0.6, 0.08 * v, 0.05, 1800); noise(0.6, 0.15 * v, 'bandpass', 2600, 3200, 3); break;
     case 'caw': tone('sawtooth', 620 * r, 420 * r, 0.18, 0.12 * v, 0, 1400); tone('sawtooth', 560 * r, 380 * r, 0.16, 0.1 * v, 0.2, 1300); break; // (round 35) crows
     case 'screech': tone('square', 2200 * r, 3200 * r, 0.22, 0.06 * v, 0, 4000); noise(0.2, 0.08 * v, 'highpass', 3500, 3500, 2); break; // bats
@@ -54,6 +54,16 @@ function sfx(n, x, y) {
     case 'summon': tone('sawtooth', 60 * r, 40, 0.8, 0.16 * v, 0, 300); noise(0.7, 0.2 * v, 'lowpass', 400, 200, 1); break;
     case 'shield': tone('sine', 520 * r, 880 * r, 0.35, 0.12 * v); tone('sine', 780 * r, 1320 * r, 0.3, 0.06 * v, 0.05); break;
     case 'ambush': noise(0.18, 0.4 * v, 'bandpass', 900, 400, 1); tone('sawtooth', 160 * r, 60, 0.2, 0.2 * v, 0, 900); break;
+    case 'cannon': noise(0.06, 0.8 * v, 'bandpass', 1600 * r, 700, 0.8); tone('sine', 70 * r, 26, 0.55, 0.75 * v); noise(0.7, 0.75 * v, 'lowpass', 1100 * r, 60, 0.6); noise(1.1, 0.18 * v, 'lowpass', 400, 60, 0.6, 0.2); tone('triangle', 900, 700, 0.05, 0.04 * v, 0.6); break; // (round 36f) the tank / 重炮 cannon: a deep blast, a rolling tail, the breech clank
+    case 'gyro': noise(0.04, 0.3 * v, 'bandpass', 2800 * r, 1800, 1.2); tone('sine', 160 * r, 80, 0.05, 0.18 * v); break; // (round 36f) the gyrocopter's gun: lighter, faster
+    case 'mswing': noise(0.3, 0.32 * v, 'bandpass', 500 * r, 1500, 1.2); tone('sine', 90 * r, 140, 0.22, 0.12 * v); noise(0.06, 0.08 * v, 'highpass', 3000, 3000, 2, 0.0); break; // (round 36f) a heavy mech arm swinging (servo + air)
+    case 'mslash': noise(0.2, 0.3 * v, 'bandpass', 5200 * r, 1200, 2); tone('sine', 2600 * r, 2200, 0.35, 0.05 * v, 0.02); tone('sine', 3900 * r, 3400, 0.3, 0.03 * v, 0.03); break; // (round 36f) 赤刃's 太刀: a ringing 'shing' and the cut
+    case 'mclang': noise(0.06, 0.4 * v, 'bandpass', 2400 * r, 1400, 2); tone('triangle', 620 * r, 520, 0.18, 0.1 * v); tone('sine', 80 * r, 40, 0.18, 0.4 * v); break; // (round 36f) a mech blow landing: metal on meat
+    case 'xform': [0, 0.25, 0.5, 0.75].forEach((d, i) => { noise(0.07, 0.18, 'bandpass', 1200 + i * 300, 900, 2, d); tone('triangle', 300 + i * 90, 260 + i * 90, 0.06, 0.06, d + 0.02); }); tone('sawtooth', 120, 520, 0.95, 0.04, 0, 1400); break; // (round 36f) the transformation: a rising servo whine and four clunks
+    case 'mstep': noise(0.14, 0.3 * v, 'lowpass', 400 * r, 80, 1); tone('sine', 60 * r, 35, 0.14, 0.4 * v); noise(0.05, 0.05 * v, 'highpass', 2500, 2500, 2, 0.01); break; // (round 36f) a mech footfall with a hiss of hydraulics
+    case 'parcel': noise(0.06, 0.25 * v, 'bandpass', 900 * r, 600, 1.5); tone('triangle', 420 * r, 300, 0.07, 0.1 * v); noise(0.2, 0.1 * v, 'bandpass', 2400, 1800, 1.5, 0.04); break; // (round 36f) 工蜂's parcels: a pop and a rustle
+    case 'thunk': noise(0.08, 0.22 * v, 'lowpass', 900 * r, 250, 1.2); tone('triangle', 240 * r, 150, 0.08, 0.12 * v); break; // (round 36f) something landing in the trike's bed / 工蜂's rack
+    case 'mdash': noise(0.35, 0.35 * v, 'bandpass', 700 * r, 2600, 1); tone('sawtooth', 160, 420, 0.25, 0.04 * v, 0, 1500); break;
     case 'jump': noise(0.12, 0.14, 'bandpass', 900, 1600, 1.5); break;
     case 'heart': tone('sine', 70, 45, 0.11, 0.32); tone('sine', 62, 40, 0.12, 0.26, 0.17); break; // (round 34d) low-health heartbeat
     case 'vault': noise(0.2, 0.18, 'bandpass', 700, 1300, 1.2); tone('triangle', 200, 160, 0.08, 0.06, 0.1); break;
@@ -62,11 +72,11 @@ function sfx(n, x, y) {
     case 'empty': tone('square', 1300, 1100, 0.03, 0.12); break;
     case 'reload': tone('square', 600 * r, 500, 0.04, 0.1 * v); noise(0.05, 0.2 * v, 'highpass', 3000, 3000, 1, 0.12); tone('square', 900 * r, 700, 0.05, 0.12 * v, 0.35); break;
     case 'swap': noise(0.06, 0.2, 'highpass', 2500); tone('triangle', 500, 700, 0.05, 0.08, 0.04); break;
-    case 'flesh': noise(0.08, 0.28 * v, 'lowpass', 900 * r, 300); break;
-    case 'head': noise(0.1, 0.4 * v, 'lowpass', 1400 * r, 300); tone('sine', 160, 60, 0.1, 0.25 * v); break;
-    case 'zdie': tone('sawtooth', 160 * r, 60, 0.4, 0.14 * v, 0, 600); noise(0.25, 0.18 * v, 'lowpass', 500, 150); break;
-    case 'bigdie': tone('sawtooth', 90 * r, 30, 0.9, 0.3 * v, 0, 500); noise(0.6, 0.35 * v, 'lowpass', 400, 80); break;
-    case 'groan': tone('sawtooth', (90 + Math.random() * 40) * r, 70 * r, 0.9, 0.06 * v, 0, 380); break;
+    case 'flesh': noise(0.07, 0.3 * v, 'lowpass', 1100 * r, 250, 1.2); tone('sine', 120 * r, 70, 0.05, 0.12 * v); break;
+    case 'head': noise(0.05, 0.35 * v, 'bandpass', 1800 * r, 600, 1.5); noise(0.12, 0.35 * v, 'lowpass', 1200 * r, 220); tone('sine', 170, 60, 0.1, 0.25 * v); tone('triangle', 1400, 1400, 0.05, 0.05 * v, 0.02); break; // (round 36f) a crunch with a little 'tink' so a headshot reads
+    case 'zdie': noise(0.12, 0.3 * v, 'lowpass', 900 * r, 200, 1); tone('sawtooth', 140 * r, 55, 0.45, 0.1 * v, 0.02, 500); noise(0.22, 0.16 * v, 'lowpass', 400, 90, 0.8, 0.25); break; // (round 36f) a wet hit, a dying moan, the body dropping
+    case 'bigdie': tone('sawtooth', 85 * r, 28, 1.0, 0.26 * v, 0, 420); noise(0.4, 0.3 * v, 'lowpass', 500, 90, 0.8); noise(0.7, 0.4 * v, 'lowpass', 300, 50, 0.7, 0.45); tone('sine', 55, 28, 0.5, 0.45 * v, 0.45); break; // (round 36f) a long bellow, then the ground shakes when it falls
+    case 'groan': { const f = (80 + Math.random() * 45) * r; tone('sawtooth', f, f * 0.78, 1.0, 0.05 * v, 0, 330); tone('sawtooth', f * 1.012, f * 0.8, 1.0, 0.035 * v, 0.03, 420); noise(0.9, 0.035 * v, 'bandpass', 380 * r, 260, 5); break; } // (round 36f) two throats a hair out of tune and a breath: wetter, less buzzy
     case 'bash': noise(0.12, 0.42 * v, 'lowpass', 700 * r, 200, 1); tone('sine', 90 * r, 50, 0.1, 0.2 * v); break;
     case 'smash': noise(0.3, 0.7 * v, 'lowpass', 600 * r, 90, 1); tone('sine', 60 * r, 30, 0.3, 0.45 * v); break;
     case 'brk': noise(0.35, 0.5 * v, 'lowpass', 1600 * r, 200, 0.8); tone('triangle', 200 * r, 60, 0.2, 0.15 * v); break;
@@ -93,7 +103,7 @@ function sfx(n, x, y) {
     case 'spit': noise(0.25, 0.25 * v, 'bandpass', 600 * r, 1500, 3); break;
     case 'acid': noise(0.3, 0.25 * v, 'highpass', 2500 * r, 6000, 1); break;
     case 'rhit': tone('square', 880, 880, 0.08, 0.12); tone('square', 660, 660, 0.08, 0.12, 0.1); noise(0.1, 0.25, 'bandpass', 2000); break;
-    case 'slash': noise(0.13, 0.22, 'bandpass', 2600, 900, 1.2); break;
+    case 'slash': noise(0.16, 0.24, 'bandpass', 3800, 900, 1.6); break; // (round 36f) a whoosh that falls
     case 'stab': noise(0.1, 0.22, 'bandpass', 2600, 900, 1.2); noise(0.09, 0.45, 'lowpass', 1400, 260); tone('square', 170, 70, 0.07, 0.18); break;
     case 'land': noise(0.08, 0.12, 'lowpass', 500); break;
     case 'chop': noise(0.12, 0.35 * v, 'bandpass', 900 * r, 500, 2); tone('triangle', 180 * r, 120, 0.1, 0.18 * v); noise(0.5, 0.25 * v, 'lowpass', 600, 120, 1, 0.15); break;

@@ -530,6 +530,18 @@ function drawPlayers(vl, dt) {
         }
       }
     }
+    if (p._tossT != null && p._tossT < 0.95 && RP && !pil) { const g = p._tossT += dt; // (round 36f) cargo trike: reach out and down for it, swing it up over the right shoulder, lob it back into the bed
+      const w = g < 0.12 ? g / 0.12 : g > 0.78 ? Math.max(0, 1 - (g - 0.78) / 0.17) : 1, a = ease(clamp(g / 0.3, 0, 1)), b = ease(clamp((g - 0.3) / 0.28, 0, 1)), c = ease(clamp((g - 0.58) / 0.2, 0, 1));
+      const tx = lerp(lerp(0.32, 0.05, b), -0.22, c), ty = lerp(lerp(-0.42, 0.42, b), 0.3, c), tz = lerp(0.3, 0.18, b);
+      rx = lerp(rx, tx, w); ry = lerp(ry, ty, w); rz = lerp(rz, tz, w); m.torso.rotation.y += w * (0.35 * a - 0.75 * b + 0.3 * c); m.torso.rotation.z += w * (0.25 * a * (1 - b)); m.head.rotation.y += w * (0.5 * b);
+      if (!m.toss) { const h = m.toss = new THREE.Group(), bx = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.17, 0.2), new THREE.MeshLambertMaterial({ color: '#b8893a' })); h.add(bx); h.userData.mat = bx.material; const tp = new THREE.Mesh(new THREE.BoxGeometry(0.205, 0.035, 0.205), new THREE.MeshLambertMaterial({ color: '#e8d9a8' })); h.add(tp); SCN.add(h); }
+      const on = g > 0.16 && g < 0.86; m.toss.visible = on;
+      if (on) { m.toss.userData.mat.color.set(p._grabCol || '#b8893a'); m.g.updateMatrixWorld(true);
+        if (g < 0.58) { m.aim.localToWorld(_v1.set(rx, ry, rz)); m.toss.position.copy(_v1); m.toss.position.y -= 0.06; m.toss.rotation.set(0, 0, 0); (m.tossP || (m.tossP = new THREE.Vector3())).copy(m.toss.position); }
+        else { const f = (g - 0.58) / 0.28, V = m.veh && m.veh.userData.all[3], bed = V && V.userData.S.bed; if (bed) bed.getWorldPosition(_v1); else _v1.copy(m.tossP); _v1.y += 0.12; m.toss.position.lerpVectors(m.tossP, _v1, f); m.toss.position.y += Math.sin(f * Math.PI) * 0.75; m.toss.rotation.set(f * 4, f * 1.5, f * 6); } }
+      if (g >= 0.86 && !p._tossLand) { p._tossLand = 1; if (p.i === ME) sfx('thunk'); const V = m.veh && m.veh.userData.all[3], bed = V && V.userData.S.bed; if (bed) { bed.getWorldPosition(_v1); for (let k = 0; k < 5; k++) addP({ x: _v1.x, y: _v1.z, z: _v1.y + 0.15, vx: frnd(-1.2, 1.2), vy: frnd(-1.2, 1.2), vz: frnd(0.6, 1.8), col: k % 2 ? '#fff0b0' : p._grabCol || '#b8893a', s: 0.06, life: 0.35 }); } }
+      if (g < 0.5) p._tossLand = 0; }
+    else if (m.toss) m.toss.visible = false;
     ikArm(m.arms[1], rx, ry, rz, 1); ikArm(m.arms[0], lx, ly, lz, -1);
   });
   for (const p of W.p) { if (p._throwT > 0) p._throwT -= dt; if (p._swingT > 0) p._swingT -= dt; }

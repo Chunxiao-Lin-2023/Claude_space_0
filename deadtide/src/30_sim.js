@@ -15,7 +15,7 @@ function newWorld(seed, names, diff, mode) {
     seed, t: 0, G: m.G, tt: m.tt, blk: m.blk, bhp: m.bhp, slab: m.slab, shp: m.shp, bdir: m.bdir, stab: new Int8Array(NC), srch: new Set(),
     radio: { x: m.radio.x, y: m.radio.y }, bench: m.bench, tasks: [], tkv: 0, clean: true,
     p: names.map((n, i) => mkPlayer(i, n)), zs: [], proj: [], zid: 1, gid: 0,
-    phase: 'day', clock: BAL.dayLen[0], dayLen: BAL.dayLen[0], night: 0, res: Object.assign({}, BAL.startRes), upg: 0, kills: 0,
+    phase: 'day', clock: BAL.dayLen[0], dayLen: BAL.dayLen[0], night: 0, res: Object.assign({}, BAL.startRes), upg: BAL.upgStart, kills: 0,
     spawnQ: [], nightT: 0, strayT: 8, diff, D: BAL.diff[diff] || BAL.diff.normal, rng: mulberry(seed ^ 0x9e3779b9), seq: 0,
     dirty: new Set(), endless: false, over: null, stats: { built: 0, lost: 0 }, navDirty: true, ver: 1,
     ff: { rw: new Float32Array(NC), rc: new Float32Array(NC), pw: new Float32Array(NC), pc: new Float32Array(NC), rT: 0, pT: 0 },
@@ -529,16 +529,17 @@ function completeUse(p, tgt) {
 /* ---------- (round 32) permanent tasks: the counters build up over the whole run, every tier reached is a permanent team upgrade ---------- */
 // W.perm[k] = { got, tier }, W.perk[upgrade] = level; W.tasks is just what the panel shows (same shape as the old daily tasks, so the sync and save code stay)
 function rollTasks() {
-  W.perm = W.perm || {}; W.perk = W.perk || { hp: 0, bag: 0, med: 0, nade: 0, life: 0 };
+  W.perm = W.perm || {}; W.perk = W.perk || { hp: 0, bag: 0, med: 0, nade: 0, life: 0, upg: 0 };
   const rows = [];
   for (const P of PERM) { const q = W.perm[P.k] || (W.perm[P.k] = { got: 0, tier: 0 }); if (q.tier >= P.need.length) continue; const need = P.need[q.tier]; rows.push({ k: P.k, need, got: Math.min(q.got, need), done: 0, txt: P.name + ' ' + need + (P.need.length > 1 ? '（' + (q.tier + 1) + '/' + P.need.length + '）' : ''), rt: PERK[P.perk][0], f: q.got / need }); }
-  rows.sort((x, y) => y.f - x.f); W.tasks = rows.slice(0, 4); W.tkv++; // the four closest to done: a taller panel pushed the 准备入夜 button into the middle of the screen
+  rows.sort((x, y) => y.f - x.f); W.tasks = rows; W.tkv++; /* (round 36f) every task still open (the list scrolls) */ // the four closest to done: a taller panel pushed the 准备入夜 button into the middle of the screen
 }
 function grantPerk(k) {
   W.perk[k] = (W.perk[k] || 0) + 1;
   for (const p of W.p) { if (p.gone) continue;
     if (k === 'hp') { p.maxHp = BAL.pMaxHp; if (!p.dead && !p.down) p.hp = Math.min(p.maxHp, p.hp + PERK.hp[1]); }
     if (k === 'life') p.lives = (p.lives || 0) + 1; }
+  if (k === 'upg') W.upg = Math.min(BAL.upgMax, W.upg + 1);
   modeSay('永久提升：' + PERK[k][0], '#9fe0ff', true);
 }
 function taskAdd(k, n = 1) {
@@ -564,7 +565,7 @@ function payTask(t) {
     if (r.med) q.meds = Math.min(BAL.medCap, q.meds + r.med);
     if (r.nade) q.nades = Math.min(BAL.nadeCap, q.nades + r.nade);
   }
-  if (r.upg) W.upg = Math.min(5, W.upg + r.upg);
+  if (r.upg) W.upg = Math.min(BAL.upgMax, W.upg + r.upg);
   emit({ k: 'task', txt: t.txt, rt: t.rt });
 }
 /* ---------- bloaters: a burst that hurts people, zombies and walls ---------- */
@@ -908,7 +909,7 @@ function craftBlocked(p, c) {
   if (c.gam && (p.gam || 0) >= BAL.gyroCap) return '已满';
   if (c.nade && gCount(p, c.gt || 0) >= gCap(c.gt || 0)) return '已满';
   if (c.med && p.meds >= BAL.medCap) return '已满';
-  if (c.upg && W.upg >= 5) return '已满级';
+  if (c.upg && W.upg >= BAL.upgMax) return '已满级';
   if (!affordable(W.res, c.cost)) return '材料不足';
   return '';
 }

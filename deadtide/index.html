@@ -78,7 +78,8 @@ input:focus{border-color:var(--amber)}
 #tasks{position:relative;display:flex;flex-direction:column;align-items:center;width:100%;font-size:11.5px;color:var(--sub);text-align:left;cursor:pointer;pointer-events:auto}
 /* (round 33) the task list folds into a small pill; opened, it drops down over the scene instead of pushing the 准备入夜 button down */
 #tasks .tklist{position:absolute;top:calc(100% + 4px);left:50%;transform:translateX(-50%);width:min(300px,82vw);display:none;flex-direction:column;gap:4px;padding:8px 10px;background:rgba(14,16,20,.88);border:1px solid rgba(255,255,255,.12);border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.4);z-index:30}
-#tasks.open .tklist{display:flex}
+#tasks.open .tklist{display:flex;max-height:min(62vh,420px);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y}
+#tasks .tkhd{font-size:11px;color:#9fe0ff;line-height:1.35;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,.1)}
 #tasks .tksum{display:inline-block;padding:2px 10px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1)}
 #tasks .tksum.ping{animation:tkping 1.2s ease-out 2}@keyframes tkping{0%{background:rgba(255,215,106,.55)}100%{background:rgba(255,255,255,.06)}}
 #tasks .tkhide{display:block;text-align:center;font-size:11px;color:#9aa0a6;margin-top:2px}
@@ -380,6 +381,14 @@ body:not(.touch) #hTL .items{flex-wrap:wrap;gap:1px 10px}body:not(.touch):not([d
 .shop .sc small{grid-area:d;font-size:11px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .shop .sc .sb{grid-area:b;flex-direction:column;margin:0;gap:4px}.shop .sbtn{min-height:34px;padding:3px 9px;flex:none;min-width:118px}.shop .sbtn b{font-size:12.5px}.shop .sbtn span{font-size:11px}
 .shop .sfree{padding:0;white-space:nowrap}
+/* (round 36f) no hint lines on the cards — long-press (right-click) one for its details; medkit on top, the four grenades in one row; the vehicle tab opens with fuel / ammo / mech upkeep */
+.modal .card.shop{position:relative}.shop .sc[data-k],.shop .sres{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.shop .sc{grid-template-areas:"h b"}.shop .sc.smed{grid-column:1/-1;border-color:#5a8a5a;background:rgba(80,140,80,.12)}
+.sgrid2{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.sgrid2 .sc{grid-template-columns:1fr;grid-template-areas:"h" "b";gap:4px}.sgrid2 .sc .sh{justify-content:space-between}.sgrid2 .sbtn{min-width:0!important;width:100%}
+.stop{grid-column:1/-1;display:flex;flex-direction:column;gap:5px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+.sres{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:5px 8px;border-left:3px solid var(--amber);background:rgba(255,190,90,.07);border-radius:4px;font-size:13px}.sres b{font-size:14px;min-width:3.5em}.sres span{white-space:nowrap;color:#e8dcc6}.sres span.lo{color:#ff8a7a;font-weight:700}.sres .sbtn{min-width:0!important;min-height:30px;margin-left:auto}.sres .sbtn+.sbtn{margin-left:0}
+.stip{position:absolute;left:12px;right:12px;z-index:6;background:#211d19;border:1px solid var(--amber);border-radius:8px;padding:10px 12px;box-shadow:0 8px 24px rgba(0,0,0,.6);font-size:13px;line-height:1.5;display:flex;flex-direction:column;gap:6px}.stip>b{font-size:15px;color:var(--amber)}.stip i{font-style:normal;font-size:11px;color:#9a8e7c;text-align:right}.stip .sbtn{align-self:flex-start}
+@media (max-width:600px){.sgrid2{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .squick{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:2px 0 6px;border-bottom:1px solid var(--line)}.squick i{font-style:normal;font-size:12px;color:var(--amber);margin-right:2px}
 .squick .sbtn{flex:none;min-width:0;min-height:32px;padding:2px 8px;gap:8px}
 @media (max-height:520px){.modal .card.shop{padding:8px 10px;gap:6px}.shop .shead h3{font-size:16px}.ctabs button{min-height:30px;font-size:13px}.shop .sc small{display:none}.shop .sc{padding:4px 7px}.shop .sbtn{min-height:30px;min-width:100px}.clist{gap:5px}}
@@ -628,7 +637,7 @@ body:not(.touch) #hTL .items{flex-wrap:wrap;gap:1px 10px}body:not(.touch):not([d
   <div id="tFire" class="fight" data-g="点=一发 · 按住=连射 · 拖=选目标"><i></i><span>射击</span></div>
   <button id="tReload" class="tb fight old">换弹</button>
   <button id="tNade" class="tb fight" data-g="点=扔向尸堆 · 拖=瞄准">手雷<small id="tNadeN">1</small></button>
-  <button id="tShove" class="tb fight" data-g="点=近战 · 滑一下=刀/盾">刀</button>
+  <button id="tShove" class="tb fight" data-g="点=近战（刀）">刀</button>
   <button id="tJump" class="tb fight old">跳</button>
   <button id="tWpn" class="tb fight" data-g="点=换枪 · 拖=选枪"><b>手枪</b><span>∞</span></button>
   <button id="tUse" class="tb fight" data-g="交互"><b></b><span>交互</span></button>
@@ -674,14 +683,13 @@ body:not(.touch) #hTL .items{flex-wrap:wrap;gap:1px 10px}body:not(.touch):not([d
 </div>
 
 <div id="craft" class="modal hidden">
-  <div class="card shop"><div class="shead"><h3>商店</h3><div class="lbl" id="cres"></div></div><div class="ctabs" id="ctabs"></div><div class="clist" id="clist"></div><button id="craftClose" class="ghost">关闭 <span class="kbd">(C)</span></button><div class="bmhint" style="text-align:center;margin-top:4px">点旁边空白处也能关闭</div></div>
+  <div class="card shop"><div class="shead"><h3>商店</h3><div class="lbl" id="cres"></div></div><div class="ctabs" id="ctabs"></div><div class="clist" id="clist"></div><div id="stip" class="stip hidden"></div><button id="craftClose" class="ghost">关闭 <span class="kbd">(C)</span></button><div class="bmhint" style="text-align:center;margin-top:4px">长按（右键）物品看详情 · 点旁边空白处关闭</div></div>
 </div>
 <div id="kit" class="modal hidden">
   <div class="card kitc"><h3>装备</h3>
     <div class="lbl">快捷武器（先点一个格子，再点下面的枪放进去）<span class="kbd"> · 电脑按 1–4 切换，Z 切回上一把</span><span class="tch"> · 触屏点武器键换下一把，拖武器键选</span></div>
     <div class="kslots" id="kslots"></div><div class="kwpn" id="kwpn"></div>
     <div class="lbl">默认载具（T / 「载具」就上这辆）</div><div class="kveh" id="kveh"></div>
-    <div class="lbl">近战（右键 / V，触屏「刀 / 盾」键；X 切换）</div><div class="kveh" id="kshield"></div>
     <button id="kitClose" class="ghost">关闭 <span class="kbd">(I)</span></button></div>
 </div>
 <div id="modesel" class="modal hidden"><div class="card mscard"><h3>选择模式</h3><div class="mgrid" id="mGrid"></div><h3>选择地图 <small id="mapHint" class="lbl"></small></h3><div class="mapgrid" id="mapGrid"></div><button id="msOk" class="primary">确定</button></div></div>
@@ -5080,7 +5088,7 @@ const ZT = {
   shade: { name: '隐身者', hp: 420, spd: 1.5, r: 0.3, h: 1.25, dmg: 12, bdmg: 10, cd: 0.9, sc: 1.2, look: 'walker', skin: '#50505e', elite: { k: 'cloak', cd: 6, col: '#c0c0e0', tip: '隐身摸到你身边偷袭，留意空气里的扭曲，附近炸一下就现形' } },
 };
 const ELITES = ['blinker', 'caller', 'warden', 'shade'];
-const BUILD_TAG = '第 36 轮之五'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
+const BUILD_TAG = '第 36 轮之六'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
 // aim assist (SET.assist): fire-button lock range (x weapon range), lock-on time before it fires, spread while auto-aimed, mouse/finger magnet
 const PORT = 1.25; // firing port: your own shots pass a wall / door you built if it is this close to you
 const ASSIST = [{ name: '关', range: 0, acq: 0, spread: 1, mag: 0 }, { name: '标准', range: 0.75, acq: 0.3, spread: 1.5, mag: 1 }, { name: '强', range: 1, acq: 0, spread: 1, mag: 1 }];
@@ -5111,11 +5119,11 @@ const PERM = [
   { k: 'build', name: '建造 / 放置', need: [40, 150, 400], perk: 'med' },
   { k: 'nade', name: '用手雷炸死丧尸', need: [15, 60, 160], perk: 'nade' },
   { k: 'clean', name: '整夜没有人倒下', need: [2, 5, 9], perk: 'life' },
-  { k: 'elite', name: '击杀精英（重锤、防暴尸、尸王）', need: [5, 20, 50], perk: 'hp' },
-  { k: 'shove', name: '刀 / 盾命中', need: [50, 200, 500], perk: 'bag' },
+  { k: 'elite', name: '击杀精英（重锤、防暴尸、尸王）', need: [5, 20, 50], perk: 'upg' }, // (round 36f) raises 强化弹头 (the shop no longer sells it)
+  { k: 'shove', name: '刀命中', need: [50, 200, 500], perk: 'bag' },
   { k: 'gather', name: '砍树、采石', need: [30, 100, 250], perk: 'med' },
 ];
-const PERK = { hp: ['生命上限 +10', 10], bag: ['背包：弹药上限 +25%', 0.25], med: ['医疗包上限 +2', 2], nade: ['手雷上限 +3（特殊手雷各 +2）', 3], life: ['复活次数 +1', 1] };
+const PERK = { hp: ['生命上限 +10', 10], bag: ['背包：弹药上限 +25%', 0.25], med: ['医疗包上限 +2', 2], nade: ['手雷上限 +3（特殊手雷各 +2）', 3], life: ['复活次数 +1', 1], upg: ['强化弹头 +1（全队伤害 +12%）', 1] };
 const perkLv = k => (typeof W !== 'undefined' && W && W.perk && W.perk[k]) || 0;
 // carry limits grow with the upgrades (read through getters so every place that checks a cap sees the current one)
 const ammoCap = wi => Math.round((WPN[wi].gl ? 60 : 500) * (1 + PERK.bag[1] * perkLv('bag'))); // (round 33) 500 rounds a gun (grenade launcher 100), +25% per backpack upgrade
@@ -5181,7 +5189,6 @@ const CRAFT = [
   { id: 'gsmoke', cat: 'item', name: '烟雾弹 ×2', desc: '一团烟 10 秒，里面的丧尸找不到你、不咬人；最多 8 颗', cost: { wood: 2, parts: 2 }, nade: 2, gt: 2 },
   { id: 'gblast', cat: 'item', name: '爆破弹 ×2', desc: '把一大片丧尸炸飞 3–5 格、晕 1.6 秒，清出一条路；最多 8 颗', cost: { parts: 4, steel: 2 }, nade: 2, gt: 3 },
   { id: 'med', cat: 'item', name: '医疗包', desc: '回复 60 生命，最多带 8 个；H 用，也能救回阵亡的队友', cost: { parts: 3, wood: 2 }, med: 1 },
-  { id: 'shield', cat: 'melee', name: '防暴盾', desc: '近战武器（和刀二选一）：猛推前方一片丧尸，撞开 3 格、晕 1 秒；拿着它时正面挨打少受一半', cost: { steel: 6, parts: 4 }, shield: 1 },
   { id: 'bike', cat: 'veh', name: '自行车', desc: VEH[1].tag, cost: { wood: 6, steel: 6, parts: 4 }, veh: 1, bp: 'bike' },
   { id: 'moto', cat: 'veh', name: '摩托车', desc: VEH[2].tag, cost: { steel: 14, parts: 12 }, veh: 2, bp: 'moto' },
   { id: 'cargo', cat: 'veh', name: '货运三轮', desc: VEH[3].tag, cost: { wood: 8, steel: 10, parts: 8 }, veh: 3, bp: 'cargo' },
@@ -5190,12 +5197,13 @@ const CRAFT = [
   { id: 'tank', cat: 'veh', name: '坦克', desc: VEH[6].tag, cost: { steel: 40, parts: 30 }, veh: 6, bp: 'tank' },
   { id: 'mfix', cat: 'fuel', name: '修好机甲装甲', desc: '', cost: { steel: 8, parts: 8 }, mfix: 1 }, // (round 34b) all your mechs' hulls
   { id: 'mbat', cat: 'fuel', name: '给机甲充满电', desc: '', cost: { parts: 4 }, mbat: 1 },
-  { id: 'upg', cat: 'upg', name: '强化弹头', desc: '全队伤害 +12%（最多 5 级）', cost: { parts: 8 }, upg: 1 },
+  /* (round 36f) the riot shield and the 强化弹头 purchase are gone: the knife is the melee weapon, and the team starts at 弹头 Lv 3 (tasks raise it further) */
 ];
 
 /* ---------- balance ---------- */
 const BAL = {
   nights: 15,
+  upgStart: 3, upgMax: 6,         // (round 36f) 强化弹头 (+12% team damage a level) starts at 3 (was 0, bought up to 5 in the shop); the 击杀精英 task's three tiers push it to 6
   dayLen: [300, 240],            // first day, later days (seconds); (round 34b) from day 2 dayFor(n) shortens it
   dayFor: n => n <= 1 ? 300 : Math.max(150, 240 - (n - 1) * 12), // day n (after night n - 1): 240, 228, 216 … down to 150
   pMaxHp: 100, pSpeed: 4.4, pReach: 7.5, /* (round 25) 6.5 → 7.5 */
@@ -6223,7 +6231,7 @@ function newWorld(seed, names, diff, mode) {
     seed, t: 0, G: m.G, tt: m.tt, blk: m.blk, bhp: m.bhp, slab: m.slab, shp: m.shp, bdir: m.bdir, stab: new Int8Array(NC), srch: new Set(),
     radio: { x: m.radio.x, y: m.radio.y }, bench: m.bench, tasks: [], tkv: 0, clean: true,
     p: names.map((n, i) => mkPlayer(i, n)), zs: [], proj: [], zid: 1, gid: 0,
-    phase: 'day', clock: BAL.dayLen[0], dayLen: BAL.dayLen[0], night: 0, res: Object.assign({}, BAL.startRes), upg: 0, kills: 0,
+    phase: 'day', clock: BAL.dayLen[0], dayLen: BAL.dayLen[0], night: 0, res: Object.assign({}, BAL.startRes), upg: BAL.upgStart, kills: 0,
     spawnQ: [], nightT: 0, strayT: 8, diff, D: BAL.diff[diff] || BAL.diff.normal, rng: mulberry(seed ^ 0x9e3779b9), seq: 0,
     dirty: new Set(), endless: false, over: null, stats: { built: 0, lost: 0 }, navDirty: true, ver: 1,
     ff: { rw: new Float32Array(NC), rc: new Float32Array(NC), pw: new Float32Array(NC), pc: new Float32Array(NC), rT: 0, pT: 0 },
@@ -6737,16 +6745,17 @@ function completeUse(p, tgt) {
 /* ---------- (round 32) permanent tasks: the counters build up over the whole run, every tier reached is a permanent team upgrade ---------- */
 // W.perm[k] = { got, tier }, W.perk[upgrade] = level; W.tasks is just what the panel shows (same shape as the old daily tasks, so the sync and save code stay)
 function rollTasks() {
-  W.perm = W.perm || {}; W.perk = W.perk || { hp: 0, bag: 0, med: 0, nade: 0, life: 0 };
+  W.perm = W.perm || {}; W.perk = W.perk || { hp: 0, bag: 0, med: 0, nade: 0, life: 0, upg: 0 };
   const rows = [];
   for (const P of PERM) { const q = W.perm[P.k] || (W.perm[P.k] = { got: 0, tier: 0 }); if (q.tier >= P.need.length) continue; const need = P.need[q.tier]; rows.push({ k: P.k, need, got: Math.min(q.got, need), done: 0, txt: P.name + ' ' + need + (P.need.length > 1 ? '（' + (q.tier + 1) + '/' + P.need.length + '）' : ''), rt: PERK[P.perk][0], f: q.got / need }); }
-  rows.sort((x, y) => y.f - x.f); W.tasks = rows.slice(0, 4); W.tkv++; // the four closest to done: a taller panel pushed the 准备入夜 button into the middle of the screen
+  rows.sort((x, y) => y.f - x.f); W.tasks = rows; W.tkv++; /* (round 36f) every task still open (the list scrolls) */ // the four closest to done: a taller panel pushed the 准备入夜 button into the middle of the screen
 }
 function grantPerk(k) {
   W.perk[k] = (W.perk[k] || 0) + 1;
   for (const p of W.p) { if (p.gone) continue;
     if (k === 'hp') { p.maxHp = BAL.pMaxHp; if (!p.dead && !p.down) p.hp = Math.min(p.maxHp, p.hp + PERK.hp[1]); }
     if (k === 'life') p.lives = (p.lives || 0) + 1; }
+  if (k === 'upg') W.upg = Math.min(BAL.upgMax, W.upg + 1);
   modeSay('永久提升：' + PERK[k][0], '#9fe0ff', true);
 }
 function taskAdd(k, n = 1) {
@@ -6772,7 +6781,7 @@ function payTask(t) {
     if (r.med) q.meds = Math.min(BAL.medCap, q.meds + r.med);
     if (r.nade) q.nades = Math.min(BAL.nadeCap, q.nades + r.nade);
   }
-  if (r.upg) W.upg = Math.min(5, W.upg + r.upg);
+  if (r.upg) W.upg = Math.min(BAL.upgMax, W.upg + r.upg);
   emit({ k: 'task', txt: t.txt, rt: t.rt });
 }
 /* ---------- bloaters: a burst that hurts people, zombies and walls ---------- */
@@ -7116,7 +7125,7 @@ function craftBlocked(p, c) {
   if (c.gam && (p.gam || 0) >= BAL.gyroCap) return '已满';
   if (c.nade && gCount(p, c.gt || 0) >= gCap(c.gt || 0)) return '已满';
   if (c.med && p.meds >= BAL.medCap) return '已满';
-  if (c.upg && W.upg >= 5) return '已满级';
+  if (c.upg && W.upg >= BAL.upgMax) return '已满级';
   if (!affordable(W.res, c.cost)) return '材料不足';
   return '';
 }
@@ -8966,8 +8975,8 @@ function fxEvent(e) {
   const guest = NETROLE === 'guest';
   switch (e.k) {
     case 'shot': if (guest && e.o === ME) break; shotFx(e.o, e.w, e.e); break;
-    case 'cshot': { RND.tracers.push({ x: e.x, y: e.y, z: e.z, x2: e.e[0], y2: e.e[1], z2: e.e[2], t: 0, life: 0.12, w: 0.09, col: [1, 0.7, 0.35] }); RND.flashes.push({ x: e.x, y: e.y, z: e.z, t: 0, life: 0.08 }); sfx('sniper', e.x, e.y); const q = W.p[e.o]; if (q) q._crec = 1; for (let k = 0; k < 6; k++) addP({ x: e.x, y: e.y, z: e.z, vx: frnd(-0.6, 0.6), vy: frnd(-0.6, 0.6), vz: frnd(0.2, 0.8), g: -0.3, col: '#8d8a84', s: 0.1, life: 0.8, smoke: 1 }); break; } // (round 31) tank cannon
-    case 'gshot': RND.tracers.push({ x: e.x, y: e.y, z: e.z, x2: e.e[0], y2: e.e[1], z2: e.e[2], t: 0, life: 0.07, w: 0.03, col: [1, 0.8, 0.4] }); RND.flashes.push({ x: e.x, y: e.y, z: e.z, t: 0, life: 0.04 }); if (thr('gyro', 0.1)) sfx('rifle', e.x, e.y); if (e.h) addP({ x: e.e[0], y: e.e[1], z: e.e[2], vx: frnd(-1, 1), vy: frnd(-1, 1), vz: 1, col: '#7a1010', s: 0.06, life: 0.4 }); break; // (round 30) gyrocopter chin gun
+    case 'cshot': { RND.tracers.push({ x: e.x, y: e.y, z: e.z, x2: e.e[0], y2: e.e[1], z2: e.e[2], t: 0, life: 0.12, w: 0.09, col: [1, 0.7, 0.35] }); RND.flashes.push({ x: e.x, y: e.y, z: e.z, t: 0, life: 0.08 }); sfx('cannon', e.x, e.y); const q = W.p[e.o]; if (q) q._crec = 1; for (let k = 0; k < 6; k++) addP({ x: e.x, y: e.y, z: e.z, vx: frnd(-0.6, 0.6), vy: frnd(-0.6, 0.6), vz: frnd(0.2, 0.8), g: -0.3, col: '#8d8a84', s: 0.1, life: 0.8, smoke: 1 }); break; } // (round 31) tank cannon
+    case 'gshot': RND.tracers.push({ x: e.x, y: e.y, z: e.z, x2: e.e[0], y2: e.e[1], z2: e.e[2], t: 0, life: 0.07, w: 0.03, col: [1, 0.8, 0.4] }); RND.flashes.push({ x: e.x, y: e.y, z: e.z, t: 0, life: 0.04 }); if (thr('gyro', 0.1)) sfx('gyro', e.x, e.y); if (e.h) addP({ x: e.e[0], y: e.e[1], z: e.e[2], vx: frnd(-1, 1), vy: frnd(-1, 1), vz: 1, col: '#7a1010', s: 0.06, life: 0.4 }); break; // (round 30) gyrocopter chin gun
     case 'tshot': { if (e.i != null) (RND.taim = RND.taim || {})[e.i] = Math.atan2(e.ty - e.y, e.tx - e.x);
       const a = Math.atan2(e.ty - e.y, e.tx - e.x), d = Math.hypot(e.tx - e.x, e.ty - e.y);
       if (e.w === 'shot') { for (let k = 0; k < 6; k++) { const q = a + (k / 5 - 0.5) * 0.8, L = Math.min(5, d + 0.6); RND.tracers.push({ x: e.x, y: e.y, z: e.z, x2: e.x + Math.cos(q) * L, y2: e.y + Math.sin(q) * L, z2: e.tz, t: 0, life: 0.07, w: 0.03, col: [1, 0.75, 0.4] }); } sfx('shotgun', e.x, e.y); }
@@ -9001,9 +9010,9 @@ function fxEvent(e) {
     case 'repair': { const [x, y] = cellPos(e.i); sfx('build', x, y); break; }
     case 'spot': if (guest) { if (e.v) W.srch.add(e.i); else W.srch.delete(e.i); W.ver++; } break;
     case 'loot': { RND.floats.push({ x: e.x, y: e.y, z: e.z, text: e.text, col: '#ffd76a', t: 0 }); if (e.p === ME || e.p < 0) sfx('loot');
-      if (e.p != null && e.p >= 0) { const q = W.p[e.p], m = OBJ.pl && OBJ.pl[e.p]; if (q && q.ride && q.veh === 3 && !inMech(q) && m && m.veh) { const S = m.veh.userData.all[3].userData.S; if (S && S.bed) { S.bed.getWorldPosition(_lootV); const T = 0.55; // (round 34d) what you found on the cargo trike gets tossed into the bed
-        for (let k = 0; k < 4; k++) { const sx = e.x + frnd(-0.15, 0.15), sy = e.y + frnd(-0.15, 0.15), sz = e.z + 0.2, tx = _lootV.x + frnd(-0.12, 0.12), ty = _lootV.z + frnd(-0.12, 0.12), tz = _lootV.y + 0.05, TT = T + k * 0.06; addP({ x: sx, y: sy, z: sz, vx: (tx - sx) / TT, vy: (ty - sy) / TT, vz: (tz - sz + 0.5 * 9 * TT * TT) / TT, col: ['#8a6a44', '#9aa0a6', '#b8893a', '#5a6a4a'][k], s: 0.075, life: TT, floor: -9 }); }
-        q._ldKT = W.t + T + 0.1; } } }
+      if (e.p != null && e.p >= 0) { const q = W.p[e.p], m = OBJ.pl && OBJ.pl[e.p], tx2 = e.text || ''; if (q && q.veh === 3 && q.ride) q._grabCol = /木/.test(tx2) ? '#8a5a32' : /石|砖/.test(tx2) ? '#8d9196' : /钢|铁|零件/.test(tx2) ? '#a8b4bc' : /布|药|食/.test(tx2) ? '#c8b088' : '#b8893a';
+        if (q && q.ride && q.veh === 3 && !inMech(q) && m && m.veh) { q._tossT = 0; q._ldKT = W.t + 0.86; } // (round 36f) on the cargo trike the rider leans out, grabs it and lobs it over the shoulder into the bed (drawn in drawPlayers)
+        if (q && inMech(q) && q.veh === 3) { q._grabT = 0; } } /* (round 36f) 工蜂 picks it up and lobs it into its rack (drawn in mechTick) */
       break; }
     case 'phurt': if (guest && e.d > 0 && W.p[e.p]) W.p[e.p].hurtT = 0.3; if (e.d > 6 && Math.random() < 0.5) { const q = W.p[e.p]; addDecal(q.x + frnd(-0.2, 0.2), q.y + frnd(-0.2, 0.2), q.z, frnd(0.08, 0.14)); }
       if (e.p === ME) { RND.hurtV = Math.min(1, RND.hurtV + 0.5); CAM.shake = Math.max(CAM.shake, 0.12); if (thr('hurt', 0.25)) sfx('hurt'); } break;
@@ -9016,14 +9025,14 @@ function fxEvent(e) {
     case 'task': sfx('craft'); uiMsg('任务完成：' + e.txt + '  奖励 ' + e.rt, '#ffd76a'); toast('任务完成 · ' + e.rt, '#ffd76a'); break;
     case 'tp': if (guest && e.p === ME) { const p = W.p[ME]; p.x = e.x; p.y = e.y; p.L = e.l; p.vx = p.vy = 0; } break;
     case 'kacid': for (let k = 0; k < 10; k++) { const a = e.a + frnd(-0.45, 0.45), v = frnd(5, 9); addP({ x: e.x + Math.cos(e.a) * 1.4, y: e.y + Math.sin(e.a) * 1.4, z: e.z, vx: Math.cos(a) * v, vy: Math.sin(a) * v, vz: frnd(-1.5, 0.5), g: -3, col: k % 3 ? '#9dff3a' : '#5f9a20', s: 0.1, life: 0.8, floor: e.z - 3 }); } if (thr('kacid', 0.3)) sfx('acid', e.x, e.y); break; // (round 34) kaiju acid breath
-    case 'xform': { const q = W.p[e.o]; if (!q) break; q._xfT = 0; q._xfTo = e.to; q._xfS = -1; sfx('swap', q.x, q.y); shake(q.x, q.y, 0.12); break; } // (round 34b) start the 1 s transformation on every screen
+    case 'xform': { const q = W.p[e.o]; if (!q) break; q._xfT = 0; q._xfTo = e.to; q._xfS = -1; sfx('xform', q.x, q.y); shake(q.x, q.y, 0.12); break; } // (round 34b) start the 1 s transformation on every screen
     case 'mmove': if (guest && e.p === ME) { const p = W.p[ME]; if (e.m.dash) p.dash = e.m.dash; if (e.m.jmp) p.jmp = e.m.jmp; } break; // (round 34) a mech dash / leap the host started for this screen's survivor
-    case 'mpunch': { const q = W.p[e.o]; if (!q) break; q._mcombo = e.c != null ? e.c : q._mpT != null && q._mpT < 0.95 ? ((q._mcombo || 0) + 1) % 3 : 0; q._mpT = 0; q._mpS = e.s; if (e.a != null) { q._mA = e.a; q._mAT = 0.5; } sfx('swap', q.x, q.y); break; } /* (round 35) e.a: the mech turns to the zombie it locked onto */ // (round 34b) a quick follow-up continues the combo
-    case 'mrkt': (RND.mrk = RND.mrk || []).push({ x: e.x, y: e.y, z: e.z, e: e.e, T: Math.max(0.05, e.t), t: 0, kd: e.kd }); mechShotFx(e); if (e.kd === 'parcel') for (let k = 0; k < 2; k++) RND.mrk.push({ x: e.x + frnd(-0.15, 0.15), y: e.y + frnd(-0.15, 0.15), z: e.z + frnd(0, 0.2), e: [e.e[0] + frnd(-0.8, 0.8), e.e[1] + frnd(-0.8, 0.8), e.e[2]], T: Math.max(0.05, e.t * frnd(0.85, 1.15)), t: 0, kd: 'parcel', sm: 0.65, fake: 1 }); /* (round 35) a little spray of parcels, not one */ { const q = W.p[e.o]; if (q) { q._mrec = 1; } sfx(e.kd === 'cannon' ? 'sniper' : e.kd === 'parcel' || e.kd === 'bigparcel' ? 'swap' : 'launcher', e.x, e.y); RND.flashes.push({ x: e.x, y: e.y, z: e.z, t: 0, life: 0.06 }); } break; // (round 34d) rockets / shells / the fist cannon in flight
-    case 'mhit': { const q = W.p[e.o]; if (!q) break; mechHitFx(e, q); /* (round 36) */ if (e.box) { debrisFx(e.x, e.y, e.z + 0.1, '#b8893a', e.box > 1 ? 16 : 8); debrisFx(e.x, e.y, e.z + 0.1, '#e8d9a8', e.box > 1 ? 6 : 3); sfx('smash', e.x, e.y); if (e.box > 1) shake(e.x, e.y, 0.15); } if (e.g) { debrisFx(e.x, e.y, e.z, '#8a7e6a', 8); for (let k = 0; k < 14; k++) { const a = k / 14 * Math.PI * 2, r = (e.r || 1) * 0.5; addP({ x: e.x + Math.cos(a) * r, y: e.y + Math.sin(a) * r, z: e.z + 0.05, vx: Math.cos(a) * 3.5 * (e.r || 1), vy: Math.sin(a) * 3.5 * (e.r || 1), vz: 0.3, g: -0.2, col: '#a89878', s: 0.1, life: 0.45, smoke: 1 }); } } if (e.h) { q._mhs = 0.07; sfx('smash', e.x, e.y); shake(e.x, e.y, 0.18); for (let k = 0; k < 12; k++) addP({ x: e.x, y: e.y, z: e.z, vx: frnd(-3, 3), vy: frnd(-3, 3), vz: frnd(0.5, 3), col: k % 3 ? '#ffd27a' : '#7a1010', s: 0.07, life: 0.35 }); RND.flashes.push({ x: e.x, y: e.y, z: e.z, t: 0, life: 0.06 }); } break; }
+    case 'mpunch': { const q = W.p[e.o]; if (!q) break; q._mcombo = e.c != null ? e.c : q._mpT != null && q._mpT < 0.95 ? ((q._mcombo || 0) + 1) % 3 : 0; q._mpT = 0; q._mpS = e.s; if (e.a != null) { q._mA = e.a; q._mAT = 0.5; } { const M = MECHS[q.veh]; sfx(M && M.style === 'slim' ? 'mslash' : 'mswing', q.x, q.y); } break; } /* (round 36f) a sword cut sounds like one */ /* (round 35) e.a: the mech turns to the zombie it locked onto */ // (round 34b) a quick follow-up continues the combo
+    case 'mrkt': (RND.mrk = RND.mrk || []).push({ x: e.x, y: e.y, z: e.z, e: e.e, T: Math.max(0.05, e.t), t: 0, kd: e.kd }); mechShotFx(e); if (e.kd === 'parcel') for (let k = 0; k < 2; k++) RND.mrk.push({ x: e.x + frnd(-0.15, 0.15), y: e.y + frnd(-0.15, 0.15), z: e.z + frnd(0, 0.2), e: [e.e[0] + frnd(-0.8, 0.8), e.e[1] + frnd(-0.8, 0.8), e.e[2]], T: Math.max(0.05, e.t * frnd(0.85, 1.15)), t: 0, kd: 'parcel', sm: 0.65, fake: 1 }); /* (round 35) a little spray of parcels, not one */ { const q = W.p[e.o]; if (q) { q._mrec = 1; } sfx(e.kd === 'cannon' ? 'cannon' : e.kd === 'parcel' || e.kd === 'bigparcel' ? 'parcel' : 'launcher', e.x, e.y); RND.flashes.push({ x: e.x, y: e.y, z: e.z, t: 0, life: 0.06 }); } break; // (round 34d) rockets / shells / the fist cannon in flight
+    case 'mhit': { const q = W.p[e.o]; if (!q) break; mechHitFx(e, q); /* (round 36) */ if (thr('mclang', 0.07)) sfx('mclang', e.x, e.y); if (e.box) { debrisFx(e.x, e.y, e.z + 0.1, '#b8893a', e.box > 1 ? 16 : 8); debrisFx(e.x, e.y, e.z + 0.1, '#e8d9a8', e.box > 1 ? 6 : 3); sfx('smash', e.x, e.y); if (e.box > 1) shake(e.x, e.y, 0.15); } if (e.g) { debrisFx(e.x, e.y, e.z, '#8a7e6a', 8); for (let k = 0; k < 14; k++) { const a = k / 14 * Math.PI * 2, r = (e.r || 1) * 0.5; addP({ x: e.x + Math.cos(a) * r, y: e.y + Math.sin(a) * r, z: e.z + 0.05, vx: Math.cos(a) * 3.5 * (e.r || 1), vy: Math.sin(a) * 3.5 * (e.r || 1), vz: 0.3, g: -0.2, col: '#a89878', s: 0.1, life: 0.45, smoke: 1 }); } } if (e.h) { q._mhs = 0.07; sfx('smash', e.x, e.y); shake(e.x, e.y, 0.18); for (let k = 0; k < 12; k++) addP({ x: e.x, y: e.y, z: e.z, vx: frnd(-3, 3), vy: frnd(-3, 3), vz: frnd(0.5, 3), col: k % 3 ? '#ffd27a' : '#7a1010', s: 0.07, life: 0.35 }); RND.flashes.push({ x: e.x, y: e.y, z: e.z, t: 0, life: 0.06 }); } break; }
     case 'mskill': { const q = W.p[e.o]; if (q) { q._msT = 0; q._msK = e.t; }
       if (e.t === 'slam') { shake(e.x, e.y, 0.6); debrisFx(e.x, e.y, e.z + 0.2, '#9a8a70', 26); for (let k = 0; k < 36; k++) { const a = k / 36 * Math.PI * 2; addP({ x: e.x + Math.cos(a) * 0.8, y: e.y + Math.sin(a) * 0.8, z: e.z + 0.1, vx: Math.cos(a) * 7, vy: Math.sin(a) * 7, vz: 0.4, g: -0.3, col: '#a89878', s: 0.13, life: 0.55, smoke: 1 }); } sfx('collapse', e.x, e.y); }
-      else if (e.t === 'dash') { sfx('swap', e.x, e.y); for (let k = 0; k < 16; k++) addP({ x: e.x + Math.cos(e.a) * k * 0.5, y: e.y + Math.sin(e.a) * k * 0.5, z: e.z + 1.3, vx: frnd(-0.3, 0.3), vy: frnd(-0.3, 0.3), vz: 0.2, g: -0.1, col: '#ffb060', s: 0.08, life: 0.35 }); }
+      else if (e.t === 'dash') { sfx('mdash', e.x, e.y); for (let k = 0; k < 16; k++) addP({ x: e.x + Math.cos(e.a) * k * 0.5, y: e.y + Math.sin(e.a) * k * 0.5, z: e.z + 1.3, vx: frnd(-0.3, 0.3), vy: frnd(-0.3, 0.3), vz: 0.2, g: -0.1, col: '#ffb060', s: 0.08, life: 0.35 }); }
       else { sfx('jump', e.x, e.y); shake(e.x, e.y, 0.25); for (let k = 0; k < 18; k++) { const a = k / 18 * Math.PI * 2; addP({ x: e.x + Math.cos(a) * 0.6, y: e.y + Math.sin(a) * 0.6, z: e.z + 0.1, vx: Math.cos(a) * 4, vy: Math.sin(a) * 4, vz: 0.6, g: -0.2, col: '#bfc8d0', s: 0.12, life: 0.5, smoke: 1 }); } }
       break; }
     case 'kb': if (guest && e.p === ME) { const p = W.p[ME]; p.kbx += e.x; p.kby += e.y; } break;
@@ -9918,6 +9927,18 @@ function drawPlayers(vl, dt) {
         }
       }
     }
+    if (p._tossT != null && p._tossT < 0.95 && RP && !pil) { const g = p._tossT += dt; // (round 36f) cargo trike: reach out and down for it, swing it up over the right shoulder, lob it back into the bed
+      const w = g < 0.12 ? g / 0.12 : g > 0.78 ? Math.max(0, 1 - (g - 0.78) / 0.17) : 1, a = ease(clamp(g / 0.3, 0, 1)), b = ease(clamp((g - 0.3) / 0.28, 0, 1)), c = ease(clamp((g - 0.58) / 0.2, 0, 1));
+      const tx = lerp(lerp(0.32, 0.05, b), -0.22, c), ty = lerp(lerp(-0.42, 0.42, b), 0.3, c), tz = lerp(0.3, 0.18, b);
+      rx = lerp(rx, tx, w); ry = lerp(ry, ty, w); rz = lerp(rz, tz, w); m.torso.rotation.y += w * (0.35 * a - 0.75 * b + 0.3 * c); m.torso.rotation.z += w * (0.25 * a * (1 - b)); m.head.rotation.y += w * (0.5 * b);
+      if (!m.toss) { const h = m.toss = new THREE.Group(), bx = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.17, 0.2), new THREE.MeshLambertMaterial({ color: '#b8893a' })); h.add(bx); h.userData.mat = bx.material; const tp = new THREE.Mesh(new THREE.BoxGeometry(0.205, 0.035, 0.205), new THREE.MeshLambertMaterial({ color: '#e8d9a8' })); h.add(tp); SCN.add(h); }
+      const on = g > 0.16 && g < 0.86; m.toss.visible = on;
+      if (on) { m.toss.userData.mat.color.set(p._grabCol || '#b8893a'); m.g.updateMatrixWorld(true);
+        if (g < 0.58) { m.aim.localToWorld(_v1.set(rx, ry, rz)); m.toss.position.copy(_v1); m.toss.position.y -= 0.06; m.toss.rotation.set(0, 0, 0); (m.tossP || (m.tossP = new THREE.Vector3())).copy(m.toss.position); }
+        else { const f = (g - 0.58) / 0.28, V = m.veh && m.veh.userData.all[3], bed = V && V.userData.S.bed; if (bed) bed.getWorldPosition(_v1); else _v1.copy(m.tossP); _v1.y += 0.12; m.toss.position.lerpVectors(m.tossP, _v1, f); m.toss.position.y += Math.sin(f * Math.PI) * 0.75; m.toss.rotation.set(f * 4, f * 1.5, f * 6); } }
+      if (g >= 0.86 && !p._tossLand) { p._tossLand = 1; if (p.i === ME) sfx('thunk'); const V = m.veh && m.veh.userData.all[3], bed = V && V.userData.S.bed; if (bed) { bed.getWorldPosition(_v1); for (let k = 0; k < 5; k++) addP({ x: _v1.x, y: _v1.z, z: _v1.y + 0.15, vx: frnd(-1.2, 1.2), vy: frnd(-1.2, 1.2), vz: frnd(0.6, 1.8), col: k % 2 ? '#fff0b0' : p._grabCol || '#b8893a', s: 0.06, life: 0.35 }); } }
+      if (g < 0.5) p._tossLand = 0; }
+    else if (m.toss) m.toss.visible = false;
     ikArm(m.arms[1], rx, ry, rz, 1); ikArm(m.arms[0], lx, ly, lz, -1);
   });
   for (const p of W.p) { if (p._throwT > 0) p._throwT -= dt; if (p._swingT > 0) p._swingT -= dt; }
@@ -10431,7 +10452,7 @@ function rideBank(m, ly, roll, pitch) { _vax.set(Math.cos(ly), 0, Math.sin(ly));
 const MECH_DIM = { // s = overall scale; th / sh = thigh / shin; cw = chest width; arm = arm thickness; hunch = resting torso lean
   scout: { s: 0.82, th: 0.72, sh: 0.82, ft: 0.15, cw: 0.78, arm: 0.8, hunch: 0.08 },
   slim: { s: 1.0, th: 0.78, sh: 0.8, ft: 0.15, cw: 0.86, arm: 0.9, hunch: 0.04 },
-  worker: { s: 1.02, th: 0.6, sh: 0.62, ft: 0.17, cw: 1.04, arm: 1.2, hunch: 0.28 },
+  worker: { s: 1.0, th: 0.42, sh: 0.44, ft: 0.2, cw: 1.0, arm: 1.15, hunch: 0.06 }, // (round 36f) a stubby little chibi: short legs, big head, round belly
   big: { s: 1.2, th: 0.7, sh: 0.7, ft: 0.18, cw: 1.18, arm: 1.25, hunch: 0.05 },
   fly: { s: 0.94, th: 0.74, sh: 0.78, ft: 0.15, cw: 0.82, arm: 0.88, hunch: 0.02 },
   cannon: { s: 1.12, th: 0.56, sh: 0.6, ft: 0.18, cw: 1.12, arm: 1.12, hunch: 0.1 },
@@ -10488,6 +10509,7 @@ function mkMech(k) {
   mPart(tor, mTaper(0.2 * cw, 0.24 * cw, 0.14, 12), steel, 0, 0.14, 0);
   for (let a = 0; a < 3; a++) mPart(tor, mTaper(0.24 * cw - a * 0.01, 0.22 * cw + a * 0.01, 0.08, 10), a % 2 ? dark : main, 0.02, 0.22 + a * 0.085, 0, 0, 0, 0, 1.15, 1, 1.25);
   const ch = new THREE.Group(); ch.position.y = 0.42; tor.add(ch); J.ch = ch;
+  if (worker) { ch.scale.set(0.82, 0.8, 0.82); mPart(ch, mBall(0.42), main, 0.06, 0.3, 0, 0, 0, 0, 1.05, 1.0, 1.12); mPart(ch, mBall(0.22), acc, 0.32, 0.26, 0, 0, 0, 0, 0.5, 1, 1.2); } // (round 36f) a round belly with a yellow tummy plate
   mRB(ch, dark, 0.58, 0.6, 0.9 * cw, 0.12, -0.02, 0.32, 0);
   for (const s of [-1, 1]) { mRB(ch, main, 0.2, 0.5, 0.44 * cw, 0.08, 0.27, 0.36, s * 0.24 * cw, 0, s * 0.24); mRB(ch, line, 0.21, 0.015, 0.4 * cw, 0.006, 0.28, 0.22, s * 0.24 * cw, 0, s * 0.24); }
   mRB(ch, main, 0.5, 0.12, 0.94 * cw, 0.05, 0.02, 0.66, 0); mRB(ch, acc, 0.52, 0.035, 0.22, 0.012, 0.03, 0.73, 0);
@@ -10498,7 +10520,10 @@ function mkMech(k) {
   mRB(ch, dark, 0.34, 0.54, 0.7 * cw, 0.1, -0.42, 0.32, 0);
   for (let a = 0; a < 4; a++) mRB(ch, blk, 0.02, 0.035, 0.48 * cw, 0.01, -0.6, 0.16 + a * 0.1, 0);
   if (big && !cannon) for (const s of [-1, 1]) { mPart(ch, mTaper(0.07, 0.085, 0.5, 10), steel, -0.5, 1.05, s * 0.2); vCyl(ch, blk, 0.05, 0.05, 0.04, -0.5, 1.06, s * 0.2, 'y', 10); }
-  if (edge) for (let a = 0; a < 4; a++) mRB(ch, acc, 0.22 - a * 0.03, 0.06, 0.03, 0.012, -0.62, 0.62 - a * 0.13, 0, 0.5);
+  if (edge) { for (let a = 0; a < 4; a++) mRB(ch, acc, 0.22 - a * 0.03, 0.06, 0.03, 0.012, -0.62, 0.62 - a * 0.13, 0, 0.5);
+    const sb = new THREE.Group(); sb.position.set(-0.5, 0.38, -0.12); sb.rotation.set(0.15, 0, -0.95); ch.add(sb); const laq = lit(M.col[1]), gold2 = lit('#c9a24a'); // (round 36f) the scabbard across its back
+    mRB(sb, laq, 1.75, 0.12, 0.06, 0.03, 0.55, 0, 0); for (const xq of [-0.25, 0.4, 1.3]) mRB(sb, gold2, 0.04, 0.13, 0.065, 0.01, xq, 0, 0);
+    const sh2 = new THREE.Group(); sh2.position.x = -0.32; sb.add(sh2); mPart(sh2, mTaper(0.034, 0.034, 0.36, 8), lit('#2a1c1c'), -0.18, 0, 0, Math.PI / 2); const ts2 = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.022, 12), gold2); ts2.rotation.z = Math.PI / 2; sh2.add(ts2); J.katSheathed = sh2; }
   if (fly) {
     for (const s of [-1, 1]) { const wg = new THREE.Group(); wg.position.set(-0.5, 0.5, s * 0.3); wg.rotation.set(s * 0.35, s * 0.5, 0.25); ch.add(wg); wg.userData.s = s; // (round 35) a two-part wing that folds along the back and spreads to fly
       mRB(wg, main, 0.5, 0.05, 0.9, 0.02, -0.1, 0, s * 0.45); mRB(wg, acc, 0.4, 0.055, 0.12, 0.02, -0.08, 0.01, s * 0.86); vBox(wg, glow, 0.36, 0.02, 0.03, -0.06, 0.03, s * 0.62);
@@ -10509,6 +10534,15 @@ function mkMech(k) {
   }
   // head / cockpit: a rounded helmet, a wrap-around visor, a chin, a crest that differs per mech
   const hd = new THREE.Group(); hd.position.set(0.04, 0.78, 0); ch.add(hd); J.head = hd;
+  if (worker) { // (round 36f) a big round head (a cute little helper bot): a face screen with two big eyes that blink, rosy cheeks, a stubby antenna with a beacon, little ear-bolts
+    hd.position.set(0.02, 0.86, 0); const face = lit('#2a2e36'), white = new THREE.MeshBasicMaterial({ color: '#f4f8ff' }), pupil = new THREE.MeshBasicMaterial({ color: '#1a2230' }), cheek = new THREE.MeshBasicMaterial({ color: '#ff9a8a', transparent: true, opacity: 0.75 });
+    mPart(hd, mTaper(0.12, 0.14, 0.1, 12), steel, 0, 0.06, 0);
+    mPart(hd, mBall(0.36), main, 0, 0.36, 0, 0, 0, 0, 1, 0.92, 1.02); mPart(hd, mBall(0.37), acc, 0, 0.5, 0, 0, 0, 0, 1.0, 0.5, 1.03); // the dome, a yellow cap band on top
+    mRB(hd, face, 0.08, 0.36, 0.54, 0.1, 0.355, 0.33, 0);                                                                                   // the face screen
+    J.eyes = []; for (const s2 of [-1, 1]) { const e = new THREE.Group(); e.position.set(0.428, 0.36, s2 * 0.13); hd.add(e); const w = new THREE.Mesh(new THREE.CircleGeometry(0.105, 18), white); w.rotation.y = Math.PI / 2; e.add(w); const pu = new THREE.Mesh(new THREE.CircleGeometry(0.06, 14), pupil); pu.rotation.y = Math.PI / 2; pu.position.set(0.004, -0.01, 0); e.add(pu); const hl = new THREE.Mesh(new THREE.CircleGeometry(0.022, 8), white); hl.rotation.y = Math.PI / 2; hl.position.set(0.008, 0.025, -s2 * 0.022); e.add(hl); J.eyes.push(e); }
+    for (const s2 of [-1, 1]) { const c = new THREE.Mesh(new THREE.CircleGeometry(0.045, 12), cheek); c.rotation.y = Math.PI / 2; c.position.set(0.426, 0.22, s2 * 0.2); hd.add(c); mPart(hd, mTaper(0.06, 0.06, 0.06, 10), steel, 0, 0.36, s2 * 0.36, 0, 0, Math.PI / 2); }
+    const ant = new THREE.Group(); ant.position.set(-0.04, 0.68, 0); hd.add(ant); vRod(ant, steel, [0, 0, 0], [0, 0.2, 0], 0.014); mPart(ant, mBall(0.05), lit('#ffcc33'), 0, 0.22, 0); J.ant = ant;
+  } else {
   mPart(hd, mTaper(0.1, 0.12, 0.08, 10), steel, 0, 0.06, 0);
   mRB(hd, main, 0.32, 0.24, 0.3, 0.09, 0.02, 0.17, 0); mRB(hd, dark, 0.18, 0.08, 0.3, 0.03, 0.1, 0.06, 0);
   const vis = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.022, 4, 14, Math.PI * 0.8), glow); vis.rotation.set(Math.PI / 2, 0, -Math.PI * 0.4); vis.position.set(0.03, 0.19, 0); hd.add(vis);
@@ -10517,12 +10551,12 @@ function mkMech(k) {
   if (edge) { mRB(hd, acc, 0.3, 0.05, 0.03, 0.012, -0.02, 0.38, 0, 0.5); mRB(hd, acc, 0.12, 0.2, 0.025, 0.01, 0.12, 0.36, 0, -0.4); }
   if (fly) for (const s of [-1, 1]) mRB(hd, acc, 0.26, 0.03, 0.08, 0.012, -0.08, 0.3, s * 0.14, 0.35, 0, s * 0.3);
   if (scout) for (const s of [-1, 1]) mRB(hd, acc, 0.06, 0.18, 0.03, 0.012, -0.02, 0.34, s * 0.12, -0.3);
-  if (worker) { mRB(hd, acc, 0.34, 0.04, 0.32, 0.015, 0.02, 0.31, 0); mPart(hd, mBall(0.04), lit('#ffcc33'), 0.05, 0.36, 0); }    // hard hat + beacon
+  } /* (round 36f) end of the non-worker head */
   // arms: ball shoulder under a curved pauldron, tapered upper arm, elbow, a gauntlet forearm, a fist with fingers
   for (const s of [-1, 1]) {
     const sh = new THREE.Group(); sh.position.set(-0.02, 0.48, s * (0.56 * cw + 0.06)); ch.add(sh);
     mPart(sh, mBall(0.14 * A), steel, 0, 0, 0);
-    if (worker) { mRB(sh, main, 0.42, 0.2, 0.36, 0.08, 0, 0.1, s * 0.06, 0, 0, s * 0.25); for (let q = 0; q < 3; q++) mRB(sh, q % 2 ? blk : acc, 0.06, 0.205, 0.365, 0.01, -0.12 + q * 0.12, 0.1, s * 0.06, 0, 0, s * 0.25); } // hazard-striped shoulder guards
+    if (worker) mPart(sh, mBall(0.2), main, 0, 0.04, s * 0.03); // (round 36f) round little shoulders
     const pd = new THREE.Mesh(new THREE.SphereGeometry(0.27 * A, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.5), main); if (worker) pd.visible = false; pd.scale.set(1.15, 0.75, 1); pd.rotation.x = s * 0.35; pd.position.set(0, 0.06, s * 0.05); sh.add(pd);
     const ps = new THREE.Mesh(new THREE.TorusGeometry(0.255 * A, 0.018, 4, 18), acc); if (worker) ps.visible = false; ps.rotation.x = Math.PI / 2 + s * 0.35; ps.scale.set(1.15, 1, 1); ps.position.set(0, 0.07, s * 0.05); sh.add(ps);
     mPart(sh, mTaper(0.11 * A, 0.095 * A, 0.6), dark, 0, -0.04, 0);
@@ -10535,10 +10569,20 @@ function mkMech(k) {
     for (let a = 0; a < 4; a++) mRB(el, steel, 0.07, 0.06, 0.055 * A, 0.02, 0.14 * A, -0.67 - (a % 2) * 0.012, (a - 1.5) * 0.06 * A);
     mRB(el, steel, 0.06, 0.1, 0.05, 0.02, 0.08, -0.62, -s * 0.12 * A, 0, 0, s * 0.4);                                       // thumb
     if (big && !cannon) mRB(el, acc, 0.08, 0.5, 0.42, 0.03, 0, -0.32, s * 0.18);
-    if (edge) { const bl = new THREE.Group(); bl.position.set(0.1, -0.5, 0); el.add(bl); const blade = new THREE.Mesh(new THREE.ConeGeometry(0.09, 1.5, 4).scale(0.5, 1, 1.7).translate(0, -0.66, 0).rotateX(Math.PI), lit('#e8eef2')); blade.rotation.x = Math.PI; bl.add(blade); vBox(bl, glow, 0.014, 1.2, 0.024, 0.025, -0.56, 0); vBox(bl, dark, 0.07, 0.12, 0.2, 0, 0.02, 0); /* (round 35) longer blade with a guard */ J.blades.push(bl); }
+    if (edge && s === -1) { // (round 36f) 赤刃 carries a long curved 太刀 in its right hand (drawn from the scabbard on its back when it fights): wrapped hilt, round guard, a gently curved blade with a glowing edge
+      const kat = new THREE.Group(); kat.position.set(0.1, -0.74, 0); kat.scale.setScalar(1.35); el.add(kat); J.kat = kat; const bladeM = lit('#dfe6ec'), wrap = lit('#2a1c1c'), gold = lit('#c9a24a');
+      mPart(kat, mTaper(0.034, 0.034, 0.38, 8), wrap, -0.2, 0, 0, Math.PI / 2); for (let q = 0; q < 4; q++) mPart(kat, mTaper(0.037, 0.037, 0.012, 8), gold, -0.2 + 0.08 * q - 0.13, 0, 0, Math.PI / 2); // hilt + wrap bands (the hilt runs from x -0.39 to -0.01)
+      mPart(kat, mTaper(0.042, 0.042, 0.03, 8), gold, -0.4, 0, 0, Math.PI / 2);                                                       // pommel
+      const tsuba = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.025, 14), gold); tsuba.rotation.z = Math.PI / 2; tsuba.position.x = 0.01; kat.add(tsuba);
+      let seg = new THREE.Group(); seg.position.x = 0.03; kat.add(seg); mPart(seg, mTaper(0.03, 0.03, 0.06, 8), gold, 0.04, 0, 0, Math.PI / 2); // habaki collar
+      for (let q = 0; q < 4; q++) { const L = 0.44; mRB(seg, bladeM, L, 0.13 - q * 0.01, 0.03, 0.005, L / 2 + 0.05, 0, 0); vBox(seg, glow, L, 0.018, 0.034, L / 2 + 0.05, -0.062 + q * 0.005, 0); vBox(seg, lit('#9aa6b0'), L, 0.012, 0.034, L / 2 + 0.05, 0.035 - q * 0.004, 0); if (q === 1) J.katMid = vMark(seg, L, 0, 0);
+        const nx = new THREE.Group(); nx.position.x = L + 0.05; nx.rotation.z = 0.045; seg.add(nx); seg = nx; }                       // four segments, each bent up a little: the curve
+      const tip = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.26, 4).rotateZ(-Math.PI / 2).scale(1, 1, 0.3), bladeM); tip.position.set(0.15, 0.0, 0); seg.add(tip); J.katTip = vMark(seg, 0.28, 0, 0);
+    }
     if (fly) mPart(el, mTaper(0.06, 0.08, 0.16, 10), blk, -0.15, -0.24, 0);
-    J.arms.push({ sh, el, s, fist: vMark(el, 0.12, -0.74, 0), tip: edge ? vMark(J.blades[J.blades.length - 1], 0, -1.3, 0) : null });
+    J.arms.push({ sh, el, s, fist: vMark(el, 0.12, -0.74, 0), tip: null });
   }
+  if (worker) for (const A2 of J.arms) A2.sh.scale.setScalar(0.8); // (round 36f) short little arms to go with the short legs
   // what the vehicle turned into still shows: wheels, cargo box, rotor, tracks and guns ride on the mech
   const tyre = lit('#1a1a1c'), rim = lit('#9aa0a6');
   const wheelOn = (par, x, y, z, r, ry) => { const w = new THREE.Group(); w.position.set(x, y, z); w.rotation.y = ry || 0; par.add(w); vCyl(w, tyre, r, r, 0.08, 0, 0, 0, 'z', 16); vCyl(w, rim, r * 0.55, r * 0.55, 0.09, 0, 0, 0, 'z', 10); const tr = new THREE.Mesh(new THREE.TorusGeometry(r * 0.78, 0.01, 4, 16), rim); w.add(tr); return w; };
@@ -10594,11 +10638,12 @@ function mechTick(p, mm, dt, xf = 1) { // xf < 1: mid-transform (0 = folded up, 
   if (t < 0.6) {
     const f = t < 0.12 ? -ease(t / 0.12) * 0.6 : t < 0.2 ? -0.6 + ease((t - 0.12) / 0.08) * 1.6 : t < 0.3 ? 1 : 1 - ease((t - 0.3) / 0.3); // -0.6 cocked … 1 struck
     const o = 1 - side, sgn = side ? 1 : -1, on = Math.max(0, f), cock = Math.max(0, -f / 0.6), rest = 1 - cock - on, st = J.st;
-    if (st === 'slim') { // 赤刃 (round 35): a diagonal cut from high outside to low across, a wide sweep back the other way, then a two-handed overhead cleave
-      if (combo === 0) { T.sh[side] = 2.5 * cock + 0.45 * on + 0.3 * rest; T.ab[side] = 1.0 * cock - 0.55 * on; T.el[side] = 0.35 * cock + 0.12; T.twist = sgn * (0.55 * cock - 0.65 * on); T.lean += 0.35 * on; T.crouch += 0.18 * on; }
-      else if (combo === 1) { T.sh[side] = 1.35 + 0.2 * cock; T.ab[side] = 1.35 * cock - 0.75 * on + 0.2 * rest; T.el[side] = 0.2; T.twist = sgn * (0.75 * cock - 0.85 * on); T.crouch += 0.22 * on; T.lean += 0.15 * on; }
-      else { for (const s2 of [0, 1]) { T.sh[s2] = 2.8 * cock + 0.3 * on + 0.3 * rest; T.el[s2] = 0.25; T.ab[s2] = -0.1; } T.lean += 0.45 * on - 0.12 * cock; T.crouch += 0.3 * on; }
-      T.sh[o] = combo === 2 ? T.sh[o] : 0.6; T.el[o] = combo === 2 ? T.el[o] : 1.2; T.blade = 0;
+    if (st === 'slim') { // 赤刃 (round 36f): sword work with the 太刀 in the right hand (arm 0) — 袈裟斩 (high right down across to low left), 横斩 (a flat sweep), then a two-handed 唐竹割 (overhead straight down)
+      const G = { sh: 0.9, el: 1.2, ab: 0.05, kz: 0.75, kx: 0 }, mix = (c, s) => c * cock + s * on + (c === undefined ? 0 : 0) , bl = (cv, sv, gv) => cv * cock + sv * on + gv * rest;
+      if (combo === 0) { T.sh[0] = bl(2.7, 0.55, G.sh); T.ab[0] = bl(0.6, -0.55, G.ab); T.el[0] = bl(0.5, 0.05, G.el); T.kz = bl(1.55, -0.4, G.kz); T.kx = 0; T.twist = 0.5 * cock - 0.65 * on; T.lean += 0.38 * on - 0.08 * cock; T.crouch += 0.22 * on; T.sh[1] = bl(1.2, 0.35, 0.8); T.el[1] = bl(1.3, 0.8, 1.3); T.ab[1] = -0.2; }
+      else if (combo === 1) { T.sh[0] = bl(1.35, 1.4, G.sh); T.ab[0] = bl(1.3, -1.0, G.ab); T.el[0] = bl(0.35, 0.1, G.el); T.kz = bl(0.15, 0.05, G.kz); T.kx = bl(1.45, 1.45, 0); T.twist = 0.8 * cock - 0.95 * on; T.crouch += 0.26 * on; T.lean += 0.12 * on; T.sh[1] = 0.5; T.el[1] = 1.0; T.ab[1] = 0.4 * on; }
+      else { for (const s2 of [0, 1]) { T.sh[s2] = bl(2.95, 0.5, G.sh); T.el[s2] = bl(0.55, 0.08, 1.2); T.ab[s2] = s2 ? -0.18 : 0.18; } T.kz = bl(1.95, -0.3, G.kz); T.kx = 0; T.twist = 0; T.lean += 0.5 * on - 0.15 * cock; T.crouch += 0.34 * on; }
+      void mix; void sgn; void o;
     } else if (st === 'big') { // 铁卫: hammer fist into the ground, a stomp, then the fist cannon
       if (combo === 0) { T.sh[side] = 2.8 * cock + 0.35 * on + 0.3 * rest; T.el[side] = 0.2; T.lean += 0.45 * on; T.crouch += 0.28 * on; T.twist = sgn * -0.3 * on; T.sh[o] = 0.7; T.el[o] = 1.5; }
       else if (combo === 1) { const up = t < 0.15 ? ease(t / 0.15) : 0, dn = t >= 0.15 && t < 0.3 ? 1 : t >= 0.3 ? 1 - ease((t - 0.3) / 0.3) : 0; if (side) { T.thL = 1.1 * up + 0.25 * dn; T.knL = 1.5 * up + 0.2 * dn; } else { T.thR = 1.1 * up + 0.25 * dn; T.knR = 1.5 * up + 0.2 * dn; } T.crouch += 0.18 * dn; T.lean += 0.1 * dn; T.ab = [0.5 * up + 0.3, 0.5 * up + 0.3]; T.sh = [0.3, 0.3]; T.el = [0.9, 0.9]; }
@@ -10619,6 +10664,12 @@ function mechTick(p, mm, dt, xf = 1) { // xf < 1: mid-transform (0 = folded up, 
   if (sk === 'parcels' && sT < 0.9) { const f = sT < 0.25 ? ease(sT / 0.25) : 1 - ease((sT - 0.25) / 0.65); T.sh = [2.2 * f + 0.3 * (1 - f), 2.2 * f + 0.3 * (1 - f)]; T.ab = [0.8 * f, 0.8 * f]; T.el = [0.3, 0.3]; T.lean -= 0.25 * f; T.crouch += 0.15 * f; T.rack = 1.1 * f; } // (round 35) the rack tips right up and sprays the lot
   if (sk === 'dash' && sT < 0.55) { const f = sT < 0.4 ? 1 : 1 - (sT - 0.4) / 0.15; T.lean = 0.55 * f; T.sh = [-0.5 * f + 0.55 * (1 - f), 1.4 * f + 0.55 * (1 - f)]; T.el = [0.2, 0.3]; T.ab = [0.3, 1.0 * f]; T.crouch = 0.15 * f; T.thL = 0.6 * f; T.thR = -0.5 * f; T.knL = 0.5 * f + 0.15; T.knR = 0.9 * f + 0.15; T.blade = 0; T.flame = 1; T.twist = -0.6 * f; }
   if (sk === 'leap' && sT < 1.3) { if (sT < 0.15) T.crouch = ease(sT / 0.15) * 0.35; T.flame = air || sT < 1.05 ? 1 : 0; }
+  if (J.kat && J.cmb > 0.05 && !(t < 0.6) && !(sT < 1)) { T.kz = 0.75; T.kx = 0; T.sh[0] = lerp(T.sh[0], 0.9, J.cmb); T.el[0] = lerp(T.el[0], 1.2, J.cmb); T.sh[1] = lerp(T.sh[1], 0.85, J.cmb); T.el[1] = lerp(T.el[1], 1.35, J.cmb); T.ab[1] = lerp(T.ab[1], -0.35, J.cmb); } // (round 36f) 赤刃's 中段 guard between cuts: both hands toward the hilt, the blade up and forward
+  // (round 36f) 工蜂 grabs what it finds: reaches down in front with its right hand, then flings it back over its shoulder into the rack
+  if (J.st === 'worker' && p._grabT != null && p._grabT < 1.05) { p._grabT += dt; const g = p._grabT; // (round 36f) 工蜂 bends down, picks the thing up, hoists it over its head and lobs it into the rack on its back
+    if (g < 0.28) { const r = ease(g / 0.28); T.sh[1] = lerp(T.sh[1], 1.3, r); T.el[1] = lerp(T.el[1], 0.1, r); T.ab[1] = 0.05; T.sh[0] = lerp(T.sh[0], 0.9, r); T.el[0] = lerp(T.el[0], 0.3, r); T.lean += 0.45 * r; T.crouch += 0.22 * r; }
+    else if (g < 0.6) { const r = ease((g - 0.28) / 0.32); T.sh[1] = 1.3 + 1.85 * r; T.el[1] = 0.1 + 1.0 * r; T.ab[1] = 0.05; T.sh[0] = 0.9 + 1.4 * r; T.el[0] = 0.3 + 0.5 * r; T.ab[0] = 0.3 * r; T.lean += 0.45 - 0.75 * r; T.crouch += 0.22 * (1 - r); T.twist = 0.25 * r; }
+    else { const r = ease(Math.min(1, (g - 0.6) / 0.3)); T.sh[1] = 3.15 - 0.9 * r; T.el[1] = 1.1 - 0.8 * r; T.sh[0] = 2.3 - 1.2 * r; T.el[0] = 0.8; T.ab[0] = 0.3; T.lean += -0.3 + 0.3 * r; T.twist = 0.25 - 0.45 * r; T.rack = Math.max(T.rack || 0, g > 0.88 ? 0.5 * Math.sin(Math.min(1, (g - 0.88) / 0.17) * Math.PI) : 0); } }
   if (air) { T.thL = 0.55; T.thR = 0.15; T.knL = 1.2; T.knR = 0.75; T.sh = [0.9, 0.9]; T.el = [0.9, 0.9]; T.ab = [0.5, 0.5]; T.flame = 1; T.lean = 0.15; }
   // ---- springs → joints ----
   const u = xf < 1 ? ease(xf) : 1;
@@ -10635,7 +10686,9 @@ function mechTick(p, mm, dt, xf = 1) { // xf < 1: mid-transform (0 = folded up, 
   J.tor.rotation.set(-roll * 0.6, yaw, -lean * 0.7);
   J.head.rotation.set(0, -twist * 0.4, lean * 0.4);
   J.arms.forEach((A, n) => { A.sh.rotation.z = S('sh' + n, T.sh[n], 380); A.el.rotation.z = S('el' + n, T.el[n], 380); A.sh.rotation.x = A.s * S('ab' + n, T.ab[n], 300); });
-  for (const b of J.blades) b.rotation.z = S('blade', J.cmb > 0.25 ? 0 : T.blade, 600); // (round 35) the arm blades flick out for a fight, fold back along the forearm after
+  for (const b of J.blades) b.rotation.z = S('blade', J.cmb > 0.25 ? 0 : T.blade, 600);
+  if (J.kat) { const drawn = J.cmb > 0.05 || xf < 1 && false; J.kat.visible = drawn; if (J.katSheathed) J.katSheathed.visible = !drawn; // (round 36f) the 太刀: in hand for a fight, back in the scabbard after
+    J.kat.rotation.z = S('kz', T.kz != null ? T.kz : 0.75, 520); J.kat.rotation.x = S('kx', T.kx || 0, 520); } // (round 35) the arm blades flick out for a fight, fold back along the forearm after
   // (round 35) weapons deploy: 重炮's arm barrel slides out and its shoulder guns swing up off the back; 苍隼's pods rise; 工蜂's rack kicks; 苍隼's wings spread to fly
   const dep = S('dep', J.cmb > 0.05 ? 1 : 0, 120);
   if (J.armGun) J.armGun.position.y = lerp(0.05, -0.55, dep) + (t < 0.18 ? 0.12 * (1 - t / 0.18) : 0);
@@ -10646,12 +10699,21 @@ function mechTick(p, mm, dt, xf = 1) { // xf < 1: mid-transform (0 = folded up, 
   if (J.buckets) { const bz = S('bucket', J.st === 'worker' && t < 0.45 && t > 0.1 ? -0.8 : 0.5, 400); for (const b of J.buckets) b.rotation.z = bz; } // the bucket curls as it scoops
   // ---- effects: reactor, thrusters, blade trail, footfalls ----
   const pulse = 0.85 + Math.sin(W.t * 4 + p.i) * 0.15; J.coreHalo.scale.set(1, pulse, pulse);
+  if (J.eyes) { const bl = (W.t + p.i * 1.7) % 3.4 < 0.13 ? 0.08 : p._grabT != null && p._grabT < 1.05 ? 1.3 : 1; for (const e of J.eyes) e.scale.y = lerp(e.scale.y, bl, Math.min(1, dt * 30)); } // (round 36f) blinks; wide-eyed when it grabs something
+  if (J.ant) { J.ant.rotation.z = S('ant', (sp > 0.4 ? Math.sin(W.t * 13) * 0.22 : Math.sin(W.t * 2.2) * 0.07) - lean * 0.6, 220); J.head.rotation.z += Math.sin(W.t * 2.4 + p.i) * 0.04; J.head.rotation.x = Math.sin(W.t * 1.7 + p.i) * 0.05; } // antenna wobble, a little head tilt
   for (const f of J.flames) { f.visible = T.flame > 0 || sp > maxS * 0.9; f.scale.y = (T.flame ? 1.4 : 0.6) * (0.85 + FXR() * 0.3); }
   const pz = (p.zv != null ? p.zv : p.z) + (p.rjz != null ? p.rjz : p.jz || 0), px = p.rx != null ? p.rx : p.x, py = p.ry != null ? p.ry : p.y;
   if (T.flame && FXR() < dt * 40) addP({ x: px - Math.cos(p._ly) * 0.7, y: py - Math.sin(p._ly) * 0.7, z: pz + 1.6, vx: frnd(-0.4, 0.4), vy: frnd(-0.4, 0.4), vz: -2, g: -0.3, col: '#ffb060', s: 0.09, life: 0.3 });
-  if (J.st === 'slim' && t > 0.1 && t < 0.34) for (const A of J.arms) if (A.tip && (combo === 2 || A.s === (side ? 1 : -1))) { A.tip.getWorldPosition(_vw); const q = A.mid || (A.mid = vMark(J.blades[J.arms.indexOf(A)], 0, -0.55, 0)); q.getWorldPosition(_vw2);
+  if (J.kat && J.st === 'slim' && t > 0.08 && t < 0.34) { J.katTip.getWorldPosition(_vw); J.katMid.getWorldPosition(_vw2);
     for (let k = 0; k < 3; k++) { const f2 = k / 2; addP({ x: lerp(_vw2.x, _vw.x, f2), y: lerp(_vw2.z, _vw.z, f2), z: lerp(_vw2.y, _vw.y, f2), vx: 0, vy: 0, vz: 0, g: 0, col: k === 2 ? '#fff0d0' : '#ffb060', s: 0.07 + f2 * 0.05, life: 0.16 + f2 * 0.08 }); } } // (round 35) a fuller slash trail along the blade
-  const st = Math.sign(Math.sin(ph)); if (a > 0.3 && st !== J.fs && !air) { const s2 = st > 0 ? 1 : -1, aa = p._ly + Math.PI / 2 * s2; for (let q = 0; q < 5; q++) addP({ x: px + Math.cos(aa) * 0.38, y: py + Math.sin(aa) * 0.38, z: pz + 0.05, vx: frnd(-0.9, 0.9), vy: frnd(-0.9, 0.9), vz: 0.35, g: -0.2, col: '#8a7e6a', s: 0.12, life: 0.5, smoke: 1 }); if (p.i === ME) { shake(px, py, J.st === 'big' || J.st === 'cannon' ? 0.07 : J.st === 'scout' ? 0.02 : 0.04); if (thr('mstep', 0.25)) sfx('bash', px, py); } } J.fs = st; /* (round 35) was J.st = st: overwrote the mech's style after the first footstep, so the style's attack poses stopped playing */
+  if (J.st === 'worker' && J.rack) { const g = p._grabT, on = g != null && g > 0.18 && g < 0.92; // (round 36f) the thing it picked up: in its hand, then flying in an arc over its head into the rack
+    if (on && !J.held) { const h = J.held = new THREE.Group(), bx = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.3, 0.34), new THREE.MeshLambertMaterial({ color: '#b8893a' })); h.add(bx); vBox(h, lam('#e8d9a8'), 0.35, 0.06, 0.35, 0, 0.02, 0); J.heldM = bx.material; mm.add(h); }
+    if (J.held) { J.held.visible = on; if (on) { if (J.heldM.color.getStyle() !== (p._grabCol || '#b8893a')) J.heldM.color.set(p._grabCol || '#b8893a'); mm.updateMatrixWorld(true);
+      if (g < 0.6) { J.arms[1].fist.getWorldPosition(_vw); mm.worldToLocal(J.held.position.copy(_vw)); J.held.position.y -= 0.05; J.held.rotation.set(0, 0, 0); J._relP = (J._relP || new THREE.Vector3()).copy(J.held.position); }
+      else { const f = (g - 0.6) / 0.32; J.rack.getWorldPosition(_vw2); mm.worldToLocal(_vw2); _vw2.y += 0.75; J.held.position.lerpVectors(J._relP, _vw2, f); J.held.position.y += Math.sin(f * Math.PI) * 0.9; J.held.rotation.set(f * 5, f * 2, f * 7); J.held.scale.setScalar(1 - 0.35 * f); } }
+      if (!on && g != null && g >= 0.92 && !J._landed) { J._landed = true; if (p.i === ME) sfx('thunk'); J.rack.getWorldPosition(_vw2); for (let k = 0; k < 6; k++) addP({ x: _vw2.x, y: _vw2.z, z: _vw2.y + 0.8, vx: frnd(-1.4, 1.4), vy: frnd(-1.4, 1.4), vz: frnd(0.5, 2), col: k % 2 ? '#fff0b0' : p._grabCol || '#b8893a', s: 0.07, life: 0.4 }); }
+      if (g != null && g < 0.6) { J._landed = false; J.held.scale.setScalar(1); } } }
+  const st = Math.sign(Math.sin(ph)); if (a > 0.3 && st !== J.fs && !air) { const s2 = st > 0 ? 1 : -1, aa = p._ly + Math.PI / 2 * s2; for (let q = 0; q < 5; q++) addP({ x: px + Math.cos(aa) * 0.38, y: py + Math.sin(aa) * 0.38, z: pz + 0.05, vx: frnd(-0.9, 0.9), vy: frnd(-0.9, 0.9), vz: 0.35, g: -0.2, col: '#8a7e6a', s: 0.12, life: 0.5, smoke: 1 }); if (p.i === ME) { shake(px, py, J.st === 'big' || J.st === 'cannon' ? 0.07 : J.st === 'scout' ? 0.02 : 0.04); if (thr('mstep', 0.25)) sfx('mstep', px, py); } } J.fs = st; /* (round 35) was J.st = st: overwrote the mech's style after the first footstep, so the style's attack poses stopped playing */
 }
 
 /* ---- 56_props.js ---- */
@@ -11013,7 +11075,7 @@ function noise(dur, vol, ft = 'lowpass', f0 = 2000, f1 = f0, Q = 1, delay = 0) {
   const g = C.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
   s.connect(f); f.connect(g); g.connect(AU.master); s.start(t, Math.random() * 0.5); s.stop(t + dur + 0.05);
 }
-const LIM = { pistol: 0.04, rifle: 0.05, shotgun: 0.05, flesh: 0.05, bash: 0.08, zdie: 0.08, brk: 0.05, build: 0.04, groan: 1.2 };
+const LIM = { gyro: 0.05, mstep: 0.12, mclang: 0.06, pistol: 0.04, rifle: 0.05, shotgun: 0.05, flesh: 0.05, bash: 0.08, zdie: 0.08, brk: 0.05, build: 0.04, groan: 1.2 };
 function sfx(n, x, y) {
   if (!AU.ctx || SET.mute || (W && W.demo)) return;
   const now = AU.ctx.currentTime; if (LIM[n] && AU.last[n] && now - AU.last[n] < LIM[n]) return; AU.last[n] = now;
@@ -11021,13 +11083,13 @@ function sfx(n, x, y) {
   if (x != null && W && W.p[ME]) { const me = W.p[ME]; v = clamp(1 - d2(x, y, me.x, me.y) / 30, 0.12, 1); }
   const r = 1 + (Math.random() - 0.5) * 0.16, hurt = W && W.p[ME] ? 1 + (1 - W.p[ME].hp / W.p[ME].maxHp) * 0.3 : 1;
   switch (n) {
-    case 'pistol': noise(0.12, 0.5 * v, 'bandpass', 2400 * r, 600, 0.8); tone('square', 180 * r, 60, 0.08, 0.18 * v); break;
-    case 'shotgun': noise(0.32, 0.8 * v, 'lowpass', 3000 * r, 300, 0.7); tone('sawtooth', 110 * r, 40, 0.18, 0.3 * v, 0, 800); break;
-    case 'rifle': noise(0.09, 0.45 * v, 'bandpass', 3000 * r, 900, 0.9); tone('square', 150 * r, 70, 0.06, 0.14 * v); break;
-    case 'sniper': noise(0.5, 0.85 * v, 'lowpass', 5000 * r, 200, 0.6); tone('sawtooth', 220 * r, 50, 0.3, 0.3 * v, 0, 1500); noise(0.6, 0.15 * v, 'bandpass', 900, 300, 2, 0.12); break;
-    case 'crossbow': tone('triangle', 420 * r, 120, 0.12, 0.25 * v); noise(0.08, 0.25 * v, 'highpass', 2500, 2500, 1); break;
-    case 'flamer': noise(0.3, 0.32 * v, 'lowpass', 900 * r, 400, 0.7); noise(0.25, 0.12 * v, 'bandpass', 2400, 1800, 2); break;
-    case 'launcher': noise(0.25, 0.6 * v, 'lowpass', 700 * r, 150, 0.7); tone('sine', 140 * r, 60, 0.2, 0.4 * v); break;
+    case 'pistol': noise(0.05, 0.42 * v, 'bandpass', 3200 * r, 1800, 1.2); noise(0.16, 0.32 * v, 'lowpass', 1500 * r, 260, 0.8); tone('sine', 150 * r, 55, 0.09, 0.3 * v); noise(0.35, 0.05 * v, 'lowpass', 700, 200, 0.7, 0.06); break; // (round 36f) a dry pop: crack + body + thump + a short room tail
+    case 'shotgun': noise(0.07, 0.6 * v, 'bandpass', 2400 * r, 1200, 0.9); noise(0.38, 0.75 * v, 'lowpass', 2400 * r, 180, 0.7); tone('sine', 95 * r, 38, 0.24, 0.55 * v); noise(0.6, 0.1 * v, 'lowpass', 500, 120, 0.7, 0.1); noise(0.05, 0.12 * v, 'highpass', 3000, 3000, 2, 0.32); tone('triangle', 520, 380, 0.04, 0.05 * v, 0.34); break; // (round 36f) a big boom, then the pump clacks
+    case 'rifle': noise(0.04, 0.4 * v, 'bandpass', 3800 * r, 2200, 1.4); noise(0.11, 0.3 * v, 'lowpass', 1900 * r, 400, 0.9); tone('sine', 130 * r, 60, 0.06, 0.22 * v); break; // (round 36f) a tight snap for the fast fire
+    case 'sniper': noise(0.04, 0.75 * v, 'highpass', 4500 * r, 2500, 0.8); noise(0.4, 0.75 * v, 'lowpass', 3500 * r, 160, 0.6); tone('sine', 110 * r, 40, 0.3, 0.5 * v); noise(0.9, 0.16 * v, 'lowpass', 900, 120, 0.6, 0.14); noise(0.6, 0.08 * v, 'lowpass', 600, 100, 0.6, 0.42); break; // (round 36f) a sharp crack that rolls away, with an echo
+    case 'crossbow': tone('triangle', 260 * r, 110, 0.09, 0.22 * v); noise(0.05, 0.22 * v, 'bandpass', 1800, 900, 2); noise(0.18, 0.1 * v, 'bandpass', 3500, 6000, 3, 0.02); break; // (round 36f) a twang and the bolt hissing off
+    case 'flamer': noise(0.34, 0.3 * v, 'lowpass', 1200 * r, 350, 0.6); noise(0.3, 0.1 * v, 'bandpass', 2200, 1400, 1.5); tone('sine', 70 * r, 55, 0.3, 0.12 * v); break; // (round 36f) a roaring whoosh
+    case 'launcher': noise(0.08, 0.35 * v, 'bandpass', 900 * r, 500, 1.5); tone('sine', 180 * r, 70, 0.18, 0.45 * v); noise(0.3, 0.25 * v, 'lowpass', 600, 150, 0.7); break; // (round 36f) a hollow 'thoonk'
     case 'scream': tone('sawtooth', 900 * r, 1500, 0.7, 0.18 * v, 0, 2400); tone('square', 640 * r, 1200, 0.6, 0.08 * v, 0.05, 1800); noise(0.6, 0.15 * v, 'bandpass', 2600, 3200, 3); break;
     case 'caw': tone('sawtooth', 620 * r, 420 * r, 0.18, 0.12 * v, 0, 1400); tone('sawtooth', 560 * r, 380 * r, 0.16, 0.1 * v, 0.2, 1300); break; // (round 35) crows
     case 'screech': tone('square', 2200 * r, 3200 * r, 0.22, 0.06 * v, 0, 4000); noise(0.2, 0.08 * v, 'highpass', 3500, 3500, 2); break; // bats
@@ -11036,6 +11098,16 @@ function sfx(n, x, y) {
     case 'summon': tone('sawtooth', 60 * r, 40, 0.8, 0.16 * v, 0, 300); noise(0.7, 0.2 * v, 'lowpass', 400, 200, 1); break;
     case 'shield': tone('sine', 520 * r, 880 * r, 0.35, 0.12 * v); tone('sine', 780 * r, 1320 * r, 0.3, 0.06 * v, 0.05); break;
     case 'ambush': noise(0.18, 0.4 * v, 'bandpass', 900, 400, 1); tone('sawtooth', 160 * r, 60, 0.2, 0.2 * v, 0, 900); break;
+    case 'cannon': noise(0.06, 0.8 * v, 'bandpass', 1600 * r, 700, 0.8); tone('sine', 70 * r, 26, 0.55, 0.75 * v); noise(0.7, 0.75 * v, 'lowpass', 1100 * r, 60, 0.6); noise(1.1, 0.18 * v, 'lowpass', 400, 60, 0.6, 0.2); tone('triangle', 900, 700, 0.05, 0.04 * v, 0.6); break; // (round 36f) the tank / 重炮 cannon: a deep blast, a rolling tail, the breech clank
+    case 'gyro': noise(0.04, 0.3 * v, 'bandpass', 2800 * r, 1800, 1.2); tone('sine', 160 * r, 80, 0.05, 0.18 * v); break; // (round 36f) the gyrocopter's gun: lighter, faster
+    case 'mswing': noise(0.3, 0.32 * v, 'bandpass', 500 * r, 1500, 1.2); tone('sine', 90 * r, 140, 0.22, 0.12 * v); noise(0.06, 0.08 * v, 'highpass', 3000, 3000, 2, 0.0); break; // (round 36f) a heavy mech arm swinging (servo + air)
+    case 'mslash': noise(0.2, 0.3 * v, 'bandpass', 5200 * r, 1200, 2); tone('sine', 2600 * r, 2200, 0.35, 0.05 * v, 0.02); tone('sine', 3900 * r, 3400, 0.3, 0.03 * v, 0.03); break; // (round 36f) 赤刃's 太刀: a ringing 'shing' and the cut
+    case 'mclang': noise(0.06, 0.4 * v, 'bandpass', 2400 * r, 1400, 2); tone('triangle', 620 * r, 520, 0.18, 0.1 * v); tone('sine', 80 * r, 40, 0.18, 0.4 * v); break; // (round 36f) a mech blow landing: metal on meat
+    case 'xform': [0, 0.25, 0.5, 0.75].forEach((d, i) => { noise(0.07, 0.18, 'bandpass', 1200 + i * 300, 900, 2, d); tone('triangle', 300 + i * 90, 260 + i * 90, 0.06, 0.06, d + 0.02); }); tone('sawtooth', 120, 520, 0.95, 0.04, 0, 1400); break; // (round 36f) the transformation: a rising servo whine and four clunks
+    case 'mstep': noise(0.14, 0.3 * v, 'lowpass', 400 * r, 80, 1); tone('sine', 60 * r, 35, 0.14, 0.4 * v); noise(0.05, 0.05 * v, 'highpass', 2500, 2500, 2, 0.01); break; // (round 36f) a mech footfall with a hiss of hydraulics
+    case 'parcel': noise(0.06, 0.25 * v, 'bandpass', 900 * r, 600, 1.5); tone('triangle', 420 * r, 300, 0.07, 0.1 * v); noise(0.2, 0.1 * v, 'bandpass', 2400, 1800, 1.5, 0.04); break; // (round 36f) 工蜂's parcels: a pop and a rustle
+    case 'thunk': noise(0.08, 0.22 * v, 'lowpass', 900 * r, 250, 1.2); tone('triangle', 240 * r, 150, 0.08, 0.12 * v); break; // (round 36f) something landing in the trike's bed / 工蜂's rack
+    case 'mdash': noise(0.35, 0.35 * v, 'bandpass', 700 * r, 2600, 1); tone('sawtooth', 160, 420, 0.25, 0.04 * v, 0, 1500); break;
     case 'jump': noise(0.12, 0.14, 'bandpass', 900, 1600, 1.5); break;
     case 'heart': tone('sine', 70, 45, 0.11, 0.32); tone('sine', 62, 40, 0.12, 0.26, 0.17); break; // (round 34d) low-health heartbeat
     case 'vault': noise(0.2, 0.18, 'bandpass', 700, 1300, 1.2); tone('triangle', 200, 160, 0.08, 0.06, 0.1); break;
@@ -11044,11 +11116,11 @@ function sfx(n, x, y) {
     case 'empty': tone('square', 1300, 1100, 0.03, 0.12); break;
     case 'reload': tone('square', 600 * r, 500, 0.04, 0.1 * v); noise(0.05, 0.2 * v, 'highpass', 3000, 3000, 1, 0.12); tone('square', 900 * r, 700, 0.05, 0.12 * v, 0.35); break;
     case 'swap': noise(0.06, 0.2, 'highpass', 2500); tone('triangle', 500, 700, 0.05, 0.08, 0.04); break;
-    case 'flesh': noise(0.08, 0.28 * v, 'lowpass', 900 * r, 300); break;
-    case 'head': noise(0.1, 0.4 * v, 'lowpass', 1400 * r, 300); tone('sine', 160, 60, 0.1, 0.25 * v); break;
-    case 'zdie': tone('sawtooth', 160 * r, 60, 0.4, 0.14 * v, 0, 600); noise(0.25, 0.18 * v, 'lowpass', 500, 150); break;
-    case 'bigdie': tone('sawtooth', 90 * r, 30, 0.9, 0.3 * v, 0, 500); noise(0.6, 0.35 * v, 'lowpass', 400, 80); break;
-    case 'groan': tone('sawtooth', (90 + Math.random() * 40) * r, 70 * r, 0.9, 0.06 * v, 0, 380); break;
+    case 'flesh': noise(0.07, 0.3 * v, 'lowpass', 1100 * r, 250, 1.2); tone('sine', 120 * r, 70, 0.05, 0.12 * v); break;
+    case 'head': noise(0.05, 0.35 * v, 'bandpass', 1800 * r, 600, 1.5); noise(0.12, 0.35 * v, 'lowpass', 1200 * r, 220); tone('sine', 170, 60, 0.1, 0.25 * v); tone('triangle', 1400, 1400, 0.05, 0.05 * v, 0.02); break; // (round 36f) a crunch with a little 'tink' so a headshot reads
+    case 'zdie': noise(0.12, 0.3 * v, 'lowpass', 900 * r, 200, 1); tone('sawtooth', 140 * r, 55, 0.45, 0.1 * v, 0.02, 500); noise(0.22, 0.16 * v, 'lowpass', 400, 90, 0.8, 0.25); break; // (round 36f) a wet hit, a dying moan, the body dropping
+    case 'bigdie': tone('sawtooth', 85 * r, 28, 1.0, 0.26 * v, 0, 420); noise(0.4, 0.3 * v, 'lowpass', 500, 90, 0.8); noise(0.7, 0.4 * v, 'lowpass', 300, 50, 0.7, 0.45); tone('sine', 55, 28, 0.5, 0.45 * v, 0.45); break; // (round 36f) a long bellow, then the ground shakes when it falls
+    case 'groan': { const f = (80 + Math.random() * 45) * r; tone('sawtooth', f, f * 0.78, 1.0, 0.05 * v, 0, 330); tone('sawtooth', f * 1.012, f * 0.8, 1.0, 0.035 * v, 0.03, 420); noise(0.9, 0.035 * v, 'bandpass', 380 * r, 260, 5); break; } // (round 36f) two throats a hair out of tune and a breath: wetter, less buzzy
     case 'bash': noise(0.12, 0.42 * v, 'lowpass', 700 * r, 200, 1); tone('sine', 90 * r, 50, 0.1, 0.2 * v); break;
     case 'smash': noise(0.3, 0.7 * v, 'lowpass', 600 * r, 90, 1); tone('sine', 60 * r, 30, 0.3, 0.45 * v); break;
     case 'brk': noise(0.35, 0.5 * v, 'lowpass', 1600 * r, 200, 0.8); tone('triangle', 200 * r, 60, 0.2, 0.15 * v); break;
@@ -11075,7 +11147,7 @@ function sfx(n, x, y) {
     case 'spit': noise(0.25, 0.25 * v, 'bandpass', 600 * r, 1500, 3); break;
     case 'acid': noise(0.3, 0.25 * v, 'highpass', 2500 * r, 6000, 1); break;
     case 'rhit': tone('square', 880, 880, 0.08, 0.12); tone('square', 660, 660, 0.08, 0.12, 0.1); noise(0.1, 0.25, 'bandpass', 2000); break;
-    case 'slash': noise(0.13, 0.22, 'bandpass', 2600, 900, 1.2); break;
+    case 'slash': noise(0.16, 0.24, 'bandpass', 3800, 900, 1.6); break; // (round 36f) a whoosh that falls
     case 'stab': noise(0.1, 0.22, 'bandpass', 2600, 900, 1.2); noise(0.09, 0.45, 'lowpass', 1400, 260); tone('square', 170, 70, 0.07, 0.18); break;
     case 'land': noise(0.08, 0.12, 'lowpass', 500); break;
     case 'chop': noise(0.12, 0.35 * v, 'bandpass', 900 * r, 500, 2); tone('triangle', 180 * r, 120, 0.1, 0.18 * v); noise(0.5, 0.25 * v, 'lowpass', 600, 120, 1, 0.15); break;
@@ -11152,7 +11224,7 @@ function setGren(t) { const me = W.p[ME]; if (!GREN[t]) return; me.gt = t; SET.g
 function cycleGren(d) { const me = W.p[ME]; let t = me.gt || 0; for (let k = 0; k < 4; k++) { t = (t + d + 4) % 4; if (gCount(me, t) > 0) break; } setGren(t); }
 // (round 23) the melee slot: knife or riot shield
 function switchMelee(v) {
-  const me = W.p[ME]; if (!me.shield) { toast('近战只有刀：商店 → 武器 里能买防暴盾（猛推开一片丧尸）'); return; }
+  const me = W.p[ME]; if (!me.shield) return; /* (round 36f) the knife is the only melee weapon now */
   const m = v != null ? v : me.melee === 1 ? 0 : 1; act('melee', m); me.melee = m; UI.meleeT = performance.now() + 600; toast(m ? '近战：防暴盾 · 推开前面一片丧尸、晕 1 秒，正面挨打少受一半' : '近战：刀 · 冲上去砍一只，背后砍双倍'); sfx('swap');
 }
 function doBash() {
@@ -12102,7 +12174,7 @@ function hudTick(dt) {
     $('wbItem').addEventListener('pointerdown', e => { e.stopPropagation(); if (inGame()) toggleBuild(true); });
     $('wbMel').addEventListener('pointerdown', e => { e.stopPropagation(); if (inGame()) switchMelee(); });
     $('wbar').querySelectorAll('button[data-g]').forEach(b => b.addEventListener('pointerdown', e => { e.stopPropagation(); if (inGame()) setGren(+b.dataset.g); })); }
-  { const mb = $('wbMel'), sh = me.melee === 1 && me.shield; mb.querySelector('b').textContent = sh ? '盾' : '刀'; mb.classList.toggle('dim', !me.shield); mb.lastElementChild.textContent = me.shield ? '右键 · X 换' + (sh ? '刀' : '盾') : '右键 / V';
+  { const mb = $('wbMel'), sh = me.melee === 1 && me.shield; mb.querySelector('b').textContent = sh ? '盾' : '刀'; mb.classList.remove('dim'); mb.lastElementChild.textContent = me.shield ? '右键 · X 换' + (sh ? '刀' : '盾') : '右键 / V';
     GREN.forEach((g, t) => { const b = $('wbar').querySelector('[data-g="' + t + '"]'), c = gCount(me, t); b.classList.toggle('sel', t === (me.gt || 0)); b.classList.toggle('dim', !c); $('wg' + t).textContent = '×' + c; }); }
   q.forEach(i => { const b = $('wbar').querySelector('[data-w="' + i + '"]'), w2 = WPN[i]; b.classList.toggle('sel', i === me.wpn); $('wb' + i).textContent = (me.rlBg && me.rlBg[i] > 0 ? '⟳ ' : '') + (w2.inf ? '∞' : me.mag[i] + '/' + me.ammo[i]); });
   if (!q.includes(me.wpn) && !me.build) { const b = $('wbKit'); if (b) b.lastElementChild.textContent = '在用：' + w.name; }
@@ -12124,8 +12196,8 @@ function hudTick(dt) {
     if (changed && UI.tkv !== -1) UI.tkPing = 1; /* (round 33) never pops open by itself: the pill just flashes */
     UI.tkv = W.tkv; UI.tkDone = W.tasks.some(t => t.done);
     const nd = W.tasks.filter(t => t.done).length;
-    const pk = W.perk ? Object.values(W.perk).reduce((a, b) => a + b, 0) : 0; /* (round 32) permanent tasks */
-    $('tasks').innerHTML = `<div class="tksum${UI.tkPing ? ' ping' : ''}">任务 · 提升 ${pk} <span>▾</span></div><div class="tklist">` + W.tasks.map(t => `<div class="tk${t.done ? ' done' : ''}"><i>${t.done ? '✔' : ''}</i><span class="tt">${t.txt}</span><b>${t.done ? '完成' : t.got + '/' + t.need}</b><span class="tr">${t.rt}</span></div>`).join('') + '<span class="tkhide">点这里收起 ▴</span></div>'; UI.tkPing = 0;
+    const pk = W.perk || {}, have = Object.keys(PERK).filter(k => k !== 'upg' && pk[k] > 0).map(k => PERK[k][0].split(/[：（]/)[0].replace(/上限|次数/, '') + ' Lv' + pk[k]); /* (round 36f) the pill just says 任务; what the tasks already earned is spelled out at the top of the list */
+    $('tasks').innerHTML = `<div class="tksum${UI.tkPing ? ' ping' : ''}">任务 ${W.tasks.length} <span>▾</span></div><div class="tklist"><div class="tkhd">做满一档 = 全队永久强化<br>弹头 Lv${W.upg}/${BAL.upgMax}${have.length ? ' · ' + have.join(' · ') : ''}</div>` + W.tasks.map(t => `<div class="tk${t.done ? ' done' : ''}"><i>${t.done ? '✔' : ''}</i><span class="tt">${t.txt}</span><b>${t.done ? '完成' : t.got + '/' + t.need}</b><span class="tr">${t.rt}</span></div>`).join('') + '<span class="tkhide">点这里收起 ▴</span></div>'; UI.tkPing = 0;
   }
   UI.tkOpenT = Math.max(0, (UI.tkOpenT || 0) - dt);
   $('tasks').classList.toggle('open', !!UI.tkPin);
@@ -12142,7 +12214,7 @@ function hudTick(dt) {
     const key = INP.touch ? '点「交互」' : '按 F ';
     if (tgt) { ptxt = key + tgt.name; prog = me.useT / tgt.t; }
     else if (nearBench(me)) ptxt = (INP.touch ? '点「交互」' : '按 F ') + '打开工作台';
-    else if (canCraft(me) && !INP.touch && W.t - (UI.craftHintT || -99) < 4) ptxt = '在建筑里：按 C 逛商店（枪、弹药、盾、载具）';
+    else if (canCraft(me) && !INP.touch && W.t - (UI.craftHintT || -99) < 4) ptxt = '在建筑里：按 C 逛商店（枪、弹药、道具、载具）';
     else if (!me.meds && W.p.some(q => q !== me && q.dead && !q.gone && q.L === me.L && Math.hypot(q.x - me.x, q.y - me.y) < 1.6)) ptxt = '要有医疗包才能把队友救回来（搜背包、柜子，或在「商店」里买）';
     if (me.down) ptxt = me.meds > 0 ? (INP.touch ? '点「医疗」' : '按 H ') + '用医疗包自救' : (W.p.length > 1 ? '等待队友来扶你…' : '');
     if (me.medT > 0 && me.selfRev) { ptxt = '正在自救…'; prog = 1 - me.medT / 3; }
@@ -12190,15 +12262,34 @@ function openCraft() {
   if (!canCraft(me)) { toast('进到任何建筑里（或回营地）才能逛商店'); return; }
   renderCraft(); $('craft').classList.remove('hidden'); sfx('click');
 }
-function closeCraft() { $('craft').classList.add('hidden'); }
+function closeCraft() { $('craft').classList.add('hidden'); $('stip').classList.add('hidden'); }
+document.addEventListener('pointerdown', e => { const b = document.getElementById('stip'); if (b && !b.classList.contains('hidden') && !b.contains(e.target)) b.classList.add('hidden'); }, true); // (round 36f) the detail card closes on any tap outside it
 // (round 22) the shop: tabs by kind; a gun and its ammo share one card; vehicles have their own tab
-const SHOP_TABS = [['gun', '武器 · 弹药'], ['item', '道具'], ['veh', '载具'], ['upg', '强化']];
+const SHOP_TABS = [['gun', '武器 · 道具'], ['veh', '载具']]; // (round 36f) weapons and grenades share one tab (medkit first); the 强化 tab is gone
 function shopBuy(c) {
   const me = W.p[ME], why = craftBlocked(me, c);
   if (why) { toast(why, '#ff8a7a'); sfx('deny'); return; }
   act('craft', c.id); sfx('click');
   if (NETROLE === 'guest') { for (const k in c.cost) W.res[k] -= c.cost[k]; if (c.wpn) me.owned[c.wpn] = 1; if (c.shield) { me.shield = 1; me.melee = 1; UI.meleeT = performance.now() + 600; } if (c.veh) { me.vehs = (me.vehs || 0) | 1 << c.veh; me.veh = c.veh; } if (c.shield) me.shield = BAL.shieldHp; }
   setTimeout(() => { if (!$('craft').classList.contains('hidden')) renderCraft(); }, NETROLE === 'guest' ? 250 : 0);
+}
+// (round 36f) long-press (or right-click) a shop card for what it does; a vehicle's card also sets it as the default
+function shopTip(k, el) {
+  const t = UI.stips && UI.stips[k], box = $('stip'); if (!t) return;
+  box.innerHTML = `<b>${t.t}</b><div class="stx">${t.d}</div>${t.v != null ? `<button class="sbtn vdef2" data-v="${t.v}"><b>设为默认载具</b><span>T 就上这辆</span></button>` : ''}<i>点别处关闭</i>`;
+  box.classList.remove('hidden'); const r = el.getBoundingClientRect(), pr = box.parentElement.getBoundingClientRect(); box.style.top = Math.max(4, Math.min(pr.height - box.offsetHeight - 4, r.bottom - pr.top + 4)) + 'px';
+  const vb = box.querySelector('.vdef2'); if (vb) vb.onclick = () => { const me = W.p[ME], v = +vb.dataset.v; act('vdef', v); if (NETROLE === 'guest') me.veh = v; sfx('click'); box.classList.add('hidden'); setTimeout(renderCraft, NETROLE === 'guest' ? 250 : 0); };
+  sfx('click');
+}
+function shopTipWire() {
+  for (const el of $('clist').querySelectorAll('[data-k]')) {
+    let tm = 0, x0 = 0, y0 = 0; const k = el.dataset.k, stop = () => { clearTimeout(tm); tm = 0; };
+    el.addEventListener('pointerdown', e => { if (e.button > 0) return; x0 = e.clientX; y0 = e.clientY; stop(); tm = setTimeout(() => { tm = 0; UI.stipEat = performance.now(); shopTip(k, el); }, 420); });
+    el.addEventListener('pointermove', e => { if (tm && Math.hypot(e.clientX - x0, e.clientY - y0) > 10) stop(); });
+    el.addEventListener('pointerup', stop); el.addEventListener('pointercancel', stop); el.addEventListener('pointerleave', stop);
+    el.addEventListener('contextmenu', e => { e.preventDefault(); shopTip(k, el); });
+    el.addEventListener('click', e => { if (performance.now() - (UI.stipEat || 0) < 600) { e.stopPropagation(); e.preventDefault(); } }, true); // the long press must not also buy
+  }
 }
 function shopBtn(c, label) {
   const me = W.p[ME], why = craftBlocked(me, c), hard = why && why !== '材料不足';
@@ -12207,48 +12298,44 @@ function shopBtn(c, label) {
 function renderCraft() {
   const me = W.p[ME], tab = SET.shopTab && SHOP_TABS.some(t => t[0] === SET.shopTab) ? SET.shopTab : 'gun';
   $('ctabs').innerHTML = SHOP_TABS.map(([k, n]) => `<button data-t="${k}" class="${k === tab ? 'sel' : ''}">${n}</button>`).join('');
-  $('ctabs').querySelectorAll('button').forEach(b => b.onclick = () => { SET.shopTab = b.dataset.t; saveSet(); renderCraft(); sfx('click'); });
-  $('cres').textContent = '材料：' + RES.map(r => r.name + ' ' + W.res[r.k]).join(' · ');
-  // (round 36d) 常买: the things you restock most, on every tab — this gun's ammo, medkits, frag grenades, and the gyro / tank / mech upkeep if you have them
-  let h = '';
-  { const q = [], wi = me.wpn, am = CRAFT.find(c => c.ammo && c.ammo[0] === wi); if (me.owned[wi] && am && !WPN[wi].inf) q.push([am, WPN[wi].sn || WPN[wi].name + '弹']);
-    for (const [k, n] of [['med', '医疗包'], ['nade', '破片 ×2']]) { const c = CRAFT.find(x => x.id === k); if (c) q.push([c, n]); }
-    if (ownsVeh(me, 5)) { const c = CRAFT.find(x => x.gam); if (c) q.push([c, '旋翼机弹']); }
-    if (ownsVeh(me, 6)) { const c = CRAFT.find(x => x.shl); if (c) q.push([c, '炮弹']); }
-    if (me.vehs & 126 && [1, 2, 3, 4, 5, 6].some(v => ownsVeh(me, v) && mhpOf(me, v) < MECHS[v].hp)) { const c = CRAFT.find(x => x.mfix); if (c) q.push([c, '修机甲']); }
-    h += `<div class="squick"><i>常买</i>${q.map(([c, n]) => shopBtn(c, n)).join('')}</div>`; }
+  $('ctabs').querySelectorAll('button').forEach(b => b.onclick = () => { $('stip').classList.add('hidden'); SET.shopTab = b.dataset.t; saveSet(); renderCraft(); sfx('click'); });
+  $('cres').textContent = '材料：' + RES.map(r => r.name + ' ' + W.res[r.k]).join(' · ') + ' · 弹头 Lv' + W.upg; // (round 36f) the team damage level (tasks raise it)
+  let h = ''; // (round 36f) the 常买 strip is gone: medkit and grenades head the weapons tab, fuel / ammo / upkeep head the vehicle tab, your own guns come first
+  // (round 36f) cards carry only a name, what you have and the button; everything else (what it does, setting a default vehicle) is in the long-press card
+  const T = UI.stips = {}, card = (k, own, name, em, btns, tip, cls) => { T[k] = tip; return `<div class="sc${own ? ' own' : ''}${cls ? ' ' + cls : ''}" data-k="${k}"><div class="sh"><b>${name}</b><em>${em}</em></div><div class="sb">${btns}</div></div>`; };
   if (tab === 'gun') {
+    { const c = CRAFT.find(x => x.med); h += card('med', me.meds > 0, c.name, me.meds + ' / ' + BAL.medCap, shopBtn(c, '买'), { t: c.name, d: c.desc }, 'smed'); }
+    h += `<div class="sgrid2">`;
+    for (const c of CRAFT.filter(x => x.nade)) { const n = c.gt ? gCount(me, c.gt) : me.nades, cap = c.gt ? BAL.gnCap : BAL.nadeCap; h += card(c.id, n > 0, c.name.replace(' ×2', ''), n + ' / ' + cap, shopBtn(c, '买 ×2'), { t: c.name, d: c.desc }); }
+    h += `</div>`;
     const ord = WPN.map((w, k) => k).sort((a, b) => { const sc = k => { const own = me.owned[k], buy = CRAFT.find(c => c.wpn === k); return own ? (WPN[k].inf ? 1 : 0) : buy && !craftBlocked(me, buy) ? 2 : 3; }; return sc(a) - sc(b) || a - b; }); // (round 36d) your guns first (ammo to buy), then what you can afford, then the rest
     h += ord.map(k => { const w = WPN[k];
       const buy = CRAFT.find(c => c.wpn === k), am = CRAFT.find(c => c.ammo && c.ammo[0] === k), own = me.owned[k];
-      const st = own ? (w.inf ? '已有 · 子弹无限' : '已有 · ' + me.mag[k] + ' / ' + me.ammo[k] + '（最多 ' + ammoCap(k) + '）') : '没有'; // (round 32) backpack cap
-      const btns = !own && buy ? shopBtn(buy, '造这把枪') : own && am ? shopBtn(am, '买' + am.name) : own && w.inf ? '<span class="sfree">不用买子弹</span>' : '';
-      return `<div class="sc${own ? ' own' : ''}" title="${(w.tag || '').replace(/"/g, '')}"><div class="sh"><b>${w.name}</b><em>${st}</em></div><small>${w.tag || ''}</small><div class="sb">${btns}</div></div>`;
+      const st = own ? (w.inf ? '子弹无限' : me.mag[k] + ' / ' + me.ammo[k]) : '没有'; // (round 32) backpack cap is in the long-press card
+      const btns = !own && buy ? shopBtn(buy, '造') : own && am ? shopBtn(am, '买' + am.name.replace(/^.*?(×\s*\d+)$/, '$1')) : own && w.inf ? '<span class="sfree">不用买</span>' : '';
+      return card('w' + k, own, w.name, st, btns, { t: w.name, d: (w.tag || '') + (own && !w.inf ? '<br>背包最多带 ' + ammoCap(k) + ' 发' : '') + (am ? '<br>弹药：' + am.name + '，' + costText(am.cost) : '') });
     }).join('');
-    { const g = CRAFT.find(c => c.gam), own = ownsVeh(me, 5); h += `<div class="sc${own ? ' own' : ''}"><div class="sh"><b>旋翼机机枪</b><em>${own ? '机上 ' + (me.gam || 0) + ' / ' + BAL.gyroCap : '要先有旋翼机'}</em></div><small>飞的时候按开火：一发 ${BAL.gyroDmg}，射速快，打你瞄的地方；子弹存在飞机上</small><div class="sb">${own ? shopBtn(g, '买' + g.name) : '<span class="sfree">「载具」栏造</span>'}</div></div>`; } // (round 30)
-    { const g = CRAFT.find(c => c.shl), own = ownsVeh(me, 6); h += `<div class="sc${own ? ' own' : ''}"><div class="sh"><b>坦克炮</b><em>${own ? '车里 ' + (me.shl || 0) + ' / ' + BAL.tankCap : '要先有坦克'}</em></div><small>开坦克时按开火：炮弹打到哪炸到哪（${BAL.tankDmg}，半径 ${BAL.tankR}），${BAL.tankRate} 秒一发</small><div class="sb">${own ? shopBtn(g, '买' + g.name) : '<span class="sfree">「载具」栏造</span>'}</div></div>`; } // (round 31)
-    // (round 23) melee: knife or riot shield, one at a time
-    const sc = CRAFT.find(c => c.shield), useBtn = m => `<button class="sbtn mel" data-m="${m}"><b>${m ? '用盾' : '用刀'}</b><span>换成近战武器</span></button>`;
-    h += `<div class="sgrp">近战 · 右键 / V（触屏「刀 / 盾」键）；X 或武器菜单里切换</div>`;
-    h += `<div class="sc own"><div class="sh"><b>刀</b><em>${me.melee !== 1 || !me.shield ? '在用' : '已有'}</em></div><small>冲上去砍一只，背后砍双倍，睡着的一刀死</small><div class="sb">${me.melee === 1 && me.shield ? useBtn(0) : '<span class="sfree">在用</span>'}</div></div>`;
-    h += `<div class="sc${me.shield ? ' own' : ''}"><div class="sh"><b>防暴盾</b><em>${me.shield ? (me.melee === 1 ? '在用' : '已有') : '没有'}</em></div><small>${sc.desc}</small><div class="sb">${!me.shield ? shopBtn(sc, '买') : me.melee === 1 ? '<span class="sfree">在用</span>' : useBtn(1)}</div></div>`;
-  } else if (tab === 'item') {
-    const st = { nade: '带着 ' + me.nades + ' / ' + BAL.nadeCap, med: '带着 ' + me.meds + ' / ' + BAL.medCap }; for (let t = 1; t < 4; t++) st['g' + GREN[t].k] = '带着 ' + gCount(me, t) + ' / ' + BAL.gnCap;
-    h += CRAFT.filter(c => c.cat === 'item').map(c => `<div class="sc"><div class="sh"><b>${c.name}</b><em>${st[c.id] || ''}</em></div><small>${c.desc}</small><div class="sb">${shopBtn(c, c.shield && me.shield > 0 ? '修满' : '买')}</div></div>`).join('');
-    h += `<div class="sgrp">墙、陷阱、地雷、机枪塔、跳板这些<b>放置类道具不在商店里</b>：随时随地点「道具」（电脑按 B）拿出来放，放一个扣一份材料</div>`;
-  } else if (tab === 'veh') {
-    h += `<div class="sgrp">选一辆当默认：T（触屏点「载具」）就上这辆；Shift+T / 长按「载具」换车</div>`;
-    h += CRAFT.filter(c => c.cat === 'veh').map(c => { const v = c.veh, own = (me.vehs || 0) >> v & 1, def = own && me.veh === v, M = MECHS[v];
-      return `<div class="sc${own ? ' own' : ''}"><div class="sh"><b>${c.name}</b><em>${def ? '默认 ✓' : own ? '已有' : '速度 ×' + VEH[v].spd}</em></div><small>${c.desc}${M ? `<br><b>二阶段 · ${M.name}</b>（骑着按 X / 「变形」，1 秒）：${M.tag}` : ''}</small><div class="sb">${own ? (def ? '<span class="sfree">按 T 上车</span>' : `<button class="sbtn vdef" data-v="${v}"><b>设为默认</b><span>T 就上这辆</span></button>`) : shopBtn(c, '造')}</div></div>`; }).join('');
-    if (me.vehs & 126) { const fx = CRAFT.find(c => c.mfix), bt = CRAFT.find(c => c.mbat), hs = [1, 2, 3, 4, 5, 6].filter(v => ownsVeh(me, v)).map(v => MECHS[v].name + ' ' + Math.round(mhpOf(me, v)) + '/' + MECHS[v].hp).join('，'); h += `<div class="sc own"><div class="sh"><b>机甲维护</b><em>电 ${Math.floor(me.bat != null ? me.bat : BAL.mechBat)} / ${BAL.mechBat} 秒</em></div><small>装甲：${hs}。不是机甲形态时装甲和电会慢慢恢复；这里马上修好 / 充满（要先变回载具）</small><div class="sb">${shopBtn(fx, '修好装甲')}${shopBtn(bt, '充满电')}</div></div>`; } // (round 34b)
-    if (ownsVeh(me, 5)) { const f = CRAFT.find(c => c.fuel); h += `<div class="sc own"><div class="sh"><b>旋翼机油箱</b><em>油 ${Math.floor(me.fuel || 0)} / ${VEH[5].fuel} 秒</em></div><small>在这里直接加满（免费、马上满）；也可以在有屋顶的房间里按 F 加。机枪子弹在「武器 · 弹药」栏买</small><div class="sb">${shopBtn(f, '加满油')}</div></div>`; } // (round 30)
+    h += card('knife', true, '刀', '近战', '<span class="sfree">右键 / V</span>', { t: '刀（近战）', d: '右键 / V（触屏「刀」键）：冲上去砍一只，背后砍双倍，睡着的一刀死。不用买、不会坏。' });
   } else {
-    h += CRAFT.filter(c => c.cat === 'upg').map(c => `<div class="sc"><div class="sh"><b>${c.name}</b><em>${W.upg} / 5 级</em></div><small>${c.desc}</small><div class="sb">${shopBtn(c, '升级')}</div></div>`).join('');
+    // (round 36f) what flying and driving burn, right at the top: gyro fuel + gun rounds, tank shells, mech armour + battery
+    let top = '';
+    if (ownsVeh(me, 5)) { const f = CRAFT.find(c => c.fuel), g = CRAFT.find(c => c.gam), fu = Math.floor(me.fuel || 0), fm = VEH[5].fuel; top += `<div class="sres" data-k="rgyro"><b>旋翼机</b><span class="${fu < fm * 0.3 ? 'lo' : ''}">油 ${fu}/${fm}</span><span class="${(me.gam || 0) < 60 ? 'lo' : ''}">弹 ${me.gam || 0}/${BAL.gyroCap}</span>${shopBtn(f, '加满油')}${shopBtn(g, '弹 ×150')}</div>`;
+      T.rgyro = { t: '旋翼机：油和机枪弹', d: `油：飞的时候一直烧，最多 ${fm} 秒；这里加满免费，也能在有屋顶的房间里按 F 加。<br>机枪：飞的时候按开火，一发 ${BAL.gyroDmg}，打你瞄的地方；子弹存在飞机上，最多 ${BAL.gyroCap} 发，造飞机时送 250 发。` }; }
+    if (ownsVeh(me, 6)) { const g = CRAFT.find(c => c.shl); top += `<div class="sres" data-k="rtank"><b>坦克</b><span class="${(me.shl || 0) < 15 ? 'lo' : ''}">炮弹 ${me.shl || 0}/${BAL.tankCap}</span>${shopBtn(g, '炮弹 ×25')}</div>`;
+      T.rtank = { t: '坦克炮弹', d: `开坦克时按开火：打到哪炸到哪（${BAL.tankDmg}，半径 ${BAL.tankR}），${BAL.tankRate} 秒一发。车里最多 ${BAL.tankCap} 发，造坦克时送 100 发。` }; }
+    if (me.vehs & 126) { const fx = CRAFT.find(c => c.mfix), bt = CRAFT.find(c => c.mbat), hs = [1, 2, 3, 4, 5, 6].filter(v => ownsVeh(me, v)), low = hs.some(v => mhpOf(me, v) < MECHS[v].hp * 0.5), bat = Math.floor(me.bat != null ? me.bat : BAL.mechBat);
+      top += `<div class="sres" data-k="rmech"><b>机甲</b><span class="${bat < BAL.mechBat * 0.3 ? 'lo' : ''}">电 ${bat}/${BAL.mechBat}</span><span class="${low ? 'lo' : ''}">装甲 ${Math.round(Math.min(...hs.map(v => mhpOf(me, v) / MECHS[v].hp)) * 100)}%</span>${shopBtn(fx, '修装甲')}${shopBtn(bt, '充电')}</div>`;
+      T.rmech = { t: '机甲维护', d: '装甲：' + hs.map(v => MECHS[v].name + ' ' + Math.round(mhpOf(me, v)) + '/' + MECHS[v].hp).join('，') + '。<br>不是机甲形态时装甲和电会慢慢恢复；这里马上修好 / 充满（要先变回载具）。' }; } // (round 34b)
+    if (top) h += `<div class="stop">${top}</div>`;
+    h += CRAFT.filter(c => c.cat === 'veh').map(c => { const v = c.veh, own = (me.vehs || 0) >> v & 1, def = own && me.veh === v, M = MECHS[v];
+      return card('v' + v, own, c.name, def ? '默认 ✓' : own ? '已有' : '×' + VEH[v].spd, own ? (def ? '<span class="sfree">T 上车</span>' : '<span class="sfree">长按设默认</span>') : shopBtn(c, '造'),
+        { t: c.name + (M ? ' / ' + M.name : ''), d: c.desc + '<br>速度 ×' + VEH[v].spd + (M ? `<br><b>二阶段 · ${M.name}</b>（骑着按 X / 「变形」，1 秒）：${M.tag}` : '') + (own ? '<br>默认载具：T（触屏点「载具」）就上这辆；Shift+T / 长按「载具」换车' : ''), v: own && !def ? v : null }); }).join('');
   }
   $('clist').innerHTML = h;
   $('clist').querySelectorAll('button[data-c]').forEach(b => b.addEventListener('click', () => shopBuy(CRAFT.find(c => c.id === b.dataset.c))));
   $('clist').querySelectorAll('button[data-g]').forEach(b => b.addEventListener('click', () => { closeCraft(); selItem(+b.dataset.g); }));
   $('clist').querySelectorAll('button.mel').forEach(b => b.addEventListener('click', () => { switchMelee(+b.dataset.m); setTimeout(renderCraft, NETROLE === 'guest' ? 250 : 0); }));
+  shopTipWire();
   $('clist').querySelectorAll('button.vdef').forEach(b => b.addEventListener('click', () => { const v = +b.dataset.v; act('vdef', v); if (NETROLE === 'guest') me.veh = v; sfx('click'); setTimeout(renderCraft, NETROLE === 'guest' ? 250 : 0); }));
 }
 /* (round 22) 装备: pick the 4 quick weapons and the default vehicle; works anywhere */
@@ -12261,8 +12348,6 @@ function renderKit() {
     return `<button data-w="${k}" class="kw${own ? '' : ' no'}${k === me.wpn ? ' cur' : ''}" ${own ? '' : 'disabled'}><b>${w.name}${j >= 0 ? ' <i>' + (j + 1) + '</i>' : ''}</b><small>${own ? (w.inf ? '∞' : me.mag[k] + ' / ' + me.ammo[k]) : '商店里造'}</small><span>${w.tag || ''}</span></button>`; }).join('');
   $('kveh').innerHTML = [1, 2, 3, 4, 5, 6].map(v => { const own = (me.vehs || 0) >> v & 1;
     return `<button data-v="${v}" class="${own ? '' : 'no'}${own && me.veh === v ? ' sel' : ''}" ${own ? '' : 'disabled'}><b>${VEH[v].name}</b><small>${own ? (me.veh === v ? '默认 ✓' : '设为默认') : '商店里造'}</small></button>`; }).join('');
-  $('kshield').innerHTML = [0, 1].map(m => { const own = !m || me.shield, on = (me.melee === 1 && me.shield ? 1 : 0) === m; return `<button data-m="${m}" class="${on ? 'sel' : ''}${own ? '' : ' no'}" ${own ? '' : 'disabled'}><b>${m ? '防暴盾' : '刀'}</b><small>${!own ? '商店 → 武器 里买' : on ? '在用 ✓' : '换成它'}</small></button>`; }).join('');
-  $('kshield').querySelectorAll('button[data-m]').forEach(b => b.onclick = () => { switchMelee(+b.dataset.m); renderKit(); });
   $('kslots').querySelectorAll('button').forEach(b => b.onclick = () => { UI.kitSlot = +b.dataset.s; renderKit(); sfx('click'); });
   $('kwpn').querySelectorAll('button[data-w]').forEach(b => b.onclick = () => {
     const k = +b.dataset.w, cur = quickList(me), j = cur.indexOf(k), s0 = clamp(UI.kitSlot || 0, 0, 3);
@@ -12413,7 +12498,7 @@ function initUI() {
   $('pAssist').onclick = () => { SET.assist = ((SET.assist == null ? 1 : SET.assist) + 1) % 3; saveSet(); $('pAssist').textContent = '辅助瞄准：' + assistLv().name; sfx('click'); };
   $('pQual').onclick = () => { const o = ['auto', 0, 1, 2], i = o.indexOf(SET.q == null ? 'auto' : SET.q); SET.q = o[(i + 1) % 4]; if (SET.q === 'auto') SET.qa = 0; saveSet(); applyQual(); $('pQual').textContent = qualLabel(); sfx('click'); };
   $('readyBtn').onclick = () => inGame() && toggleReady();
-  $('tasks').addEventListener('pointerdown', e => { e.stopPropagation(); UI.tkPin = !UI.tkPin; UI.tkOpenT = 0; sfx('click'); });
+  $('tasks').addEventListener('pointerdown', e => { e.stopPropagation(); if (UI.tkPin && !e.target.closest('.tksum,.tkhide')) return; /* (round 36f) touching the open list (to scroll it) keeps it open */ UI.tkPin = !UI.tkPin; UI.tkOpenT = 0; sfx('click'); });
   $('oAgain').onclick = () => { $('over').classList.add('hidden'); SLOT = freeSlot() || SLOT; /* (round 27) the run that just ended keeps its slot unless there's a free one */ if (NETROLE === 'host') { if (!NET.gctl || !NET.gctl.open) { NETROLE = 'solo'; startGame((Math.random() * 1e9) | 0, [SET.name || '幸存者'], SET.diff, 0, W ? W.mode : SET.mode, W ? W.map : SET.map); } else hostStart(); } else startGame((Math.random() * 1e9) | 0, [SET.name || '幸存者'], SET.diff, 0, W ? W.mode : SET.mode, W ? W.map : SET.map); };
   $('oLobby').onclick = () => { netSendCtl({ t: 'toLobby' }); backToLobby(); };
   $('oEndless').onclick = () => { $('over').classList.add('hidden'); W.endless = true; W.over = null; W.phase = 'night'; dawn(); };
@@ -12686,10 +12771,10 @@ function applySave(S) {
   applyWorld(S.g, leg);
   W.p2keep = S.p && S.p[1] ? JSON.parse(JSON.stringify(S.p[1])) : null; // (round 34) the teammate's kit stays in the save even when you carry on alone
   W.saveName = S.name || ''; W.perm = S.perm || null; W.perk = S.perk || null; W.mine = new Set(S.mine || []);
-  Object.assign(W, { night: S.night, phase: S.phase, clock: S.clock, dayLen: S.dayLen, nightT: S.nightT || 0, res: S.res, upg: S.upg, kills: S.kills, stats: S.stats, endless: !!S.endless, clean: S.clean !== false, tasks: S.tasks || [], t: S.t || 0 });
+  Object.assign(W, { night: S.night, phase: S.phase, clock: S.clock, dayLen: S.dayLen, nightT: S.nightT || 0, res: S.res, upg: Math.max(S.upg || 0, BAL.upgStart), kills: S.kills, stats: S.stats, endless: !!S.endless, clean: S.clean !== false, tasks: S.tasks || [], t: S.t || 0 });
   W.srch = new Set(S.srch || []); W.spotN = S.spotN || null; if (!W.spotN) { W.spotN = spotCount(); for (const k in W.spotN) W.spotN[k] = Math.round(W.spotN[k] * 2); } W.tkv++; W.rng = mulberry((S.seed ^ (S.night * 7919) ^ (S.at & 0xffff)) >>> 0);
   const p = W.p[0], P = S.p[0];
-  if (P) { Object.assign(p, { x: P.x, y: P.y, L: P.L, hp: P.dead ? BAL.pMaxHp * 0.5 : P.hp, wpn: P.wpn, owned: P.owned, mag: P.mag, ammo: P.ammo, meds: P.meds, nades: P.nades, kills: P.kills, veh: P.veh || 0, vehs: P.vehs != null ? P.vehs : (P.veh ? 1 << P.veh : 0), shield: P.shield ? 1 : 0, melee: P.shield ? P.melee || 0 : 0, gn: P.gn || [0, 0, 0], lives: P.lives != null ? P.lives : livesFor(W.diff, W.mode), fuel: P.fuel != null ? P.fuel : 60, gam: P.gam || 0, shl: P.shl || 0, mh: P.mh || [], bat: P.bat != null ? P.bat : BAL.mechBat }); p.vehs &= 127; if (p.veh === 7) p.veh = [4, 2, 3, 1, 5, 6].find(k => p.vehs >> k & 1) || 0; p.dead = false; /* (round 34b) the stand-alone mech of 34a became the vehicles' second stage */ p.down = false; } // (round 22) vehs = owned bitmask; older saves only knew the best one
+  if (P) { Object.assign(p, { x: P.x, y: P.y, L: P.L, hp: P.dead ? BAL.pMaxHp * 0.5 : P.hp, wpn: P.wpn, owned: P.owned, mag: P.mag, ammo: P.ammo, meds: P.meds, nades: P.nades, kills: P.kills, veh: P.veh || 0, vehs: P.vehs != null ? P.vehs : (P.veh ? 1 << P.veh : 0), shield: 0, melee: 0, /* (round 36f) no more riot shield */ gn: P.gn || [0, 0, 0], lives: P.lives != null ? P.lives : livesFor(W.diff, W.mode), fuel: P.fuel != null ? P.fuel : 60, gam: P.gam || 0, shl: P.shl || 0, mh: P.mh || [], bat: P.bat != null ? P.bat : BAL.mechBat }); p.vehs &= 127; if (p.veh === 7) p.veh = [4, 2, 3, 1, 5, 6].find(k => p.vehs >> k & 1) || 0; p.dead = false; /* (round 34b) the stand-alone mech of 34a became the vehicles' second stage */ p.down = false; } // (round 22) vehs = owned bitmask; older saves only knew the best one
   // older saves may have fewer weapons
   for (const k of ['owned', 'mag', 'ammo']) while (p[k].length < NW) p[k].push(0);
   p.z = pZ(p); p.zv = p.z; CAM.tx = p.x; CAM.ty = p.y;

@@ -58,7 +58,7 @@ function setGren(t) { const me = W.p[ME]; if (!GREN[t]) return; me.gt = t; SET.g
 function cycleGren(d) { const me = W.p[ME]; let t = me.gt || 0; for (let k = 0; k < 4; k++) { t = (t + d + 4) % 4; if (gCount(me, t) > 0) break; } setGren(t); }
 // (round 23) the melee slot: knife or riot shield
 function switchMelee(v) {
-  const me = W.p[ME]; if (!me.shield) { toast('近战只有刀：商店 → 武器 里能买防暴盾（猛推开一片丧尸）'); return; }
+  const me = W.p[ME]; if (!me.shield) return; /* (round 36f) the knife is the only melee weapon now */
   const m = v != null ? v : me.melee === 1 ? 0 : 1; act('melee', m); me.melee = m; UI.meleeT = performance.now() + 600; toast(m ? '近战：防暴盾 · 推开前面一片丧尸、晕 1 秒，正面挨打少受一半' : '近战：刀 · 冲上去砍一只，背后砍双倍'); sfx('swap');
 }
 function doBash() {

@@ -15,8 +15,8 @@ const UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/6
     const simWait = s => p.evaluate(s => new Promise(r => { const t0 = W.t; const f = () => W.t - t0 >= s ? r() : setTimeout(f, 30); f(); }), s);
     // tasks
     const tk = await p.evaluate(() => W.tasks.map(t => t.k + ':' + t.need + ':' + t.rt));
-    ok('permanent tasks: the four closest to done are shown (round 32)', tk.length === 4, tk.join(' | '));
-    ok('task panel rendered', await p.evaluate(() => document.querySelectorAll('#tasks .tk').length === 4));
+    ok('permanent tasks: every open one is shown (round 36f; was the four closest)', tk.length === 8, tk.join(' | '));
+    ok('task panel rendered', await p.evaluate(() => document.querySelectorAll('#tasks .tk').length === PERM.length && /任务 \d/.test(document.querySelector('#tasks .tksum').textContent)));
     ok('no radio left', await p.evaluate(() => !W.blk.some(b => b === 30) && !CRAFT.some(c => c.id === 'radio')));
     const pay = await p.evaluate(() => { const h0 = W.p[0].maxHp; taskAdd('kill', 60); return [W.perk.hp, W.p[0].maxHp - h0, W.tasks.find(t => t.k === 'kill').need]; });
     ok('a permanent task tier gives its upgrade and moves on to the next tier', pay[0] === 1 && pay[1] === 10 && pay[2] === 200, pay.join(','));

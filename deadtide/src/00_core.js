@@ -214,7 +214,7 @@ const ZT = {
   shade: { name: '隐身者', hp: 420, spd: 1.5, r: 0.3, h: 1.25, dmg: 12, bdmg: 10, cd: 0.9, sc: 1.2, look: 'walker', skin: '#50505e', elite: { k: 'cloak', cd: 6, col: '#c0c0e0', tip: '隐身摸到你身边偷袭，留意空气里的扭曲，附近炸一下就现形' } },
 };
 const ELITES = ['blinker', 'caller', 'warden', 'shade'];
-const BUILD_TAG = '第 36 轮之五'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
+const BUILD_TAG = '第 36 轮之六'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
 // aim assist (SET.assist): fire-button lock range (x weapon range), lock-on time before it fires, spread while auto-aimed, mouse/finger magnet
 const PORT = 1.25; // firing port: your own shots pass a wall / door you built if it is this close to you
 const ASSIST = [{ name: '关', range: 0, acq: 0, spread: 1, mag: 0 }, { name: '标准', range: 0.75, acq: 0.3, spread: 1.5, mag: 1 }, { name: '强', range: 1, acq: 0, spread: 1, mag: 1 }];
@@ -245,11 +245,11 @@ const PERM = [
   { k: 'build', name: '建造 / 放置', need: [40, 150, 400], perk: 'med' },
   { k: 'nade', name: '用手雷炸死丧尸', need: [15, 60, 160], perk: 'nade' },
   { k: 'clean', name: '整夜没有人倒下', need: [2, 5, 9], perk: 'life' },
-  { k: 'elite', name: '击杀精英（重锤、防暴尸、尸王）', need: [5, 20, 50], perk: 'hp' },
-  { k: 'shove', name: '刀 / 盾命中', need: [50, 200, 500], perk: 'bag' },
+  { k: 'elite', name: '击杀精英（重锤、防暴尸、尸王）', need: [5, 20, 50], perk: 'upg' }, // (round 36f) raises 强化弹头 (the shop no longer sells it)
+  { k: 'shove', name: '刀命中', need: [50, 200, 500], perk: 'bag' },
   { k: 'gather', name: '砍树、采石', need: [30, 100, 250], perk: 'med' },
 ];
-const PERK = { hp: ['生命上限 +10', 10], bag: ['背包：弹药上限 +25%', 0.25], med: ['医疗包上限 +2', 2], nade: ['手雷上限 +3（特殊手雷各 +2）', 3], life: ['复活次数 +1', 1] };
+const PERK = { hp: ['生命上限 +10', 10], bag: ['背包：弹药上限 +25%', 0.25], med: ['医疗包上限 +2', 2], nade: ['手雷上限 +3（特殊手雷各 +2）', 3], life: ['复活次数 +1', 1], upg: ['强化弹头 +1（全队伤害 +12%）', 1] };
 const perkLv = k => (typeof W !== 'undefined' && W && W.perk && W.perk[k]) || 0;
 // carry limits grow with the upgrades (read through getters so every place that checks a cap sees the current one)
 const ammoCap = wi => Math.round((WPN[wi].gl ? 60 : 500) * (1 + PERK.bag[1] * perkLv('bag'))); // (round 33) 500 rounds a gun (grenade launcher 100), +25% per backpack upgrade
@@ -315,7 +315,6 @@ const CRAFT = [
   { id: 'gsmoke', cat: 'item', name: '烟雾弹 ×2', desc: '一团烟 10 秒，里面的丧尸找不到你、不咬人；最多 8 颗', cost: { wood: 2, parts: 2 }, nade: 2, gt: 2 },
   { id: 'gblast', cat: 'item', name: '爆破弹 ×2', desc: '把一大片丧尸炸飞 3–5 格、晕 1.6 秒，清出一条路；最多 8 颗', cost: { parts: 4, steel: 2 }, nade: 2, gt: 3 },
   { id: 'med', cat: 'item', name: '医疗包', desc: '回复 60 生命，最多带 8 个；H 用，也能救回阵亡的队友', cost: { parts: 3, wood: 2 }, med: 1 },
-  { id: 'shield', cat: 'melee', name: '防暴盾', desc: '近战武器（和刀二选一）：猛推前方一片丧尸，撞开 3 格、晕 1 秒；拿着它时正面挨打少受一半', cost: { steel: 6, parts: 4 }, shield: 1 },
   { id: 'bike', cat: 'veh', name: '自行车', desc: VEH[1].tag, cost: { wood: 6, steel: 6, parts: 4 }, veh: 1, bp: 'bike' },
   { id: 'moto', cat: 'veh', name: '摩托车', desc: VEH[2].tag, cost: { steel: 14, parts: 12 }, veh: 2, bp: 'moto' },
   { id: 'cargo', cat: 'veh', name: '货运三轮', desc: VEH[3].tag, cost: { wood: 8, steel: 10, parts: 8 }, veh: 3, bp: 'cargo' },
@@ -324,12 +323,13 @@ const CRAFT = [
   { id: 'tank', cat: 'veh', name: '坦克', desc: VEH[6].tag, cost: { steel: 40, parts: 30 }, veh: 6, bp: 'tank' },
   { id: 'mfix', cat: 'fuel', name: '修好机甲装甲', desc: '', cost: { steel: 8, parts: 8 }, mfix: 1 }, // (round 34b) all your mechs' hulls
   { id: 'mbat', cat: 'fuel', name: '给机甲充满电', desc: '', cost: { parts: 4 }, mbat: 1 },
-  { id: 'upg', cat: 'upg', name: '强化弹头', desc: '全队伤害 +12%（最多 5 级）', cost: { parts: 8 }, upg: 1 },
+  /* (round 36f) the riot shield and the 强化弹头 purchase are gone: the knife is the melee weapon, and the team starts at 弹头 Lv 3 (tasks raise it further) */
 ];
 
 /* ---------- balance ---------- */
 const BAL = {
   nights: 15,
+  upgStart: 3, upgMax: 6,         // (round 36f) 强化弹头 (+12% team damage a level) starts at 3 (was 0, bought up to 5 in the shop); the 击杀精英 task's three tiers push it to 6
   dayLen: [300, 240],            // first day, later days (seconds); (round 34b) from day 2 dayFor(n) shortens it
   dayFor: n => n <= 1 ? 300 : Math.max(150, 240 - (n - 1) * 12), // day n (after night n - 1): 240, 228, 216 … down to 150
   pMaxHp: 100, pSpeed: 4.4, pReach: 7.5, /* (round 25) 6.5 → 7.5 */
