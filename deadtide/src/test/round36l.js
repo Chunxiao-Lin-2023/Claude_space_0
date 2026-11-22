@@ -44,7 +44,7 @@ const { chromium } = require('playwright');
     check('隐身者: it flickers before striking; ' + (face ? 'facing it parries (破绽, no damage)' : 'back turned → ambushed'), s.tell && (face ? s.open && s.hurt === 0 : !s.open && s.hurt > 0), JSON.stringify(s));
   }
   // 唤尸者: backs off when you close in; its raised zombies drop when it dies
-  s = await S(() => { const o = spot(true); put(o); const me = W.p[ME]; W.phase = 'night'; W.strayT = 1e9; const z = spawnZombie('caller', 0); z.x = me.x + 3; z.y = me.y; z.L = me.L; z.z = surfZ(z.x, z.y, z.L); const d0 = 3; run(1.2, () => visTick()); const d1 = Math.hypot(z.x - me.x, z.y - me.y);
+  s = await S(() => { const o = spot(true); put(o); const me = W.p[ME]; W.phase = 'night'; W.strayT = 1e9; const z = spawnZombie('caller', 0); z.x = me.x + 3; z.y = me.y; z.L = me.L; z.z = surfZ(z.x, z.y, z.L); const d0 = 3; run(2, () => visTick()); const d1 = Math.hypot(z.x - me.x, z.y - me.y);
     const m = spawnZombie('walker', 0); m.x = z.x + 1; m.y = z.y; m.L = z.L; z.mins = [m.id]; hurtZombie(z, 1e6, me); return { d0, d1: +d1.toFixed(1), minion: m.hp }; });
   check('唤尸者 keeps its distance (you chase it), and what it raised drops with it', s.d1 > 3.5 && s.minion <= 0, JSON.stringify(s));
   // 护盾者: stand inside its bubble and it pulses you out (marked); hit it hard in the tell = bubble broken + 破绽
@@ -59,6 +59,17 @@ const { chromium } = require('playwright');
     W.zs.length = 0; let strafe = 0; for (let k = 0; k < 6; k++) { const c = spawnZombie('crow', 0); c.x = me.x + 3; c.y = me.y + k * 0.3; c.z = me.z + 2; c.fk = 50; c.L = me.L; } run(8, () => { visTick(); for (const c of W.zs) if (c.dv && c.dv.strafe) strafe = 1; });
     return { bomb, vd, latched, drained, off: !b2.latch, strafe }; });
   check('飞行丧尸: 尸鹫 acid glob hits someone standing still; a clinging bat drains until hit; crows strafe along marked lines', s.bomb >= 1 && s.vd > 0 && s.latched && s.drained && s.off && s.strafe, JSON.stringify(s));
+  // (round 36m) 翼龙兽: flies high, swoops along a marked line and lands (open), rains acid, gusts; hit hard in a tell → shot down
+  s = await S(() => { const o = spot(true); put(o); const me = W.p[ME]; W.phase = 'night'; W.strayT = 1e9; window.__dbg.god = true; const z = spawnZombie('kwing', 0); z.x = me.x + 6; z.y = me.y; z.z = me.z + 5; z.L = me.L; z.kcd = 0.5; const ev = {}; let maxAlt = 0, landed = 0;
+    const oe = window.emit; window.emit = e => { if (e.k === 'ktell' || e.k === 'kxp' || e.k === 'vbomb' || e.k === 'kroar') { const key = e.k + ':' + (e.k === 'ktell' ? e.s : e.w || ''); ev[key] = (ev[key] || 0) + 1; } return oe(e); };
+    run(25, () => { visTick(); maxAlt = Math.max(maxAlt, z.z - me.z); if (z.gnd > 0 && z.z - flyFloor(z.x, z.y) < 0.5) landed = 1; if (!z.ks) z.kcd = Math.min(z.kcd, 0.6); });
+    z.gnd = 0; z.xpT = 0; z.stun = 0; z.kcd = 0; z.z = me.z + 5; let down = false; for (let k = 0; k < 400 && !down; k++) { visTick(); stepZombies(1 / 60); if (z.ks && z.kt === 1) { hurtZombie(z, z.max * 0.1, me); visTick(); stepZombies(1 / 60); down = z.gnd > 0 && z.xpT > 0; } }
+    window.emit = oe; window.__dbg.god = false; return { maxAlt: +maxAlt.toFixed(1), landed, ev, down, label: ZT.kwing.kaiju }; });
+  check('翼龙兽: circles high, swoops (marked line) and lands (破绽), rains acid (marked), and a hard hit in a tell shoots it down', s.maxAlt > 4 && s.landed && s.ev['ktell:line'] && s.ev['kxp:land'] && s.ev['vbomb:'] && s.down, JSON.stringify(s));
+  s = await S(() => { const out = {}; for (const n of [6, 7]) { W.night = n - 1; W.zs.length = 0; let wing = 0; for (let k = 0; k < 40; k++) { W.night = n - 1; W.zs.length = 0; startNight(); if (W.spawnQ.some(q => q.k === 'kwing')) wing++; } out[n] = wing; } return out; });
+  check('翼龙兽 can turn up from night 7 (not before; night 6 has no kaiju at all)', s[6] === 0 && s[7] > 0, JSON.stringify(s));
+  s = await S(() => ({ runner: ZT.runner.hp, dog: ZT.dog.hp, climber: ZT.climber.hp, screamer: ZT.screamer.hp, walker: ZT.walker.hp }));
+  check('fast zombies are frailer than the slow ones', s.runner < s.walker && s.dog < s.runner && s.climber < s.walker && s.screamer < 150, JSON.stringify(s));
   check('no page errors', !errs.length, errs.join(' | '));
   console.log(ok ? 'ALL PASS' : 'SOME FAIL'); await b.close(); process.exit(ok ? 0 : 1);
 })();

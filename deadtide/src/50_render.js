@@ -551,9 +551,9 @@ function drawOverlay() {
   let html = '';
   // (round 34d) a health bar over every survivor (an orange hull line under it in a mech); it pulses red when low
   hpBars();
-  for (const z of W.zs) { const T = ZT[z.k]; if (!T || !T.elite || z.hp <= 0 || z.ck || z.ckF || z.sleep || !zSeen(z) || lcHide(Math.floor(z.x), Math.floor(z.y), z.L)) continue; // (round 35) 能力者: name and health over the head
+  for (const z of W.zs) { const T = ZT[z.k]; if (!T || !(T.elite || T.kaiju) || z.hp <= 0 || z.ck || z.ckF || z.sleep || !zSeen(z) || (!(T.kaiju && T.fly) && lcHide(Math.floor(z.x), Math.floor(z.y), z.L))) continue; // (round 35) 能力者: name and health over the head
     const [sx, sy, sz] = w2s(z.x, z.y, z.z + T.h * T.sc / 1.2 + 0.55); if (sz > 1 || sx < -60 || sx > VW + 60 || sy < -30 || sy > VH + 30) continue;
-    html += `<div class="elt" style="left:${sx | 0}px;top:${sy | 0}px;color:${T.elite.col}">${T.name}<i><b style="width:${clamp(z.hp / (z.max || 100), 0, 1) * 100 | 0}%;background:${T.elite.col}"></b></i></div>`; }
+    const ec = T.elite ? T.elite.col : '#ff8a5a'; /* (round 36m) kaiju get a name and health bar too */ html += `<div class="elt${T.kaiju ? ' kj' : ''}" style="left:${sx | 0}px;top:${sy | 0}px;color:${ec}">${T.name}<i><b style="width:${clamp(z.hp / (z.max || 100), 0, 1) * 100 | 0}%;background:${ec}"></b></i></div>`; }
   html += kxpLabels(); // (round 36l) 破绽 labels
   for (const f of RND.floats) { const [sx, sy] = w2s(f.x, f.y, f.z); html += `<div class="fl" style="left:${sx | 0}px;top:${sy | 0}px;opacity:${clamp(2.2 - f.t, 0, 1).toFixed(2)};color:${f.col}">${f.text}</div>`; }
   // 尸城求生: sleepers show a "z", a growing "?" while they're noticing you, a "!" as they wake

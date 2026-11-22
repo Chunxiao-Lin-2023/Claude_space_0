@@ -95,9 +95,10 @@ function drawZombies(vl, dt) {
     const corpse = !!z.corpse, L = z.L != null ? z.L : Math.floor((z.z + 0.1) / FH);
     if (z.hidden && !corpse) continue;
     if (!corpse && !zSeen(z)) continue; // (round 34d) out of everyone's sight
-    if (L > vl || lcHide(Math.floor(z.x), Math.floor(z.y), L)) continue;
+    const sky = ZT[z.k] && ZT[z.k].kaiju && ZT[z.k].fly; /* (round 36m) the flying kaiju is drawn over the floor cut-away */
+    if (!sky && (L > vl || lcHide(Math.floor(z.x), Math.floor(z.y), L))) continue;
     drawn++;
-    if (ZT[z.k] && ZT[z.k].kaiju) { drawKaiju(z, corpse, dt); continue; } // (round 34)
+    if (ZT[z.k] && ZT[z.k].kaiju && !ZT[z.k].fly) { drawKaiju(z, corpse, dt); continue; } // (round 34)
     if (ZT[z.k] && ZT[z.k].fly) { drawFlyer(z, corpse, dt); continue; } // (round 35) birds / bats
     if (ZT[z.k] && ZT[z.k].elite && !corpse) { drawElite(z, dt); if (z.ck || z.ckF) continue; } // (round 35) aura etc.; cloaked: only the shimmer
     rigZombie(z, corpse, dt, dk);

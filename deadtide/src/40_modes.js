@@ -291,6 +291,61 @@ function bossStep(z, dt) {
   return false;
 }
 /* ---------- (round 34) kaiju skills (host): every one is telegraphed (z.kt 1 = winding up, 2 = doing it) ---------- */
+// (round 36m) 翼龙兽, the flying kaiju: circles high over you; a swoop along a marked line (then it lands — an opening you can hit up close),
+// an acid rain on the spots you are heading for (it splashes on roofs too and eats into them), a wing gust that blows people away when they crowd under it.
+// Enough damage in a tell (8% of its health) or a hard stun knocks it out of the sky: 3 s on the ground, open. Berserk at half health (a flock of crows comes).
+function wingStep(z, Z, dt) {
+  const F = Z.fly, D = W.D.dmg || 1, CDK = z.rage2 ? 0.6 : 1; z.st = 'walk'; z.atk = 0; z.moving = true;
+  z.kcd = (z.kcd == null ? 2.5 : z.kcd) - dt; if (z.xpT > 0) z.xpT -= dt;
+  let tp = null, td = 1e9; for (const p of W.p) { if (p.gone || p.dead || p.down) continue; const d = Math.hypot(p.x - z.x, p.y - z.y) * (zExposed(p) ? 1 : 1.4); if (d < td) { td = d; tp = p; } }
+  const ground = () => flyFloor(z.x, z.y), cruise = () => Math.max(ground(), flyFloor(z.x + Math.cos(z.face) * 2, z.y + Math.sin(z.face) * 2)) + F.alt;
+  if (!z.rage2 && z.hp < z.max * 0.5) { z.rage2 = 1; z.spd *= 1.2; z.kcd = Math.min(z.kcd, 1); const fk = W.gid = (W.gid || 0) + 1; for (let k = 0; k < 5; k++) { const c = spawnZombie('crow', 0); c.x = z.x + (rand() - 0.5) * 3; c.y = z.y + (rand() - 0.5) * 3; c.z = z.z; c.L = z.L; c.fk = fk; }
+    emit({ k: 'kroar', id: z.id, x: r2(z.x), y: r2(z.y), z: r2(z.z) }); emit({ k: 'sfx', n: 'screech', x: z.x, y: z.y }); say(Z.name + '暴怒了！叫来了鸦群'); }
+  let S = z.ks;
+  if (S && z.kt === 1 && (z.stun > 0.3 || (S.dm || 0) >= z.max * 0.08)) { z.ks = S = null; z.gnd = 3; zExpose(z, 3, 'fall'); emit({ k: 'sfx', n: 'clank', x: z.x, y: z.y }); } // shot out of the sky
+  if (z.gnd > 0) { z.gnd -= dt; z.kt = 0; const g = ground(); z.z += (g - z.z) * Math.min(1, dt * 7); z.z = Math.max(z.z, g); z.L = clamp(Math.floor((z.z + 0.2) / FH), 0, ML - 1); if (z.gnd > 0) return; z.kcd = Math.max(z.kcd, 1.5); } // on the ground: open, then it takes off again
+  let gx = z.x, gy = z.y, gz = cruise(), spd = z.spd, vzMax = 3.5;
+  if (S) {
+    S.t += dt;
+    if (S.k === 'swoop') {
+      if (S.t < 0.9) { z.kt = 1; spd = 0; gz = z.z + 0.2; z.face += angDiff(z.face, Math.atan2(S.y - z.y, S.x - z.x)) * Math.min(1, dt * 8); }
+      else { z.kt = 2; vzMax = 10; spd = z.spd * F.spd; const toEnd = Math.hypot(S.x2 - z.x, S.y2 - z.y); gx = S.x2; gy = S.y2; gz = Math.max(S.hz, ground() + 0.6);
+        for (const p of W.p) { if (p.gone || p.dead || S.hit.includes(p.i) || !zExposed(p)) continue; if (Math.hypot(p.x - z.x, p.y - z.y, flyAimZ(p) - z.z) < 1.8 + (inMech(p) ? 0.6 : 0)) { S.hit.push(p.i); hurtPlayer(p, 30 * D, z); knock(p, Math.cos(z.face) * 12, Math.sin(z.face) * 12); emit({ k: 'sfx', n: 'smash', x: p.x, y: p.y }); } }
+        if (toEnd < 0.7 || S.t > 3.2) { z.ks = null; z.kt = 0; z.gnd = 1.7; zExpose(z, 1.7, 'land'); z.kcd = 5 * CDK; emit({ k: 'slam', x: r2(z.x), y: r2(z.y), z: r2(ground()), r: 2 }); } }
+    } else if (S.k === 'rain') {
+      z.kt = S.t < 0.6 ? 1 : 2; spd = z.spd * 0.4; if (tp) { gx = tp.x + Math.cos(z.fa || 0) * 4; gy = tp.y + Math.sin(z.fa || 0) * 4; }
+      if (S.t >= 0.6 && !S.g) { S.g = []; const ps = W.p.filter(p => !p.gone && !p.dead && !p.down), n = z.rage2 ? 5 : 3;
+        for (let k = 0; k < n && ps.length; k++) { const p = ps[k % ps.length], j = k === 0 ? 0 : 2.2, a = rand() * Math.PI * 2, x = clamp(p.x + (p.vx || 0) * 1.0 + Math.cos(a) * j * rand(), 1, MW - 1), y = clamp(p.y + (p.vy || 0) * 1.0 + Math.sin(a) * j * rand(), 1, MH - 1), h = flyFloor(x, y);
+          S.g.push({ x, y, h }); emit({ k: 'ktell', s: 'disc', x: r2(x), y: r2(y), z: r2(h), r: 1.7, t: 1.0 }); } emit({ k: 'sfx', n: 'screech', x: z.x, y: z.y }); }
+      if (S.t >= 1.6) { for (const G of S.g || []) { for (const p of W.p) { if (p.gone || p.dead) continue; const pz = inAirZ(p) != null ? inAirZ(p) : p.z; if (Math.hypot(p.x - G.x, p.y - G.y) < 1.7 && Math.abs(pz - G.h) < 2) hurtPlayer(p, 18 * D, z); }
+          const top = Math.round(G.h / FH) - 1; if (top >= 0) { const x0 = Math.floor(G.x), y0 = Math.floor(G.y); for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { if (!inMap(x0 + dx, y0 + dy)) continue; const i = ci(x0 + dx, y0 + dy, top); if (W.blk[i] && B[W.blk[i]].brk) damageCell(i, dx || dy ? 50 : 120); } } // eats into roofs
+          emit({ k: 'vbomb', x: r2(G.x), y: r2(G.y), z: r2(G.h) }); }
+        z.ks = null; z.kt = 0; z.kcd = 5 * CDK; }
+    } else if (S.k === 'gust') {
+      z.kt = S.t < 0.7 ? 1 : 2; spd = 0; gz = Math.max(ground() + 3, z.z - 0.5);
+      if (S.t >= 0.7 && !S.done) { S.done = 1; for (const p of W.p) { if (p.gone || p.dead) continue; const ex = p.x - z.x, ey = p.y - z.y, e = Math.hypot(ex, ey); if (e < 6 && (inAirZ(p) != null ? inAirZ(p) : p.z) < z.z + 1) { hurtPlayer(p, 10 * D, z); knock(p, ex / (e || 1) * 13, ey / (e || 1) * 13); } }
+        emit({ k: 'kroar', id: z.id, x: r2(z.x), y: r2(z.y), z: r2(ground() + 2) }); emit({ k: 'sfx', n: 'mdash', x: z.x, y: z.y }); }
+      if (S.t >= 1.1) { z.ks = null; z.kt = 0; z.kcd = 4 * CDK; }
+    }
+  } else if (tp) { // circle high over the target
+    z.kt = 0; if (z.fa == null) z.fa = rand() * Math.PI * 2; const R = F.orbit, dist = Math.hypot(tp.x - z.x, tp.y - z.y);
+    if (dist < R + 4) z.fa += z.spd / R * dt * 0.7; else z.fa = Math.atan2(z.y - tp.y, z.x - tp.x);
+    gx = tp.x + Math.cos(z.fa) * R; gy = tp.y + Math.sin(z.fa) * R; gz = Math.max(cruise(), flyFloor(tp.x, tp.y) + F.alt, inAirZ(tp) != null ? inAirZ(tp) + 1.5 : 0);
+    if (z.kcd <= 0 && z.stun <= 0 && zSeen(z) && W.phase !== 'day' && dist < F.dive) {
+      const under = W.p.some(p => !p.gone && !p.dead && Math.hypot(p.x - z.x, p.y - z.y) < 5), ex = zExposed(tp), r = rand();
+      if (under && r < 0.45) { z.ks = { k: 'gust', t: 0 }; emit({ k: 'ktell', s: 'disc', x: r2(z.x), y: r2(z.y), z: r2(ground()), r: 6, t: 0.7 }); }
+      else if (ex && r < 0.65) { const lx = clamp(tp.x + (tp.vx || 0) * 0.6, 1, MW - 1), ly = clamp(tp.y + (tp.vy || 0) * 0.6, 1, MH - 1), a = Math.atan2(ly - z.y, lx - z.x), x2 = clamp(lx + Math.cos(a) * 5, 1, MW - 1), y2 = clamp(ly + Math.sin(a) * 5, 1, MH - 1);
+        z.ks = { k: 'swoop', t: 0, x: lx, y: ly, x2, y2, hz: flyAimZ(tp), hit: [] }; emit({ k: 'ktell', s: 'line', x: r2(z.x), y: r2(z.y), z: r2(flyFloor(lx, ly)), x2: r2(x2), y2: r2(y2), w: 2.2, t: 0.9 }); emit({ k: 'sfx', n: 'screech', x: z.x, y: z.y }); }
+      else { z.ks = { k: 'rain', t: 0 }; }
+    }
+  }
+  // fly (the same steering as the small flyers)
+  const dx = gx - z.x, dy = gy - z.y, d = Math.hypot(dx, dy); let mx = 0, my = 0; if (d > 0.05 && spd > 0) { const v = Math.min(spd, d / Math.max(dt, 1e-3)); mx = dx / d * v; my = dy / d * v; }
+  if (z.kt !== 1 && Math.hypot(mx, my) > 0.1) z.face += angDiff(z.face, Math.atan2(my, mx)) * Math.min(1, dt * 5);
+  z.kbx = (z.kbx || 0) * Math.max(0, 1 - dt * 5); z.kby = (z.kby || 0) * Math.max(0, 1 - dt * 5);
+  z.x = clamp(z.x + (mx + z.kbx) * dt, 1, MW - 1.01); z.y = clamp(z.y + (my + z.kby) * dt, 1, MH - 1.01);
+  z.z += clamp((gz - z.z) * 3, -vzMax, vzMax) * dt; z.z = Math.max(z.z, ground() + 0.25); z.L = clamp(Math.floor((z.z - 1.0) / FH), 0, ML - 1);
+}
 function kaijuStep(z, dt) {
   // (round 36l) kaiju fights are about reading and punishing: every big move has a tell and leaves an opening (破绽, damage ×2) —
   // after a breath it pants, a sweep leaves it off balance, a charge into a wall knocks it silly (3 s), a burrow leaves it stuck half out, a pounce lands heavy;

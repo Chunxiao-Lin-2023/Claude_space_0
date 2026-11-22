@@ -4,24 +4,26 @@
 // a 唤尸者's summoning circle, and a 隐身者's shimmer while it is cloaked (then nothing else is drawn).
 const FLY = new Map(), ELX = new Map();
 function mkFlyer(k) {
-  const bat = k === 'bat', vult = k === 'vult', g = new THREE.Group(), J = { k, wings: [] };
-  const body = lam(bat ? '#4a3838' : vult ? '#4a3a2c' : '#1d1d24'), dark = lam(bat ? '#2c2222' : vult ? '#c9b89a' : '#0d0d12'), /* (round 36l) 尸鹫: brown with a pale ruff */ beakM = lam('#8a7a58'), memb = lam(bat ? '#5c4242' : '#24242c', { side: THREE.DoubleSide });
-  const eyeM = new THREE.MeshBasicMaterial({ color: bat ? '#ffcf3a' : '#ff3a2a' });
+  const ptero = k === 'kwing', bat = k === 'bat', vult = k === 'vult', g = new THREE.Group(), J = { k, wings: [] }; /* (round 36m) 翼龙兽: a pterosaur — long beak, a swept-back crest, membrane wings, a long tail with a vane */
+  const body = lam(bat ? '#4a3838' : ptero ? '#6a4a5c' : vult ? '#4a3a2c' : '#1d1d24'), dark = lam(bat ? '#2c2222' : ptero ? '#2e1e28' : vult ? '#c9b89a' : '#0d0d12'), /* (round 36l) 尸鹫: brown with a pale ruff */ beakM = lam('#8a7a58'), memb = lam(bat ? '#5c4242' : ptero ? '#9a5868' : '#24242c', { side: THREE.DoubleSide });
+  const eyeM = new THREE.MeshBasicMaterial({ color: bat || ptero ? '#ffb030' : '#ff3a2a' });
   const B = kjGrp(g, 0, 0.25, 0); J.body = B;
   kjPart(B, kjBlob(0.12, bat ? 1.15 : 1.7, bat ? 0.95 : 0.85, bat ? 0.9 : 0.8, 5), body);
   if (!bat) kjPart(B, kjBlob(0.08, 1.4, 0.6, 0.9, 11), dark, -0.03, -0.06, 0); // a darker belly
   const H = kjGrp(B, bat ? 0.13 : 0.21, bat ? 0.04 : 0.06, 0); J.head = H;
   kjPart(H, kjBlob(0.08, 1.05, 0.95, 0.95, 7), body);
   if (bat) { for (const s of [1, -1]) kjPart(H, new THREE.ConeGeometry(0.03, 0.11, 4), dark, -0.01, 0.1, s * 0.04, 0.25 * s, 0, 0); kjPart(H, kjBlob(0.04, 1.2, 0.7, 0.9, 2), dark, 0.07, -0.02, 0); for (const s of [1, -1]) kjPart(H, new THREE.ConeGeometry(0.008, 0.03, 3), lam('#e8e0d0'), 0.08, -0.05, s * 0.015, Math.PI, 0, 0); }
+  else if (ptero) { kjPart(H, new THREE.ConeGeometry(0.035, 0.3, 6).rotateZ(-Math.PI / 2), lam('#c8a878'), 0.22, -0.02, 0); kjPart(H, new THREE.ConeGeometry(0.03, 0.26, 4).rotateZ(Math.PI / 2 + 0.5).scale(1, 1, 0.3), memb, -0.13, 0.08, 0); }
   else { kjPart(H, new THREE.ConeGeometry(0.028, 0.13, 5).rotateZ(-Math.PI / 2), beakM, 0.12, -0.01, 0); kjPart(H, boxG(0.05, 0.02, 0.06), dark, -0.04, 0.07, 0, 0, 0, 0.3); } // beak, ragged crest
   for (const s of [1, -1]) kjPart(H, new THREE.IcosahedronGeometry(bat ? 0.016 : 0.018, 0), eyeM, 0.055, 0.025, s * 0.042);
   // tail: a fan of feathers (crow) / a stub (bat)
-  if (!bat) { const T = kjGrp(B, -0.18, 0.01, 0); J.tail = T; for (let k = -2; k <= 2; k++) kjPart(T, boxG(0.2, 0.012, 0.04, -0.1, 0, 0), body, 0, 0, k * 0.022, 0, k * 0.16, 0); }
+  if (ptero) { const T = kjGrp(B, -0.18, 0.01, 0); J.tail = T; kjPart(T, new THREE.ConeGeometry(0.03, 0.5, 5).rotateZ(Math.PI / 2), body, -0.25, 0, 0); kjPart(T, new THREE.OctahedronGeometry(0.06, 0).scale(1, 1.3, 0.3), memb, -0.5, 0.02, 0); }
+  else if (!bat) { const T = kjGrp(B, -0.18, 0.01, 0); J.tail = T; for (let k = -2; k <= 2; k++) kjPart(T, boxG(0.2, 0.012, 0.04, -0.1, 0, 0), body, 0, 0, k * 0.022, 0, k * 0.16, 0); }
   else kjPart(B, new THREE.ConeGeometry(0.03, 0.12, 4).rotateZ(Math.PI / 2), dark, -0.16, 0, 0);
   // wings: an inner and an outer part on each side; crows get fanned feathers, bats a stretched membrane between finger bones
   for (const s of [1, -1]) {
-    const W0 = kjGrp(B, 0.02, 0.05, s * 0.07), O = kjGrp(W0, 0, 0, s * (bat ? 0.24 : 0.22));
-    if (bat) {
+    const W0 = kjGrp(B, 0.02, 0.05, s * 0.07), O = kjGrp(W0, 0, 0, s * (bat || ptero ? 0.24 : 0.22));
+    if (bat || ptero) {
       const mem = (pts) => { const sh = new THREE.Shape(); sh.moveTo(pts[0][0], pts[0][1]); for (const q of pts.slice(1)) sh.lineTo(q[0], q[1]); const geo = new THREE.ShapeGeometry(sh).rotateX(Math.PI / 2); if (s < 0) geo.scale(1, 1, -1); return geo; };
       kjPart(W0, mem([[0.06, 0], [0.04, 0.24], [-0.14, 0.22], [-0.16, 0]]), memb);
       kjPart(O, mem([[0.04, 0], [0.12, 0.26], [-0.02, 0.16], [-0.12, 0.3], [-0.14, 0.08], [-0.14, 0]]), memb);
@@ -39,13 +41,13 @@ function drawFlyer(z, corpse, dt) {
   const key = (corpse ? 'c' : 'z') + (z.id != null ? z.id : z.seed) + z.k; let K = FLY.get(key);
   if (!K) { if (!FLYSH) FLYSH = new THREE.MeshBasicMaterial({ color: '#000000', transparent: true, opacity: 0.3, depthWrite: false });
     const g = mkFlyer(z.k), sh = new THREE.Mesh(new THREE.CircleGeometry(0.22, 12).rotateX(-Math.PI / 2), FLYSH.clone()); SCN.add(g); SCN.add(sh); K = { g, J: g.userData.J, sh }; FLY.set(key, K); }
-  K.seen = 1; const g = K.g, J = K.J, bat = z.k === 'bat', t = W.t, S = bat ? 1.55 : z.k === 'vult' ? 2.3 : 1.4; g.visible = K.sh.visible = true;
+  K.seen = 1; const g = K.g, J = K.J, bat = z.k === 'bat', t = W.t, S = bat ? 1.55 : z.k === 'vult' ? 2.3 : z.k === 'kwing' ? 6.0 : 1.4; g.visible = K.sh.visible = true;
   if (z._f == null) { z._f = z.face || 0; z._ph = (z.seed || 0) % 7; z._roll = 0; z._pz = z.z; }
   const kt = corpse ? 0 : z.kt || 0, f0 = z._f; z._f = angLerp(z._f, z.face || 0, Math.min(1, dt * 7));
   const turn = dt > 0 ? angDiff(f0, z._f) / dt : 0; z._roll = lerp(z._roll, clamp(-turn * 0.18, -0.7, 0.7), Math.min(1, dt * 5));
   const vz = dt > 0 ? (z.z - z._pz) / dt : 0; z._pz = z.z;
   // flap: cruising beats, a fast flutter while hovering for the dive, wings tucked back in the dive, gliding as it pulls up
-  const rate = kt === 1 ? 22 : kt === 2 ? 0 : (bat ? 14 : 9) * (vz > 0.4 ? 1.4 : 1); z._ph += dt * rate;
+  const rate = (kt === 1 ? 22 : kt === 2 ? 0 : (bat ? 14 : 9) * (vz > 0.4 ? 1.4 : 1)) * (z.k === 'kwing' ? 0.4 : 1); z._ph += dt * rate;
   const amp = corpse ? 0 : kt === 2 ? 0.1 : kt === 1 ? 0.75 : vz < -0.5 ? 0.25 : 0.62, tuck = kt === 2 ? 1 : 0;
   for (const Wg of J.wings) { const lift = Math.sin(z._ph) * amp + (corpse ? -0.1 : 0.12), lo = Math.sin(z._ph - 0.7) * amp * 0.8;
     Wg.g.rotation.x = -Wg.s * lift; Wg.g.rotation.y = lerp(Wg.g.rotation.y, -Wg.s * (tuck ? 0.95 : 0.05), Math.min(1, dt * 12)); Wg.o.rotation.x = -Wg.s * (lo * 0.7 + (tuck ? -0.3 : 0)); Wg.o.rotation.y = -Wg.s * (tuck ? 0.6 : 0); }
