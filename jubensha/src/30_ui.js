@@ -300,11 +300,17 @@ function optOrder(q, i) {
 function gAnswer() {
   const sc = S(), r = myRole(), mine = G.answers[r];
   if (!U.sheet || U.sheetGid !== G.gid) { U.sheet = (mine || sc.questions.map(() => null)).slice(); U.sheetGid = G.gid; }
-  const qs = sc.questions.map((q, i) => `<div class="q"><div class="qt">${i + 1}. ${esc(q.q)}${i === 0 ? ' <span class="stamp" style="font-size:14px;padding:0 6px">指认</span>' : ''}</div><div class="os">${optOrder(q, i).map(j => `<button class="${U.sheet[i] === j ? 'on' : ''}" ${mine ? 'disabled' : ''} onclick="UI.ans(${i},${j})">${esc(q.opts[j])}</button>`).join('')}</div></div>`).join('');
+  const qs = sc.questions.map((q, i) => `<div class="q"><div class="qt">${i + 1}. ${esc(q.q)}${i === 0 ? ' <span class="stamp" style="font-size:14px;padding:0 6px">指认</span>' : ''}</div><div class="os">${optOrder(q, i).map(j => { const self = q.killer && q.roles && q.roles[j] === r; return `<button class="${U.sheet[i] === j ? 'on' : ''}" ${mine || self ? 'disabled' : ''} ${self ? 'title="不能指认自己"' : ''} onclick="UI.ans(${i},${j})">${esc(q.opts[j])}${self ? '（你）' : ''}</button>`; }).join('')}</div></div>`).join('');
   const done = U.sheet.every(x => x != null), left = U.sheet.filter(x => x == null).length;
   const wait = humanRoles(G).filter(x => !G.answers[x]).map(x => sc.roles[x].name);
   return `<div class="main"><div class="book" style="font-family:var(--sans)"><h2>答　卷</h2><p class="mut" style="text-indent:0">第一题就是你的指认。${G.seats.includes('det') ? '侦探的指认决定结果，其他人的投票只作参考。' : '所有人（包括 AI）投票，票多的被指认；平票则无人被指认。'}</p>${qs}</div></div>
   <div class="bar"><span class="mut small">${mine ? '已交卷' + (wait.length ? '，等 ' + esc(wait.join('、')) + '…' : '') : left ? '还有 ' + left + ' 题没答' : '答完了'}</span><span class="sp"></span>${mine ? '' : `<button class="pri" ${done ? '' : 'disabled'} onclick="UI.submit()">交卷</button>`}</div>`;
+}
+/* 站在玩家自己的立场说输赢：凶手没被投出去就是赢 */
+function outcomeLine(r, v, sc) {
+  const won = r === sc.killer ? v !== sc.killer : v === sc.killer;
+  const t = r === 'det' ? (won ? '你抓到了真凶。' : '真凶逍遥法外。') : r === sc.killer ? (won ? '你是凶手——你逃过去了。' : '你是凶手——你被识破了。') : v === r ? '你是无辜的，却被投了出去。' : won ? '你是无辜的，真凶被揪了出来。' : '你是无辜的，可真凶没被揪出来。';
+  return `<div class="outcome ${won ? 'win' : 'lose'}">${won ? '胜' : '负'} · ${esc(t)}</div>`;
 }
 function gReveal() {
   const sc = S(), r = myRole(), v = G.verdict, end = v === sc.killer ? sc.endings.wang : v ? sc.endings.other : sc.endings.none;
@@ -316,7 +322,7 @@ function gReveal() {
   const againBtn = NET.role ? (G.again[r] ? '<button disabled>等对方同意…</button>' : `<button class="pri" onclick="act({t:'again'})">再玩一次${humanRoles(G).some(x => x !== r && G.again[x]) ? '（对方已同意）' : ''}</button>`) : '<button class="pri" onclick="UI.again()">再玩一次</button>';
   return `<div class="main"><div class="wrap">
     <div class="card" style="text-align:center;margin-bottom:14px"><div class="mut">被指认的人</div><div style="margin:10px 0">${v ? sealH(v, 1) + ' <span class="nm" style="font-size:26px">' + esc(roleName(v)) + '</span>' : '<span class="nm" style="font-size:24px">无人</span>'}</div>
-      <div><span class="stamp">${v === sc.killer ? '真　凶' : '错　判'}</span></div><div class="mut" style="margin-top:10px">真凶是 ${esc(roleName(sc.killer))}</div></div>
+      <div><span class="stamp">${v === sc.killer ? '真　凶' : v ? '错　判' : '悬　案'}</span></div><div class="mut" style="margin-top:10px">真凶是 ${esc(roleName(sc.killer))}</div>${outcomeLine(r, v, sc)}</div>
     <div class="card" style="margin-bottom:14px"><h3>投票</h3>${votes}</div>
     <div class="card ending" style="margin-bottom:14px"><h2>${esc(end.title)}</h2>${para(end.text.replace('{name}', roleName(v)))}</div>
     <div class="card" style="margin-bottom:14px;overflow:auto"><h3>那一夜</h3><table class="tl"><tr><th>时间</th>${sc.timeline.cols.map(c => `<th>${esc(roleName(c))}</th>`).join('')}</tr>${rows}</table>

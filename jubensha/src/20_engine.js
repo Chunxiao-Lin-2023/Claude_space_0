@@ -337,7 +337,7 @@ function apply(g, a, seat) {
     case 'status': g.status[role] = String(a.s || '').slice(0, 20); return;
     case 'again': if (g.phase === 'reveal') { g.again[role] = 1; if (humanRoles(g).every(r => g.again[r])) g.restartReq = 1; } return;
     case 'listen': if (disc) aiStep(g); break;
-    case 'answers': if (g.phase === 'answer' && Array.isArray(a.v) && a.v.length === sc.questions.length && a.v.every(x => Number.isInteger(x))) { g.answers[role] = a.v.slice(); g.ready[role] = 1; if (allReady(g)) advance(g); } break;
+    case 'answers': if (g.phase === 'answer' && Array.isArray(a.v) && a.v.length === sc.questions.length && a.v.every(x => Number.isInteger(x)) && !(sc.questions[0].roles && sc.questions[0].roles[a.v[0]] === role)) { g.answers[role] = a.v.slice(); g.ready[role] = 1; if (allReady(g)) advance(g); } break;
   }
   if (disc && OPT.autoAI && ['ask', 'show', 'say', 'link'].includes(a.t) && g.acts % 2 === 0) aiStep(g);
 }
