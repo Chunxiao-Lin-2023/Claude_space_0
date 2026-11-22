@@ -44,7 +44,8 @@ const { chromium } = require('playwright'); const PJ = require('fs').readFileSyn
   await F.click('button.pri:has-text("再玩一次")'); await F.waitForFunction(() => __dbg.G.phase === 'read', null, { timeout: 5000 }); console.log('restart synced after both agreed');
   /* 朋友手上有私有线索时掉线 → 公开；房主刷新 → 朋友自动重连 */
   for (let i = 0; i < 4; i++) await both();
-  await F.evaluate(() => act({ t: 'search', id: 'c_zh_loan' })); await H.waitForTimeout(300);
+  await F.evaluate(() => UI.search('c_zh_loan')); await H.waitForTimeout(600);
+  console.log('guest search popup after host state:', await F.evaluate(() => (document.querySelector('.mask .cl h3') || {}).textContent || 'none')); await F.evaluate(() => UI.close());
   await H.evaluate(() => NET.leave()); await H.waitForTimeout(800);
   console.log('guest kept game while host gone:', await F.evaluate(() => !!__dbg.G && __dbg.U.scr === 'game'));
   await H.reload(); await H.evaluate(() => localStorage.setItem('jbs-tut', '3')); console.log('host save after reload:', await H.evaluate(() => { const g = loadSave('renchiren'); return g ? g.mode + ' ' + JSON.stringify(g.seats) + ' ' + g.phase + ' room ' + g.room : 'none'; }), await H.evaluate(() => document.querySelector('.tk-root, #tk, body').innerText.slice(0, 200).replace(/\s+/g, ' '))); await H.evaluate(() => { window.adv = () => { const g = __dbg.G, r = myRole(); if (g.phase === 'intro' && !g.introStyle[r]) act({ t: 'intro', i: 0 }); if (g.phase === 'final' && r !== 'det' && !g.finalSaid[r]) act({ t: 'say', topic: 'final', i: 0 }); act({ t: 'ready' }); }; }); await H.click('text=继续上次'); await H.click('text=重开同一个房间');

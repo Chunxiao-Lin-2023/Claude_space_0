@@ -69,6 +69,7 @@ node test/serve.js out 8781 &          # 静态服务
 node test/peerserver.js &              # 本地 PeerJS（联机测试用，需 npm i peer express）
 node test/solo.js /tmp/jbs             # 单人三种局 + 手机竖屏 + 截图
 node test/title_ai.js                  # 标题画面 → 设置 → AI 玩家（Claude）能打开密钥面板
+node test/ux.js                        # 弹窗/点击体验：不闪、看得到内容、不被自动弹窗挤掉、切标签回顶部（电脑+手机）
 node test/coop.js                      # 双人联机：开房/加入/选角/一起推进/提问弹窗/搜证/悄悄话/对方状态/答卷/双方同意再来一局/房主刷新后朋友自动重连/朋友掉线由 AI 接手并公开私有线索
 node test/regress.js /tmp/jx           # 自查出的 12 个问题的回归检查（第二局弹窗、滚动、闲话、结束确认、联机存档、手机热点…）
 node test/balance.js                   # 三档难度 × 消极凶手/聪明凶手/无辜玩家的 AI 嫌疑分

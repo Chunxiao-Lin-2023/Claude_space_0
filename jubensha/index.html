@@ -165,6 +165,8 @@ h3.grp{font-size:15px;color:var(--mut);margin:10px 0 2px}
 .outcome{margin-top:12px;font-size:18px;font-family:var(--serif);font-weight:700}.outcome.win{color:#8fd19e}.outcome.lose{color:#e88}
 .linkopt{text-align:left}.linkopt .ex{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:12px;color:var(--mut);font-weight:400;margin-top:2px}
 .linksel{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0 12px}.linksel .card{padding:10px}.linksel canvas{width:100%;height:auto;max-height:150px;object-fit:contain;border-radius:6px;margin-top:6px}@media (max-width:640px){.linksel{grid-template-columns:1fr}}
+.refx{cursor:pointer}.refx:hover .acc{text-decoration:underline}
+button.it{cursor:pointer}
 .aichip{font-size:12px;padding:2px 8px;border-radius:999px;border:1px solid var(--acc);color:var(--acc);background:transparent;min-height:28px}
 .prompt-badge{background:#d9524a;color:#fff;border-radius:999px;padding:0 7px;font-size:12px;margin-left:4px}
 @media (max-width:640px){.hot{font-size:13px;padding:0;min-height:30px;min-width:30px;width:30px;height:30px}.hot span{display:none}.hot b{display:inline}.legend{display:flex}.seats{flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;padding:4px 8px 22px;gap:4px}.seats .seal.big{width:34px;height:34px;font-size:19px;border-radius:7px}.st{min-width:58px;padding:4px 6px}.st .nm{font-size:11px}.sbar{width:44px}.hide-n,.partner{display:none}.seats .logtg{bottom:2px;right:6px;min-height:26px;padding:2px 8px;font-size:12px}.top{padding:6px 8px;gap:4px}.top .tm{display:none}.book{padding:18px 16px;font-size:17px}.msg .tx{font-size:16px}.top .ph{font-size:16px}button{padding:9px 12px}}
@@ -2215,12 +2217,14 @@ function renderGame() {
   const voicedNow = G.log.filter(e => e.v === 'a' && !AIJ.voiced[e.i]); voicedNow.forEach(e => AIJ.voiced[e.i] = 1);
   if (voicedNow.length && U.seenI) typeNew(voicedNow);
   U.seenI = G.log.length ? G.log[G.log.length - 1].i : 0;
-  const fm = (G.freeMsg || {})[r]; if (fm && fm.n !== U.freeSeen) { U.freeSeen = fm.n; toast(fm.text, 4200); if (fm.back) { const reopen = fm.pid != null && G.prompts.some(p => p.id === fm.pid) ? 'prompt' : fm.say ? 'say' : null; if (reopen && !U.modalOpen) UI.modal(reopen); const fi = $(reopen === 'prompt' ? '#freea' : reopen === 'say' ? '#frees' : '#freeq'); if (fi && !fi.value) { fi.value = fm.back; fi.select(); } } }
+  const fm = (G.freeMsg || {})[r]; if (fm && fm.n !== U.freeSeen) { U.freeSeen = fm.n; toast(fm.text, 4200); if (fm.back) { const reopen = fm.pid != null && G.prompts.some(p => p.id === fm.pid) ? 'prompt' : fm.say ? 'say' : null; if (reopen && !modalBusy()) UI.modal(reopen); const fi = $(reopen === 'prompt' ? '#freea' : reopen === 'say' ? '#frees' : '#freeq'); if (fi && !fi.value) { fi.value = fm.back; fi.select(); } } }
   $$('#app canvas.cimg').forEach(c => drawImg(c));
   if (ph === 'r1') drawPlan($('#plan'), 1);
   if (ph === 'r2') drawPlan($('#plan'), 2);
+  if (U.pendSearch && (G.own[r] || []).includes(U.pendSearch) && !modalBusy()) UI.searchPop(U.pendSearch);
   const pkey = p => G.gid + ':' + p.id, np = G.prompts.find(p => p.to === r && !U.pSeen[pkey(p)]);
-  if (np && !U.modalOpen && (ph === 'd1' || ph === 'd2')) { U.pSeen[pkey(np)] = 1; UI.modal('prompt'); }
+  /* 有任何弹窗开着（包括单独的线索卡）都不抢：等玩家关掉再弹，否则正在看的东西会“闪一下就消失” */
+  if (np && !modalBusy() && (ph === 'd1' || ph === 'd2')) { U.pSeen[pkey(np)] = 1; UI.modal('prompt'); }
   const h = G.hintText[r]; if (h && h.n !== U.hintSeen) { U.hintSeen = h.n; UI.modal('hint'); }
   const typingInModal = document.activeElement && document.activeElement.closest && document.activeElement.closest('.mask') && /INPUT|TEXTAREA/.test(document.activeElement.tagName);
   if (U.modalOpen && ['clues', 'tl', 'prompt', 'acts'].includes(U.modalOpen) && !typingInModal) UI.modal(U.modalOpen, 1);
@@ -2269,7 +2273,7 @@ function msgHTML(e) {
   if (e.k === 'fact') return `<div class="fact ${e.ref && e.ref[0] === 'd' ? 'ded' : ''} ${e.i > U.seenI ? 'new' : ''}" data-i="${e.i}">✦ ${esc(e.text)}</div>`;
   const who = e.who, to = e.to, mine = who === r;
   const hd = esc(roleName(who)) + (to ? ' → ' + esc(roleName(to)) : '') + ({ pub: ' · 公开', show: ' · 出示', contra: ' · 指出矛盾', chat: ' · 悄悄话（AI 听不到）', final: ' · 最终陈述' }[e.k] || '');
-  const tx = e.k === 'show' || e.k === 'pub' ? esc(e.text) + (e.ref && sc.clues[e.ref] ? `<div class="small mut" style="margin-top:4px">${esc(sc.clues[e.ref].text.slice(0, 80))}${sc.clues[e.ref].text.length > 80 ? '…' : ''}</div>` : '') : esc(e.text);
+  const tx = e.k === 'show' || e.k === 'pub' ? esc(e.text) + (e.ref && sc.clues[e.ref] ? `<div class="small mut refx" style="margin-top:4px" onclick="event.stopPropagation();showClue('${e.ref}')">${esc(sc.clues[e.ref].text.slice(0, 80))}${sc.clues[e.ref].text.length > 80 ? '…' : ''} <span class="acc">查看全文</span></div>` : '') : esc(e.text);
   const tag = e.v === 'a' ? `<span class="aitag" title="Claude 说的。脚本原句：${esc(e.text0 || '')}">Claude</span>` : '';
   const body = e.v === 'p' ? '<span class="dots"><i></i><i></i><i></i></span>' : tx;
   return `<div class="msg k-${e.k} ${mine ? 'mine' : ''} ${e.broke ? 'brk' : ''} ${e.k === 'contra' ? 'contra' : ''} ${e.i > U.seenI ? 'new' : ''}" data-i="${e.i}">${sealH(who)}<div class="bd"><div class="hd2">${hd}${tag}</div><div class="tx">${body}</div></div></div>`;
@@ -2302,7 +2306,7 @@ function gR2() {
   const groups = sc.suspects.concat(['scene']).map(o => {
     const its = items.filter(c => (sc.clues[c].owner || 'scene') === o); if (!its.length) return '';
     const cards = its.map((c, i) => { const t = G.taken[c]; const mine = t === r, pubd = G.pub.includes(c);
-      if (t) return `<div class="it ${mine ? 'got' : 'gone'}">${mine || pubd ? '<b>' + esc(sc.clues[c].title) + '</b>' : '？'}<span class="small mut">${mine ? (pubd ? '你搜到 · 已公开' : '你搜到 · 未公开') : esc(roleName(t)) + '搜走' + (pubd ? ' · 已公开' : '')}</span></div>`;
+      if (t) return `<${mine || pubd ? `button onclick="showClue('${c}')"` : 'div'} class="it ${mine ? 'got' : 'gone'}">${mine || pubd ? '<b>' + esc(sc.clues[c].title) + '</b>' : '？'}<span class="small mut">${mine ? (pubd ? '你搜到 · 已公开' : '你搜到 · 未公开') : esc(roleName(t)) + '搜走' + (pubd ? ' · 已公开' : '')}${mine || pubd ? ' · 点开看' : ''}</span></${mine || pubd ? 'button' : 'div'}>`;
       const dis = o === r || ap <= 0; return `<button class="it" ${dis ? 'disabled' : ''} onclick="UI.search('${c}')"><b>${o === 'scene' ? '🔍 ' + esc(sc.clues[c].title) : '线索 ' + (i + 1)}</b><span class="small mut">${o === r ? '不能搜自己' : ap <= 0 ? '行动点用完了' : '花 1 点查看'}</span></button>`; }).join('');
     return `<div style="margin-bottom:14px"><h3>${o === 'scene' ? '🏚 现场深入调查' : sealH(o) + ' ' + esc(roleName(o))}</h3><div class="items">${cards}</div></div>`;
   }).join('');
@@ -2310,7 +2314,7 @@ function gR2() {
   return `<div class="main"><div class="wrap"><div class="card" style="margin-bottom:12px;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><span>行动点</span><span class="ap">${'●'.repeat(ap)}${'○'.repeat(Math.max(0, max - ap))}</span><span class="mut small">搜到的线索只有你看得到，要不要公开由你决定。</span></div>
     ${groups}
     ${mine.length ? '<h3>你手上还没公开的线索</h3><div class="grid">' + mine.map(c => clueCard(c, `<div style="margin-top:8px"><button class="sm" onclick="act({t:'publish',id:'${c}'})">公开给所有人</button></div>`)).join('') + '</div>' : ''}
-    <h3 style="margin-top:14px">搜证记录</h3>${logHTML(e => e.ph === 'r2')}</div></div>` + readyBar('开始第二轮讨论', `<span class="mut small">剩 ${ap} 点</span><button class="sm ghost" onclick="act({t:'hint'})">💡 提示</button>`);
+    <h3 style="margin-top:14px">搜证记录</h3>${logHTML(e => e.ph === 'r2')}</div></div>` + readyBar('开始第二轮讨论', `<span class="mut small">剩 ${ap} 点</span><button class="sm ghost" onclick="UI.hint()">💡 提示</button>`);
 }
 function seatStatus(x) {
   if (!dif().status || x === 'det') return '';
@@ -2425,13 +2429,13 @@ function itemBtn(id, extra) { const sc = S(); return sc.clues[id] ? '🗂 ' + es
 function modalHTML(k) {
   const sc = G ? S() : SCRIPTS.renchiren, r = G ? myRole() : null;
   if (k === 'rules') return dlg('玩法说明', `<div style="line-height:1.9">${sc.rules.map(x => '<p>· ' + esc(x) + '</p>').join('')}<p>· <b>当侦探</b>：四名嫌疑人都是 AI。向任何人提问、出示线索和证词；被戳中的人会改口说实话。点“听大家说”，AI 们会互相质问、提出推论。</p><p>· <b>🔗 指出关联</b>：自己把两条线索或证词放在一起。对了就得出推论或逼出实话，错了扣评级。</p><p>· <b>💡 提示</b>：告诉你下一步能做什么，按难度扣评级。</p><p>· <b>入局</b>：AI 也会来问你。你只能从你的剧本允许的说法里选——不是凶手就不能撒谎，只能回避。</p><p>· 顶栏 📖 剧本、📝 笔记、🗂 线索箱、🕒 时间线板随时可以看。</p></div>`);
-  if (k === 'opts') return dlg('设置', [['anim', '动画（破防演出、淡入）'], ['typing', '台词逐字出现'], ['sound', '声音'], ['autoAI', 'AI 自动插话（每两次操作后）']].map(([o, n]) => `<label style="display:flex;align-items:center;gap:10px;padding:10px 0;font-size:17px"><input type="checkbox" ${OPT[o] ? 'checked' : ''} onchange="OPT['${o}']=this.checked;saveOpt();render()" style="width:22px;height:22px"> ${n}</label>`).join('') + `<button class="sm ghost" onclick="lsSet('tut',0);toast('下一局会重新显示新手引导')">重新显示新手引导</button>`);
+  if (k === 'opts') return dlg('设置', [['anim', '动画（破防演出、淡入）'], ['typing', '台词逐字出现'], ['sound', '声音'], ['autoAI', 'AI 自动插话（每两次操作后）']].map(([o, n]) => `<label style="display:flex;align-items:center;gap:10px;padding:10px 0;font-size:17px"><input type="checkbox" ${OPT[o] ? 'checked' : ''} onchange="OPT['${o}']=this.checked;saveOpt();render()" style="width:22px;height:22px"> ${n}</label>`).join('') + `<button class="sm ghost" onclick="lsSet('tut',0);UI.close();render();toast(G && G.phase === 'd1' ? '新手引导已重新打开' : '到讨论阶段会重新显示新手引导')">重新显示新手引导</button>`);
   if (k === 'menu') return dlg('菜单', `<div class="optl"><button onclick="UI.close();UI.modal('rules')">玩法说明</button><button onclick="UI.close();UI.modal('opts')">设置</button><button onclick="UI.close();UI.modal('ai')">AI 玩家（Claude）${typeof AIKit !== 'undefined' && AIKit.available() ? ' · 已开启' : ''}</button>
     <button onclick="UI.toTitle(this)">回到标题（${NET.role ? '离开房间' : '进度已自动保存'}）</button>${HUB ? '<button onclick="UI.hub(this)">返回游戏厅</button>' : ''}</div>`);
   if (k === 'resumeNet') { const sv = loadSave('renchiren'); return dlg('继续上次联机', `<p>上次是联机局（房间 <b class="code">${esc(sv.room || '----')}</b>），你是房主。</p><div class="optl"><button onclick="UI.resumeNet(1)">重开同一个房间，等朋友回来<br><span class="mut small">朋友在“和朋友联机”里输入同一个房间码就能接回他的角色</span></button><button onclick="UI.resumeNet(0)">单机继续<br><span class="mut small">朋友的角色交给 AI，他手上没公开的线索会公开</span></button></div>`); }
   if (k === 'ai') return dlg('AI 玩家（Claude）', AIKit.panelHTML(G && NET.role === 'guest' ? '你是朋友那一方：AI 由房主那边的 Claude 扮演，你不用设置。' : 'Claude 只负责把 AI 玩家的台词说得自然、听懂你打的字；谁说实话、透露什么、谁破防，仍由游戏规则决定，所以不会剧透。' + (AIJ.err ? '<br>最近一次调用失败：' + esc(AIJ.err) : '')));
   if (!G) return '';
-  if (k === 'book') { const t = U.btab || 'mine'; return dlg('剧本', `<div class="tabs">${[['bg', '背景'], ['mine', '我的剧本'], ['rules', '规则']].map(([x, n]) => `<button class="sm ${t === x ? 'on' : ''}" onclick="U.btab='${x}';UI.modal('book',1)">${n}</button>`).join('')}</div><div class="book">${bookHTML(t)}</div>${bookTip}`); }
+  if (k === 'book') { const t = U.btab || 'mine'; return dlg('剧本', `<div class="tabs">${[['bg', '背景'], ['mine', '我的剧本'], ['rules', '规则']].map(([x, n]) => `<button class="sm ${t === x ? 'on' : ''}" onclick="U.btab='${x}';UI.modal('book',2)">${n}</button>`).join('')}</div><div class="book">${bookHTML(t)}</div>${bookTip}`); }
   if (k === 'notes') { const n = notes(); return dlg('笔记', `<p class="mut small">只存在这台设备上。读剧本时点一段文字就能摘进来。</p>${n.quotes.length ? '<h3>摘录</h3>' + n.quotes.map((q, i) => `<div class="cl" style="margin:6px 0;display:flex;gap:8px;align-items:flex-start"><div class="tx" style="flex:1">${esc(q)}</div><button class="sm ghost" onclick="UI.delQuote(${i})">删</button></div>`).join('') : ''}<h3>自己记</h3><textarea id="notetx" rows="8" style="width:100%;font:16px/1.7 var(--serif);padding:10px;border-radius:10px;border:1px solid var(--line);background:rgba(0,0,0,.2);color:var(--fg)" placeholder="比如：九点二十五以后谁没有不在场证明？" oninput="UI.saveNote(this.value)">${esc(n.text)}</textarea>`); }
   if (k === 'clues') {
     const t = U.mtab, disc = G.phase === 'd1' || G.phase === 'd2', seen = seenClues();
@@ -2443,7 +2447,7 @@ function modalHTML(k) {
     else if (t === 'mine') body = mine.map(id => clueCard(id, btn(id), !seen.has(id))).join('');
     else body = group(pubF, id => id[0] === 'd' ? 'deduce' : sc.facts[id].who, k2 => k2 === 'deduce' ? '推论' : roleName(k2) + '的证词');
     setTimeout(() => lsSet(localKey('seenc'), [...new Set([...seen, ...G.pub, ...mine])]), 0);
-    return dlg('线索箱', `<div class="tabs">${[['pub', '公开线索 ' + pubC.length], ['mine', '我私有的 ' + mine.length], ['fact', '证词与推论 ' + pubF.length]].map(([x, n]) => `<button class="sm ${t === x ? 'on' : ''}" onclick="U.mtab='${x}';UI.modal('clues',1)">${n}</button>`).join('')}</div>
+    return dlg('线索箱', `<div class="tabs">${[['pub', '公开线索 ' + pubC.length], ['mine', '我私有的 ' + mine.length], ['fact', '证词与推论 ' + pubF.length]].map(([x, n]) => `<button class="sm ${t === x ? 'on' : ''}" onclick="U.mtab='${x}';UI.modal('clues',2)">${n}</button>`).join('')}</div>
       <div style="display:flex;flex-direction:column;gap:10px">${body || '<p class="mut">还没有。</p>'}</div>`);
   }
   if (k === 'tl') {
@@ -2465,7 +2469,7 @@ function modalHTML(k) {
   if (k === 'show') {
     const t = U.target; if (!t) return '';
     const ids = (G.own[r] || []).concat(G.pub);
-    return dlg('向' + esc(sc.roles[t].name) + '出示', `<p class="mut small">线索和证词都能出示。出示私有线索等于公开它。</p><div class="optl">${ids.map(id => `<button onclick="UI.doShow('${t}','${id}')">${itemBtn(id, (G.own[r] || []).includes(id) ? ' <span class="acc small">（私有）</span>' : '')}${G.log.some(e => e.k === 'show' && e.ref === id && e.to === t) ? ' <span class="mut small">（给他看过）</span>' : ''}</button>`).join('')}</div>`);
+    return dlg('向' + esc(sc.roles[t].name) + '出示', `<p class="mut small">线索和证词都能出示。出示私有线索等于公开它。</p><div class="optl">${ids.map(id => `<button class="linkopt" onclick="UI.doShow('${t}','${id}')"><b>${itemBtn(id, (G.own[r] || []).includes(id) ? ' <span class="acc small">（私有）</span>' : '')}</b>${sc.clues[id] ? `<span class="ex">${esc(sc.clues[id].text)}</span>` : ''}${G.log.some(e => e.k === 'show' && e.ref === id && e.to === t) ? ' <span class="mut small">（给他看过）</span>' : ''}</button>`).join('')}</div>`);
   }
   if (k === 'link') {
     const ids = (G.own[r] || []).concat(G.pub), sel = U.linkSel;
@@ -2517,7 +2521,11 @@ const UI = {
   tgt(x) { U.target = U.target === x ? null : x; render(); },
   search(c) {
     act({ t: 'search', id: c });
-    if (!(G.own[myRole()] || []).includes(c)) return;
+    if (!(G.own[myRole()] || []).includes(c)) { U.pendSearch = c; return; } /* 联机朋友：等房主的状态回来再弹 */
+    UI.searchPop(c);
+  },
+  searchPop(c) {
+    U.pendSearch = null;
     showClue(c, `<div class="optl" style="margin-top:10px"><button class="pri" onclick="act({t:'publish',id:'${c}'});UI.close()">公开给大家</button><button onclick="UI.close()">先留着（只有我知道）</button></div><p class="mut small">留着的线索讨论时也能出示——出示就等于公开。</p>`);
   },
   look(c) { act({ t: 'look', id: c }); U.modalOpen = null; showClue(c); },
@@ -2568,7 +2576,8 @@ const UI = {
     if (keep && old && U.modalOpen === k && $$('.mask').length === 1) { const t = document.createElement('div'); t.innerHTML = h; old.innerHTML = t.firstElementChild.innerHTML; }
     else { closeMask(); document.body.insertAdjacentHTML('beforeend', h); }
     U.modalOpen = k; $$('.mask canvas.cimg').forEach(c => drawImg(c));
-    if (keep) { const d = $('.mask .db'); if (d) d.scrollTop = st; } else sfx('tick');
+    /* keep=1 原地刷新并保留滚动；keep=2 原地刷新、回到顶部（切标签） */
+    if (keep) { const d = $('.mask .db'); if (d) d.scrollTop = keep === 2 ? 0 : st; } else sfx('tick');
     if (k === 'ai') { const box = $('.mask .ak'); if (box) AIKit.bind(box, () => { if (G) { aiAfter(); save(); netSend(); } UI.modal('ai', 1); render(); }); }
     sendStatus();
   },
@@ -2576,8 +2585,10 @@ const UI = {
 };
 const STATUS = { book: '在看剧本', notes: '在记笔记', clues: '在翻线索箱', tl: '在看时间线', ask: '在想问什么', show: '在挑证据', link: '在找关联', prompt: '在回答问题', say: '在想怎么说', chat: '在打字' };
 function sendStatus() { if (!G || humanRoles(G).length < 2 || U.scr !== 'game') return; const s = STATUS[U.modalOpen] || ''; if (s === U.lastStatus) return; U.lastStatus = s; act({ t: 'status', s }); }
+/* 弹窗开着、或者正在底部输入框里打字时，都不自动弹新窗口 */
+const modalBusy = () => { const a = document.activeElement; return !!(U.modalOpen || document.querySelector('.mask') || (a && a.id === 'freeq' && a.value)); };
 function closeMask() { $$('.mask').forEach(m => m.remove()); }
-function showClue(c, extra) { closeMask(); U.modalOpen = null; lsSet(localKey('seenc'), [...new Set([...seenClues(), c])]); document.body.insertAdjacentHTML('beforeend', dlg('线索', clueCard(c) + (extra || ''))); $$('.mask canvas.cimg').forEach(x => drawImg(x)); sfx('fact'); }
+function showClue(c, extra) { closeMask(); U.modalOpen = 'clue'; lsSet(localKey('seenc'), [...new Set([...seenClues(), c])]); document.body.insertAdjacentHTML('beforeend', dlg('线索', clueCard(c) + (extra || ''))); $$('.mask canvas.cimg').forEach(x => drawImg(x)); sfx('fact'); }
 document.addEventListener('click', e => { const p = e.target.closest('.book p.q'); if (p) UI.addQuote(p.textContent.trim()); });
 setInterval(() => { const e = $('#ptm'); if (e && G && PH_MIN[G.phase]) e.textContent = fmtT(phaseClock()) + ' / 建议 ' + PH_MIN[G.phase] + ' 分'; }, 1000);
 setInterval(() => { if (G && G.phase === 'reveal' && U.scr === 'game' && U.tlShown < S().timeline.rows.length) { U.tlShown++; const rows = $$('table.tl tr'); if (rows[U.tlShown]) rows[U.tlShown].style.visibility = ''; if (U.tlShown >= S().timeline.rows.length) { const b = $$('.card button').find(x => x.textContent === '全部显示'); if (b) b.remove(); } } }, 900);
