@@ -15,7 +15,7 @@ const UA = 'Mozilla/5.0 (iPad; CPU OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (
     await p.evaluate(() => { window.__dbg.skipDraw = true; const me = W.p[0]; me.x = W.radio.x + 0.5; me.y = W.radio.y + 2.5; me.L = gAt(W.radio.x, W.radio.y + 2); for (const k in W.res) W.res[k] = 999; });
     // shop
     let s = await p.evaluate(() => { openCraft(); const tabs = [...document.querySelectorAll('#ctabs button')].map(b => b.textContent), cards = document.querySelectorAll('#clist .sc').length;
-      const shot = [...document.querySelectorAll('#clist .sc')][1].textContent; [...document.querySelectorAll('#clist button[data-c="rifle"]')][0].click(); return { tabs, cards, shot, rifle: W.p[0].owned[2] }; });
+      const shot = ([...document.querySelectorAll('#clist .sc')].find(e => /^霰弹枪/.test(e.querySelector('b').textContent)) || {}).textContent || ''; /* (round 36d) cards are sorted (your guns first) */ [...document.querySelectorAll('#clist button[data-c="rifle"]')][0].click(); return { tabs, cards, shot, rifle: W.p[0].owned[2] }; });
     check('shop has 4 tabs; the gun tab has one card per gun, ammo on the gun\'s card', s.tabs.length === 4 && s.cards === 11 && /霰弹/.test(s.shot) && /买霰弹/.test(s.shot), JSON.stringify(s).slice(0, 200));
     check('buying a gun from its card works', s.rifle === 1);
     s = await p.evaluate(() => { SET.shopTab = 'gun'; renderCraft(); document.querySelector('#clist button[data-c="shield"]').click(); SET.shopTab = 'item'; renderCraft(); const n = document.querySelectorAll('#clist .sc.mini').length;

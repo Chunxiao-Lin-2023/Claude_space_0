@@ -350,22 +350,36 @@ body.touch .hcard{background:rgba(14,16,20,.62)}
 @media (pointer:coarse) and (max-height:500px){body.touch #pcards{padding:3px 7px}body.touch #pcards .nm{font-size:10px}body.touch #pcards .bar{height:4px}body.touch #pcards .pbar{gap:1px}
   body.touch #hTC{left:calc(176px + var(--sa-l));transform:none;align-items:flex-start;max-width:calc(100vw - 176px - 380px - var(--sa-l) - var(--sa-r));background:rgba(14,16,20,.38)}body.touch .hcard{background:rgba(14,16,20,.42)}
   body.touch #objp{display:none!important}
+  body.touch #hTC{flex-direction:row;align-items:center;gap:6px;padding:3px 8px;flex-wrap:nowrap}body.touch #phase{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px;min-width:0}
+  body.touch #readyBtn{min-height:28px;padding:2px 8px;font-size:12px;flex:none}
+  body.touch #hTL #tasks{align-items:flex-start;width:auto}body.touch #hTL #tasks .tklist{left:0;transform:none}
 body.touch #hTL{width:160px}body.touch .items{font-size:11px}body.touch .res b{font-size:14px}}
 /* (round 36b) desktop: the weapon bar at the bottom already shows every gun's ammo and the grenades, so the top-left card keeps only medkits, respawns and what you're riding */
-body:not(.touch) #hTL>div.hcard:nth-of-type(2) .wpn,body:not(.touch) #hTL>div.hcard:nth-of-type(2) .rl{display:none}
+body:not(.touch) #hTL>#wcard .wpn,body:not(.touch) #hTL>#wcard .rl{display:none}
 body:not(.touch) #hTL .items>div:nth-child(1),body:not(.touch) #hTL .items>div:nth-child(3){display:none}
 body:not(.touch) #hTL .items{flex-wrap:wrap;gap:1px 10px}body:not(.touch):not([data-veh="6"]) #hTL #iShlW,body:not(.touch):not([data-veh="5"]) #hTL #iFuelW{display:none}body:not(.touch) #hTL .items>#iMechW{flex-basis:100%}
 @media (pointer:coarse) and (max-height:500px),(pointer:coarse) and (max-width:500px){
   body.touch #hTL .items>#iMechW{white-space:normal}
   /* (round 36b) phones: no weapon / item card — the ammo is on the weapon key, grenades / medkits on theirs; only what you're riding (mech, gyrocopter, tank) shows, in one small line */
-  body.touch #hTL>div.hcard:nth-of-type(2) .wpn,body.touch #hTL>div.hcard:nth-of-type(2) .rl{display:none}
+  body.touch #hTL>#wcard .wpn,body.touch #hTL>#wcard .rl{display:none}
   body.touch #hTL .items>div{display:none}
   body[data-veh="6"].touch #hTL .items>#iShlW:not(.hidden),body[data-veh="5"].touch #hTL .items>#iFuelW:not(.hidden),body.touch.inmech #hTL .items>#iMechW:not(.hidden){display:block}
-  body.touch #hTL>div.hcard:nth-of-type(2){padding:3px 7px}
-  body.touch:not([data-veh="1"]):not([data-veh="2"]):not([data-veh="3"]):not([data-veh="4"]):not([data-veh="5"]):not([data-veh="6"]) #hTL>div.hcard:nth-of-type(2){display:none}
-  body[data-veh="1"].touch #hTL>div.hcard:nth-of-type(2),body[data-veh="2"].touch #hTL>div.hcard:nth-of-type(2),body[data-veh="3"].touch #hTL>div.hcard:nth-of-type(2),body[data-veh="4"].touch #hTL>div.hcard:nth-of-type(2){display:none}
-  body[data-veh].touch.inmech #hTL>div.hcard:nth-of-type(2){display:block}
+  body.touch #hTL>#wcard{padding:3px 7px}
+  body.touch:not([data-veh="1"]):not([data-veh="2"]):not([data-veh="3"]):not([data-veh="4"]):not([data-veh="5"]):not([data-veh="6"]) #hTL>#wcard{display:none}
+  body[data-veh="1"].touch #hTL>#wcard,body[data-veh="2"].touch #hTL>#wcard,body[data-veh="3"].touch #hTL>#wcard,body[data-veh="4"].touch #hTL>#wcard{display:none}
+  body[data-veh].touch.inmech #hTL>#wcard{display:block}
 }
+/* (round 36d) a compact shop: one row per thing (name + what you have on the left, the buy button on the right, a one-line hint under the name),
+   a 常买 strip on every tab, the title and materials on one line — more fits on screen, so what you want is quicker to find */
+.shop .shead{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}.shop .shead h3{margin:0}.shop .shead .lbl{margin:0}
+.shop .sc{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"h b" "d b";align-items:center;gap:1px 8px;padding:6px 8px}
+.shop .sc .sh{grid-area:h;justify-content:flex-start;gap:8px;min-width:0}.shop .sc .sh b{font-size:14px;white-space:nowrap}.shop .sc .sh em{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.shop .sc small{grid-area:d;font-size:11px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.shop .sc .sb{grid-area:b;flex-direction:column;margin:0;gap:4px}.shop .sbtn{min-height:34px;padding:3px 9px;flex:none;min-width:118px}.shop .sbtn b{font-size:12.5px}.shop .sbtn span{font-size:11px}
+.shop .sfree{padding:0;white-space:nowrap}
+.squick{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:2px 0 6px;border-bottom:1px solid var(--line)}.squick i{font-style:normal;font-size:12px;color:var(--amber);margin-right:2px}
+.squick .sbtn{flex:none;min-width:0;min-height:32px;padding:2px 8px;gap:8px}
+@media (max-height:520px){.modal .card.shop{padding:8px 10px;gap:6px}.shop .shead h3{font-size:16px}.ctabs button{min-height:30px;font-size:13px}.shop .sc small{display:none}.shop .sc{padding:4px 7px}.shop .sbtn{min-height:30px;min-width:100px}.clist{gap:5px}}
 </style>
 <body>
 <div id="lowhp"></div>
@@ -379,7 +393,7 @@ body:not(.touch) #hTL .items{flex-wrap:wrap;gap:1px 10px}body:not(.touch):not([d
   <div id="stickHint">移动</div>
   <div id="hTL">
     <div class="hcard" id="pcards"></div>
-    <div class="hcard">
+    <div class="hcard" id="wcard">
       <div class="wpn ptr"><b id="wName">手枪</b><span class="am" id="wMag">12</span><span class="rs" id="wRes">/ ∞</span></div>
       <div class="rl ptr"><i id="wRl"></i></div>
       <div class="items"><div><span id="iNadeL">手雷</span> <span id="iNade">1</span></div><div>医疗包 <span id="iMed">1</span></div><div>击杀 <span id="iKill">0</span></div><div>复活 <span id="iLife">3</span></div><div id="iShlW" class="hidden">炮弹 <span id="iShl">0</span></div><div id="iFuelW" class="hidden">油 <span id="iFuel">60</span></div><div id="iMechW" class="hidden">机甲 <span id="iMech"></span></div></div>
@@ -464,7 +478,7 @@ body:not(.touch) #hTL .items{flex-wrap:wrap;gap:1px 10px}body:not(.touch):not([d
 </div>
 
 <div id="craft" class="modal hidden">
-  <div class="card shop"><h3>商店</h3><div class="ctabs" id="ctabs"></div><div class="lbl" id="cres"></div><div class="clist" id="clist"></div><button id="craftClose" class="ghost">关闭 <span class="kbd">(C)</span></button><div class="bmhint" style="text-align:center;margin-top:4px">点旁边空白处也能关闭</div></div>
+  <div class="card shop"><div class="shead"><h3>商店</h3><div class="lbl" id="cres"></div></div><div class="ctabs" id="ctabs"></div><div class="clist" id="clist"></div><button id="craftClose" class="ghost">关闭 <span class="kbd">(C)</span></button><div class="bmhint" style="text-align:center;margin-top:4px">点旁边空白处也能关闭</div></div>
 </div>
 <div id="kit" class="modal hidden">
   <div class="card kitc"><h3>装备</h3>

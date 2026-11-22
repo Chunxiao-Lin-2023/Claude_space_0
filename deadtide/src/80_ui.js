@@ -188,12 +188,12 @@ function hudTick(dt) {
   if (W.phase === 'day') {
     const m = Math.max(0, Math.ceil(W.clock)); ph.className = '';
     const nl = BAL.nightLv(W.night + 1), up = W.night > 0 && nl > BAL.nightLv(W.night); /* (round 31) the next night's level */
-    ph.innerHTML = (W.night ? '第 ' + (W.night + 1) + ' 夜前' : '第一个白天') + `<span class="sub">${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')} 后入夜 · 今夜 Lv ${nl}${up ? '（升级）' : ''}</span>`;
+    ph.innerHTML = (W.night ? '第 ' + (W.night + 1) + ' 夜前' : '第一个白天') + (UI.phoneTop ? `<span class="sub">${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')} 后入夜</span>` : `<span class="sub">${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')} 后入夜 · 今夜 Lv ${nl}${up ? '（升级）' : ''}</span>`);
   } else if (W.phase === 'night') {
     const left = W.zs.length + (NETROLE === 'guest' ? (W.spawnLeft || 0) : W.spawnQ.length);
     ph.className = isBlood(W.night) ? 'blood' : 'night';
     const rest = Math.max(0, Math.ceil(BAL.nightMin(W.night) - W.nightT));
-    ph.innerHTML = '第 ' + W.night + ' 夜 · Lv ' + BAL.nightLv(W.night) + (isBlood(W.night) ? ' · 血月' : '') + `<span class="sub">剩余 ${left} 只${rest > 0 ? ' · 天亮还要 ' + Math.floor(rest / 60) + ':' + String(rest % 60).padStart(2, '0') : ''} · ${W.night}/${BAL.nights}</span>`;
+    ph.innerHTML = '第 ' + W.night + ' 夜 · Lv ' + BAL.nightLv(W.night) + (isBlood(W.night) ? ' · 血月' : '') + (UI.phoneTop ? `<span class="sub">${rest > 0 ? '天亮 ' + Math.floor(rest / 60) + ':' + String(rest % 60).padStart(2, '0') + ' · ' : ''}剩 ${left}</span>` : `<span class="sub">剩余 ${left} 只${rest > 0 ? ' · 天亮还要 ' + Math.floor(rest / 60) + ':' + String(rest % 60).padStart(2, '0') : ''} · ${W.night}/${BAL.nights}</span>`); /* (round 36d) phones: the time to dawn first, short */
   } else ph.textContent = W.phase === 'win' ? '获救' : '失守';
   // tasks: a one-line summary that opens on tap, and pops open for a few seconds when something changes
   if (UI.tkv !== W.tkv) {
@@ -285,14 +285,22 @@ function renderCraft() {
   const me = W.p[ME], tab = SET.shopTab && SHOP_TABS.some(t => t[0] === SET.shopTab) ? SET.shopTab : 'gun';
   $('ctabs').innerHTML = SHOP_TABS.map(([k, n]) => `<button data-t="${k}" class="${k === tab ? 'sel' : ''}">${n}</button>`).join('');
   $('ctabs').querySelectorAll('button').forEach(b => b.onclick = () => { SET.shopTab = b.dataset.t; saveSet(); renderCraft(); sfx('click'); });
-  $('cres').textContent = '全队材料：' + RES.map(r => r.name + ' ' + W.res[r.k]).join(' · ');
+  $('cres').textContent = '材料：' + RES.map(r => r.name + ' ' + W.res[r.k]).join(' · ');
+  // (round 36d) 常买: the things you restock most, on every tab — this gun's ammo, medkits, frag grenades, and the gyro / tank / mech upkeep if you have them
   let h = '';
+  { const q = [], wi = me.wpn, am = CRAFT.find(c => c.ammo && c.ammo[0] === wi); if (me.owned[wi] && am && !WPN[wi].inf) q.push([am, WPN[wi].sn || WPN[wi].name + '弹']);
+    for (const [k, n] of [['med', '医疗包'], ['nade', '破片 ×2']]) { const c = CRAFT.find(x => x.id === k); if (c) q.push([c, n]); }
+    if (ownsVeh(me, 5)) { const c = CRAFT.find(x => x.gam); if (c) q.push([c, '旋翼机弹']); }
+    if (ownsVeh(me, 6)) { const c = CRAFT.find(x => x.shl); if (c) q.push([c, '炮弹']); }
+    if (me.vehs & 126 && [1, 2, 3, 4, 5, 6].some(v => ownsVeh(me, v) && mhpOf(me, v) < MECHS[v].hp)) { const c = CRAFT.find(x => x.mfix); if (c) q.push([c, '修机甲']); }
+    h += `<div class="squick"><i>常买</i>${q.map(([c, n]) => shopBtn(c, n)).join('')}</div>`; }
   if (tab === 'gun') {
-    h = WPN.map((w, k) => {
+    const ord = WPN.map((w, k) => k).sort((a, b) => { const sc = k => { const own = me.owned[k], buy = CRAFT.find(c => c.wpn === k); return own ? (WPN[k].inf ? 1 : 0) : buy && !craftBlocked(me, buy) ? 2 : 3; }; return sc(a) - sc(b) || a - b; }); // (round 36d) your guns first (ammo to buy), then what you can afford, then the rest
+    h += ord.map(k => { const w = WPN[k];
       const buy = CRAFT.find(c => c.wpn === k), am = CRAFT.find(c => c.ammo && c.ammo[0] === k), own = me.owned[k];
       const st = own ? (w.inf ? '已有 · 子弹无限' : '已有 · ' + me.mag[k] + ' / ' + me.ammo[k] + '（最多 ' + ammoCap(k) + '）') : '没有'; // (round 32) backpack cap
       const btns = !own && buy ? shopBtn(buy, '造这把枪') : own && am ? shopBtn(am, '买' + am.name) : own && w.inf ? '<span class="sfree">不用买子弹</span>' : '';
-      return `<div class="sc${own ? ' own' : ''}"><div class="sh"><b>${w.name}</b><em>${st}</em></div><small>${w.tag || ''}</small><div class="sb">${btns}</div></div>`;
+      return `<div class="sc${own ? ' own' : ''}" title="${(w.tag || '').replace(/"/g, '')}"><div class="sh"><b>${w.name}</b><em>${st}</em></div><small>${w.tag || ''}</small><div class="sb">${btns}</div></div>`;
     }).join('');
     { const g = CRAFT.find(c => c.gam), own = ownsVeh(me, 5); h += `<div class="sc${own ? ' own' : ''}"><div class="sh"><b>旋翼机机枪</b><em>${own ? '机上 ' + (me.gam || 0) + ' / ' + BAL.gyroCap : '要先有旋翼机'}</em></div><small>飞的时候按开火：一发 ${BAL.gyroDmg}，射速快，打你瞄的地方；子弹存在飞机上</small><div class="sb">${own ? shopBtn(g, '买' + g.name) : '<span class="sfree">「载具」栏造</span>'}</div></div>`; } // (round 30)
     { const g = CRAFT.find(c => c.shl), own = ownsVeh(me, 6); h += `<div class="sc${own ? ' own' : ''}"><div class="sh"><b>坦克炮</b><em>${own ? '车里 ' + (me.shl || 0) + ' / ' + BAL.tankCap : '要先有坦克'}</em></div><small>开坦克时按开火：炮弹打到哪炸到哪（${BAL.tankDmg}，半径 ${BAL.tankR}），${BAL.tankRate} 秒一发</small><div class="sb">${own ? shopBtn(g, '买' + g.name) : '<span class="sfree">「载具」栏造</span>'}</div></div>`; } // (round 31)
@@ -303,16 +311,16 @@ function renderCraft() {
     h += `<div class="sc${me.shield ? ' own' : ''}"><div class="sh"><b>防暴盾</b><em>${me.shield ? (me.melee === 1 ? '在用' : '已有') : '没有'}</em></div><small>${sc.desc}</small><div class="sb">${!me.shield ? shopBtn(sc, '买') : me.melee === 1 ? '<span class="sfree">在用</span>' : useBtn(1)}</div></div>`;
   } else if (tab === 'item') {
     const st = { nade: '带着 ' + me.nades + ' / ' + BAL.nadeCap, med: '带着 ' + me.meds + ' / ' + BAL.medCap }; for (let t = 1; t < 4; t++) st['g' + GREN[t].k] = '带着 ' + gCount(me, t) + ' / ' + BAL.gnCap;
-    h = CRAFT.filter(c => c.cat === 'item').map(c => `<div class="sc"><div class="sh"><b>${c.name}</b><em>${st[c.id] || ''}</em></div><small>${c.desc}</small><div class="sb">${shopBtn(c, c.shield && me.shield > 0 ? '修满' : '买')}</div></div>`).join('');
+    h += CRAFT.filter(c => c.cat === 'item').map(c => `<div class="sc"><div class="sh"><b>${c.name}</b><em>${st[c.id] || ''}</em></div><small>${c.desc}</small><div class="sb">${shopBtn(c, c.shield && me.shield > 0 ? '修满' : '买')}</div></div>`).join('');
     h += `<div class="sgrp">墙、陷阱、地雷、机枪塔、跳板这些<b>放置类道具不在商店里</b>：随时随地点「道具」（电脑按 B）拿出来放，放一个扣一份材料</div>`;
   } else if (tab === 'veh') {
-    h = `<div class="sgrp">选一辆当默认：T（触屏点「载具」）就上这辆；Shift+T / 长按「载具」换车</div>`;
+    h += `<div class="sgrp">选一辆当默认：T（触屏点「载具」）就上这辆；Shift+T / 长按「载具」换车</div>`;
     h += CRAFT.filter(c => c.cat === 'veh').map(c => { const v = c.veh, own = (me.vehs || 0) >> v & 1, def = own && me.veh === v, M = MECHS[v];
       return `<div class="sc${own ? ' own' : ''}"><div class="sh"><b>${c.name}</b><em>${def ? '默认 ✓' : own ? '已有' : '速度 ×' + VEH[v].spd}</em></div><small>${c.desc}${M ? `<br><b>二阶段 · ${M.name}</b>（骑着按 X / 「变形」，1 秒）：${M.tag}` : ''}</small><div class="sb">${own ? (def ? '<span class="sfree">按 T 上车</span>' : `<button class="sbtn vdef" data-v="${v}"><b>设为默认</b><span>T 就上这辆</span></button>`) : shopBtn(c, '造')}</div></div>`; }).join('');
     if (me.vehs & 126) { const fx = CRAFT.find(c => c.mfix), bt = CRAFT.find(c => c.mbat), hs = [1, 2, 3, 4, 5, 6].filter(v => ownsVeh(me, v)).map(v => MECHS[v].name + ' ' + Math.round(mhpOf(me, v)) + '/' + MECHS[v].hp).join('，'); h += `<div class="sc own"><div class="sh"><b>机甲维护</b><em>电 ${Math.floor(me.bat != null ? me.bat : BAL.mechBat)} / ${BAL.mechBat} 秒</em></div><small>装甲：${hs}。不是机甲形态时装甲和电会慢慢恢复；这里马上修好 / 充满（要先变回载具）</small><div class="sb">${shopBtn(fx, '修好装甲')}${shopBtn(bt, '充满电')}</div></div>`; } // (round 34b)
     if (ownsVeh(me, 5)) { const f = CRAFT.find(c => c.fuel); h += `<div class="sc own"><div class="sh"><b>旋翼机油箱</b><em>油 ${Math.floor(me.fuel || 0)} / ${VEH[5].fuel} 秒</em></div><small>在这里直接加满（免费、马上满）；也可以在有屋顶的房间里按 F 加。机枪子弹在「武器 · 弹药」栏买</small><div class="sb">${shopBtn(f, '加满油')}</div></div>`; } // (round 30)
   } else {
-    h = CRAFT.filter(c => c.cat === 'upg').map(c => `<div class="sc"><div class="sh"><b>${c.name}</b><em>${W.upg} / 5 级</em></div><small>${c.desc}</small><div class="sb">${shopBtn(c, '升级')}</div></div>`).join('');
+    h += CRAFT.filter(c => c.cat === 'upg').map(c => `<div class="sc"><div class="sh"><b>${c.name}</b><em>${W.upg} / 5 级</em></div><small>${c.desc}</small><div class="sb">${shopBtn(c, '升级')}</div></div>`).join('');
   }
   $('clist').innerHTML = h;
   $('clist').querySelectorAll('button[data-c]').forEach(b => b.addEventListener('click', () => shopBuy(CRAFT.find(c => c.id === b.dataset.c))));
@@ -473,6 +481,9 @@ function initUI() {
   $('modeBtn').onclick = () => { sfx('click'); openModeSel(); }; $('lModeBtn').onclick = () => { sfx('click'); openModeSel(); }; $('msOk').onclick = () => { sfx('click'); closeModeSel(); }; uiModeLbl();
   $('mini').addEventListener('pointerdown', e => { e.stopPropagation(); e.preventDefault(); toggleBigMap(true); });
   $('bigmap').addEventListener('pointerdown', e => { e.stopPropagation(); e.preventDefault(); toggleBigMap(false); });
+  // (round 36d) phones: the task pill moves to the left column under the health card; the top centre keeps one line (the night + the ready button)
+  { const mq = window.matchMedia('(pointer:coarse) and (max-height:500px)'), place = () => { const t = $('tasks'); UI.phoneTop = mq.matches; if (!t) return; if (mq.matches) { if (t.parentNode !== $('hTL')) $('hTL').insertBefore(t, $('pcards').nextSibling); } else if (t.parentNode !== $('hTC')) $('hTC').insertBefore(t, $('readyBtn')); };
+    place(); if (mq.addEventListener) mq.addEventListener('change', place); }
   // (round 36b) the shop and the gear panel close like the map: tap / click anywhere outside the card
   for (const [id, close] of [['craft', () => closeCraft()], ['kit', () => closeKit()]]) $(id).addEventListener('pointerdown', e => { if (e.target !== e.currentTarget) return; e.stopPropagation(); e.preventDefault(); close(); });
   $('keys').addEventListener('pointerdown', e => { e.stopPropagation(); if (!e.target.closest('.kh')) return; SET.keysOff = !SET.keysOff; saveSet(); UI.keysK = ''; if (W && W.p[ME]) uiKeys(W.p[ME]); sfx('click'); });

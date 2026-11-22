@@ -353,22 +353,36 @@ body.touch .hcard{background:rgba(14,16,20,.62)}
 @media (pointer:coarse) and (max-height:500px){body.touch #pcards{padding:3px 7px}body.touch #pcards .nm{font-size:10px}body.touch #pcards .bar{height:4px}body.touch #pcards .pbar{gap:1px}
   body.touch #hTC{left:calc(176px + var(--sa-l));transform:none;align-items:flex-start;max-width:calc(100vw - 176px - 380px - var(--sa-l) - var(--sa-r));background:rgba(14,16,20,.38)}body.touch .hcard{background:rgba(14,16,20,.42)}
   body.touch #objp{display:none!important}
+  body.touch #hTC{flex-direction:row;align-items:center;gap:6px;padding:3px 8px;flex-wrap:nowrap}body.touch #phase{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px;min-width:0}
+  body.touch #readyBtn{min-height:28px;padding:2px 8px;font-size:12px;flex:none}
+  body.touch #hTL #tasks{align-items:flex-start;width:auto}body.touch #hTL #tasks .tklist{left:0;transform:none}
 body.touch #hTL{width:160px}body.touch .items{font-size:11px}body.touch .res b{font-size:14px}}
 /* (round 36b) desktop: the weapon bar at the bottom already shows every gun's ammo and the grenades, so the top-left card keeps only medkits, respawns and what you're riding */
-body:not(.touch) #hTL>div.hcard:nth-of-type(2) .wpn,body:not(.touch) #hTL>div.hcard:nth-of-type(2) .rl{display:none}
+body:not(.touch) #hTL>#wcard .wpn,body:not(.touch) #hTL>#wcard .rl{display:none}
 body:not(.touch) #hTL .items>div:nth-child(1),body:not(.touch) #hTL .items>div:nth-child(3){display:none}
 body:not(.touch) #hTL .items{flex-wrap:wrap;gap:1px 10px}body:not(.touch):not([data-veh="6"]) #hTL #iShlW,body:not(.touch):not([data-veh="5"]) #hTL #iFuelW{display:none}body:not(.touch) #hTL .items>#iMechW{flex-basis:100%}
 @media (pointer:coarse) and (max-height:500px),(pointer:coarse) and (max-width:500px){
   body.touch #hTL .items>#iMechW{white-space:normal}
   /* (round 36b) phones: no weapon / item card — the ammo is on the weapon key, grenades / medkits on theirs; only what you're riding (mech, gyrocopter, tank) shows, in one small line */
-  body.touch #hTL>div.hcard:nth-of-type(2) .wpn,body.touch #hTL>div.hcard:nth-of-type(2) .rl{display:none}
+  body.touch #hTL>#wcard .wpn,body.touch #hTL>#wcard .rl{display:none}
   body.touch #hTL .items>div{display:none}
   body[data-veh="6"].touch #hTL .items>#iShlW:not(.hidden),body[data-veh="5"].touch #hTL .items>#iFuelW:not(.hidden),body.touch.inmech #hTL .items>#iMechW:not(.hidden){display:block}
-  body.touch #hTL>div.hcard:nth-of-type(2){padding:3px 7px}
-  body.touch:not([data-veh="1"]):not([data-veh="2"]):not([data-veh="3"]):not([data-veh="4"]):not([data-veh="5"]):not([data-veh="6"]) #hTL>div.hcard:nth-of-type(2){display:none}
-  body[data-veh="1"].touch #hTL>div.hcard:nth-of-type(2),body[data-veh="2"].touch #hTL>div.hcard:nth-of-type(2),body[data-veh="3"].touch #hTL>div.hcard:nth-of-type(2),body[data-veh="4"].touch #hTL>div.hcard:nth-of-type(2){display:none}
-  body[data-veh].touch.inmech #hTL>div.hcard:nth-of-type(2){display:block}
+  body.touch #hTL>#wcard{padding:3px 7px}
+  body.touch:not([data-veh="1"]):not([data-veh="2"]):not([data-veh="3"]):not([data-veh="4"]):not([data-veh="5"]):not([data-veh="6"]) #hTL>#wcard{display:none}
+  body[data-veh="1"].touch #hTL>#wcard,body[data-veh="2"].touch #hTL>#wcard,body[data-veh="3"].touch #hTL>#wcard,body[data-veh="4"].touch #hTL>#wcard{display:none}
+  body[data-veh].touch.inmech #hTL>#wcard{display:block}
 }
+/* (round 36d) a compact shop: one row per thing (name + what you have on the left, the buy button on the right, a one-line hint under the name),
+   a 常买 strip on every tab, the title and materials on one line — more fits on screen, so what you want is quicker to find */
+.shop .shead{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}.shop .shead h3{margin:0}.shop .shead .lbl{margin:0}
+.shop .sc{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"h b" "d b";align-items:center;gap:1px 8px;padding:6px 8px}
+.shop .sc .sh{grid-area:h;justify-content:flex-start;gap:8px;min-width:0}.shop .sc .sh b{font-size:14px;white-space:nowrap}.shop .sc .sh em{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.shop .sc small{grid-area:d;font-size:11px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.shop .sc .sb{grid-area:b;flex-direction:column;margin:0;gap:4px}.shop .sbtn{min-height:34px;padding:3px 9px;flex:none;min-width:118px}.shop .sbtn b{font-size:12.5px}.shop .sbtn span{font-size:11px}
+.shop .sfree{padding:0;white-space:nowrap}
+.squick{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:2px 0 6px;border-bottom:1px solid var(--line)}.squick i{font-style:normal;font-size:12px;color:var(--amber);margin-right:2px}
+.squick .sbtn{flex:none;min-width:0;min-height:32px;padding:2px 8px;gap:8px}
+@media (max-height:520px){.modal .card.shop{padding:8px 10px;gap:6px}.shop .shead h3{font-size:16px}.ctabs button{min-height:30px;font-size:13px}.shop .sc small{display:none}.shop .sc{padding:4px 7px}.shop .sbtn{min-height:30px;min-width:100px}.clist{gap:5px}}
 </style>
 <style>
 /* TitleKit — shared start screen for every game in the Claude_space_0 hub.
@@ -575,7 +589,7 @@ body:not(.touch) #hTL .items{flex-wrap:wrap;gap:1px 10px}body:not(.touch):not([d
   <div id="stickHint">移动</div>
   <div id="hTL">
     <div class="hcard" id="pcards"></div>
-    <div class="hcard">
+    <div class="hcard" id="wcard">
       <div class="wpn ptr"><b id="wName">手枪</b><span class="am" id="wMag">12</span><span class="rs" id="wRes">/ ∞</span></div>
       <div class="rl ptr"><i id="wRl"></i></div>
       <div class="items"><div><span id="iNadeL">手雷</span> <span id="iNade">1</span></div><div>医疗包 <span id="iMed">1</span></div><div>击杀 <span id="iKill">0</span></div><div>复活 <span id="iLife">3</span></div><div id="iShlW" class="hidden">炮弹 <span id="iShl">0</span></div><div id="iFuelW" class="hidden">油 <span id="iFuel">60</span></div><div id="iMechW" class="hidden">机甲 <span id="iMech"></span></div></div>
@@ -660,7 +674,7 @@ body:not(.touch) #hTL .items{flex-wrap:wrap;gap:1px 10px}body:not(.touch):not([d
 </div>
 
 <div id="craft" class="modal hidden">
-  <div class="card shop"><h3>商店</h3><div class="ctabs" id="ctabs"></div><div class="lbl" id="cres"></div><div class="clist" id="clist"></div><button id="craftClose" class="ghost">关闭 <span class="kbd">(C)</span></button><div class="bmhint" style="text-align:center;margin-top:4px">点旁边空白处也能关闭</div></div>
+  <div class="card shop"><div class="shead"><h3>商店</h3><div class="lbl" id="cres"></div></div><div class="ctabs" id="ctabs"></div><div class="clist" id="clist"></div><button id="craftClose" class="ghost">关闭 <span class="kbd">(C)</span></button><div class="bmhint" style="text-align:center;margin-top:4px">点旁边空白处也能关闭</div></div>
 </div>
 <div id="kit" class="modal hidden">
   <div class="card kitc"><h3>装备</h3>
@@ -5066,7 +5080,7 @@ const ZT = {
   shade: { name: '隐身者', hp: 420, spd: 1.5, r: 0.3, h: 1.25, dmg: 12, bdmg: 10, cd: 0.9, sc: 1.2, look: 'walker', skin: '#50505e', elite: { k: 'cloak', cd: 6, col: '#c0c0e0', tip: '隐身摸到你身边偷袭，留意空气里的扭曲，附近炸一下就现形' } },
 };
 const ELITES = ['blinker', 'caller', 'warden', 'shade'];
-const BUILD_TAG = '第 36 轮之三'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
+const BUILD_TAG = '第 36 轮之四'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
 // aim assist (SET.assist): fire-button lock range (x weapon range), lock-on time before it fires, spread while auto-aimed, mouse/finger magnet
 const PORT = 1.25; // firing port: your own shots pass a wall / door you built if it is this close to you
 const ASSIST = [{ name: '关', range: 0, acq: 0, spread: 1, mag: 0 }, { name: '标准', range: 0.75, acq: 0.3, spread: 1.5, mag: 1 }, { name: '强', range: 1, acq: 0, spread: 1, mag: 1 }];
@@ -12097,12 +12111,12 @@ function hudTick(dt) {
   if (W.phase === 'day') {
     const m = Math.max(0, Math.ceil(W.clock)); ph.className = '';
     const nl = BAL.nightLv(W.night + 1), up = W.night > 0 && nl > BAL.nightLv(W.night); /* (round 31) the next night's level */
-    ph.innerHTML = (W.night ? '第 ' + (W.night + 1) + ' 夜前' : '第一个白天') + `<span class="sub">${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')} 后入夜 · 今夜 Lv ${nl}${up ? '（升级）' : ''}</span>`;
+    ph.innerHTML = (W.night ? '第 ' + (W.night + 1) + ' 夜前' : '第一个白天') + (UI.phoneTop ? `<span class="sub">${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')} 后入夜</span>` : `<span class="sub">${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')} 后入夜 · 今夜 Lv ${nl}${up ? '（升级）' : ''}</span>`);
   } else if (W.phase === 'night') {
     const left = W.zs.length + (NETROLE === 'guest' ? (W.spawnLeft || 0) : W.spawnQ.length);
     ph.className = isBlood(W.night) ? 'blood' : 'night';
     const rest = Math.max(0, Math.ceil(BAL.nightMin(W.night) - W.nightT));
-    ph.innerHTML = '第 ' + W.night + ' 夜 · Lv ' + BAL.nightLv(W.night) + (isBlood(W.night) ? ' · 血月' : '') + `<span class="sub">剩余 ${left} 只${rest > 0 ? ' · 天亮还要 ' + Math.floor(rest / 60) + ':' + String(rest % 60).padStart(2, '0') : ''} · ${W.night}/${BAL.nights}</span>`;
+    ph.innerHTML = '第 ' + W.night + ' 夜 · Lv ' + BAL.nightLv(W.night) + (isBlood(W.night) ? ' · 血月' : '') + (UI.phoneTop ? `<span class="sub">${rest > 0 ? '天亮 ' + Math.floor(rest / 60) + ':' + String(rest % 60).padStart(2, '0') + ' · ' : ''}剩 ${left}</span>` : `<span class="sub">剩余 ${left} 只${rest > 0 ? ' · 天亮还要 ' + Math.floor(rest / 60) + ':' + String(rest % 60).padStart(2, '0') : ''} · ${W.night}/${BAL.nights}</span>`); /* (round 36d) phones: the time to dawn first, short */
   } else ph.textContent = W.phase === 'win' ? '获救' : '失守';
   // tasks: a one-line summary that opens on tap, and pops open for a few seconds when something changes
   if (UI.tkv !== W.tkv) {
@@ -12194,14 +12208,22 @@ function renderCraft() {
   const me = W.p[ME], tab = SET.shopTab && SHOP_TABS.some(t => t[0] === SET.shopTab) ? SET.shopTab : 'gun';
   $('ctabs').innerHTML = SHOP_TABS.map(([k, n]) => `<button data-t="${k}" class="${k === tab ? 'sel' : ''}">${n}</button>`).join('');
   $('ctabs').querySelectorAll('button').forEach(b => b.onclick = () => { SET.shopTab = b.dataset.t; saveSet(); renderCraft(); sfx('click'); });
-  $('cres').textContent = '全队材料：' + RES.map(r => r.name + ' ' + W.res[r.k]).join(' · ');
+  $('cres').textContent = '材料：' + RES.map(r => r.name + ' ' + W.res[r.k]).join(' · ');
+  // (round 36d) 常买: the things you restock most, on every tab — this gun's ammo, medkits, frag grenades, and the gyro / tank / mech upkeep if you have them
   let h = '';
+  { const q = [], wi = me.wpn, am = CRAFT.find(c => c.ammo && c.ammo[0] === wi); if (me.owned[wi] && am && !WPN[wi].inf) q.push([am, WPN[wi].sn || WPN[wi].name + '弹']);
+    for (const [k, n] of [['med', '医疗包'], ['nade', '破片 ×2']]) { const c = CRAFT.find(x => x.id === k); if (c) q.push([c, n]); }
+    if (ownsVeh(me, 5)) { const c = CRAFT.find(x => x.gam); if (c) q.push([c, '旋翼机弹']); }
+    if (ownsVeh(me, 6)) { const c = CRAFT.find(x => x.shl); if (c) q.push([c, '炮弹']); }
+    if (me.vehs & 126 && [1, 2, 3, 4, 5, 6].some(v => ownsVeh(me, v) && mhpOf(me, v) < MECHS[v].hp)) { const c = CRAFT.find(x => x.mfix); if (c) q.push([c, '修机甲']); }
+    h += `<div class="squick"><i>常买</i>${q.map(([c, n]) => shopBtn(c, n)).join('')}</div>`; }
   if (tab === 'gun') {
-    h = WPN.map((w, k) => {
+    const ord = WPN.map((w, k) => k).sort((a, b) => { const sc = k => { const own = me.owned[k], buy = CRAFT.find(c => c.wpn === k); return own ? (WPN[k].inf ? 1 : 0) : buy && !craftBlocked(me, buy) ? 2 : 3; }; return sc(a) - sc(b) || a - b; }); // (round 36d) your guns first (ammo to buy), then what you can afford, then the rest
+    h += ord.map(k => { const w = WPN[k];
       const buy = CRAFT.find(c => c.wpn === k), am = CRAFT.find(c => c.ammo && c.ammo[0] === k), own = me.owned[k];
       const st = own ? (w.inf ? '已有 · 子弹无限' : '已有 · ' + me.mag[k] + ' / ' + me.ammo[k] + '（最多 ' + ammoCap(k) + '）') : '没有'; // (round 32) backpack cap
       const btns = !own && buy ? shopBtn(buy, '造这把枪') : own && am ? shopBtn(am, '买' + am.name) : own && w.inf ? '<span class="sfree">不用买子弹</span>' : '';
-      return `<div class="sc${own ? ' own' : ''}"><div class="sh"><b>${w.name}</b><em>${st}</em></div><small>${w.tag || ''}</small><div class="sb">${btns}</div></div>`;
+      return `<div class="sc${own ? ' own' : ''}" title="${(w.tag || '').replace(/"/g, '')}"><div class="sh"><b>${w.name}</b><em>${st}</em></div><small>${w.tag || ''}</small><div class="sb">${btns}</div></div>`;
     }).join('');
     { const g = CRAFT.find(c => c.gam), own = ownsVeh(me, 5); h += `<div class="sc${own ? ' own' : ''}"><div class="sh"><b>旋翼机机枪</b><em>${own ? '机上 ' + (me.gam || 0) + ' / ' + BAL.gyroCap : '要先有旋翼机'}</em></div><small>飞的时候按开火：一发 ${BAL.gyroDmg}，射速快，打你瞄的地方；子弹存在飞机上</small><div class="sb">${own ? shopBtn(g, '买' + g.name) : '<span class="sfree">「载具」栏造</span>'}</div></div>`; } // (round 30)
     { const g = CRAFT.find(c => c.shl), own = ownsVeh(me, 6); h += `<div class="sc${own ? ' own' : ''}"><div class="sh"><b>坦克炮</b><em>${own ? '车里 ' + (me.shl || 0) + ' / ' + BAL.tankCap : '要先有坦克'}</em></div><small>开坦克时按开火：炮弹打到哪炸到哪（${BAL.tankDmg}，半径 ${BAL.tankR}），${BAL.tankRate} 秒一发</small><div class="sb">${own ? shopBtn(g, '买' + g.name) : '<span class="sfree">「载具」栏造</span>'}</div></div>`; } // (round 31)
@@ -12212,16 +12234,16 @@ function renderCraft() {
     h += `<div class="sc${me.shield ? ' own' : ''}"><div class="sh"><b>防暴盾</b><em>${me.shield ? (me.melee === 1 ? '在用' : '已有') : '没有'}</em></div><small>${sc.desc}</small><div class="sb">${!me.shield ? shopBtn(sc, '买') : me.melee === 1 ? '<span class="sfree">在用</span>' : useBtn(1)}</div></div>`;
   } else if (tab === 'item') {
     const st = { nade: '带着 ' + me.nades + ' / ' + BAL.nadeCap, med: '带着 ' + me.meds + ' / ' + BAL.medCap }; for (let t = 1; t < 4; t++) st['g' + GREN[t].k] = '带着 ' + gCount(me, t) + ' / ' + BAL.gnCap;
-    h = CRAFT.filter(c => c.cat === 'item').map(c => `<div class="sc"><div class="sh"><b>${c.name}</b><em>${st[c.id] || ''}</em></div><small>${c.desc}</small><div class="sb">${shopBtn(c, c.shield && me.shield > 0 ? '修满' : '买')}</div></div>`).join('');
+    h += CRAFT.filter(c => c.cat === 'item').map(c => `<div class="sc"><div class="sh"><b>${c.name}</b><em>${st[c.id] || ''}</em></div><small>${c.desc}</small><div class="sb">${shopBtn(c, c.shield && me.shield > 0 ? '修满' : '买')}</div></div>`).join('');
     h += `<div class="sgrp">墙、陷阱、地雷、机枪塔、跳板这些<b>放置类道具不在商店里</b>：随时随地点「道具」（电脑按 B）拿出来放，放一个扣一份材料</div>`;
   } else if (tab === 'veh') {
-    h = `<div class="sgrp">选一辆当默认：T（触屏点「载具」）就上这辆；Shift+T / 长按「载具」换车</div>`;
+    h += `<div class="sgrp">选一辆当默认：T（触屏点「载具」）就上这辆；Shift+T / 长按「载具」换车</div>`;
     h += CRAFT.filter(c => c.cat === 'veh').map(c => { const v = c.veh, own = (me.vehs || 0) >> v & 1, def = own && me.veh === v, M = MECHS[v];
       return `<div class="sc${own ? ' own' : ''}"><div class="sh"><b>${c.name}</b><em>${def ? '默认 ✓' : own ? '已有' : '速度 ×' + VEH[v].spd}</em></div><small>${c.desc}${M ? `<br><b>二阶段 · ${M.name}</b>（骑着按 X / 「变形」，1 秒）：${M.tag}` : ''}</small><div class="sb">${own ? (def ? '<span class="sfree">按 T 上车</span>' : `<button class="sbtn vdef" data-v="${v}"><b>设为默认</b><span>T 就上这辆</span></button>`) : shopBtn(c, '造')}</div></div>`; }).join('');
     if (me.vehs & 126) { const fx = CRAFT.find(c => c.mfix), bt = CRAFT.find(c => c.mbat), hs = [1, 2, 3, 4, 5, 6].filter(v => ownsVeh(me, v)).map(v => MECHS[v].name + ' ' + Math.round(mhpOf(me, v)) + '/' + MECHS[v].hp).join('，'); h += `<div class="sc own"><div class="sh"><b>机甲维护</b><em>电 ${Math.floor(me.bat != null ? me.bat : BAL.mechBat)} / ${BAL.mechBat} 秒</em></div><small>装甲：${hs}。不是机甲形态时装甲和电会慢慢恢复；这里马上修好 / 充满（要先变回载具）</small><div class="sb">${shopBtn(fx, '修好装甲')}${shopBtn(bt, '充满电')}</div></div>`; } // (round 34b)
     if (ownsVeh(me, 5)) { const f = CRAFT.find(c => c.fuel); h += `<div class="sc own"><div class="sh"><b>旋翼机油箱</b><em>油 ${Math.floor(me.fuel || 0)} / ${VEH[5].fuel} 秒</em></div><small>在这里直接加满（免费、马上满）；也可以在有屋顶的房间里按 F 加。机枪子弹在「武器 · 弹药」栏买</small><div class="sb">${shopBtn(f, '加满油')}</div></div>`; } // (round 30)
   } else {
-    h = CRAFT.filter(c => c.cat === 'upg').map(c => `<div class="sc"><div class="sh"><b>${c.name}</b><em>${W.upg} / 5 级</em></div><small>${c.desc}</small><div class="sb">${shopBtn(c, '升级')}</div></div>`).join('');
+    h += CRAFT.filter(c => c.cat === 'upg').map(c => `<div class="sc"><div class="sh"><b>${c.name}</b><em>${W.upg} / 5 级</em></div><small>${c.desc}</small><div class="sb">${shopBtn(c, '升级')}</div></div>`).join('');
   }
   $('clist').innerHTML = h;
   $('clist').querySelectorAll('button[data-c]').forEach(b => b.addEventListener('click', () => shopBuy(CRAFT.find(c => c.id === b.dataset.c))));
@@ -12382,6 +12404,9 @@ function initUI() {
   $('modeBtn').onclick = () => { sfx('click'); openModeSel(); }; $('lModeBtn').onclick = () => { sfx('click'); openModeSel(); }; $('msOk').onclick = () => { sfx('click'); closeModeSel(); }; uiModeLbl();
   $('mini').addEventListener('pointerdown', e => { e.stopPropagation(); e.preventDefault(); toggleBigMap(true); });
   $('bigmap').addEventListener('pointerdown', e => { e.stopPropagation(); e.preventDefault(); toggleBigMap(false); });
+  // (round 36d) phones: the task pill moves to the left column under the health card; the top centre keeps one line (the night + the ready button)
+  { const mq = window.matchMedia('(pointer:coarse) and (max-height:500px)'), place = () => { const t = $('tasks'); UI.phoneTop = mq.matches; if (!t) return; if (mq.matches) { if (t.parentNode !== $('hTL')) $('hTL').insertBefore(t, $('pcards').nextSibling); } else if (t.parentNode !== $('hTC')) $('hTC').insertBefore(t, $('readyBtn')); };
+    place(); if (mq.addEventListener) mq.addEventListener('change', place); }
   // (round 36b) the shop and the gear panel close like the map: tap / click anywhere outside the card
   for (const [id, close] of [['craft', () => closeCraft()], ['kit', () => closeKit()]]) $(id).addEventListener('pointerdown', e => { if (e.target !== e.currentTarget) return; e.stopPropagation(); e.preventDefault(); close(); });
   $('keys').addEventListener('pointerdown', e => { e.stopPropagation(); if (!e.target.closest('.kh')) return; SET.keysOff = !SET.keysOff; saveSet(); UI.keysK = ''; if (W && W.p[ME]) uiKeys(W.p[ME]); sfx('click'); });
