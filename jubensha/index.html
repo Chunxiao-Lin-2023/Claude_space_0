@@ -606,7 +606,7 @@ button.it{cursor:pointer}
         if (sv.export) h += '<button class="tk-mini" data-a="s-exp" data-arg="' + esc(s.slot) + '" title="导出存档码">导出</button>';
         if (sv.remove) h += '<button class="tk-mini" data-a="s-del" data-arg="' + esc(s.slot) + '" title="删除">删除</button>';
         h += '</div>';
-        if (exportShown && String(exportShown.slot) === String(s.slot)) h += '<textarea class="tk-ta" readonly data-sel>' + esc(exportShown.text) + '</textarea><div class="tk-row"><button class="tk-mini" data-a="s-copy">' + svg('copy') + '复制</button><button class="tk-mini" data-a="s-file">下载文件</button></div>';
+        if (exportShown && String(exportShown.slot) === String(s.slot)) h += '<textarea class="tk-ta" readonly data-sel>' + esc(exportShown.text) + '</textarea><div class="tk-row"><button class="tk-mini" data-a="s-copy">' + svg('copy') + '复制</button>' + (cfg.artifact ? '' : '<button class="tk-mini" data-a="s-file">下载文件</button>') + '</div>'; /* claude.ai 里网页不能下载文件，只留复制 */
       }
       if (!l.length) h += '<div class="tk-note">还没有存档。</div>';
       h += '</div>';
