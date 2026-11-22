@@ -16,12 +16,12 @@ const UA = 'Mozilla/5.0 (iPad; CPU OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (
     // shop
     let s = await p.evaluate(() => { openCraft(); const tabs = [...document.querySelectorAll('#ctabs button')].map(b => b.textContent), cards = document.querySelectorAll('#clist .sc').length;
       const shot = ([...document.querySelectorAll('#clist .sc')].find(e => /^霰弹枪/.test(e.querySelector('b').textContent)) || {}).textContent || ''; /* (round 36d) cards are sorted (your guns first) */ [...document.querySelectorAll('#clist button[data-c="rifle"]')][0].click(); return { tabs, cards, shot, rifle: W.p[0].owned[2] }; });
-    check('shop has 4 tabs; the gun tab has one card per gun, ammo on the gun\'s card', s.tabs.length === 4 && s.cards === 11 && /霰弹/.test(s.shot) && /买霰弹/.test(s.shot), JSON.stringify(s).slice(0, 200));
+    check('shop has 2 tabs (round 36f); the gun tab: medkit, 4 grenades, one card per gun (ammo on it), the knife', s.tabs.length === 2 && s.cards === 13 && /霰弹/.test(s.shot) && /买×12/.test(s.shot), JSON.stringify(s).slice(0, 200));
     check('buying a gun from its card works', s.rifle === 1);
-    s = await p.evaluate(() => { SET.shopTab = 'gun'; renderCraft(); document.querySelector('#clist button[data-c="shield"]').click(); SET.shopTab = 'item'; renderCraft(); const n = document.querySelectorAll('#clist .sc.mini').length;
+    s = await p.evaluate(() => { SET.shopTab = 'gun'; renderCraft(); const n = document.querySelectorAll('#clist .sc.mini').length + document.querySelectorAll('#clist button[data-c="shield"]').length; /* (round 36f) no shield */
       SET.shopTab = 'veh'; renderCraft(); document.querySelector('#clist button[data-c="cargo"]').click(); document.querySelector('#clist button[data-c="armor"]').click(); renderCraft();
-      const def = document.querySelector('#clist button.vdef'); if (def) def.click(); return { shield: W.p[0].shield, items: n, vehs: W.p[0].vehs, veh: W.p[0].veh }; });
-    check('gun tab: shield bought (round 23: a melee weapon); item tab no longer lists placeables (round 25)', s.shield === 1 && s.items === 0, JSON.stringify(s));
+      shopTip('v3', document.querySelector('[data-k=v3]')); const def = document.querySelector('#stip button.vdef2'); if (def) def.click(); /* (round 36f) set default from the long-press card */ return { shield: W.p[0].shield, items: n, vehs: W.p[0].vehs, veh: W.p[0].veh }; });
+    check('no shield to buy (round 36f), no placeables in the shop (round 25)', !s.shield && s.items === 0, JSON.stringify(s));
     check('vehicle tab: cargo + armour owned, default switchable', (s.vehs & 24) === 24 && s.veh >= 3, JSON.stringify(s));
     await p.evaluate(() => closeCraft());
     // kit / quick weapons
@@ -41,8 +41,8 @@ const UA = 'Mozilla/5.0 (iPad; CPU OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (
     check('a ladder hangs on the wall you can climb onto, whichever way you face', s.every(d => d === 0), JSON.stringify(s));
     await p.keyboard.press('b');
     // shield / armour
-    s = await p.evaluate(() => { const me = W.p[0]; me.hp = 100; me.aim = 0; hurtPlayer(me, 20, { x: me.x + 1, y: me.y }); const front = 100 - me.hp, sh = me.shield; me.hp = 100; hurtPlayer(me, 20, { x: me.x - 1, y: me.y }); const back = 100 - me.hp;
-      me.hp = 100; me.veh = 4; me.ride = true; hurtPlayer(me, 20); const arm = 100 - me.hp; me.ride = false; me.hp = 100; return { front, sh, back, arm }; });
+    s = await p.evaluate(() => { const me = W.p[0]; me.shield = 1; me.melee = 1; /* (round 36f) legacy shield, handed over directly */ me.hp = 100; me.aim = 0; hurtPlayer(me, 20, { x: me.x + 1, y: me.y }); const front = 100 - me.hp, sh = me.shield; me.hp = 100; hurtPlayer(me, 20, { x: me.x - 1, y: me.y }); const back = 100 - me.hp;
+      me.hp = 100; me.veh = 4; me.ride = true; hurtPlayer(me, 20); const arm = 100 - me.hp; me.ride = false; me.hp = 100; me.shield = 0; me.melee = 0; return { front, sh, back, arm }; });
     check('shield out: a hit from the front loses half, from behind full; armoured car takes 35%', Math.abs(s.front - 10) < 0.01 && s.sh === 1 && s.back === 20 && Math.abs(s.arm - 7) < 0.01, JSON.stringify(s));
     // armoured car rams
     s = await p.evaluate(async () => { const me = W.p[0]; W.zs.length = 0; W.spawnQ = []; const z = spawnZombie('walker', 0); z.x = me.x + 0.55; z.y = me.y; z.L = me.L; z.z = me.z; z.stun = 99; const h0 = z.hp;

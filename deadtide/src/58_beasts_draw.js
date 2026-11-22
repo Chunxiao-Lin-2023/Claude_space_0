@@ -152,6 +152,7 @@ function fxMesh(kind) {
 // o: { kind, x, y, z, s0, s1 (scale over life), life, col, op, yaw, roll, pitch }
 function fxAdd(o) { const m = fxMesh(o.kind); m.material.color.set(o.col || '#ffffff'); m.position.set(o.x, o.z, o.y); m.rotation.set(o.roll || 0, -(o.yaw || 0), o.pitch || 0, 'YXZ'); FXM.live.push(Object.assign({ m, t: 0, op: 0.9 }, o)); }
 function fxTick(dt) {
+  for (const m of KTRL) if (m.visible && !(W.t - (m.userData.seen || 0) < 0.1)) m.visible = false; /* (round 36f) a sword trail whose mech is gone */
   for (const f of FXM.live) { f.t += dt; const k = Math.min(1, f.t / f.life), s = lerp(f.s0, f.s1, 1 - (1 - k) * (1 - k)); f.m.scale.set(s, f.sy != null ? f.sy : s, s); f.m.material.opacity = f.op * (1 - k * k); if (k >= 1) { f.m.visible = false; FXM.pool[f.m.userData.kind].push(f.m); f.dead = 1; } }
   if (FXM.live.length) FXM.live = FXM.live.filter(f => !f.dead);
 }

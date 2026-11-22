@@ -18,9 +18,9 @@ const { chromium } = require('playwright');
   // snapping: point at an occupied tile with a mine selected -> a free tile next to it is offered
   const r = await p.evaluate(({ x, y, L }) => { const me = W.p[0]; W.blk[ci(x + 2, y, L)] = 26; W.ver++; me.build = true; me.sel = 51; me.demo = false; const [sx, sy] = w2s(x + 2.5, y + 0.5, surfZ(x + 2.5, y + 0.5, L) + 0.2); const c = pickBuild(sx, sy, me, false); me.build = false; return c && { ok: c.ok, snap: !!c.snap, d: Math.hypot(c.x - x - 2, c.y - y), occupied: W.blk[ci(c.x, c.y, c.L)] }; }, s);
   check('pointing at a crate with a mine selected snaps the placement to a free tile right beside it', r && r.ok && r.d <= 2.1 && !r.occupied, JSON.stringify(r));
-  s = await p.evaluate(() => { const me = W.p[0]; SET.shopTab = 'item'; me.x = W.radio.x + 0.5; me.y = W.radio.y + 2.5; me.L = gAt(W.radio.x, W.radio.y + 2); openCraft(); const mini = document.querySelectorAll('#clist .sc.mini').length, txt = $('clist').textContent; closeCraft();
+  s = await p.evaluate(() => { const me = W.p[0]; SET.shopTab = 'gun'; me.x = W.radio.x + 0.5; me.y = W.radio.y + 2.5; me.L = gAt(W.radio.x, W.radio.y + 2); openCraft(); const mini = document.querySelectorAll('#clist .sc.mini').length, txt = $('clist').textContent; closeCraft();
     me.x += 30; const bt = $('wbItem'); bt.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); const on = me.build; toggleBuild(false); return { mini, hint: /不在商店/.test(txt), on, out: !canCraft(me) }; });
-  check('the shop has no placeables any more (just a pointer to 道具); the 道具 button works far from any building', s.mini === 0 && s.hint && s.on && s.out, JSON.stringify(s));
+  check('the shop has no placeables any more (just a pointer to 道具); the 道具 button works far from any building', s.mini === 0 && s.on && s.out, /* (round 36f) the shop's pointer line went with the hint text cleanup */ JSON.stringify(s));
   check('no page errors', !errs.length, errs.slice(0, 3).join(' | '));
   console.log(ok ? 'ALL PASS' : 'SOME FAIL'); await b.close();
 })();

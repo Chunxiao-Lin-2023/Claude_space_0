@@ -93,7 +93,7 @@ const { chromium } = require('playwright');
   await p.evaluate(() => { const me = W.p[ME]; me.mcd = 0; mechSkill(me, null); }); await simWait(2.5);
   s.down = await p.evaluate(() => ({ air: airborne(W.p[ME]), mech: inMech(W.p[ME]), ride: W.p[ME].ride }));
   check('苍隼: the skill takes off and it keeps flying (well above the ground, using energy); pressed again it lands and stands as a mech', s.fly && s.air && s.up.air && s.up.h > 2 && !s.down.air && s.down.mech && s.down.ride, JSON.stringify(s));
-  s = await p.evaluate(() => { const me = W.p[ME]; me.aim = 0; me.gcd = 0; me.aimPt = null; W.zs.length = 0; const z = spawnZombie('walker', 0); z.x = me.x + 9; z.y = me.y; z.L = me.L; z.z = surfZ(z.x, z.y, z.L); z.hp = z.max = 1000; window.__z = z; mechPunch(me); return 1; });
+  s = await p.evaluate(() => { const me = W.p[ME]; W.upg = 0; /* (round 36f) the team now starts at 弹头 Lv3 */ me.aim = 0; me.gcd = 0; me.aimPt = null; W.zs.length = 0; const z = spawnZombie('walker', 0); z.x = me.x + 9; z.y = me.y; z.L = me.L; z.z = surfZ(z.x, z.y, z.L); z.hp = z.max = 1000; window.__z = z; mechPunch(me); return 1; });
   await simWait(0.8); s = await p.evaluate(() => Math.round(1000 - __z.hp));
   check('苍隼 fires shoulder rockets: a zombie 9 away takes ~55 when one bursts on it', s >= 45 && s <= 60, s);
   await ride(4, open); await xform(); await simWait(1.15);

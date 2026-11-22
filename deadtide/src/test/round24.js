@@ -14,10 +14,10 @@ const UA = 'Mozilla/5.0 (iPad; CPU OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (
     const simWait = s => p.evaluate(s => new Promise(r => { const t0 = W.t; const f = () => W.t - t0 >= s ? r() : setTimeout(f, 20); f(); }), s);
     await p.evaluate(cl => { window.__clr = eval(cl); window.__dbg.skipDraw = true; W.phase = 'day'; for (const k in W.res) W.res[k] = 999; const me = W.p[0]; me.x = W.radio.x + 0.5; me.y = W.radio.y + 2.5; me.L = gAt(W.radio.x, W.radio.y + 2); }, clearAround);
     // 1. shop + caps
-    let s = await p.evaluate(() => { const me = W.p[0]; SET.shopTab = 'item'; openCraft(); const cards = [...document.querySelectorAll('#clist .sc:not(.mini)')].map(e => e.querySelector('b').textContent);
+    let s = await p.evaluate(() => { const me = W.p[0]; SET.shopTab = 'gun'; openCraft(); const cards = [...document.querySelectorAll('#clist .sc:not(.mini)')].slice(0, 5).map(e => e.querySelector('b').textContent); /* (round 36f) medkit + grenades head the merged tab */
       for (const id of ['nade', 'gslow', 'gsmoke', 'gblast', 'med']) { const c = CRAFT.find(q => q.id === id); for (let k = 0; k < 20 && !craftBlocked(me, c); k++) doAct(me, 'craft', id); } closeCraft();
       return { cards, n: [me.nades, ...me.gn, me.meds], start: livesFor('normal', 'classic') }; });
-    check('item tab sells 4 grenade types + medkit; carry 10 frag (15 before round 34) / 8 of each special / 8 medkits', s.cards.length === 5 && s.n.join() === '10,8,8,8,8', JSON.stringify(s));
+    check('the merged tab opens with medkit + 4 grenade types; carry 10 frag (15 before round 34) / 8 of each special / 8 medkits', s.cards[0] === '医疗包' && s.cards.slice(1).every(c => /雷|弹/.test(c)) && s.n.join() === '10,8,8,8,8', JSON.stringify(s));
     // 2. PC: 5–8 pick, Shift+G cycles, bar chips follow
     await p.keyboard.press('7'); await simWait(0.1); const g7 = await p.evaluate(() => W.p[0].gt);
     await p.keyboard.down('Shift'); await p.keyboard.press('g'); await p.keyboard.up('Shift'); await simWait(0.1); const gs = await p.evaluate(() => W.p[0].gt);

@@ -18,11 +18,10 @@ const UA = 'Mozilla/5.0 (iPad; CPU OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (
       const r = {}; for (const id of [1, 51, 52, 53, 12, 15, 10, 56]) r[id] = canPlace(x, y, L, id, 0) || 'OK'; return r; });
     check('classic: mines, turret, cover, traps, pad go down outside the build zone; walls still do not (lamp left the bar in round 25)', ['51', '52', '53', '12', '15', '56'].every(k => s[k] === 'OK') && s[1] !== 'OK', JSON.stringify(s));
     // 2. shield is a melee weapon
-    s = await p.evaluate(() => { const me = W.p[0]; me.x = W.radio.x + 0.5; me.y = W.radio.y + 2.5; me.L = gAt(W.radio.x, W.radio.y + 2); SET.shopTab = 'gun'; openCraft();
-      const card = [...document.querySelectorAll('#clist .sc')].find(e => /防暴盾/.test(e.textContent)); card.querySelector('button').click(); closeCraft();
+    s = await p.evaluate(() => { const me = W.p[0]; me.x = W.radio.x + 0.5; me.y = W.radio.y + 2.5; me.L = gAt(W.radio.x, W.radio.y + 2); /* (round 36f) the shop no longer sells the shield; the old mechanic is still tested by handing it over directly */ me.shield = 1; me.melee = 1;
       me.hp = 100; me.aim = 0; window.__dbg.god = false; hurtPlayer(me, 20, { x: me.x + 1, y: me.y }); const f1 = 100 - me.hp; me.hp = 100; hurtPlayer(me, 20, { x: me.x - 1, y: me.y }); const b1 = 100 - me.hp; me.hp = 100; window.__dbg.god = true;
       return { shield: me.shield, melee: me.melee, f1, b1 }; });
-    check('shield bought from the gun tab becomes the melee weapon; with it out a front hit loses half', s.shield === 1 && s.melee === 1 && s.f1 === 10 && s.b1 === 20, JSON.stringify(s));
+    check('(legacy) shield as the melee weapon: with it out a front hit loses half', s.shield === 1 && s.melee === 1 && s.f1 === 10 && s.b1 === 20, JSON.stringify(s));
     await p.keyboard.press('x'); await simWait(0.1); const m0 = await p.evaluate(() => W.p[0].melee); await p.keyboard.press('x'); await simWait(0.1); const m1 = await p.evaluate(() => W.p[0].melee);
     check('X switches knife <-> shield', m0 === 0 && m1 === 1, m0 + ',' + m1);
     // 3. bash

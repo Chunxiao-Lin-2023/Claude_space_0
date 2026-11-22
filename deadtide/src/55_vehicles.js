@@ -393,6 +393,7 @@ function mPart(par, geo, mat, x, y, z, rz, ry, rx, sx, sy, sz) { const m = new T
 const mRB = (par, mat, w, h, d, r, x, y, z, rz, ry, rx) => mPart(par, mRound(w, h, d, r), mat, x, y, z, rz, ry, rx);
 const mTaper = (r1, r2, h, seg) => { const key = 't' + [r1, r2, h, seg || 8].join(); return _mgeo[key] || (_mgeo[key] = new THREE.CylinderGeometry(r1, r2, h, seg || 8).translate(0, -h / 2, 0)); };
 const mBall = r => _mgeo['b' + r] || (_mgeo['b' + r] = new THREE.SphereGeometry(r, 10, 7));
+const KTRL = []; // (round 36f) the sword-trail ribbons (in the scene); fxTick hides any whose mech was not drawn this frame
 function mkMech(k) {
   const M = MECHS[k] || MECHS[4], st = M.style, D = MECH_DIM[st] || MECH_DIM.slim, g = new THREE.Group(), J = { k, st, D, LEG: { th: D.th, sh: D.sh, ft: D.ft }, legs: [], arms: [], flames: [], blades: [] };
   const lit = c => new THREE.MeshLambertMaterial({ color: c, flatShading: false });
@@ -406,9 +407,18 @@ function mkMech(k) {
   // pelvis: a rounded hip block, a groin guard, ball joints, skirt plates that flare out
   mRB(pel, dark, 0.46, 0.28, 0.6 * cw, 0.07, 0, 0, 0); mRB(pel, main, 0.2, 0.3, 0.3 * cw, 0.06, 0.22, -0.06, 0, -0.25); mRB(pel, acc, 0.03, 0.12, 0.16, 0.012, 0.33, -0.04, 0, -0.25);
   for (const s of [-1, 1]) { mPart(pel, mBall(0.13 * A), steel, 0, -0.05, s * 0.32 * cw); mRB(pel, main, 0.4, 0.24, 0.07, 0.05, -0.02, -0.12, s * 0.42 * cw, 0, 0, s * 0.22); mRB(pel, line, 0.38, 0.015, 0.075, 0.005, -0.02, -0.06, s * 0.43 * cw, 0, 0, s * 0.22); }
+  if (edge) for (const fx of [1, -1]) for (let q = 0; q < 2; q++) { mRB(pel, q ? dark : main, 0.05, 0.12, 0.42 * cw, 0.02, fx * (0.26 + q * 0.025), -0.16 - q * 0.1, 0, -fx * 0.25); vBox(pel, lit('#b0242a'), 0.055, 0.012, 0.4 * cw, fx * (0.26 + q * 0.025), -0.11 - q * 0.1, 0, -fx * 0.25); } // (round 36f) 草摺 waist plates front and back
   // legs: tapered thigh with a front plate and a ram behind, a ball knee with a cap, a shin with a guard and calf, a splayed foot
   for (const s of [-1, 1]) {
     const hip = new THREE.Group(); hip.position.set(0, -0.06, s * 0.34 * cw); pel.add(hip);
+    if (worker) { // (round 36f) 工蜂: stubby rounded legs and big round boots, same smooth shell as the body
+      const sm = (r, ws = 20, hs = 14) => new THREE.SphereGeometry(r, ws, hs);
+      mPart(hip, mTaper(0.13, 0.12, D.th, 16), dark, 0, 0, 0); mPart(hip, sm(0.15), main, 0.02, -D.th * 0.5, 0, 0, 0, 0, 1, 1.5, 1);
+      const kn = new THREE.Group(); kn.position.y = -D.th; hip.add(kn); mPart(kn, sm(0.12), steel, 0, 0, 0);
+      mPart(kn, mTaper(0.12, 0.15, D.sh, 16), main, 0, 0, 0); mPart(kn, new THREE.TorusGeometry(0.15, 0.025, 8, 20), acc, 0, -D.sh + 0.06, 0, 0, 0, Math.PI / 2);
+      const an = new THREE.Group(); an.position.y = -D.sh; kn.add(an);
+      mPart(an, sm(0.2), dark, 0.07, -0.06, 0, 0, 0, 0, 1.45, 0.62, 1.05); mPart(an, sm(0.12), acc, 0.25, -0.05, 0, 0, 0, 0, 1, 0.7, 1.3); mRB(an, blk, 0.56, 0.05, 0.38, 0.02, 0.07, -0.16, 0);
+      J.legs.push({ hip, kn, an, s }); continue; }
     mPart(hip, mTaper(0.15 * A, 0.12 * A, D.th), dark, 0, 0, 0, 0, 0, 0, 1, 1, 0.92);
     mRB(hip, main, 0.13, D.th * 0.78, 0.27 * A, 0.05, 0.13 * A, -D.th * 0.45, 0, 0.05); mRB(hip, line, 0.135, 0.015, 0.275 * A, 0.006, 0.13 * A, -D.th * 0.3, 0, 0.05);
     mRB(hip, main, 0.24 * A, D.th * 0.4, 0.06, 0.04, -0.02, -D.th * 0.35, s * 0.15 * A, 0, 0, s * 0.08);
@@ -429,10 +439,21 @@ function mkMech(k) {
   }
   // torso: waist ring (turns toward the aim), segmented abdomen, chest with the reactor, collar, back pack
   const tor = new THREE.Group(); tor.position.y = 0.15; pel.add(tor); J.tor = tor;
-  mPart(tor, mTaper(0.2 * cw, 0.24 * cw, 0.14, 12), steel, 0, 0.14, 0);
-  for (let a = 0; a < 3; a++) mPart(tor, mTaper(0.24 * cw - a * 0.01, 0.22 * cw + a * 0.01, 0.08, 10), a % 2 ? dark : main, 0.02, 0.22 + a * 0.085, 0, 0, 0, 0, 1.15, 1, 1.25);
+  if (!worker) mPart(tor, mTaper(0.2 * cw, 0.24 * cw, 0.14, 12), steel, 0, 0.14, 0);
+  if (!worker) for (let a = 0; a < 3; a++) mPart(tor, mTaper(0.24 * cw - a * 0.01, 0.22 * cw + a * 0.01, 0.08, 10), a % 2 ? dark : main, 0.02, 0.22 + a * 0.085, 0, 0, 0, 0, 1.15, 1, 1.25);
   const ch = new THREE.Group(); ch.position.y = 0.42; tor.add(ch); J.ch = ch;
-  if (worker) { ch.scale.set(0.82, 0.8, 0.82); mPart(ch, mBall(0.42), main, 0.06, 0.3, 0, 0, 0, 0, 1.05, 1.0, 1.12); mPart(ch, mBall(0.22), acc, 0.32, 0.26, 0, 0, 0, 0, 0.5, 1, 1.2); } // (round 36f) a round belly with a yellow tummy plate
+  const eggR = y => { const u = clamp((y + 0.75) / 1.55, 0, 1); return 0.52 * Math.pow(Math.sin(Math.PI * (0.08 + 0.84 * u)), 0.7) * (1 - 0.18 * u); }; // the worker's shell radius at height y (chest space)
+  if (worker) { // (round 36f) 工蜂 is one smooth egg-shaped shell from the hips up to the head (not a stack of boxes): a yellow tummy plate, a panel seam, a glowing heart, a collar band the head sits in
+    const prof = []; for (let i = 0; i <= 18; i++) { const y = -0.75 + i / 18 * 1.55; prof.push(new THREE.Vector2(Math.max(0.02, eggR(y)), y)); }
+    mPart(ch, new THREE.LatheGeometry(prof, 28), main, 0, 0, 0, 0, 0, 0, 0.95, 1, 1.12);
+    mPart(ch, new THREE.SphereGeometry(0.3, 24, 16), acc, 0.31, 0.06, 0, 0, 0, 0, 0.55, 0.92, 1.05); // an oval tummy plate
+    for (const [y, m] of [[-0.36, line], [0.58, line]]) mPart(ch, new THREE.TorusGeometry(eggR(y) + 0.004, 0.011, 6, 30), m, 0, y, 0, 0, 0, Math.PI / 2, 0.95, 1.12, 1);
+    mPart(ch, new THREE.TorusGeometry(eggR(0.74) + 0.02, 0.045, 10, 30), acc, 0, 0.74, 0, 0, 0, Math.PI / 2, 0.95, 1.12, 1);
+    const ring2 = new THREE.Mesh(new THREE.TorusGeometry(0.085, 0.016, 6, 18), steel); ring2.rotation.y = Math.PI / 2; ring2.position.set(0.475, 0.1, 0); ch.add(ring2);
+    J.core = vCyl(ch, glow, 0.07, 0.07, 0.02, 0.475, 0.1, 0, 'x', 18); J.coreHalo = vCyl(ch, glowA, 0.13, 0.13, 0.01, 0.482, 0.1, 0, 'x', 18);
+    for (const s2 of [-1, 1]) mPart(ch, new THREE.CylinderGeometry(0.07, 0.07, 0.03, 16), dark, 0.22, -0.2, s2 * 0.42, 0, 0, Math.PI / 2 - s2 * 0.5); // little side vents
+  }
+  if (!worker) {
   mRB(ch, dark, 0.58, 0.6, 0.9 * cw, 0.12, -0.02, 0.32, 0);
   for (const s of [-1, 1]) { mRB(ch, main, 0.2, 0.5, 0.44 * cw, 0.08, 0.27, 0.36, s * 0.24 * cw, 0, s * 0.24); mRB(ch, line, 0.21, 0.015, 0.4 * cw, 0.006, 0.28, 0.22, s * 0.24 * cw, 0, s * 0.24); }
   mRB(ch, main, 0.5, 0.12, 0.94 * cw, 0.05, 0.02, 0.66, 0); mRB(ch, acc, 0.52, 0.035, 0.22, 0.012, 0.03, 0.73, 0);
@@ -442,46 +463,58 @@ function mkMech(k) {
   for (let a = 0; a < 6; a++) { const q = a / 6 * Math.PI * 2; vBox(ch, steel, 0.03, 0.05, 0.02, 0.4, 0.34 + Math.sin(q) * 0.2, Math.cos(q) * 0.2, q); }
   mRB(ch, dark, 0.34, 0.54, 0.7 * cw, 0.1, -0.42, 0.32, 0);
   for (let a = 0; a < 4; a++) mRB(ch, blk, 0.02, 0.035, 0.48 * cw, 0.01, -0.6, 0.16 + a * 0.1, 0);
+  } /* (round 36f) end of the non-worker chest */
   if (big && !cannon) for (const s of [-1, 1]) { mPart(ch, mTaper(0.07, 0.085, 0.5, 10), steel, -0.5, 1.05, s * 0.2); vCyl(ch, blk, 0.05, 0.05, 0.04, -0.5, 1.06, s * 0.2, 'y', 10); }
   if (edge) { for (let a = 0; a < 4; a++) mRB(ch, acc, 0.22 - a * 0.03, 0.06, 0.03, 0.012, -0.62, 0.62 - a * 0.13, 0, 0.5);
     const sb = new THREE.Group(); sb.position.set(-0.5, 0.38, -0.12); sb.rotation.set(0.15, 0, -0.95); ch.add(sb); const laq = lit(M.col[1]), gold2 = lit('#c9a24a'); // (round 36f) the scabbard across its back
-    mRB(sb, laq, 1.75, 0.12, 0.06, 0.03, 0.55, 0, 0); for (const xq of [-0.25, 0.4, 1.3]) mRB(sb, gold2, 0.04, 0.13, 0.065, 0.01, xq, 0, 0);
+    mRB(sb, laq, 1.75, 0.12, 0.06, 0.03, 0.55, 0, 0); for (const xq of [-0.25, 0.4, 1.3]) mRB(sb, gold2, 0.04, 0.13, 0.065, 0.01, xq, 0, 0); mRB(sb, gold2, 0.08, 0.125, 0.065, 0.03, 1.4, 0, 0); /* (round 36f) 鐺 end cap, 下緒 cord */ const cd2 = lit('#b0242a'); for (const xq of [-0.12, -0.06]) mPart(sb, new THREE.TorusGeometry(0.075, 0.01, 4, 14), cd2, xq, 0, 0, 0, Math.PI / 2, 0, 1, 0.9, 0.55); vRod(sb, cd2, [-0.09, -0.07, 0.02], [0.15, -0.22, 0.05], 0.01);
     const sh2 = new THREE.Group(); sh2.position.x = -0.32; sb.add(sh2); mPart(sh2, mTaper(0.034, 0.034, 0.36, 8), lit('#2a1c1c'), -0.18, 0, 0, Math.PI / 2); const ts2 = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.022, 12), gold2); ts2.rotation.z = Math.PI / 2; sh2.add(ts2); J.katSheathed = sh2; }
   if (fly) {
     for (const s of [-1, 1]) { const wg = new THREE.Group(); wg.position.set(-0.5, 0.5, s * 0.3); wg.rotation.set(s * 0.35, s * 0.5, 0.25); ch.add(wg); wg.userData.s = s; // (round 35) a two-part wing that folds along the back and spreads to fly
       mRB(wg, main, 0.5, 0.05, 0.9, 0.02, -0.1, 0, s * 0.45); mRB(wg, acc, 0.4, 0.055, 0.12, 0.02, -0.08, 0.01, s * 0.86); vBox(wg, glow, 0.36, 0.02, 0.03, -0.06, 0.03, s * 0.62);
-      const tip = new THREE.Group(); tip.position.set(-0.05, 0, s * 0.9); wg.add(tip); mRB(tip, main, 0.36, 0.04, 0.6, 0.02, -0.12, 0, s * 0.28, 0, s * -0.25); mRB(tip, dark, 0.2, 0.045, 0.3, 0.015, -0.24, 0.005, s * 0.5, 0, s * -0.5); vBox(tip, glow, 0.03, 0.03, 0.4, -0.02, 0.02, s * 0.3); wg.userData.tip = tip;
+      const tip = new THREE.Group(); tip.position.set(-0.05, 0, s * 0.9); wg.add(tip); for (let q = 0; q < 3; q++) { const fe = new THREE.Group(); fe.position.set(-0.2 - q * 0.06, 0, s * 0.5); tip.add(fe); mRB(fe, q % 2 ? dark : main, 0.14, 0.025, 0.5, 0.012, -0.05, 0, s * 0.25, 0, s * (-0.35 - q * 0.25)); vBox(fe, glow, 0.012, 0.03, 0.4, 0.0, 0.015, s * 0.22, 0, s * (-0.35 - q * 0.25)); (J.feath = J.feath || []).push({ g: fe, k: q, s }); } (J.wtips = J.wtips || []).push(vMark(tip, -0.3, 0, s * 1.0)); /* (round 36f) three feathers fan out at each wing tip; contrails from the tips */ mRB(tip, main, 0.36, 0.04, 0.6, 0.02, -0.12, 0, s * 0.28, 0, s * -0.25); mRB(tip, dark, 0.2, 0.045, 0.3, 0.015, -0.24, 0.005, s * 0.5, 0, s * -0.5); vBox(tip, glow, 0.03, 0.03, 0.4, -0.02, 0.02, s * 0.3); wg.userData.tip = tip;
       J.wings = (J.wings || []).concat(wg); }
     for (const s of [-1, 1]) { const pod = new THREE.Group(); pod.position.set(-0.18, 0.74, s * 0.36 * cw); ch.add(pod); mRB(pod, dark, 0.42, 0.2, 0.26, 0.05, 0.08, 0.1, 0); for (let r2 = 0; r2 < 2; r2++) for (let c2 = 0; c2 < 2; c2++) { vCyl(pod, blk, 0.045, 0.045, 0.06, 0.3, 0.06 + r2 * 0.09, (c2 - 0.5) * 0.11, 'x', 8); vCyl(pod, glow, 0.025, 0.025, 0.065, 0.305, 0.06 + r2 * 0.09, (c2 - 0.5) * 0.11, 'x', 8); } mRB(pod, acc, 0.44, 0.03, 0.27, 0.01, 0.08, 0.21, 0); (J.pods = J.pods || []).push(pod); } // shoulder rocket pods: lie flat, swing up to fire
     for (const s of [-1, 1]) { mPart(ch, mTaper(0.1, 0.13, 0.26, 12), steel, -0.62, 0.23, s * 0.16); const f = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.6, 10).rotateX(Math.PI).translate(0, -0.3, 0), flameM); f.position.set(-0.62, -0.04, s * 0.16); ch.add(f); J.flames.push(f); }
   }
   // head / cockpit: a rounded helmet, a wrap-around visor, a chin, a crest that differs per mech
   const hd = new THREE.Group(); hd.position.set(0.04, 0.78, 0); ch.add(hd); J.head = hd;
-  if (worker) { // (round 36f) a big round head (a cute little helper bot): a face screen with two big eyes that blink, rosy cheeks, a stubby antenna with a beacon, little ear-bolts
-    hd.position.set(0.02, 0.86, 0); const face = lit('#2a2e36'), white = new THREE.MeshBasicMaterial({ color: '#f4f8ff' }), pupil = new THREE.MeshBasicMaterial({ color: '#1a2230' }), cheek = new THREE.MeshBasicMaterial({ color: '#ff9a8a', transparent: true, opacity: 0.75 });
-    mPart(hd, mTaper(0.12, 0.14, 0.1, 12), steel, 0, 0.06, 0);
-    mPart(hd, mBall(0.36), main, 0, 0.36, 0, 0, 0, 0, 1, 0.92, 1.02); mPart(hd, mBall(0.37), acc, 0, 0.5, 0, 0, 0, 0, 1.0, 0.5, 1.03); // the dome, a yellow cap band on top
-    mRB(hd, face, 0.08, 0.36, 0.54, 0.1, 0.355, 0.33, 0);                                                                                   // the face screen
-    J.eyes = []; for (const s2 of [-1, 1]) { const e = new THREE.Group(); e.position.set(0.428, 0.36, s2 * 0.13); hd.add(e); const w = new THREE.Mesh(new THREE.CircleGeometry(0.105, 18), white); w.rotation.y = Math.PI / 2; e.add(w); const pu = new THREE.Mesh(new THREE.CircleGeometry(0.06, 14), pupil); pu.rotation.y = Math.PI / 2; pu.position.set(0.004, -0.01, 0); e.add(pu); const hl = new THREE.Mesh(new THREE.CircleGeometry(0.022, 8), white); hl.rotation.y = Math.PI / 2; hl.position.set(0.008, 0.025, -s2 * 0.022); e.add(hl); J.eyes.push(e); }
-    for (const s2 of [-1, 1]) { const c = new THREE.Mesh(new THREE.CircleGeometry(0.045, 12), cheek); c.rotation.y = Math.PI / 2; c.position.set(0.426, 0.22, s2 * 0.2); hd.add(c); mPart(hd, mTaper(0.06, 0.06, 0.06, 10), steel, 0, 0.36, s2 * 0.36, 0, 0, Math.PI / 2); }
-    const ant = new THREE.Group(); ant.position.set(-0.04, 0.68, 0); hd.add(ant); vRod(ant, steel, [0, 0, 0], [0, 0.2, 0], 0.014); mPart(ant, mBall(0.05), lit('#ffcc33'), 0, 0.22, 0); J.ant = ant;
+  if (worker) { // (round 36f) a big round head (a cute little helper bot) set into the collar: smooth dome + yellow cap, a curved face screen with two big eyes that blink, rosy cheeks, a little smile, ear pods, a stubby antenna
+    hd.position.set(0.0, 0.6, 0); const HS = [1, 0.92, 1.05], HR = 0.4, face = lit('#1c2028'), white = new THREE.MeshBasicMaterial({ color: '#f4f8ff' }), pupil = new THREE.MeshBasicMaterial({ color: '#1a2230' }), cheek = new THREE.MeshBasicMaterial({ color: '#ff9a8a', transparent: true, opacity: 0.8 });
+    mPart(hd, new THREE.SphereGeometry(HR, 28, 20), main, 0, 0.36, 0, 0, 0, 0, ...HS);
+    mPart(hd, new THREE.SphereGeometry(HR + 0.006, 28, 10, 0, Math.PI * 2, 0, 0.95), acc, 0, 0.36, 0, 0, 0, 0, ...HS);                        // the cap
+    mPart(hd, new THREE.SphereGeometry(HR + 0.004, 28, 16, Math.PI - 0.82, 1.64, Math.PI / 2 - 0.48, 0.92), face, 0, 0.36, 0, 0, 0, 0, ...HS); // the face screen, curved with the head
+    const onFace = (a, dy, out) => [(HR + out) * Math.cos(a) * HS[0], 0.36 + dy, (HR + out) * Math.sin(a) * HS[2]];
+    J.eyes = []; for (const s2 of [-1, 1]) { const a = s2 * 0.33, e = new THREE.Group(); e.position.set(...onFace(a, 0.04, 0.012)); e.rotation.y = Math.PI / 2 - a; hd.add(e);
+      const w = new THREE.Mesh(new THREE.CircleGeometry(0.1, 20), white); e.add(w); const pu = new THREE.Mesh(new THREE.CircleGeometry(0.06, 16), pupil); pu.position.set(0, -0.012, 0.003); e.add(pu); const hl = new THREE.Mesh(new THREE.CircleGeometry(0.022, 8), white); hl.position.set(-s2 * 0.022, 0.016, 0.006); e.add(hl); J.eyes.push(e); }
+    for (const s2 of [-1, 1]) { const a = s2 * 0.6, c = new THREE.Mesh(new THREE.CircleGeometry(0.045, 14), cheek); c.position.set(...onFace(a, -0.08, 0.008)); c.rotation.y = Math.PI / 2 - a; hd.add(c); }
+    { const m = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.01, 4, 12, Math.PI), white); m.position.set(...onFace(0, -0.1, 0.01)); m.rotation.set(0, Math.PI / 2, Math.PI); hd.add(m); } // a small smile
+    for (const s2 of [-1, 1]) { mPart(hd, new THREE.CylinderGeometry(0.12, 0.12, 0.08, 20), acc, 0, 0.36, s2 * HR * HS[2], 0, 0, Math.PI / 2); mPart(hd, new THREE.CylinderGeometry(0.07, 0.07, 0.09, 16), dark, 0, 0.36, s2 * HR * HS[2], 0, 0, Math.PI / 2); }
+    const ant = new THREE.Group(); ant.position.set(-0.06, 0.72, 0); hd.add(ant); vRod(ant, steel, [0, 0, 0], [0, 0.2, 0], 0.014); mPart(ant, new THREE.SphereGeometry(0.05, 14, 10), lit('#ffcc33'), 0, 0.22, 0); J.ant = ant;
   } else {
   mPart(hd, mTaper(0.1, 0.12, 0.08, 10), steel, 0, 0.06, 0);
   mRB(hd, main, 0.32, 0.24, 0.3, 0.09, 0.02, 0.17, 0); mRB(hd, dark, 0.18, 0.08, 0.3, 0.03, 0.1, 0.06, 0);
   const vis = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.022, 4, 14, Math.PI * 0.8), glow); vis.rotation.set(Math.PI / 2, 0, -Math.PI * 0.4); vis.position.set(0.03, 0.19, 0); hd.add(vis);
   vBox(hd, glowA, 0.04, 0.1, 0.32, 0.2, 0.19, 0);
   if (big) mRB(hd, acc, 0.36, 0.05, 0.34, 0.02, 0.03, 0.3, 0);
-  if (edge) { mRB(hd, acc, 0.3, 0.05, 0.03, 0.012, -0.02, 0.38, 0, 0.5); mRB(hd, acc, 0.12, 0.2, 0.025, 0.01, 0.12, 0.36, 0, -0.4); }
+  if (cannon) for (const [yy, zz, rr] of [[0.2, 0, 0.045], [0.14, 0.08, 0.028], [0.14, -0.08, 0.028]]) { vCyl(hd, blk, rr + 0.015, rr + 0.015, 0.04, 0.19, yy, zz, 'x', 12); vCyl(hd, glow, rr, rr, 0.045, 0.2, yy, zz, 'x', 12); } // (round 36f) 重炮's three-lens rangefinder
+  if (big && !cannon) J.stacks = [-1, 1].map(s2 => vMark(ch, -0.5, 1.1, s2 * 0.2)); // 铁卫's exhaust stacks
+  if (edge) { const gd = lit('#d4ad4a'); for (const s2 of [-1, 1]) { mRB(hd, gd, 0.04, 0.36, 0.022, 0.011, 0.17, 0.44, s2 * 0.06, -0.35, 0, s2 * 0.42); mRB(hd, main, 0.14, 0.12, 0.03, 0.02, 0.06, 0.24, s2 * 0.18, 0, s2 * 0.35, 0); } /* (round 36f) a gold 鍬形 crest and 吹返 side flaps */ mPart(hd, new THREE.SphereGeometry(0.035, 12, 8), glow, 0.19, 0.31, 0); mRB(hd, dark, 0.06, 0.08, 0.2, 0.02, 0.16, 0.05, 0); for (const s2 of [-1, 1]) vBox(hd, glow, 0.012, 0.012, 0.06, 0.19, 0.06, s2 * 0.05); }
   if (fly) for (const s of [-1, 1]) mRB(hd, acc, 0.26, 0.03, 0.08, 0.012, -0.08, 0.3, s * 0.14, 0.35, 0, s * 0.3);
   if (scout) for (const s of [-1, 1]) mRB(hd, acc, 0.06, 0.18, 0.03, 0.012, -0.02, 0.34, s * 0.12, -0.3);
   } /* (round 36f) end of the non-worker head */
   // arms: ball shoulder under a curved pauldron, tapered upper arm, elbow, a gauntlet forearm, a fist with fingers
   for (const s of [-1, 1]) {
     const sh = new THREE.Group(); sh.position.set(-0.02, 0.48, s * (0.56 * cw + 0.06)); ch.add(sh);
+    if (worker) { sh.position.set(0, 0.3, s * eggR(0.3) * 1.06); const sm = (r, ws = 20, hs = 14) => new THREE.SphereGeometry(r, ws, hs); // (round 36f) 工蜂's arms come out of the shell: no pauldron, no rods, round mitts
+      mPart(sh, sm(0.17), main, 0, 0, s * 0.02); mPart(sh, mTaper(0.09, 0.085, 0.6, 16), dark, 0, -0.04, 0);
+      const el = new THREE.Group(); el.position.y = -0.66; sh.add(el); mPart(el, sm(0.1), steel, 0, 0, 0);
+      mPart(el, mTaper(0.1, 0.14, 0.5, 16), main, 0, -0.02, 0); mPart(el, new THREE.TorusGeometry(0.14, 0.022, 8, 18), acc, 0, -0.5, 0, 0, 0, Math.PI / 2);
+      mPart(el, sm(0.16), blk, 0.02, -0.68, 0, 0, 0, 0, 1, 1.1, 0.95); mPart(el, sm(0.065), blk, 0.1, -0.6, -s * 0.11);
+      J.arms.push({ sh, el, s, fist: vMark(el, 0.12, -0.74, 0), tip: null }); continue; }
     mPart(sh, mBall(0.14 * A), steel, 0, 0, 0);
-    if (worker) mPart(sh, mBall(0.2), main, 0, 0.04, s * 0.03); // (round 36f) round little shoulders
-    const pd = new THREE.Mesh(new THREE.SphereGeometry(0.27 * A, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.5), main); if (worker) pd.visible = false; pd.scale.set(1.15, 0.75, 1); pd.rotation.x = s * 0.35; pd.position.set(0, 0.06, s * 0.05); sh.add(pd);
-    const ps = new THREE.Mesh(new THREE.TorusGeometry(0.255 * A, 0.018, 4, 18), acc); if (worker) ps.visible = false; ps.rotation.x = Math.PI / 2 + s * 0.35; ps.scale.set(1.15, 1, 1); ps.position.set(0, 0.07, s * 0.05); sh.add(ps);
+    const pd = new THREE.Mesh(new THREE.SphereGeometry(0.27 * A, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.5), main); pd.scale.set(1.15, 0.75, 1); pd.rotation.x = s * 0.35; pd.position.set(0, 0.06, s * 0.05); sh.add(pd);
+    const ps = new THREE.Mesh(new THREE.TorusGeometry(0.255 * A, 0.018, 4, 18), acc); ps.rotation.x = Math.PI / 2 + s * 0.35; ps.scale.set(1.15, 1, 1); ps.position.set(0, 0.07, s * 0.05); sh.add(ps);
     mPart(sh, mTaper(0.11 * A, 0.095 * A, 0.6), dark, 0, -0.04, 0);
     vRod(sh, hyd, [0.12, -0.08, 0], [0.11, -0.58, 0], 0.02);
     const el = new THREE.Group(); el.position.y = -0.66; sh.add(el);
@@ -493,30 +526,40 @@ function mkMech(k) {
     mRB(el, steel, 0.06, 0.1, 0.05, 0.02, 0.08, -0.62, -s * 0.12 * A, 0, 0, s * 0.4);                                       // thumb
     if (big && !cannon) mRB(el, acc, 0.08, 0.5, 0.42, 0.03, 0, -0.32, s * 0.18);
     if (edge && s === -1) { // (round 36f) 赤刃 carries a long curved 太刀 in its right hand (drawn from the scabbard on its back when it fights): wrapped hilt, round guard, a gently curved blade with a glowing edge
-      const kat = new THREE.Group(); kat.position.set(0.1, -0.74, 0); kat.scale.setScalar(1.35); el.add(kat); J.kat = kat; const bladeM = lit('#dfe6ec'), wrap = lit('#2a1c1c'), gold = lit('#c9a24a');
-      mPart(kat, mTaper(0.034, 0.034, 0.38, 8), wrap, -0.2, 0, 0, Math.PI / 2); for (let q = 0; q < 4; q++) mPart(kat, mTaper(0.037, 0.037, 0.012, 8), gold, -0.2 + 0.08 * q - 0.13, 0, 0, Math.PI / 2); // hilt + wrap bands (the hilt runs from x -0.39 to -0.01)
+      const kat = new THREE.Group(); kat.position.set(0.1, -0.74, 0); kat.scale.setScalar(1.35); el.add(kat); J.kat = kat; const bladeM = lit('#dfe6ec'), wrap = lit('#2a1c1c'), gold = lit('#c9a24a'), hamon = new THREE.MeshBasicMaterial({ color: '#f6fbff' }), hi = lit('#8e98a2');
+      mPart(kat, mTaper(0.034, 0.034, 0.38, 8), wrap, -0.2, 0, 0, Math.PI / 2); // the hilt runs from x -0.39 to -0.01
+      const ito = lit('#7a1418'); for (let q = 0; q < 7; q++) for (const zz of [-1, 1]) vBox(kat, ito, 0.034, 0.034, 0.01, -0.36 + q * 0.05, 0, zz * 0.031, Math.PI / 4); // (round 36f) the diamond 柄巻 wrap
+      for (const zz of [-1, 1]) mRB(kat, gold, 0.07, 0.022, 0.012, 0.006, -0.22, 0, zz * 0.036);                                    // 目貫 ornaments
+      const tas = new THREE.Group(); tas.position.set(-0.43, 0, 0); kat.add(tas); J.katTas = tas; const cord = lit('#b0242a');            // a cord and tassel off the pommel
+      mPart(tas, new THREE.TorusGeometry(0.03, 0.008, 4, 10), cord, -0.02, -0.02, 0); vRod(tas, cord, [-0.03, -0.04, 0], [-0.05, -0.16, 0], 0.008); mPart(tas, new THREE.ConeGeometry(0.028, 0.09, 8), cord, -0.05, -0.2, 0);
       mPart(kat, mTaper(0.042, 0.042, 0.03, 8), gold, -0.4, 0, 0, Math.PI / 2);                                                       // pommel
-      const tsuba = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.025, 14), gold); tsuba.rotation.z = Math.PI / 2; tsuba.position.x = 0.01; kat.add(tsuba);
-      let seg = new THREE.Group(); seg.position.x = 0.03; kat.add(seg); mPart(seg, mTaper(0.03, 0.03, 0.06, 8), gold, 0.04, 0, 0, Math.PI / 2); // habaki collar
-      for (let q = 0; q < 4; q++) { const L = 0.44; mRB(seg, bladeM, L, 0.13 - q * 0.01, 0.03, 0.005, L / 2 + 0.05, 0, 0); vBox(seg, glow, L, 0.018, 0.034, L / 2 + 0.05, -0.062 + q * 0.005, 0); vBox(seg, lit('#9aa6b0'), L, 0.012, 0.034, L / 2 + 0.05, 0.035 - q * 0.004, 0); if (q === 1) J.katMid = vMark(seg, L, 0, 0);
-        const nx = new THREE.Group(); nx.position.x = L + 0.05; nx.rotation.z = 0.045; seg.add(nx); seg = nx; }                       // four segments, each bent up a little: the curve
-      const tip = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.26, 4).rotateZ(-Math.PI / 2).scale(1, 1, 0.3), bladeM); tip.position.set(0.15, 0.0, 0); seg.add(tip); J.katTip = vMark(seg, 0.28, 0, 0);
+      const tsuba = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.025, 16), lit('#2b2b2e')); tsuba.rotation.z = Math.PI / 2; tsuba.position.x = 0.01; kat.add(tsuba); // (round 36f) an iron 鍔 with a gold rim and two gold openwork petals
+      mPart(kat, new THREE.TorusGeometry(0.1, 0.011, 6, 20), gold, 0.01, 0, 0, 0, Math.PI / 2, 0); for (const yy of [-1, 1]) mRB(kat, gold, 0.03, 0.045, 0.03, 0.012, 0.01, yy * 0.06, 0);
+      let seg = new THREE.Group(); seg.position.x = 0.03; kat.add(seg); J.katBase = vMark(seg, 0.12, 0, 0); mRB(seg, gold, 0.07, 0.11, 0.045, 0.012, 0.03, -0.005, 0); // habaki collar
+      for (let q = 0; q < 4; q++) { const L = 0.44; mRB(seg, bladeM, L + 0.03, 0.13 - q * 0.01, 0.03, 0.005, L / 2, 0, 0); vBox(seg, glow, L + 0.03, 0.018, 0.034, L / 2, -0.062 + q * 0.005, 0); vBox(seg, lit('#9aa6b0'), L + 0.03, 0.012, 0.034, L / 2, 0.035 - q * 0.004, 0); /* (round 36f) segments butt together: no gaps */
+        for (let h2 = 0; h2 < 4; h2++) vBox(seg, hamon, L / 4 + 0.004, 0.012, 0.033, L / 8 + h2 * L / 4, -0.036 + q * 0.004 + (h2 % 2 ? 0.008 : -0.002), 0, (h2 % 2 ? 0.12 : -0.12)); // a wavy 刃文 line
+        if (q < 3) vBox(seg, hi, L * 0.92, 0.012, 0.034, L / 2, 0.016 - q * 0.003, 0); /* the 樋 groove */ if (q === 1) J.katMid = vMark(seg, L * 0.6, 0, 0);
+        const nx = new THREE.Group(); nx.position.x = L; nx.rotation.z = 0.045; seg.add(nx); seg = nx; }                       // four segments, each bent up a little: the curve
+      const tip = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.26, 4).rotateZ(-Math.PI / 2).scale(1, 1, 0.3), bladeM); tip.position.set(0.12, 0.0, 0); seg.add(tip); J.katTip = vMark(seg, 0.24, 0, 0);
     }
     if (fly) mPart(el, mTaper(0.06, 0.08, 0.16, 10), blk, -0.15, -0.24, 0);
+    if (edge) { const lace = lit('#b0242a'); for (let q = 0; q < 3; q++) { mRB(sh, q % 2 ? dark : main, 0.36, 0.08, 0.05, 0.02, 0, -0.04 - q * 0.085, s * (0.27 + q * 0.018), 0, 0, s * 0.22); vBox(sh, lace, 0.012, 0.07, 0.055, 0.08, -0.04 - q * 0.085, s * (0.27 + q * 0.018), 0, 0, s * 0.22); vBox(sh, lace, 0.012, 0.07, 0.055, -0.08, -0.04 - q * 0.085, s * (0.27 + q * 0.018), 0, 0, s * 0.22); } } // (round 36f) layered 大袖 shoulder plates with red lacing
     J.arms.push({ sh, el, s, fist: vMark(el, 0.12, -0.74, 0), tip: null });
   }
   if (worker) for (const A2 of J.arms) A2.sh.scale.setScalar(0.8); // (round 36f) short little arms to go with the short legs
   // what the vehicle turned into still shows: wheels, cargo box, rotor, tracks and guns ride on the mech
   const tyre = lit('#1a1a1c'), rim = lit('#9aa0a6');
   const wheelOn = (par, x, y, z, r, ry) => { const w = new THREE.Group(); w.position.set(x, y, z); w.rotation.y = ry || 0; par.add(w); vCyl(w, tyre, r, r, 0.08, 0, 0, 0, 'z', 16); vCyl(w, rim, r * 0.55, r * 0.55, 0.09, 0, 0, 0, 'z', 10); const tr = new THREE.Mesh(new THREE.TorusGeometry(r * 0.78, 0.01, 4, 16), rim); w.add(tr); return w; };
+  if (scout) { const sc = new THREE.Group(); sc.position.set(-0.05, 0.7, 0); ch.add(sc); const scarfM = lit('#d8382c'); mPart(sc, new THREE.TorusGeometry(0.2, 0.06, 8, 20), scarfM, 0.04, 0, 0, 0, 0, Math.PI / 2, 1, 1.25, 1); J.scarf = []; let par = sc; for (let q = 0; q < 7; q++) { const sg = new THREE.Group(); sg.position.set(q ? -0.17 : -0.18, 0, q ? 0 : 0.12); par.add(sg); mRB(sg, scarfM, 0.19, 0.15 - q * 0.012, 0.025, 0.008, -0.09, 0, 0); J.scarf.push(sg); par = sg; } } // (round 36f) 疾风's long scarf streams behind it
   if (scout) { J.kib = [wheelOn(ch, -0.58, 0.48, 0, 0.3, Math.PI / 2), wheelOn(ch, -0.58, 0.08, 0, 0.3, Math.PI / 2)]; vRod(ch, steel, [0.1, 0.95, 0.12], [0.0, 1.45, 0.25], 0.012); }
   if (edge) for (const A2 of J.arms) wheelOn(A2.sh, -0.05, 0.24, A2.s * 0.3, 0.2, 0);
-  if (worker) { const box = lit('#b8893a'), box2 = lit('#9a6f2e'), tape = lit('#e8d9a8'); mRB(ch, steel, 0.06, 0.7, 0.8, 0.02, -0.5, 0.36, 0); // a rack of parcels on the back (round 35: on a hinge — it kicks up as it launches them)
+  if (worker) { const box = lit('#b8893a'), box2 = lit('#9a6f2e'), tape = lit('#e8d9a8'); mRB(ch, steel, 0.06, 0.7, 0.7, 0.03, -0.46, 0.2, 0); for (const s2 of [-1, 1]) vRod(ch, steel, [-0.3, 0.55, s2 * 0.2], [-0.48, 0.5, s2 * 0.25], 0.025); // a rack of parcels on the back (round 35: on a hinge — it kicks up as it launches them)
     const rack = new THREE.Group(); rack.position.set(-0.5, 0.0, 0); ch.add(rack); J.rack = rack; J.rackBoxes = [];
     for (const [x, y, z, w, h, d, b] of [[-0.18, 0.16, -0.2, 0.34, 0.3, 0.36, box], [-0.18, 0.16, 0.2, 0.34, 0.28, 0.34, box2], [-0.2, 0.46, 0, 0.3, 0.3, 0.42, box], [-0.16, 0.72, -0.1, 0.26, 0.22, 0.28, box2]]) { const q = new THREE.Group(); q.position.set(x, y, z); rack.add(q); mRB(q, b, w, h, d, 0.02, 0, 0, 0); mRB(q, tape, w + 0.005, 0.04, d + 0.005, 0.005, 0, 0, 0); mRB(q, tape, w + 0.006, h + 0.006, 0.04, 0.005, 0, 0, 0); J.rackBoxes.push(q); }
     for (const s2 of [-1, 1]) mRB(rack, steel, 0.5, 0.04, 0.04, 0.01, -0.18, 0.9, s2 * 0.3); mRB(rack, lit('#ffcc33'), 0.04, 0.05, 0.64, 0.01, -0.42, 0.9, 0);
   }
   if (fly) { const rot = new THREE.Group(); rot.position.set(-0.45, 0.95, 0); ch.add(rot); vCyl(rot, steel, 0.05, 0.05, 0.12, 0, 0, 0, 'y', 8); for (let b2 = 0; b2 < 2; b2++) mRB(rot, dark, 1.4, 0.02, 0.1, 0.01, 0, 0.06, 0, 0, b2 * Math.PI / 2); J.rotor = rot; }
+  if (cannon) { const drum = new THREE.Group(); drum.position.set(-0.62, 0.42, 0); ch.add(drum); vCyl(drum, dark, 0.24, 0.24, 0.5, 0, 0, 0, 'z', 18); for (const zz of [-0.24, 0.24]) vCyl(drum, steel, 0.25, 0.25, 0.04, 0, 0, zz, 'z', 18); vCyl(drum, acc, 0.1, 0.1, 0.52, 0, 0, 0, 'z', 12); const brass = lit('#c9a24a'); for (let q = 0; q < 7; q++) { const f = q / 6; vBox(ch, brass, 0.05, 0.1, 0.03, lerp(-0.45, -0.2, f), lerp(0.62, 0.86, f), lerp(0.18, 0.4, f), 0.4); } J.drum = drum; } // (round 36f) 重炮: an ammo drum on its back feeding a belt to the shoulder gun
   if (cannon) { { const A1 = J.arms[1], ag = new THREE.Group(); A1.el.add(ag); J.armGun = ag; mPart(ag, mTaper(0.075, 0.065, 0.85, 12), steel, 0, 0, 0); mPart(ag, mTaper(0.09, 0.09, 0.08, 12), blk, 0, -0.78, 0); vCyl(ag, glow, 0.04, 0.04, 0.01, 0, -0.86, 0, 'y', 10); ag.position.y = -0.2; } // (round 35) slides out past the fist to fire
     for (const s2 of [-1, 1]) { const gun = new THREE.Group(); gun.position.set(-0.15, 0.84, s2 * 0.44); ch.add(gun); mRB(gun, dark, 0.38, 0.24, 0.26, 0.06, 0, 0, 0); mPart(gun, mTaper(0.07, 0.06, 0.95, 12), main, 0.12, 0.02, 0, Math.PI / 2); mRB(gun, blk, 0.09, 0.11, 0.11, 0.03, 1.08, 0.02, 0); (J.guns = J.guns || []).push(gun); }
     for (const G of J.legs) { mRB(G.kn, tyre, 0.09, D.sh * 0.8, 0.3, 0.03, -0.21, -D.sh * 0.5, 0); for (let t2 = 0; t2 < 5; t2++) vBox(G.kn, steel, 0.09, 0.025, 0.31, -0.23, -0.12 - t2 * D.sh * 0.15, 0); } }
@@ -587,7 +630,9 @@ function mechTick(p, mm, dt, xf = 1) { // xf < 1: mid-transform (0 = folded up, 
   if (sk === 'parcels' && sT < 0.9) { const f = sT < 0.25 ? ease(sT / 0.25) : 1 - ease((sT - 0.25) / 0.65); T.sh = [2.2 * f + 0.3 * (1 - f), 2.2 * f + 0.3 * (1 - f)]; T.ab = [0.8 * f, 0.8 * f]; T.el = [0.3, 0.3]; T.lean -= 0.25 * f; T.crouch += 0.15 * f; T.rack = 1.1 * f; } // (round 35) the rack tips right up and sprays the lot
   if (sk === 'dash' && sT < 0.55) { const f = sT < 0.4 ? 1 : 1 - (sT - 0.4) / 0.15; T.lean = 0.55 * f; T.sh = [-0.5 * f + 0.55 * (1 - f), 1.4 * f + 0.55 * (1 - f)]; T.el = [0.2, 0.3]; T.ab = [0.3, 1.0 * f]; T.crouch = 0.15 * f; T.thL = 0.6 * f; T.thR = -0.5 * f; T.knL = 0.5 * f + 0.15; T.knR = 0.9 * f + 0.15; T.blade = 0; T.flame = 1; T.twist = -0.6 * f; }
   if (sk === 'leap' && sT < 1.3) { if (sT < 0.15) T.crouch = ease(sT / 0.15) * 0.35; T.flame = air || sT < 1.05 ? 1 : 0; }
-  if (J.kat && J.cmb > 0.05 && !(t < 0.6) && !(sT < 1)) { T.kz = 0.75; T.kx = 0; T.sh[0] = lerp(T.sh[0], 0.9, J.cmb); T.el[0] = lerp(T.el[0], 1.2, J.cmb); T.sh[1] = lerp(T.sh[1], 0.85, J.cmb); T.el[1] = lerp(T.el[1], 1.35, J.cmb); T.ab[1] = lerp(T.ab[1], -0.35, J.cmb); } // (round 36f) 赤刃's 中段 guard between cuts: both hands toward the hilt, the blade up and forward
+  if (J.kat && J.cmb > 0.05 && t >= 0.6 && t < 1.2 && !(sT < 1)) { T.kz = 0.75; T.kx = 0; T.sh[0] = lerp(T.sh[0], 0.9, J.cmb); T.el[0] = lerp(T.el[0], 1.2, J.cmb); T.sh[1] = lerp(T.sh[1], 0.85, J.cmb); T.el[1] = lerp(T.el[1], 1.35, J.cmb); T.ab[1] = lerp(T.ab[1], -0.35, J.cmb); } // (round 36f) 赤刃's 中段 guard between cuts: both hands toward the hilt, the blade up and forward
+  if (J.kat && t >= 1.2 && t < 1.8 && !(sT < 1)) { const f = ease(clamp((t - 1.2) / 0.22, 0, 1)), g = ease(clamp((t - 1.42) / 0.3, 0, 1)); // (round 36f) 血振り: a sharp flick down and out, then the hand goes over the shoulder to slide it back into the scabbard
+    T.sh[0] = lerp(lerp(0.9, 0.3, f), 2.95, g); T.ab[0] = lerp(lerp(0.05, 0.95, f), -0.4, g); T.el[0] = lerp(lerp(1.2, 0.12, f), 1.95, g); T.kz = lerp(lerp(0.75, -1.0, f), 2.5, g); T.kx = 0; T.sh[1] = 0.35; T.el[1] = 1.4; T.twist = 0.25 * f * (1 - g); }
   // (round 36f) 工蜂 grabs what it finds: reaches down in front with its right hand, then flings it back over its shoulder into the rack
   if (J.st === 'worker' && p._grabT != null && p._grabT < 1.05) { p._grabT += dt; const g = p._grabT; // (round 36f) 工蜂 bends down, picks the thing up, hoists it over its head and lobs it into the rack on its back
     if (g < 0.28) { const r = ease(g / 0.28); T.sh[1] = lerp(T.sh[1], 1.3, r); T.el[1] = lerp(T.el[1], 0.1, r); T.ab[1] = 0.05; T.sh[0] = lerp(T.sh[0], 0.9, r); T.el[0] = lerp(T.el[0], 0.3, r); T.lean += 0.45 * r; T.crouch += 0.22 * r; }
@@ -610,7 +655,9 @@ function mechTick(p, mm, dt, xf = 1) { // xf < 1: mid-transform (0 = folded up, 
   J.head.rotation.set(0, -twist * 0.4, lean * 0.4);
   J.arms.forEach((A, n) => { A.sh.rotation.z = S('sh' + n, T.sh[n], 380); A.el.rotation.z = S('el' + n, T.el[n], 380); A.sh.rotation.x = A.s * S('ab' + n, T.ab[n], 300); });
   for (const b of J.blades) b.rotation.z = S('blade', J.cmb > 0.25 ? 0 : T.blade, 600);
-  if (J.kat) { const drawn = J.cmb > 0.05 || xf < 1 && false; J.kat.visible = drawn; if (J.katSheathed) J.katSheathed.visible = !drawn; // (round 36f) the 太刀: in hand for a fight, back in the scabbard after
+  if (J.kat) { const drawn = sT < 1 || J.cmb > 0.05 && t < 1.7; J.kat.visible = drawn; if (J.katSheathed) J.katSheathed.visible = !drawn; // (round 36f) the 太刀: in hand for a fight, back in the scabbard after
+    if (drawn !== J._drawn) { if (J._drawn != null && J.katTip) { J.katBase.getWorldPosition(_vw); for (let q = 0; q < 8; q++) addP({ x: _vw.x, y: _vw.z, z: _vw.y, vx: frnd(-2, 2), vy: frnd(-2, 2), vz: frnd(0, 2), g: 0.5, col: drawn ? '#fff0d0' : '#ffb060', s: 0.05, life: 0.25 }); if (p.i === ME) sfx(drawn ? 'clink' : 'clank'); } J._drawn = drawn; } // the draw flashes, the sheathe clicks
+    if (J.katTas) { J.katTas.rotation.z = Math.sin(W.t * 5 + p.i) * 0.25 + (J.sp && J.sp.kz ? clamp(J.sp.kz.v || 0, -6, 6) * 0.08 : 0); J.katTas.rotation.x = Math.sin(W.t * 3.3) * 0.2; }
     J.kat.rotation.z = S('kz', T.kz != null ? T.kz : 0.75, 520); J.kat.rotation.x = S('kx', T.kx || 0, 520); } // (round 35) the arm blades flick out for a fight, fold back along the forearm after
   // (round 35) weapons deploy: 重炮's arm barrel slides out and its shoulder guns swing up off the back; 苍隼's pods rise; 工蜂's rack kicks; 苍隼's wings spread to fly
   const dep = S('dep', J.cmb > 0.05 ? 1 : 0, 120);
@@ -618,7 +665,7 @@ function mechTick(p, mm, dt, xf = 1) { // xf < 1: mid-transform (0 = folded up, 
   if (J.guns) for (const G of J.guns) G.rotation.z = lerp(1.2, 0, dep);
   if (J.pods) { const pk = S('pod', J.cmb > 0.05 ? 1 : 0, 160); for (const P of J.pods) { P.rotation.z = lerp(-1.3, 0.15, pk) + (T.podK ? -0.06 * T.podK : 0); P.scale.setScalar(lerp(0.75, 1, pk)); } }
   if (J.rack) J.rack.rotation.z = S('rack', T.rack || 0, 300);
-  if (J.wings) { const wo = S('wing', p.mfly || air ? 1 : sp > maxS * 0.8 ? 0.25 : 0, 90); for (const Wg of J.wings) { const s2 = Wg.userData.s; Wg.rotation.set(s2 * lerp(0.2, 0.05, wo), s2 * lerp(1.25, 0.08, wo), lerp(0.75, 0.12, wo) + (wo > 0.6 ? Math.sin(W.t * 3 + s2) * 0.04 : 0)); if (Wg.userData.tip) Wg.userData.tip.rotation.y = s2 * lerp(2.2, 0, wo); } }
+  if (J.wings) { const wo = S('wing', p.mfly || air ? 1 : sp > maxS * 0.8 ? 0.25 : 0, 90); if (J.feath) for (const F of J.feath) F.g.rotation.y = F.s * (F.k - 1) * 0.3 * wo; /* (round 36f) the tip feathers fan out as the wings spread */ if (J.wtips && wo > 0.6 && (p.mfly || air) && FXR() < dt * 40) for (const m2 of J.wtips) { m2.getWorldPosition(_vw); addP({ x: _vw.x, y: _vw.z, z: _vw.y, vx: 0, vy: 0, vz: 0, g: 0, col: '#e8f4ff', s: 0.05, life: 0.45 }); } for (const Wg of J.wings) { const s2 = Wg.userData.s; Wg.rotation.set(s2 * lerp(0.2, 0.05, wo), s2 * lerp(1.25, 0.08, wo), lerp(0.75, 0.12, wo) + (wo > 0.6 ? Math.sin(W.t * 3 + s2) * 0.04 : 0)); if (Wg.userData.tip) Wg.userData.tip.rotation.y = s2 * lerp(2.2, 0, wo); } }
   if (J.buckets) { const bz = S('bucket', J.st === 'worker' && t < 0.45 && t > 0.1 ? -0.8 : 0.5, 400); for (const b of J.buckets) b.rotation.z = bz; } // the bucket curls as it scoops
   // ---- effects: reactor, thrusters, blade trail, footfalls ----
   const pulse = 0.85 + Math.sin(W.t * 4 + p.i) * 0.15; J.coreHalo.scale.set(1, pulse, pulse);
@@ -627,8 +674,16 @@ function mechTick(p, mm, dt, xf = 1) { // xf < 1: mid-transform (0 = folded up, 
   for (const f of J.flames) { f.visible = T.flame > 0 || sp > maxS * 0.9; f.scale.y = (T.flame ? 1.4 : 0.6) * (0.85 + FXR() * 0.3); }
   const pz = (p.zv != null ? p.zv : p.z) + (p.rjz != null ? p.rjz : p.jz || 0), px = p.rx != null ? p.rx : p.x, py = p.ry != null ? p.ry : p.y;
   if (T.flame && FXR() < dt * 40) addP({ x: px - Math.cos(p._ly) * 0.7, y: py - Math.sin(p._ly) * 0.7, z: pz + 1.6, vx: frnd(-0.4, 0.4), vy: frnd(-0.4, 0.4), vz: -2, g: -0.3, col: '#ffb060', s: 0.09, life: 0.3 });
-  if (J.kat && J.st === 'slim' && t > 0.08 && t < 0.34) { J.katTip.getWorldPosition(_vw); J.katMid.getWorldPosition(_vw2);
-    for (let k = 0; k < 3; k++) { const f2 = k / 2; addP({ x: lerp(_vw2.x, _vw.x, f2), y: lerp(_vw2.z, _vw.z, f2), z: lerp(_vw2.y, _vw.y, f2), vx: 0, vy: 0, vz: 0, g: 0, col: k === 2 ? '#fff0d0' : '#ffb060', s: 0.07 + f2 * 0.05, life: 0.16 + f2 * 0.08 }); } } // (round 35) a fuller slash trail along the blade
+  if (J.kat) { // (round 36f) a ribbon of light swept by the blade (world space, fades in 0.16 s) + a few sparks off the tip
+    const TR = J.trl || (J.trl = { pts: [] }), on = J.st === 'slim' && t > 0.05 && t < 0.4 && J.kat.visible;
+    if (!TR.m) { const N = 28, gg = new THREE.BufferGeometry(); gg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(N * 2 * 3), 3)); gg.setAttribute('color', new THREE.BufferAttribute(new Float32Array(N * 2 * 3), 3)); const ix = []; for (let q = 0; q < N - 1; q++) { const a0 = q * 2; ix.push(a0, a0 + 1, a0 + 2, a0 + 1, a0 + 3, a0 + 2); } gg.setIndex(ix);
+      TR.m = new THREE.Mesh(gg, new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide })); TR.m.frustumCulled = false; KTRL.push(TR.m); TR.N = N; TR.col = new THREE.Color(M.glow || '#ff6040'); SCN.add(TR.m); }
+    TR.m.userData.seen = W.t; const now = W.t; if (on) { J.katTip.getWorldPosition(_vw); J.katMid.getWorldPosition(_vw2); TR.pts.push({ a: _vw2.clone(), b: _vw.clone(), t: now }); if (FXR() < 0.5) addP({ x: _vw.x, y: _vw.z, z: _vw.y, vx: frnd(-1, 1), vy: frnd(-1, 1), vz: frnd(0, 1.5), g: 0.6, col: '#fff0d0', s: 0.045, life: 0.2 }); }
+    while (TR.pts.length && (now - TR.pts[0].t > 0.16 || TR.pts.length > TR.N)) TR.pts.shift();
+    const n = TR.pts.length; TR.m.visible = n > 1;
+    if (n > 1) { const P = TR.m.geometry.attributes.position, C = TR.m.geometry.attributes.color; for (let q = 0; q < n; q++) { const pt = TR.pts[q], k2 = 1 - (now - pt.t) / 0.16, f = Math.max(0, k2) * (q / (n - 1)); P.setXYZ(q * 2, pt.a.x, pt.a.y, pt.a.z); P.setXYZ(q * 2 + 1, pt.b.x, pt.b.y, pt.b.z); C.setXYZ(q * 2, TR.col.r * f * 0.08, TR.col.g * f * 0.08, TR.col.b * f * 0.08); C.setXYZ(q * 2 + 1, Math.min(1, TR.col.r * f * 0.75 + f * 0.15), Math.min(1, TR.col.g * f * 0.75 + f * 0.12), Math.min(1, TR.col.b * f * 0.75 + f * 0.1)); }
+      P.needsUpdate = true; C.needsUpdate = true; TR.m.geometry.setDrawRange(0, (n - 1) * 6); }
+  }
   if (J.st === 'worker' && J.rack) { const g = p._grabT, on = g != null && g > 0.18 && g < 0.92; // (round 36f) the thing it picked up: in its hand, then flying in an arc over its head into the rack
     if (on && !J.held) { const h = J.held = new THREE.Group(), bx = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.3, 0.34), new THREE.MeshLambertMaterial({ color: '#b8893a' })); h.add(bx); vBox(h, lam('#e8d9a8'), 0.35, 0.06, 0.35, 0, 0.02, 0); J.heldM = bx.material; mm.add(h); }
     if (J.held) { J.held.visible = on; if (on) { if (J.heldM.color.getStyle() !== (p._grabCol || '#b8893a')) J.heldM.color.set(p._grabCol || '#b8893a'); mm.updateMatrixWorld(true);
@@ -636,5 +691,7 @@ function mechTick(p, mm, dt, xf = 1) { // xf < 1: mid-transform (0 = folded up, 
       else { const f = (g - 0.6) / 0.32; J.rack.getWorldPosition(_vw2); mm.worldToLocal(_vw2); _vw2.y += 0.75; J.held.position.lerpVectors(J._relP, _vw2, f); J.held.position.y += Math.sin(f * Math.PI) * 0.9; J.held.rotation.set(f * 5, f * 2, f * 7); J.held.scale.setScalar(1 - 0.35 * f); } }
       if (!on && g != null && g >= 0.92 && !J._landed) { J._landed = true; if (p.i === ME) sfx('thunk'); J.rack.getWorldPosition(_vw2); for (let k = 0; k < 6; k++) addP({ x: _vw2.x, y: _vw2.z, z: _vw2.y + 0.8, vx: frnd(-1.4, 1.4), vy: frnd(-1.4, 1.4), vz: frnd(0.5, 2), col: k % 2 ? '#fff0b0' : p._grabCol || '#b8893a', s: 0.07, life: 0.4 }); }
       if (g != null && g < 0.6) { J._landed = false; J.held.scale.setScalar(1); } } }
+  if (J.scarf) { const f = clamp(sp / (maxS * 0.9), 0, 1) + (sT < 0.6 ? 0.6 : 0); for (let q = 0; q < J.scarf.length; q++) { const sg = J.scarf[q]; sg.rotation.z = (q ? 0.18 : 1.0) * (1 - Math.min(1, f)) + (q ? -0.04 * f : 0.15) + Math.sin(W.t * (6 + 8 * f) - q * 0.9) * (0.06 + 0.12 * f); sg.rotation.y = Math.sin(W.t * (4 + 6 * f) - q * 0.7) * (0.08 + 0.18 * f); } } // (round 36f) hangs when it stands, streams and ripples when it runs
+  if (J.stacks && FXR() < dt * (1.2 + a * 5)) { const m2 = J.stacks[FXR() < 0.5 ? 0 : 1]; m2.getWorldPosition(_vw); addP({ x: _vw.x, y: _vw.z, z: _vw.y, vx: frnd(-0.3, 0.3), vy: frnd(-0.3, 0.3), vz: 1.2 + a, g: -0.2, col: '#6a6a6e', s: 0.1, life: 0.9, smoke: 1 }); } // (round 36f) 铁卫's stacks puff smoke, more when it runs
   const st = Math.sign(Math.sin(ph)); if (a > 0.3 && st !== J.fs && !air) { const s2 = st > 0 ? 1 : -1, aa = p._ly + Math.PI / 2 * s2; for (let q = 0; q < 5; q++) addP({ x: px + Math.cos(aa) * 0.38, y: py + Math.sin(aa) * 0.38, z: pz + 0.05, vx: frnd(-0.9, 0.9), vy: frnd(-0.9, 0.9), vz: 0.35, g: -0.2, col: '#8a7e6a', s: 0.12, life: 0.5, smoke: 1 }); if (p.i === ME) { shake(px, py, J.st === 'big' || J.st === 'cannon' ? 0.07 : J.st === 'scout' ? 0.02 : 0.04); if (thr('mstep', 0.25)) sfx('mstep', px, py); } } J.fs = st; /* (round 35) was J.st = st: overwrote the mech's style after the first footstep, so the style's attack poses stopped playing */
 }
