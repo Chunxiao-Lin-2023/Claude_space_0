@@ -491,7 +491,7 @@ function nadeAimPt(me) {
 }
 // the auto pick: the spot (on a zombie in range and in sight) that catches the most of them, not too close to you
 function nadeAuto(me) {
-  const zs = W.zs.filter(z => z.hp > 0 && !z.hidden && !z.sleep && Math.abs(z.z - me.z) < 3 && Math.hypot(z.x - me.x, z.y - me.y) < BAL.nadeRange && Math.hypot(z.x - me.x, z.y - me.y) > 2.6 && los(me.x, me.y, me.z + 1.2, z.x, z.y, z.z + 0.8, 0));
+  const zs = W.zs.filter(z => z.hp > 0 && !z.hidden && !z.sleep && zSeen(z) && Math.abs(z.z - me.z) < 3 && Math.hypot(z.x - me.x, z.y - me.y) < BAL.nadeRange && Math.hypot(z.x - me.x, z.y - me.y) > 2.6 && los(me.x, me.y, me.z + 1.2, z.x, z.y, z.z + 0.8, 0));
   let best = null, bs = 0;
   for (const c of zs) { let s = 0; for (const z of zs) { const d = Math.hypot(z.x - c.x, z.y - c.y); if (d < BAL.nadeR) s += 1 - d / BAL.nadeR * 0.5; } if (s > bs) { bs = s; best = c; } }
   return best ? { x: best.x, y: best.y, z: best.z, n: bs } : null;

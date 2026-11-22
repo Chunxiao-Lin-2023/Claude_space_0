@@ -146,6 +146,8 @@ function uiPlanPos() {
   el.style.left = clamp(sx - el.offsetWidth / 2, 8, VW - el.offsetWidth - 8) + 'px'; el.style.top = clamp(sy - el.offsetHeight - 26, 60, VH - el.offsetHeight - 110) + 'px';
 }
 function hudTick(dt) {
+  { const me = W && W.p[ME], lw = !!me && !me.dead && !me.gone && !W.over && (me.down || me.hp < (me.maxHp || 100) * 0.3) && !inMech(me), el = document.getElementById('lowhp'); if (el && el.classList.contains('on') !== lw) el.classList.toggle('on', lw); // (round 34d) low health: red pulsing edges and a heartbeat
+    if (lw) { UI.hbT = (UI.hbT || 0) - dt; if (UI.hbT <= 0) { UI.hbT = me.down ? 0.7 : 0.85; sfx('heart'); } } else UI.hbT = 0; }
   uiPlanPos();
   if (UI.toastT > 0 && (UI.toastT -= dt) <= 0) $('toast').classList.remove('show');
   if (UI.bannerT > 0 && (UI.bannerT -= dt) <= 0) $('banner').classList.remove('show');
@@ -370,7 +372,7 @@ function drawBigMap() {
   if (!modeDef().anyBuild) g.strokeStyle = 'rgba(255,207,107,.8)', g.lineWidth = 2, g.strokeRect((W.radio.x - BUILD_R) * S, (W.radio.y - BUILD_R) * S, (BUILD_R * 2 + 1) * S, (BUILD_R * 2 + 1) * S);
   g.fillStyle = 'rgba(127,211,107,.85)'; g.fillRect((W.radio.x - 6) * S, (W.radio.y - 5) * S, 13 * S, 11 * S);
   for (let i = 0; i < NC; i++) { const b = W.blk[i]; if (b !== 25 && b !== 38) continue; g.fillStyle = W.srch.has(i) ? '#4a4a4a' : b === 38 ? '#e05a5a' : '#c8ccd0'; g.fillRect(cx_(i) * S - 2, cy_(i) * S - 2, 4, 4); }
-  g.fillStyle = '#ff3b2f'; for (const z of W.zs) g.fillRect(z.x * S - 2, z.y * S - 2, 4, 4);
+  g.fillStyle = '#ff3b2f'; for (const z of W.zs) if (zSeen(z)) g.fillRect(z.x * S - 2, z.y * S - 2, 4, 4); /* (round 34d) only what someone can see */
   g.restore();
   // labels and players upright on top
   g.font = '600 13px ' + getComputedStyle(document.body).fontFamily; g.textAlign = 'center'; g.textBaseline = 'middle';

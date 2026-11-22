@@ -119,12 +119,12 @@ for (const g of ITEMS) if (!['build', 'ladder'].includes(g.k)) for (const id of 
 const itemOf = id => ITEMS.find(g => g.ids.includes(id)) || ITEMS[0];
 // vehicles (round 22: their own category; you pick a default and T gets on it). spd = walking speed multiplier, seats 2 = a pillion seat
 const VEH = [null,
-  { k: 'bike', name: '自行车', spd: 1.7, quiet: 1, mud: 1, tag: '便宜、安静、灵活：走得快 70%；没有发动机，攻楼时骑着不会把楼里的丧尸吵醒；泥地不减速；单手骑车，开枪的射速几乎不降（别的车上射速减半还多）' },
-  { k: 'moto', name: '摩托车', spd: 1.9, seats: 2, noise: 6, tag: '最快：走得快 90%，后座能带一个队友；发动机响，攻楼时会吵醒附近楼里的丧尸' },
-  { k: 'cargo', name: '货运三轮', spd: 1.45, search: 1, noise: 5, tag: '搜刮用：坐在车上就能搜（够得更远、时间减半），搜到的材料 +50%' },
-  { k: 'armor', name: '装甲车', spd: 1.3, seats: 2, armor: 0.35, ram: 1, noise: 8, tag: '保护用：受到的伤害只剩 35%，撞开挡路的丧尸，后座能带一个队友' },
-  { k: 'gyro', name: '旋翼机', spd: 1.9, fly: 1, fuel: 60, seats: 2, gun: 'chin', noise: 9, tag: '会飞：越过屋顶和尸群。只能从地面或楼顶起飞（头顶不能有屋顶）；一箱油飞 60 秒，没满就能加：商店「载具」栏一键加满，或在有屋顶的房间里按 F；飞着用机头下的机枪打（机上自己的子弹，商店里买），手里的枪不能用；后座能带一个队友，队友能开枪' }, // (round 29)
-  { k: 'tank', name: '坦克', spd: 1.0, armor: 0.2, ram: 1, gun: 'cannon', outdoor: 1, noise: 10, tag: '自带炮塔：开火打炮弹（落点爆炸 120，半径 2.3），炮弹商店里买；受到的伤害只剩 20%，撞开丧尸；慢，太大进不了楼' }, // (round 31)
+  { k: 'bike', name: '自行车', vis: 12,  spd: 1.7, quiet: 1, mud: 1, tag: '便宜、安静、灵活：走得快 70%；没有发动机，攻楼时骑着不会把楼里的丧尸吵醒；泥地不减速；单手骑车，开枪的射速几乎不降（别的车上射速减半还多）' },
+  { k: 'moto', name: '摩托车', vis: 12,  spd: 1.9, seats: 2, noise: 6, tag: '最快：走得快 90%，后座能带一个队友；发动机响，攻楼时会吵醒附近楼里的丧尸' },
+  { k: 'cargo', name: '货运三轮', vis: 11,  spd: 1.45, search: 1, noise: 5, tag: '搜刮用：坐在车上就能搜（够得更远、时间减半），搜到的材料 +50%' },
+  { k: 'armor', name: '装甲车', vis: 8,  spd: 1.3, seats: 2, armor: 0.35, ram: 1, noise: 8, tag: '保护用：受到的伤害只剩 35%，撞开挡路的丧尸，后座能带一个队友' },
+  { k: 'gyro', name: '旋翼机', vis: 18,  spd: 1.9, fly: 1, fuel: 60, seats: 2, gun: 'chin', noise: 9, tag: '会飞：越过屋顶和尸群。只能从地面或楼顶起飞（头顶不能有屋顶）；一箱油飞 60 秒，没满就能加：商店「载具」栏一键加满，或在有屋顶的房间里按 F；飞着用机头下的机枪打（机上自己的子弹，商店里买），手里的枪不能用；后座能带一个队友，队友能开枪' }, // (round 29)
+  { k: 'tank', name: '坦克', vis: 10,  spd: 1.0, armor: 0.2, ram: 1, gun: 'cannon', outdoor: 1, noise: 10, tag: '自带炮塔：开火打炮弹（落点爆炸 120，半径 2.3），炮弹商店里买；受到的伤害只剩 20%，撞开丧尸；慢，太大进不了楼' }, // (round 31)
 ];
 const NVEH = VEH.length - 1;
 const MECH_ON = true;
@@ -133,13 +133,14 @@ const KAIJU_ON = MECH_ON; // (round 34) kaiju come with the mechs
 // (round 34b) every vehicle has a second stage: press 变形 while driving and in 1 s it stands up as a mech (no blueprint).
 // hp = hull, armor = share of damage the hull takes, dmg / rate / reach / arc / kb = the punch, spd = walking speed, skill + cooldown, noise (攻楼)
 const MECHS = [null,
-  { k: 'gale', name: '疾风', hp: 800, armor: 1.15, dmg: 42, rate: 0.32, reach: 2.2, arc: 1.0, kb: 3, spd: 1.65, skill: 'slide', sn: '滑铲', cd: 6, noise: 0, style: 'scout', col: ['#e8c02a', '#232326', '#f2f2ee'], glow: '#ffe066', tag: '最快最安静，出拳快但轻；装甲薄（800，挨打 ×1.15）。技能「滑铲」：贴地冲 6 格，铲倒路上的丧尸（90 伤害、倒地 1.2 秒），冷却 6 秒' },
-  { k: 'edge', name: '赤刃', hp: 1200, armor: 1.0, dmg: 65, rate: 0.42, reach: 2.7, arc: 1.05, kb: 4, spd: 1.45, skill: 'dash', sn: '冲斩', cd: 10, noise: 6, style: 'slim', col: ['#a8262a', '#2a1d20', '#e8e2d6'], glow: '#ffa040', tag: '臂刃快、够得远；装甲 1200。技能「冲斩」：朝目标冲 8 格，路上的丧尸受 180，冷却 10 秒' },
-  { k: 'worker', name: '工蜂', hp: 1600, armor: 0.9, dmg: 75, rate: 0.7, reach: 2.4, arc: 1.2, kb: 6, spd: 1.0, skill: 'throw', sn: '抓投', cd: 8, noise: 5, style: 'worker', col: ['#e07a1f', '#3b3d2e', '#f0d040'], glow: '#ffd07a', tag: '机甲形态照样能搜刮（够得远、材料 +50%）；慢。技能「抓投」：抓起面前的丧尸扔向目标，被扔的受 200、落点 2 格内受 100，冷却 8 秒' },
-  { k: 'bastion', name: '铁卫', hp: 2400, armor: 0.7, dmg: 95, rate: 0.75, reach: 2.5, arc: 1.25, kb: 7, spd: 0.95, skill: 'slam', sn: '震地', cd: 12, noise: 8, style: 'big', col: ['#55606c', '#2c333b', '#e2b93b'], glow: '#5fe0ff', tag: '最耐打（2400，挨打 ×0.7），重拳，走路撞开丧尸；慢。技能「震地」：周围 4.5 格 220 伤害并震晕 1.6 秒，冷却 12 秒' },
-  { k: 'falcon', name: '苍隼', hp: 1000, armor: 1.1, dmg: 58, rate: 0.5, reach: 2.4, arc: 1.15, kb: 5, spd: 1.3, skill: 'leap', sn: '跃击', cd: 8, noise: 9, style: 'fly', col: ['#dfe6ee', '#3a5a7a', '#59b8ff'], glow: '#9fe8ff', tag: '能飞跃：装甲薄（1000，挨打 ×1.1）。技能「跃击」：喷气越过屋顶落到 12 格内的空地，落地冲击 3 格 150，冷却 8 秒' },
-  { k: 'howitzer', name: '重炮', hp: 2000, armor: 0.8, dmg: 80, rate: 0.85, reach: 2.4, arc: 1.1, kb: 6, spd: 0.8, skill: 'volley', sn: '齐射', cd: 7, noise: 10, style: 'cannon', col: ['#5a6b3a', '#2e3622', '#c8b88a'], glow: '#ff9a3a', tag: '肩扛双炮，耐打（2000，挨打 ×0.8）；最慢。技能「齐射」：朝目标打 3 发炮弹（每发 110、半径 2.2，用坦克的炮弹），冷却 7 秒' },
+  { k: 'gale', name: '疾风', hp: 800, armor: 1.15, dmg: 42, rate: 0.32, reach: 2.2, arc: 1.0, kb: 3, spd: 1.65, skill: 'slide', sn: '滑铲', cd: 6, noise: 0, style: 'scout', atk: 'kick', col: ['#e8c02a', '#232326', '#f2f2ee'], glow: '#ffe066', tag: '最快最安静，普攻是快速低踢；装甲薄（800，挨打 ×1.15）。技能「滑铲」：贴地冲 6 格，铲倒路上的丧尸（90 伤害、倒地 1.2 秒），冷却 6 秒' },
+  { k: 'edge', name: '赤刃', hp: 1200, armor: 1.0, dmg: 65, rate: 0.42, reach: 2.7, arc: 1.05, kb: 4, spd: 1.45, skill: 'dash', sn: '冲斩', cd: 10, noise: 6, style: 'slim', atk: 'chop', col: ['#a8262a', '#2a1d20', '#e8e2d6'], glow: '#ffa040', tag: '臂刃往下劈，快、够得远；装甲 1200。技能「冲斩」：朝目标冲 8 格，路上的丧尸受 180，冷却 10 秒' },
+  { k: 'worker', name: '工蜂', hp: 1600, armor: 0.9, dmg: 45, rate: 0.55, reach: 2.4, arc: 1.2, kb: 4, spd: 1.0, skill: 'parcels', sn: '快递雨', cd: 9, noise: 5, style: 'worker', atk: 'parcel', range: 12, blast: 1.1, col: ['#e07a1f', '#3b3d2e', '#f0d040'], glow: '#ffd07a', tag: '快递机甲：普攻扔小快递箱砸丧尸（45、半径 1.1、射程 12）；技能「快递雨」：朝目标扔出一堆大快递箱，5 个箱子砸在周围（每个 90、半径 1.6、砸晕），冷却 9 秒；机甲形态照样能搜刮（够得远、材料 +50%）；慢，装甲 1600（×0.9）' },
+  { k: 'bastion', name: '铁卫', hp: 2400, armor: 0.7, dmg: 95, rate: 0.75, reach: 2.5, arc: 1.25, kb: 7, spd: 0.95, skill: 'slam', sn: '震地', cd: 12, noise: 8, style: 'big', atk: 'heavy', col: ['#55606c', '#2c333b', '#e2b93b'], glow: '#5fe0ff', tag: '最耐打（2400，挨打 ×0.7），普攻三连：下砸拳、跺脚、拳头炮（打出 7 格），走路撞开丧尸；慢。技能「震地」：周围 4.5 格 220 伤害并震晕 1.6 秒，冷却 12 秒' },
+  { k: 'falcon', name: '苍隼', hp: 1000, armor: 1.1, dmg: 55, rate: 0.5, reach: 2.4, arc: 1.15, kb: 5, spd: 1.3, skill: 'fly', sn: '飞行', cd: 1, noise: 9, style: 'fly', atk: 'rocket', range: 16, blast: 1.6, col: ['#dfe6ee', '#3a5a7a', '#59b8ff'], glow: '#9fe8ff', tag: '会飞：技能键起飞 / 降落，像旋翼机一样越过屋顶一直飞（飞着耗电 ×2，丧尸够不着，喷吐者能打到）；普攻是肩上的火箭弹（55、半径 1.6、射程 16）；装甲薄（1000，挨打 ×1.1）' },
+  { k: 'howitzer', name: '重炮', hp: 2000, armor: 0.8, dmg: 60, rate: 0.6, reach: 2.4, arc: 1.1, kb: 6, spd: 0.8, skill: 'volley', sn: '齐射', cd: 7, noise: 10, style: 'cannon', atk: 'cannon', range: 18, blast: 1.4, dmg2: 60, col: ['#5a6b3a', '#2e3622', '#c8b88a'], glow: '#ff9a3a', tag: '普攻是手臂炮（60、半径 1.4、射程 18，不耗弹药），耐打（2000，挨打 ×0.8）；最慢。技能「齐射」：朝目标打 3 发炮弹（每发 110、半径 2.2，用坦克的炮弹），冷却 7 秒' },
 ];
+const MECH_CRUSH = new Set([21, 22, 27, 29, 32, 39, 40, 41]); // (round 34d) what a mech just walks over and flattens: rocks, trees, fences, rubble, bins, scrap, logs, bushes
 const inMech = p => !!(p && p.ride && p.mform === 1 && MECHS[p.veh]);
 const mechOf = p => MECHS[p && p.veh] || MECHS[4];
 const mhpOf = (p, v) => { v = v || p.veh; const M = MECHS[v]; if (!M) return 0; const h = p.mh && p.mh[v]; return h == null ? M.hp : h; };
@@ -185,24 +186,24 @@ const NW = WPN.length;
 /* ---------- zombies (speeds in tiles/s) ---------- */
 const ZT = {
   walker: { name: '游荡者', hp: 70, spd: 1.0, r: 0.31, h: 1.2, dmg: 12, bdmg: 12, cd: 1.0, sc: 1.2 },
-  runner: { name: '疾跑者', hp: 55, spd: 3.1, r: 0.29, h: 1.14, dmg: 8, bdmg: 7, cd: 0.6, sc: 1.14 },
-  climber: { name: '攀爬者', hp: 70, spd: 2.3, r: 0.29, h: 0.84, dmg: 7, bdmg: 8, cd: 0.7, sc: 1.08, climb: 1 },
-  spitter: { name: '喷吐者', hp: 170, spd: 0.9, r: 0.36, h: 1.26, dmg: 10, bdmg: 8, cd: 1.0, sc: 1.26, range: 9, spitCD: 3 },
-  brute: { name: '重锤', hp: 800, spd: 1.0, r: 0.44, h: 1.74, dmg: 28, bdmg: 75, cd: 1.6, sc: 1.74, kb: 6, charge: 1 }, // (round 23) faster, plus a telegraphed charge and a ground slam
+  runner: { name: '疾跑者', hp: 55, spd: 3.1, r: 0.29, h: 1.14, dmg: 6, bdmg: 7, cd: 0.6, sc: 1.14, lunge: { r: 3.4, cd: 4, dmg: 9 }, sprint: { cd: 7, t: 1.2, mul: 1.45 } }, // (round 34d) pounces and bursts of speed; bite 8 → 6
+  climber: { name: '攀爬者', hp: 70, spd: 2.3, r: 0.29, h: 0.84, dmg: 6, bdmg: 8, cd: 0.7, sc: 1.08, climb: 1, lunge: { r: 3, cd: 5, dmg: 8 }, sprint: { cd: 8, t: 1.2, mul: 1.4 } },
+  spitter: { name: '喷吐者', hp: 170, spd: 0.9, r: 0.36, h: 1.26, dmg: 8, bdmg: 8, cd: 1.0, sc: 1.26, range: 9, spitCD: 2.6, sprint: { cd: 9, t: 1.0, mul: 1.6 } }, // spits more often; backs off at a run
+  brute: { name: '重锤', hp: 800, spd: 1.0, r: 0.44, h: 1.74, dmg: 24, bdmg: 75, cd: 1.6, sc: 1.74, kb: 6, charge: 1, sprint: { cd: 9, t: 1.5, mul: 1.5 } }, // (round 23) faster, plus a telegraphed charge and a ground slam
   boss: { name: '巨尸', hp: 2600, spd: 0.65, r: 0.69, h: 2.64, dmg: 45, bdmg: 220, cd: 2.0, sc: 2.64, kb: 9 },
-  dog: { name: '尸犬', hp: 40, spd: 3.7, r: 0.27, h: 0.66, dmg: 8, bdmg: 3, cd: 0.5, sc: 1.2 },
+  dog: { name: '尸犬', hp: 40, spd: 3.7, r: 0.27, h: 0.66, dmg: 6, bdmg: 3, cd: 0.5, sc: 1.2, lunge: { r: 3.6, cd: 3, dmg: 8 } },
   crawler: { name: '爬行尸', hp: 60, spd: 0.75, r: 0.3, h: 0.46, dmg: 11, bdmg: 9, cd: 0.9, sc: 1.2 },
-  bloater: { name: '爆尸', hp: 200, spd: 0.75, r: 0.4, h: 1.32, dmg: 10, bdmg: 10, cd: 1.1, sc: 1.32, blast: 1 },
-  screamer: { name: '尖叫者', hp: 150, spd: 1.5, r: 0.3, h: 1.26, dmg: 9, bdmg: 6, cd: 0.9, sc: 1.26, scream: 1 },
+  bloater: { name: '爆尸', hp: 200, spd: 0.75, r: 0.4, h: 1.32, dmg: 8, bdmg: 10, cd: 1.1, sc: 1.32, blast: 1, lob: { r: 7, cd: 5 } }, // lobs a glob of bile
+  screamer: { name: '尖叫者', hp: 150, spd: 1.5, r: 0.3, h: 1.26, dmg: 7, bdmg: 6, cd: 0.9, sc: 1.26, scream: 1, sonic: { r: 6, cd: 6, dmg: 7 }, sprint: { cd: 8, t: 1.2, mul: 1.5 } }, // a shriek that knocks you back
   leaper: { name: '飞扑尸王', hp: 2300, spd: 1.15, r: 0.5, h: 2.1, dmg: 30, bdmg: 60, cd: 1.2, sc: 2.0, kb: 7, boss: 1, look: 'boss', skin: '#7a4a3a' },
   digger: { name: '掘地尸王', hp: 2700, spd: 0.95, r: 0.55, h: 2.0, dmg: 34, bdmg: 90, cd: 1.4, sc: 2.0, kb: 8, boss: 1, look: 'brute', skin: '#6a6048' },
   summoner: { name: '召唤尸王', hp: 2100, spd: 0.72, r: 0.5, h: 2.3, dmg: 22, bdmg: 40, cd: 1.4, sc: 2.2, boss: 1, look: 'boss', skin: '#5a5470' },
   venom: { name: '毒液尸王', hp: 2300, spd: 0.85, r: 0.52, h: 2.1, dmg: 26, bdmg: 50, cd: 1.3, sc: 2.1, range: 12, boss: 1, look: 'bloater', skin: '#7a9a3a' },
   // (round 34) kaiju: walking monsters about 40-80% of a mech, each with its own telegraphed skill; from night 5 (level 3)
-  kjaw: { name: '裂颚兽', hp: 2600, spd: 0.95, r: 0.85, h: 3.2, dmg: 70, bdmg: 260, cd: 1.4, sc: 1, kb: 8, kaiju: 'acid', skin: '#4a6a3a' },
-  ktail: { name: '钢尾兽', hp: 3000, spd: 1.0, r: 0.9, h: 2.8, dmg: 75, bdmg: 300, cd: 1.6, sc: 1, kb: 10, kaiju: 'tail', skin: '#5a5a66' },
-  kdig: { name: '掘地兽', hp: 2300, spd: 0.9, r: 0.8, h: 2.5, dmg: 65, bdmg: 220, cd: 1.4, sc: 1, kb: 8, kaiju: 'dig', skin: '#7a5a3a' },
-  armored: { name: '防暴尸', hp: 260, spd: 0.9, r: 0.36, h: 1.26, dmg: 15, bdmg: 16, cd: 1.1, sc: 1.3, armor: 0.3 },
+  kjaw: { name: '裂颚兽', hp: 2600, spd: 0.95, r: 0.85, h: 3.2, dmg: 42, bdmg: 260, cd: 1.4, sc: 1, kb: 8, kaiju: 'acid', skin: '#4a6a3a' },
+  ktail: { name: '钢尾兽', hp: 3000, spd: 1.0, r: 0.9, h: 2.8, dmg: 45, bdmg: 300, cd: 1.6, sc: 1, kb: 10, kaiju: 'tail', skin: '#5a5a66' },
+  kdig: { name: '掘地兽', hp: 2300, spd: 0.9, r: 0.8, h: 2.5, dmg: 40, bdmg: 220, cd: 1.4, sc: 1, kb: 8, kaiju: 'dig', skin: '#7a5a3a' },
+  armored: { name: '防暴尸', hp: 260, spd: 0.9, r: 0.36, h: 1.26, dmg: 12, bdmg: 16, cd: 1.1, sc: 1.3, armor: 0.3, lunge: { r: 2.8, cd: 5, dmg: 12 } }, // a shield-first lunge
 };
 // aim assist (SET.assist): fire-button lock range (x weapon range), lock-on time before it fires, spread while auto-aimed, mouse/finger magnet
 const PORT = 1.25; // firing port: your own shots pass a wall / door you built if it is this close to you
@@ -324,7 +325,7 @@ const BAL = {
   pMaxHp: 100, pSpeed: 4.4, pReach: 7.5, /* (round 25) 6.5 → 7.5 */
   stairHold: 0.18, ledgeHold: 0.45,  // seconds of pushing before you walk down stairs / jump off a ledge
   downTime: 30, reviveTime: 2.4, soloDownTime: 8, respawnHp: 0.5,
-  respawnDay: 20, respawnNight: 20, respawnInv: 2.5, lives: { easy: 5, normal: 3, hard: 1 }, livesLong: 2, /* respawns each: by difficulty, +2 in the long modes (经典 15 夜 / 尸城求生 10 夜) */ /* (round 24) 20 s day or night (was 60 at night), back at the base, 2.5 s untouchable */ rezTime: 6, rezHp: 0.4, // (round 20) a dead teammate comes back by a living one after this long (or at dawn); a medkit at the body brings them back at once
+  respawnDay: 20, respawnNight: 20, respawnInv: 4, lives: { easy: 5, normal: 3, hard: 1 }, livesLong: 2, /* respawns each: by difficulty, +2 in the long modes (经典 15 夜 / 尸城求生 10 夜) */ /* (round 24) 20 s day or night (was 60 at night), back at the base, 2.5 s untouchable */ rezTime: 6, rezHp: 0.4, // (round 20) a dead teammate comes back by a living one after this long (or at dawn); a medkit at the body brings them back at once
   searchTime: 1.5, healTime: 1.0, medHeal: 60,
   shieldBlock: 0.5, shieldCos: 0.26,                          // (round 23) riot shield is a melee weapon now: with it out, hits from within ~75° of your aim lose half; no wear
   chgWind: 0.85, chgSpd: 7.5, chgTime: 1.2, chgDmg: 34, chgKB: 10, chgWall: 400, chgStun: 1.4, chgCD: 6, chgMin: 3.2, chgMax: 10, // brute charge: red line on the ground, then a rush
@@ -342,7 +343,8 @@ const BAL = {
   mechBat: 120, mechLow: 20, mechPass: 0.1, mechRegen: 0.015, batRegen: 0.4, xformT: 1.0, // (round 34b) mech energy (s), low warning, share of a hit the pilot still feels, hull / energy coming back while not a mech (/s), transform time
   gyroDmg: 12, gyroRate: 0.12, gyroSpread: 0.06, gyroRange: 22, gyroCap: 500, gyroStart: 250, // (round 30) gyrocopter chin gun: its own ammo, bought in the shop
   flyHover: 2.2, flyClimb: 0.8, flyDrop: 0.6, fuelLow: 10, refuelT: 4, // (round 29) gyrocopter: cruise 2.2 floors over whatever is below, climb / descend rate (of the take-off curve per second), warn at 10 s of fuel, 4 s to refuel indoors
-  nadeRange: 12, nadeDmg: 220, nadeR: 3.0, nadeFuse: 1.6, nadeLand: 0.35, nadeMin: 0.3, // (round 18: radius 2.8 -> 3.4, damage at the edge 35% -> 50%, goes off 0.35 s after landing where you aimed)
+  vis: { foot: 12, floor: 2.5, night: 0.75, mech: 14, fly: 20 }, // (round 34d) how far you see zombies (shared with your teammate): on foot, + per floor up, × at night; vehicles have their own (VEH[].vis)
+  nadeRange: 12, nadeDmg: 220, nadeR: 3.0, nadeFuse: 1.9, nadeLand: 0.35, nadeMin: 0.3, // (round 18: radius 2.8 -> 3.4, damage at the edge 35% -> 50%, goes off 0.35 s after landing where you aimed)
   headshot: 1.6,
   radioHp: 1500, radioDmg: 0.5,
   startRes: { wood: 90, stone: 30, steel: 20, parts: 8 },

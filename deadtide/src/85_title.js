@@ -22,9 +22,9 @@ const TK = TitleKit.create({
   online: { label: '双人联机', sub: '创建房间 · 用房间码加入', hostText: '你当房主，难度、模式和地图由你决定。把 4 位房间码或邀请链接发给队友。' },
   setup: { fields: () => tkFields(), start: '开始守夜', wide: true },
   saves: {
-    label: '存档', slots: 5, export: true, remove: true, import: true,
+    label: '存档', slots: 5, export: true, remove: true, import: true, rename: (n, name) => renameSave(+n, name),
     note: '一共 5 个存档位。新开一局会用一个空位，不会覆盖别的存档；5 个都满了才会提示覆盖最早的那个。每个天亮、暂停菜单里点「存档」、以及关掉页面时自动写入（单人或房主）。',
-    list: () => { const l = []; for (let n = 1; n <= NSLOT; n++) { const s = loadSlot(n); l.push(s ? { slot: n, title: saveLabel(s), detail: (s.p && s.p[0] ? s.p[0].name : '') + (s.p && s.p.length > 1 ? ' · 双人' : ''), time: s.at } : { slot: n, empty: true, title: '空位', detail: '新开一局会存到这里' }); } return l; },
+    list: () => { const l = []; for (let n = 1; n <= NSLOT; n++) { const s = loadSlot(n); l.push(s ? { slot: n, name: s.name || '', title: (s.name ? s.name + ' · ' : '') + saveLabel(s), detail: (s.p && s.p[0] ? s.p[0].name : '') + (s.p && s.p.length > 1 ? ' · 双人' : ''), time: s.at } : { slot: n, empty: true, title: '空位', detail: '新开一局会存到这里' }); } return l; },
     load: n => continueGame(+n),
     remove: n => clearSave(+n),
     export: n => { try { const raw = localStorage.getItem(SKEY + slotKey(+n)); return raw ? 'DTS1' + btoa(unescape(encodeURIComponent(raw))) : ''; } catch (e) { return ''; } },

@@ -94,6 +94,7 @@ function drawZombies(vl, dt) {
     if (Math.abs(z.x - CAM.tx) > CR || Math.abs(z.y - CAM.ty) > CR) continue; // off screen (the town's sleeping crowds are mostly far away)
     const corpse = !!z.corpse, L = z.L != null ? z.L : Math.floor((z.z + 0.1) / FH);
     if (z.hidden && !corpse) continue;
+    if (!corpse && !zSeen(z)) continue; // (round 34d) out of everyone's sight
     if (L > vl || lcHide(Math.floor(z.x), Math.floor(z.y), L)) continue;
     drawn++;
     if (ZT[z.k] && ZT[z.k].kaiju) { drawKaiju(z, corpse, dt); continue; } // (round 34)

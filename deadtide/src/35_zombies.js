@@ -24,6 +24,7 @@ function stepZombies(dt) {
     if (z.stun > 0) z.stun -= dt;
     if (ZT[z.k].boss && bossStep(z, dt)) continue;
     if (ZT[z.k].kaiju && kaijuStep(z, dt)) continue; // (round 34)
+    if ((Z.lunge || Z.sprint || Z.lob || Z.sonic) && zSkill(z, Z, dt)) continue; // (round 34d) pounce / sprint / ranged
     if (z.rage > 0) z.rage -= dt;
     if (z.scr > 0) z.scr -= dt;
     // burning: damage over time, and the fire jumps to zombies right next to it
@@ -62,7 +63,7 @@ function stepZombies(dt) {
     }
     const rf = climbT ? F.rc : F.rw, pf = climbT ? F.pc : F.pw;
     // pure survival: always hunt the nearest reachable player (smashing through walls if needed)
-    let field = pf[i] < Infinity ? pf : rf;
+    let field = pf[i] < Infinity ? pf : isSiege() ? (NAV_FAR || (NAV_FAR = new Float32Array(NC).fill(Infinity))) : rf; // (round 34d) 尸城求生 has no base to defend: they only ever come for you
     if (!(pf[i] < Infinity)) { let nd = 1e9; for (const p of W.p) if (standingP(p)) nd = Math.min(nd, Math.abs(p.x - z.x) + Math.abs(p.y - z.y)); if (nd > NAV_PR * 0.75) field = NAV_FAR || (NAV_FAR = new Float32Array(NC).fill(Infinity)); } // (round 33) out past the players' field: walk straight at the nearest player
     // spitter: lob acid at a visible player in range
     let hold = false;
@@ -135,13 +136,19 @@ function stepZombies(dt) {
         else if (ub && B[ub].trunk) { // a tree in the way: aim past the side of the trunk we're already on, not at the trunk
           const fx = bx - cx, fy = by - cy, px = -fy, py = fx, side = ((z.x - (bx + 0.5)) * px + (z.y - (by + 0.5)) * py) >= 0 ? 1 : -1, off = B[ub].trunk + z.r + 0.08;
           tx = bx + 0.5 + px * side * off + fx * 0.35; ty = by + 0.5 + py * side * off + fy * 0.35;
-        } else { tx = bx + 0.5; ty = by + 0.5; }
+        } else { tx = bx + 0.5; ty = by + 0.5;
+          // (round 34d) cut the corner: if the step after this one is diagonal from here and both side cells are open, head straight for it (no staircase walking)
+          if (bl === z.L && !(DBG && DBG.noCut)) { let v2 = Infinity, b2x = -1, b2y = -1; navNbrs(bx, by, bl, climbT, (nx, ny, nl) => { if (nl !== bl) return; const v = field[ci(nx, ny, nl)]; if (v < v2) { v2 = v; b2x = nx; b2y = ny; } });
+            if (b2x >= 0 && Math.abs(b2x - cx) === 1 && Math.abs(b2y - cy) === 1 && v2 < field[ci(bx, by, bl)] && navNode(b2x, cy, z.L) && navNode(cx, b2y, z.L) && !W.blk[ci(b2x, cy, z.L)] && !W.blk[ci(cx, b2y, z.L)] && !W.blk[ci(b2x, b2y, z.L)] && zLineClear(z, b2x + 0.5, b2y + 0.5) && !(z.squeeze > 0)) { tx = b2x + 0.5; ty = b2y + 0.5; } }
+        }
       }
     } else if (!hold) {
       let best = null, bd = 1e9; for (const p of W.p) { if (!standingP(p) && !p.down) continue; const d = d2(p.x, p.y, z.x, z.y); if (d < bd) { bd = d; best = p; } }
       if (best) { tx = best.x; ty = best.y; } else { tx = W.radio.x + 0.5; ty = W.radio.y + 0.5; }
     }
     if (z.conf > 0) { if (z.wa == null || rand() < dt * 0.9) z.wa = rand() * Math.PI * 2; tx = z.x + Math.cos(z.wa); ty = z.y + Math.sin(z.wa); attackI = -1; z.chg = z.slam = null; z.tl = 0; } // lost in the smoke: wander
+    if (tx != null && attackI < 0 && !z.climbing && field === pf && !(DBG && DBG.noChase)) { let tp = null, td = 7; for (const p of W.p) { if (!standingP(p) || p.L !== z.L) continue; const d = Math.hypot(p.x - z.x, p.y - z.y); if (d < td) { td = d; tp = p; } } // (round 34d) close and in plain sight: straight at you
+      if (tp && zLineClear(z, tp.x, tp.y)) { tx = tp.x; ty = tp.y; } }
     if (attackI >= 0) { zAttackCell(z, attackI); tx = null; }
     // bite players in reach
     for (const p of W.p) {
@@ -157,7 +164,7 @@ function stepZombies(dt) {
     let mx = 0, my = 0;
     if (tx != null && z.stun <= 0) {
       const dx = tx - z.x, dy = ty - z.y, d = Math.hypot(dx, dy);
-      let rg = z.rage > 0 ? BAL.rageMul : 1;
+      let rg = (z.rage > 0 ? BAL.rageMul : 1) * (z.spr > 0 && Z.sprint ? Z.sprint.mul : 1);
       const hd = z.g && herd.get(z.g); if (hd && hd.n >= 3 && field === pf) rg *= clamp(1 + (field[i] - hd.s / hd.n) * 0.06, 0.78, 1.22);
       if (d > 0.02) { mx = dx / d * z.spd * slow * rg; my = dy / d * z.spd * slow * rg; z.face = Math.atan2(dy, dx); }
     }
@@ -186,4 +193,47 @@ function stepZombies(dt) {
   }
   for (const z of zs) if (z.hp > 0 && !z.climbing) z.z = surfZ(z.x, z.y, z.L);
   W.zs = zs.filter(z => z.hp > 0);
+}
+
+// (round 34d) the tougher zombies' extra moves (host): a short telegraphed pounce, bursts of speed, a lobbed glob / a shriek from range.
+// Returns true while a pounce is in progress (it moves the zombie itself).
+function zSkill(z, Z, dt) {
+  if (z.sleep || z.climbing || z.hidden) return false;
+  z.lgCD = (z.lgCD == null ? 1 + rand() * 2 : z.lgCD) - dt; z.spCD = (z.spCD == null ? rand() * 3 : z.spCD) - dt; z.rgCD = (z.rgCD == null ? 2 + rand() * 2 : z.rgCD) - dt; if (z.spr > 0) z.spr -= dt;
+  const P = z.lg;
+  if (P) { // pounce: a 0.3 s crouch, then a low leap toward where you were
+    P.t += dt;
+    if (P.t < 0.3) { z.atk = 0.3; return true; }
+    const f = Math.min(1, (P.t - 0.3) / 0.35), ox = z.x, oy = z.y; moveEnt(z, (P.x1 - P.x0) * dt / 0.35, (P.y1 - P.y0) * dt / 0.35, 'z', false); z.z = surfZ(z.x, z.y, z.L) + Math.sin(f * Math.PI) * 0.55; void ox; void oy;
+    if (!P.hit) for (const p of W.p) { if (p.gone || p.dead || Math.abs(p.z - z.z) > 1.2) continue; if (Math.hypot(p.x - z.x, p.y - z.y) < p.r + z.r + 0.35) { P.hit = 1; hurtPlayer(p, Z.lunge.dmg * W.D.dmg, z); knock(p, Math.cos(z.face) * 3, Math.sin(z.face) * 3); break; } }
+    if (f >= 1) { z.lg = null; z.z = surfZ(z.x, z.y, z.L); z.lgCD = Z.lunge.cd * (0.8 + rand() * 0.4); }
+    return true;
+  }
+  if (z.stun > 0 || z.conf > 0) return false;
+  let tgt = null, td = 1e9; for (const p of W.p) { if (p.gone || p.dead || p.down || inAirZ(p) != null) continue; const d = Math.hypot(p.x - z.x, p.y - z.y); if (d < td && Math.abs(p.z - z.z) < 1.5) { td = d; tgt = p; } }
+  if (!tgt) return false;
+  if (Z.lunge && z.lgCD <= 0 && td > 1.4 && td < Z.lunge.r && los(z.x, z.y, z.z + 0.6, tgt.x, tgt.y, tgt.z + 0.6)) {
+    const a = Math.atan2(tgt.y - z.y, tgt.x - z.x), D = Math.min(td + 0.4, Z.lunge.r); z.face = a;
+    z.lg = { t: 0, x0: z.x, y0: z.y, x1: z.x + Math.cos(a) * D, y1: z.y + Math.sin(a) * D, hit: 0 }; emit({ k: 'sfx', n: 'jump', x: z.x, y: z.y }); return true;
+  }
+  if (Z.sprint && z.spCD <= 0 && td > 4 && td < 11) { z.spr = Z.sprint.t; z.spCD = Z.sprint.cd * (0.8 + rand() * 0.4); }
+  if (Z.lob && z.rgCD <= 0 && td > 2.5 && td < Z.lob.r && los(z.x, z.y, z.z + 1, tgt.x, tgt.y, tgt.z + 0.6)) { // a glob of bile in an arc (the acid projectile: burns where it lands)
+    z.rgCD = Z.lob.cd * (0.8 + rand() * 0.4); const sx = z.x, sy = z.y, sz = z.z + 1.1, T = 0.7 + td / 12; z.face = Math.atan2(tgt.y - sy, tgt.x - sx);
+    W.proj.push({ k: 'acid', x: sx, y: sy, z: sz, vx: (tgt.x - sx) / T, vy: (tgt.y - sy) / T, vz: (tgt.z + 0.4 - sz) / T + 5 * T }); emit({ k: 'sfx', n: 'spit', x: sx, y: sy });
+  }
+  if (Z.sonic && z.rgCD <= 0 && td < Z.sonic.r && los(z.x, z.y, z.z + 1, tgt.x, tgt.y, tgt.z + 0.8)) { // a shriek: everyone close in front is hurt a little and pushed back
+    z.rgCD = Z.sonic.cd * (0.8 + rand() * 0.4); z.scr = 0.6; z.face = Math.atan2(tgt.y - z.y, tgt.x - z.x);
+    for (const p of W.p) { if (p.gone || p.dead || p.down) continue; const dx = p.x - z.x, dy = p.y - z.y, d = Math.hypot(dx, dy); if (d < Z.sonic.r && Math.cos(angDiff(Math.atan2(dy, dx), z.face)) > 0.5) { hurtPlayer(p, Z.sonic.dmg * W.D.dmg, z); knock(p, dx / (d || 1) * 4, dy / (d || 1) * 4); } }
+    emit({ k: 'scream', x: r2(z.x), y: r2(z.y), z: r2(z.z) });
+  }
+  return false;
+}
+
+// (round 34d) can a zombie walk straight from where it is to (x, y) on its floor? (every cell on the way open to it, no corner cutting through walls)
+function zLineClear(z, x, y) {
+  const dx = x - z.x, dy = y - z.y, d = Math.hypot(dx, dy), n = Math.ceil(d / 0.35); let pcx = Math.floor(z.x), pcy = Math.floor(z.y);
+  for (let k = 1; k <= n; k++) { const cx = Math.floor(z.x + dx * k / n), cy = Math.floor(z.y + dy * k / n); if (cx === pcx && cy === pcy) continue; if (!inMap(cx, cy)) return false;
+    if (!navNode(cx, cy, z.L) || solidFor(W.blk[ci(cx, cy, z.L)], 'z')) return false;
+    if (cx !== pcx && cy !== pcy && (solidFor(W.blk[ci(cx, pcy, z.L)], 'z') || solidFor(W.blk[ci(pcx, cy, z.L)], 'z'))) return false; pcx = cx; pcy = cy; }
+  return true;
 }

@@ -26,7 +26,7 @@ function canSave() { return W && !W.demo && !W.over && STATE.mode === 'play' && 
 function saveGame(quiet) {
   if (!canSave()) return false;
   const S = {
-    v: SAVE_V, mw: MW, at: Date.now(), mode: W.mode, map: W.map, obj: W.obj, seed: W.seed, diff: W.diff, night: W.night, phase: W.phase, clock: W.clock, dayLen: W.dayLen, nightT: W.nightT,
+    v: SAVE_V, mw: MW, at: Date.now(), name: W.saveName || '', mode: W.mode, map: W.map, obj: W.obj, seed: W.seed, diff: W.diff, night: W.night, phase: W.phase, clock: W.clock, dayLen: W.dayLen, nightT: W.nightT,
     res: W.res, upg: W.upg, kills: W.kills, stats: W.stats, endless: W.endless, clean: W.clean, tasks: W.tasks, srch: [...W.srch], spotN: W.spotN, t: W.t,
     p: W.p.map(p => ({ name: p.name, x: p.x, y: p.y, L: inAirZ(p) != null ? skyTop(p.x, p.y) : p.L, /* (round 31) saved in flight: put them on what is below */ hp: p.hp, dead: p.dead, wpn: p.wpn, owned: p.owned, mag: p.mag, ammo: p.ammo, meds: p.meds, nades: p.nades, kills: p.kills, veh: p.veh || 0, vehs: p.vehs || 0, shield: p.shield ? 1 : 0, melee: p.melee || 0, gn: p.gn || [0, 0, 0], lives: p.lives || 0, fuel: p.fuel != null ? +p.fuel.toFixed(1) : 60, gam: p.gam || 0, shl: p.shl || 0, mh: (p.mh || []).map(h => h == null ? null : Math.round(h)), bat: +(p.bat != null ? p.bat : BAL.mechBat).toFixed(1) })).concat(W.p.length < 2 && W.p2keep ? [W.p2keep] : []), /* (round 34) a two-player save played on alone still keeps the teammate's kit */
     zs: W.zs.filter(z => z.hp > 0).slice(0, 300).map(z => [z.k, +z.x.toFixed(2), +z.y.toFixed(2), z.L, Math.round(z.hp), Math.round(z.max), z.mz ? 1 : 0, z.g || 0, z.sleep ? 1 : 0, z.occ == null ? -1 : z.occ]),
@@ -42,6 +42,8 @@ function saveGame(quiet) {
 }
 const NSLOT = 5; let SLOT = 0; // (round 30) 3 → 5 slots                                   // the slot this run saves into (0 = not chosen yet)
 const slotKey = n => n > 1 ? 'save' + n : 'save';
+// (round 34d) give a save slot your own name (kept when the game saves into it again)
+function renameSave(n, name) { try { const k = SKEY + slotKey(n), raw = localStorage.getItem(k); if (!raw) return; const S = JSON.parse(raw); S.name = String(name || '').slice(0, 20); localStorage.setItem(k, JSON.stringify(S)); if (SLOT === n && W) W.saveName = S.name; } catch (e) { } }
 function loadSlot(n) { const s = lsGet(slotKey(n), null); return s && s.v === SAVE_V && s.g && (s.mw === MW || s.mw === MW0) ? s : null; } // (round 33) saves from the 160×160 maps still load (moved into the middle)
 function latestSlot() { let b = 0, t = -1; for (let n = 1; n <= NSLOT; n++) { const s = loadSlot(n); if (s && (s.at || 0) > t) { t = s.at || 0; b = n; } } return b; }
 function freeSlot() { for (let n = 1; n <= NSLOT; n++) if (!loadSlot(n)) return n; return 0; }
@@ -85,7 +87,7 @@ function applySave(S) {
   if (leg) { S = JSON.parse(JSON.stringify(S)); S.srch = (S.srch || []).map(legIdx); S.mine = (S.mine || []).map(legIdx); for (const z of S.zs || []) { z[1] += MOFF; z[2] += MOFF; } for (const P of S.p || []) { P.x += MOFF; P.y += MOFF; } legObj(S.obj); }
   applyWorld(S.g, leg);
   W.p2keep = S.p && S.p[1] ? JSON.parse(JSON.stringify(S.p[1])) : null; // (round 34) the teammate's kit stays in the save even when you carry on alone
-  W.perm = S.perm || null; W.perk = S.perk || null; W.mine = new Set(S.mine || []);
+  W.saveName = S.name || ''; W.perm = S.perm || null; W.perk = S.perk || null; W.mine = new Set(S.mine || []);
   Object.assign(W, { night: S.night, phase: S.phase, clock: S.clock, dayLen: S.dayLen, nightT: S.nightT || 0, res: S.res, upg: S.upg, kills: S.kills, stats: S.stats, endless: !!S.endless, clean: S.clean !== false, tasks: S.tasks || [], t: S.t || 0 });
   W.srch = new Set(S.srch || []); W.spotN = S.spotN || null; if (!W.spotN) { W.spotN = spotCount(); for (const k in W.spotN) W.spotN[k] = Math.round(W.spotN[k] * 2); } W.tkv++; W.rng = mulberry((S.seed ^ (S.night * 7919) ^ (S.at & 0xffff)) >>> 0);
   const p = W.p[0], P = S.p[0];

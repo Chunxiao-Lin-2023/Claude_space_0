@@ -48,6 +48,7 @@ function sfx(n, x, y) {
     case 'launcher': noise(0.25, 0.6 * v, 'lowpass', 700 * r, 150, 0.7); tone('sine', 140 * r, 60, 0.2, 0.4 * v); break;
     case 'scream': tone('sawtooth', 900 * r, 1500, 0.7, 0.18 * v, 0, 2400); tone('square', 640 * r, 1200, 0.6, 0.08 * v, 0.05, 1800); noise(0.6, 0.15 * v, 'bandpass', 2600, 3200, 3); break;
     case 'jump': noise(0.12, 0.14, 'bandpass', 900, 1600, 1.5); break;
+    case 'heart': tone('sine', 70, 45, 0.11, 0.32); tone('sine', 62, 40, 0.12, 0.26, 0.17); break; // (round 34d) low-health heartbeat
     case 'vault': noise(0.2, 0.18, 'bandpass', 700, 1300, 1.2); tone('triangle', 200, 160, 0.08, 0.06, 0.1); break;
     case 'trap': tone('square', 1200 * r, 300, 0.06, 0.3 * v); noise(0.1, 0.3 * v, 'highpass', 3000, 3000, 1); break;
     case 'clank': tone('square', 1500 * r, 900, 0.05, 0.12 * v); noise(0.05, 0.15 * v, 'highpass', 4000, 4000, 2); break;

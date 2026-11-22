@@ -76,7 +76,7 @@ MAPS.desert = {
     lot(72, 60, 82, 68, TT.road); at(75, 62, 37); at(79, 62, 37); at(74, 66, 38); at(80, 66, 25, 0); at(82, 61, 32);          // gas station at the crossing
     for (const [x, y, d] of [[40, 72, 0], [60, 69, 2], [100, 72, 1], [130, 69, 0], [86, 30, 1], [84, 110, 3]]) at(x, y, 25, d); // wrecks on the highway
   },
-  forestN: 0.86, dirtN: 0.3, veg: { tree: 0.22, rock: 2.6, bush: 0.6 }, feat: { mud: 0.2, meadow: 0.5, rocky: 1.8, farms: 3 },
+  forestN: 0.86, dirtN: 0.3, veg: { tree: 0.22, rock: 1.3, bush: 0.6 }, feat: { mud: 0.2, meadow: 0.5, rocky: 1.1, farms: 3 }, /* (round 34d) desert rocks halved: they boxed you in */
   deco: { tuft: '#9a8a50', flower: ['#d8a040', '#c86a3a', '#e8d8a0'] },
   tcol: { [TT.grass]: ['#c8aa72', '#c2a46c', '#cfb17a'], [TT.hill]: ['#b48f5c', '#ad8956', '#b9945f'], [TT.forest]: ['#a99a62', '#a09158'], [TT.dirt]: ['#a8805a', '#b08860'], [TT.sand]: ['#d6bf8a', '#ddc792'], [TT.road]: ['#56524c', '#5a564f'] },
   mc: { [TT.grass]: '#c4a66e', [TT.hill]: '#a8845a', [TT.dirt]: '#a07a52', [TT.road]: '#55524c', [TT.sand]: '#d6bf8a', [TT.forest]: '#9c8e5c', [TT.water]: '#3a7a96' },

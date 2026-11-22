@@ -61,7 +61,7 @@
     const K = k => id + '.tk.' + k;
     const T = {}; // public api
     let scr = 'main', stack = [], setupMode = 'solo', setupVals = Object.assign({}, ls.get(K('setup'), {})), room = null, visible = true, toastT = 0;
-    let invited = false, armed = null, armT = 0, joinCode = '', importOpen = false, focusIdx = -1, lastSaves = null, exportShown = null;
+    let renaming = null, invited = false, armed = null, armT = 0, joinCode = '', importOpen = false, focusIdx = -1, lastSaves = null, exportShown = null;
 
     // ---------- root ----------
     const root = document.createElement('div');
@@ -232,9 +232,11 @@
         if (s.empty) { h += '<div class="tk-sv tk-emptyslot"><span class="tk-no">' + esc(no) + '</span><span class="tk-l"><b>' + esc(s.title || '空位') + '</b>' + (s.detail ? '<small>' + esc(s.detail) + '</small>' : '') + '</span>' + (sv.newInSlot ? '<button class="tk-mini" data-a="s-new" data-arg="' + esc(s.slot) + '">' + svg('plus') + '新建</button>' : '') + '</div>'; continue; }
         h += '<div class="tk-sv' + (s === last ? ' tk-latest' : '') + '"><span class="tk-no">' + esc(no) + '</span><span class="tk-l"><b>' + esc(s.title || '存档') + '</b><small>' + esc([s.detail, when(s.time)].filter(Boolean).join(' · ')) + '</small></span>';
         if (s.canLoad !== false) h += '<button class="tk-mini tk-primary" data-a="s-load" data-arg="' + esc(s.slot) + '">读取</button>';
+        if (sv.rename) h += '<button class="tk-mini" data-a="s-ren" data-arg="' + esc(s.slot) + '" title="改名">改名</button>'; // (deadtide round 34d) rename a save
         if (sv.export) h += '<button class="tk-mini" data-a="s-exp" data-arg="' + esc(s.slot) + '" title="导出存档码">导出</button>';
         if (sv.remove) h += '<button class="tk-mini" data-a="s-del" data-arg="' + esc(s.slot) + '" title="删除">删除</button>';
         h += '</div>';
+        if (renaming != null && String(renaming) === String(s.slot)) h += '<div class="tk-row"><input class="tk-in" data-ren maxlength="20" value="' + esc(s.name || '') + '" placeholder="给这个存档起个名字"><button class="tk-mini tk-primary" data-a="s-rok" data-arg="' + esc(s.slot) + '">保存</button><button class="tk-mini" data-a="s-rno">取消</button></div>';
         if (exportShown && String(exportShown.slot) === String(s.slot)) h += '<textarea class="tk-ta" readonly data-sel>' + esc(exportShown.text) + '</textarea><div class="tk-row"><button class="tk-mini" data-a="s-copy">' + svg('copy') + '复制</button><button class="tk-mini" data-a="s-file">下载文件</button></div>';
       }
       if (!l.length) h += '<div class="tk-note">还没有存档。</div>';
@@ -352,6 +354,9 @@
         case 'r-leave': leaveRoom(); break;
         case 's-load': call(cfg.saves.load, slotArg(arg), (lastSaves || []).find(s => String(s.slot) === arg)); break;
         case 's-new': call(cfg.saves.newInSlot, slotArg(arg)); break;
+        case 's-ren': renaming = arg; render(true); setTimeout(() => { const i = root.querySelector('[data-ren]'); if (i) { i.focus(); i.select(); } }, 30); break;
+        case 's-rok': { const i = root.querySelector('[data-ren]'); call(cfg.saves.rename, slotArg(arg), i ? i.value.trim() : ''); renaming = null; T.toast('存档已改名'); render(true); break; }
+        case 's-rno': renaming = null; render(true); break;
         case 's-del': arm('del' + arg, b, () => { call(cfg.saves.remove, slotArg(arg)); T.toast('存档已删除'); render(true); }); break;
         case 's-exp': Promise.resolve(call(cfg.saves.export, slotArg(arg))).then(t => { if (t) { exportShown = { slot: arg, text: String(t) }; render(true); } }); break;
         case 's-copy': copyText(exportShown ? exportShown.text : '').then(ok => T.toast(ok ? '存档码已复制' : '复制失败，请手动全选复制')); break;

@@ -329,6 +329,10 @@ function addP(o) { if (RND.parts.length < 880) RND.parts.push(Object.assign({ vx
 function bloodFx(x, y, z, n, green) { for (let k = 0; k < n; k++) addP({ x, y, z, vx: frnd(-2, 2), vy: frnd(-2, 2), vz: frnd(0, 3), col: green ? (k % 2 ? '#7fb53a' : '#4f7a1e') : (k % 2 ? '#6e0d0b' : '#9b1712'), s: frnd(0.04, 0.09), life: frnd(0.35, 0.8), floor: z - 1.2 }); }
 function debrisFx(x, y, z, col, n) { for (let k = 0; k < n; k++) addP({ x: x + frnd(-0.4, 0.4), y: y + frnd(-0.4, 0.4), z: z + frnd(0, 1), vx: frnd(-2.5, 2.5), vy: frnd(-2.5, 2.5), vz: frnd(0, 4), col, s: frnd(0.06, 0.16), life: frnd(0.7, 1.4), floor: z - 0.05 }); for (let k = 0; k < n / 3; k++) addP({ x, y, z: z + 0.3, vx: frnd(-0.4, 0.4), vy: frnd(-0.4, 0.4), vz: frnd(0.2, 0.7), g: -0.3, col: '#5f5850', s: frnd(0.16, 0.26), life: frnd(0.4, 0.7), smoke: 1 }); }
 function stepFx(dt) {
+  if (RND.mrk && RND.mrk.length) { for (const r of RND.mrk) { r.t += dt; const f = Math.min(1, r.t / r.T), x = lerp(r.x, r.e[0], f), y = lerp(r.y, r.e[1], f), box = r.kd === 'parcel' || r.kd === 'bigparcel', z = lerp(r.z, r.e[2], f) + (box ? Math.sin(f * Math.PI) * (0.8 + Math.hypot(r.e[0] - r.x, r.e[1] - r.y) * 0.18) : 0); if (box) { addP({ x, y, z, vx: 0, vy: 0, vz: 0, g: 0, col: (Math.floor(r.t * 20) % 2) ? '#b8893a' : '#9a6f2e', s: r.kd === 'bigparcel' ? 0.3 : 0.17, life: 0.05 }); continue; } // (round 34d) a bright head and a smoke trail along the shot
+      addP({ x, y, z, vx: 0, vy: 0, vz: 0, g: 0, col: r.kd === 'fist' ? '#cfd6dc' : '#ffd27a', s: r.kd === 'fist' ? 0.16 : 0.1, life: 0.06 });
+      if (r.kd !== 'cannon') addP({ x, y, z, vx: frnd(-0.3, 0.3), vy: frnd(-0.3, 0.3), vz: 0.4, g: -0.3, col: r.kd === 'fist' ? '#ffb060' : '#9a958c', s: 0.09, life: 0.5, smoke: 1 }); }
+    RND.mrk = RND.mrk.filter(r => r.t < r.T); }
   for (const q of RND.parts) { q.t += dt; q.vz -= q.g * dt; q.x += q.vx * dt; q.y += q.vy * dt; q.z += q.vz * dt; if (q.z < q.floor && q.vz < 0) { q.z = q.floor; q.vz *= -0.3; q.vx *= 0.5; q.vy *= 0.5; } }
   RND.parts = RND.parts.filter(q => q.t < q.life);
   RND.tracers = RND.tracers.filter(t => (t.t += dt) < t.life);
@@ -416,12 +420,12 @@ function screenRay(sx, sy) { NDC.set(sx / VW * 2 - 1, -(sy / VH) * 2 + 1); RAY.s
 function aimPick(sx, sy, mag) {
   const { o, d } = screenRay(sx, sy), vl = viewL();
   let best = null, bd = 1e9;
-  for (const z of W.zs) { if (z.L > vl || lcHide(Math.floor(z.x), Math.floor(z.y), z.L)) continue; const t = rayBox(o[0], o[1], o[2], d[0], d[1], d[2], z.x - z.r - 0.15, z.y - z.r - 0.15, z.z, z.r * 2 + 0.3, z.r * 2 + 0.3, z.h, 400); if (t >= 0 && t < bd) { bd = t; best = z; } }
+  for (const z of W.zs) { if (z.L > vl || !zSeen(z) || lcHide(Math.floor(z.x), Math.floor(z.y), z.L)) continue; const t = rayBox(o[0], o[1], o[2], d[0], d[1], d[2], z.x - z.r - 0.15, z.y - z.r - 0.15, z.z, z.r * 2 + 0.3, z.r * 2 + 0.3, z.h, 400); if (t >= 0 && t < bd) { bd = t; best = z; } }
   // cursor on a zombie: aim at the height you point at — over its head (the top of the silhouette) is a headshot
   if (best) { const hz = clamp(o[2] + d[2] * bd, best.z + best.h * 0.35, best.z + best.h * 0.9); return { x: best.x, y: best.y, z: hz, zb: best, head: hz > best.z + best.h * 0.76 }; }
   // near miss: a zombie within ~34 px of the cursor on screen pulls the aim onto its body
   let mb = null, md = mag != null ? mag : assistLv().mag ? 34 : 0;
-  for (const z of W.zs) { if (z.L > vl || z.hp <= 0 || lcHide(Math.floor(z.x), Math.floor(z.y), z.L)) continue; const [px, py, pz] = w2s(z.x, z.y, z.z + z.h * 0.55); if (pz > 1) continue; const dd = Math.hypot(px - sx, py - sy); if (dd < md) { md = dd; mb = z; } }
+  for (const z of W.zs) { if (z.L > vl || z.hp <= 0 || !zSeen(z) || lcHide(Math.floor(z.x), Math.floor(z.y), z.L)) continue; const [px, py, pz] = w2s(z.x, z.y, z.z + z.h * 0.55); if (pz > 1) continue; const dd = Math.hypot(px - sx, py - sy); if (dd < md) { md = dd; mb = z; } }
   if (mb) return { x: mb.x, y: mb.y, z: mb.z + mb.h * 0.6, zb: mb, mag: 1 };
   // march the camera ray into the visible part of the map
   const top = (vl + 2) * FH; let t0 = 0; if (o[2] > top && d[2] < 0) t0 = (o[2] - top) / -d[2];
@@ -501,7 +505,7 @@ function drawTells() {
   }
   let n = 0; const pulse = 0.35 + 0.25 * Math.sin(performance.now() / 70);
   for (const z of W.zs) {
-    if (n >= T.length) break; if (!z.tl || z.hp <= 0) continue; const t = T[n++], zz = (z.zv != null ? z.zv : z.z) + 0.07;
+    if (n >= T.length) break; if (!z.tl || z.hp <= 0 || !zSeen(z)) continue; const t = T[n++], zz = (z.zv != null ? z.zv : z.z) + 0.07;
     t.g.visible = true; t.g.position.set(z.x, zz, z.y); t.l.visible = z.tl !== 3; t.r.visible = t.d.visible = z.tl === 3;
     if (z.tl !== 3) { t.l.rotation.y = -z.face; t.l.scale.set(z.tl === 1 ? BAL.chgSpd * BAL.chgTime : 3, 1, 1.0); }
     t.l.material.opacity = pulse;
@@ -529,12 +533,17 @@ const OV = document.getElementById('ov');
 function drawOverlay() {
   if (!OV) return;
   let html = '';
+  // (round 34d) a health bar over every survivor (an orange hull line under it in a mech); it pulses red when low
+  for (const p of W.p) { if (p.gone || p.dead || p.down) continue; const m = inMech(p) || (p._xfT != null && p._xfT < BAL.xformT && p.ride), hz = m ? 3.5 * ((MECH_DIM[(MECHS[p.veh] || {}).style] || {}).s || 1) : 1.62;
+    const [sx, sy] = w2s(p.rx != null ? p.rx : p.x, p.ry != null ? p.ry : p.y, (p.zv != null ? p.zv : p.z) + (p.rjz != null ? p.rjz : p.jz || 0) + hz); if (sx < -40 || sx > VW + 40 || sy < -20 || sy > VH + 20) continue;
+    const f = clamp(p.hp / (p.maxHp || 100), 0, 1), low = f < 0.3, col = f > 0.6 ? '#5fd35a' : f > 0.3 ? '#e8c53a' : '#ff4a3a', hf = m ? clamp(mhpOf(p) / MECHS[p.veh].hp, 0, 1) : -1;
+    html += `<div class="hpb${low ? ' low' : ''}${p.i === ME ? ' me' : ''}" style="left:${sx | 0}px;top:${sy | 0}px"><i style="width:${(f * 100) | 0}%;background:${col}"></i>${hf >= 0 ? `<b style="width:${(hf * 100) | 0}%"></b>` : ''}</div>`; }
   for (const f of RND.floats) { const [sx, sy] = w2s(f.x, f.y, f.z); html += `<div class="fl" style="left:${sx | 0}px;top:${sy | 0}px;opacity:${clamp(2.2 - f.t, 0, 1).toFixed(2)};color:${f.col}">${f.text}</div>`; }
   // 尸城求生: sleepers show a "z", a growing "?" while they're noticing you, a "!" as they wake
   if (isSiege()) {
     const me = W.p[ME], CR = Math.min(cullR(), 16), gst = NETROLE === 'guest';
     for (const z of W.zs) {
-      if (z.hp <= 0 || z.hidden || Math.abs(z.x - CAM.tx) > CR || Math.abs(z.y - CAM.ty) > CR || z.L > me.L + 1 || lcHide(Math.floor(z.x), Math.floor(z.y), z.L)) continue;
+      if (z.hp <= 0 || z.hidden || !zSeen(z) || Math.abs(z.x - CAM.tx) > CR || Math.abs(z.y - CAM.ty) > CR || z.L > me.L + 1 || lcHide(Math.floor(z.x), Math.floor(z.y), z.L)) continue;
       const sl = gst ? z.sleepF : z.sleep; if (z._ws && !sl) z.wokeT = W.t; z._ws = sl;
       const aw = gst ? (z.awF ? 0.6 : 0) : (z.aw || 0); let t = '', c = '', fs = 14;
       if (sl) { if (aw > 0.15) { t = '?'; c = aw > 0.6 ? '#ff8a3a' : '#ffd65a'; fs = 14 + aw * 12; } else if (Math.hypot(z.x - me.x, z.y - me.y) < 11) { t = 'z'; c = '#cfe0f0'; fs = 16; } }
@@ -601,7 +610,7 @@ function drawMinimap(dt) {
   g.fillStyle = 'rgba(30,30,34,.85)';
   for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) { for (let L = gAt(x, y); L < Math.min(ML, gAt(x, y) + 3); L++) { const b = W.blk[ci(x, y, L)]; if ((b && B[b].cost) || b === 24 || b === 50) { g.fillRect(x * S, y * S, S, S); break; } if (b === 22) { g.fillStyle = '#25381f'; g.fillRect(x * S, y * S, S, S); g.fillStyle = 'rgba(30,30,34,.85)'; break; } } }
   if (!modeDef().anyBuild) g.strokeStyle = 'rgba(255,207,107,.6)', g.lineWidth = 1, g.strokeRect((W.radio.x - BUILD_R) * S, (W.radio.y - BUILD_R) * S, (BUILD_R * 2 + 1) * S, (BUILD_R * 2 + 1) * S);
-  g.fillStyle = '#a8261f'; for (const z of W.zs) g.fillRect(z.x * S - 1, z.y * S - 1, 2, 2); // (round 31) zombies smaller and darker, so the players stand out
+  g.fillStyle = '#a8261f'; for (const z of W.zs) if (zSeen(z)) g.fillRect(z.x * S - 1, z.y * S - 1, 2, 2); /* (round 34d) only what someone can see */ // (round 31) zombies smaller and darker, so the players stand out
   g.fillStyle = '#7fd36b'; g.fillRect(W.radio.x * S - 1, W.radio.y * S - 1, S + 2, S + 2);
   g.restore();
   const R = CAM.yaw, cx = cv.width / 2, cy = cv.height / 2, rot = (x, y) => { const dx = x * S - cx, dy = y * S - cy; return [cx + dx * Math.cos(R) - dy * Math.sin(R), cy + dx * Math.sin(R) + dy * Math.cos(R)]; };
@@ -613,6 +622,7 @@ function drawMinimap(dt) {
 const sfxThr = {};
 function thr(k, s) { const n = performance.now(); if (sfxThr[k] && n - sfxThr[k] < s * 1000) return false; sfxThr[k] = n; return true; }
 const cellPos = i => [cx_(i) + 0.5, cy_(i) + 0.5, cl_(i) * FH + 0.6];
+const _lootV = new THREE.Vector3();
 function fxEvent(e) {
   if (!W) return;
   const guest = NETROLE === 'guest';
@@ -652,7 +662,11 @@ function fxEvent(e) {
     case 'collapse': { const [x, y] = cellPos(e.i); sfx('collapse', x, y); shake(x, y, 0.35); break; }
     case 'repair': { const [x, y] = cellPos(e.i); sfx('build', x, y); break; }
     case 'spot': if (guest) { if (e.v) W.srch.add(e.i); else W.srch.delete(e.i); W.ver++; } break;
-    case 'loot': RND.floats.push({ x: e.x, y: e.y, z: e.z, text: e.text, col: '#ffd76a', t: 0 }); if (e.p === ME || e.p < 0) sfx('loot'); break;
+    case 'loot': { RND.floats.push({ x: e.x, y: e.y, z: e.z, text: e.text, col: '#ffd76a', t: 0 }); if (e.p === ME || e.p < 0) sfx('loot');
+      if (e.p != null && e.p >= 0) { const q = W.p[e.p], m = OBJ.pl && OBJ.pl[e.p]; if (q && q.ride && q.veh === 3 && !inMech(q) && m && m.veh) { const S = m.veh.userData.all[3].userData.S; if (S && S.bed) { S.bed.getWorldPosition(_lootV); const T = 0.55; // (round 34d) what you found on the cargo trike gets tossed into the bed
+        for (let k = 0; k < 4; k++) { const sx = e.x + frnd(-0.15, 0.15), sy = e.y + frnd(-0.15, 0.15), sz = e.z + 0.2, tx = _lootV.x + frnd(-0.12, 0.12), ty = _lootV.z + frnd(-0.12, 0.12), tz = _lootV.y + 0.05, TT = T + k * 0.06; addP({ x: sx, y: sy, z: sz, vx: (tx - sx) / TT, vy: (ty - sy) / TT, vz: (tz - sz + 0.5 * 9 * TT * TT) / TT, col: ['#8a6a44', '#9aa0a6', '#b8893a', '#5a6a4a'][k], s: 0.075, life: TT, floor: -9 }); }
+        q._ldKT = W.t + T + 0.1; } } }
+      break; }
     case 'phurt': if (guest && e.d > 0 && W.p[e.p]) W.p[e.p].hurtT = 0.3; if (e.d > 6 && Math.random() < 0.5) { const q = W.p[e.p]; addDecal(q.x + frnd(-0.2, 0.2), q.y + frnd(-0.2, 0.2), q.z, frnd(0.08, 0.14)); }
       if (e.p === ME) { RND.hurtV = Math.min(1, RND.hurtV + 0.5); CAM.shake = Math.max(CAM.shake, 0.12); if (thr('hurt', 0.25)) sfx('hurt'); } break;
     case 'down': sfx('down', W.p[e.p].x, W.p[e.p].y); uiMsg(e.p === ME ? (W.p.length > 1 ? '你倒地了！等队友扶你，或按 H 用医疗包自救' : '你倒地了！按 H 用医疗包自救') : W.p[e.p].name + ' 倒地了！快去扶（按住 F）', '#ff6b5a'); break;
@@ -666,8 +680,9 @@ function fxEvent(e) {
     case 'kacid': for (let k = 0; k < 10; k++) { const a = e.a + frnd(-0.45, 0.45), v = frnd(5, 9); addP({ x: e.x + Math.cos(e.a) * 1.4, y: e.y + Math.sin(e.a) * 1.4, z: e.z, vx: Math.cos(a) * v, vy: Math.sin(a) * v, vz: frnd(-1.5, 0.5), g: -3, col: k % 3 ? '#9dff3a' : '#5f9a20', s: 0.1, life: 0.8, floor: e.z - 3 }); } if (thr('kacid', 0.3)) sfx('acid', e.x, e.y); break; // (round 34) kaiju acid breath
     case 'xform': { const q = W.p[e.o]; if (!q) break; q._xfT = 0; q._xfTo = e.to; q._xfS = -1; sfx('swap', q.x, q.y); shake(q.x, q.y, 0.12); break; } // (round 34b) start the 1 s transformation on every screen
     case 'mmove': if (guest && e.p === ME) { const p = W.p[ME]; if (e.m.dash) p.dash = e.m.dash; if (e.m.jmp) p.jmp = e.m.jmp; } break; // (round 34) a mech dash / leap the host started for this screen's survivor
-    case 'mpunch': { const q = W.p[e.o]; if (!q) break; q._mcombo = q._mpT != null && q._mpT < 0.95 ? ((q._mcombo || 0) + 1) % 3 : 0; q._mpT = 0; q._mpS = e.s; sfx('swap', q.x, q.y); break; } // (round 34b) a quick follow-up continues the combo
-    case 'mhit': { const q = W.p[e.o]; if (!q) break; if (e.h) { q._mhs = 0.07; sfx('smash', e.x, e.y); shake(e.x, e.y, 0.18); for (let k = 0; k < 12; k++) addP({ x: e.x, y: e.y, z: e.z, vx: frnd(-3, 3), vy: frnd(-3, 3), vz: frnd(0.5, 3), col: k % 3 ? '#ffd27a' : '#7a1010', s: 0.07, life: 0.35 }); RND.flashes.push({ x: e.x, y: e.y, z: e.z, t: 0, life: 0.06 }); } break; }
+    case 'mpunch': { const q = W.p[e.o]; if (!q) break; q._mcombo = e.c != null ? e.c : q._mpT != null && q._mpT < 0.95 ? ((q._mcombo || 0) + 1) % 3 : 0; q._mpT = 0; q._mpS = e.s; sfx('swap', q.x, q.y); break; } // (round 34b) a quick follow-up continues the combo
+    case 'mrkt': (RND.mrk = RND.mrk || []).push({ x: e.x, y: e.y, z: e.z, e: e.e, T: Math.max(0.05, e.t), t: 0, kd: e.kd }); { const q = W.p[e.o]; if (q) { q._mrec = 1; } sfx(e.kd === 'cannon' ? 'sniper' : e.kd === 'parcel' || e.kd === 'bigparcel' ? 'swap' : 'launcher', e.x, e.y); RND.flashes.push({ x: e.x, y: e.y, z: e.z, t: 0, life: 0.06 }); } break; // (round 34d) rockets / shells / the fist cannon in flight
+    case 'mhit': { const q = W.p[e.o]; if (!q) break; if (e.box) { debrisFx(e.x, e.y, e.z + 0.1, '#b8893a', e.box > 1 ? 16 : 8); debrisFx(e.x, e.y, e.z + 0.1, '#e8d9a8', e.box > 1 ? 6 : 3); sfx('smash', e.x, e.y); if (e.box > 1) shake(e.x, e.y, 0.15); } if (e.g) { debrisFx(e.x, e.y, e.z, '#8a7e6a', 8); for (let k = 0; k < 14; k++) { const a = k / 14 * Math.PI * 2, r = (e.r || 1) * 0.5; addP({ x: e.x + Math.cos(a) * r, y: e.y + Math.sin(a) * r, z: e.z + 0.05, vx: Math.cos(a) * 3.5 * (e.r || 1), vy: Math.sin(a) * 3.5 * (e.r || 1), vz: 0.3, g: -0.2, col: '#a89878', s: 0.1, life: 0.45, smoke: 1 }); } } if (e.h) { q._mhs = 0.07; sfx('smash', e.x, e.y); shake(e.x, e.y, 0.18); for (let k = 0; k < 12; k++) addP({ x: e.x, y: e.y, z: e.z, vx: frnd(-3, 3), vy: frnd(-3, 3), vz: frnd(0.5, 3), col: k % 3 ? '#ffd27a' : '#7a1010', s: 0.07, life: 0.35 }); RND.flashes.push({ x: e.x, y: e.y, z: e.z, t: 0, life: 0.06 }); } break; }
     case 'mskill': { const q = W.p[e.o]; if (q) { q._msT = 0; q._msK = e.t; }
       if (e.t === 'slam') { shake(e.x, e.y, 0.6); debrisFx(e.x, e.y, e.z + 0.2, '#9a8a70', 26); for (let k = 0; k < 36; k++) { const a = k / 36 * Math.PI * 2; addP({ x: e.x + Math.cos(a) * 0.8, y: e.y + Math.sin(a) * 0.8, z: e.z + 0.1, vx: Math.cos(a) * 7, vy: Math.sin(a) * 7, vz: 0.4, g: -0.3, col: '#a89878', s: 0.13, life: 0.55, smoke: 1 }); } sfx('collapse', e.x, e.y); }
       else if (e.t === 'dash') { sfx('swap', e.x, e.y); for (let k = 0; k < 16; k++) addP({ x: e.x + Math.cos(e.a) * k * 0.5, y: e.y + Math.sin(e.a) * k * 0.5, z: e.z + 1.3, vx: frnd(-0.3, 0.3), vy: frnd(-0.3, 0.3), vz: 0.2, g: -0.1, col: '#ffb060', s: 0.08, life: 0.35 }); }

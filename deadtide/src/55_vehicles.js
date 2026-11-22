@@ -146,11 +146,13 @@ function mkCargo() {
   for (const y of [0.43, 0.51]) vBox(v, wd, 0.022, 0.05, 0.7, -0.2, y, 0); for (const y of [0.43, 0.51, 0.59]) vBox(v, wd, 0.022, 0.05, 0.7, -0.8, y, 0);
   for (const z of [-0.43, 0.43]) vArc(v, cm, 0.24, 0.07, 0.1 * Math.PI, 0.9 * Math.PI, -0.46, 0.2, z);
   // the haul: two crates, a sack, a red jerry can, scrap pipes
-  const crate = (x, y, z, s, ry) => { const c = new THREE.Group(); c.position.set(x, y, z); c.rotation.y = ry; v.add(c); vBox(c, wd, s, s * 0.75, s, 0, 0, 0); for (const q of [-1, 1]) { vBox(c, wd2, s + 0.006, 0.025, 0.025, 0, q * s * 0.3, s * 0.5); vBox(c, wd2, s + 0.006, 0.025, 0.025, 0, q * s * 0.3, -s * 0.5); } vBox(c, wd2, s * 1.2, 0.022, 0.022, 0, 0, s * 0.5 + 0.004, 0.62); };
+  const ld = new THREE.Group(); v.add(ld); S.load = ld; S.bed = vMark(v, -0.55, 0.62, 0); // (round 34d) the haul sits in its own group so it can rattle
+  const crate = (x, y, z, s, ry) => { const c = new THREE.Group(); c.position.set(x, y, z); c.rotation.y = ry; ld.add(c); vBox(c, wd, s, s * 0.75, s, 0, 0, 0); for (const q of [-1, 1]) { vBox(c, wd2, s + 0.006, 0.025, 0.025, 0, q * s * 0.3, s * 0.5); vBox(c, wd2, s + 0.006, 0.025, 0.025, 0, q * s * 0.3, -s * 0.5); } vBox(c, wd2, s * 1.2, 0.022, 0.022, 0, 0, s * 0.5 + 0.004, 0.62); };
   crate(-0.62, 0.48, 0.13, 0.24, 0.15); crate(-0.6, 0.66, 0.1, 0.16, -0.35);
-  vBox(v, lam('#a89a78'), 0.22, 0.12, 0.2, -0.36, 0.44, -0.15, 0.25, 0.3); vBox(v, lam('#7e7258'), 0.05, 0.03, 0.06, -0.26, 0.52, -0.15, 0.25);
-  vBox(v, lam('#b02a22'), 0.09, 0.16, 0.14, -0.32, 0.47, 0.19); vBox(v, lam('#222'), 0.03, 0.03, 0.03, -0.3, 0.565, 0.23);
-  vRod(v, lam('#6a7a86'), [-0.78, 0.47, -0.25], [-0.26, 0.5, -0.04], 0.018); vRod(v, lam('#8a6a54'), [-0.76, 0.45, -0.05], [-0.4, 0.48, -0.28], 0.014);
+  vBox(ld, lam('#a89a78'), 0.22, 0.12, 0.2, -0.36, 0.44, -0.15, 0.25, 0.3); vBox(ld, lam('#7e7258'), 0.05, 0.03, 0.06, -0.26, 0.52, -0.15, 0.25);
+  vBox(ld, lam('#b02a22'), 0.09, 0.16, 0.14, -0.32, 0.47, 0.19); vBox(ld, lam('#222'), 0.03, 0.03, 0.03, -0.3, 0.565, 0.23);
+  vRod(ld, lam('#6a7a86'), [-0.78, 0.47, -0.25], [-0.26, 0.5, -0.04], 0.018); vRod(ld, lam('#8a6a54'), [-0.76, 0.45, -0.05], [-0.4, 0.48, -0.28], 0.014);
+  ld.children.forEach((c, i) => { c.userData.y0 = c.position.y; c.userData.r0 = c.rotation.z; c.userData.ph = i * 1.7; });
   // salvage flag on a pole at the back
   vRod(v, dk, [-0.79, 0.6, -0.33], [-0.79, 1.3, -0.33], 0.009); const fl = new THREE.Group(); fl.position.set(-0.79, 1.25, -0.33); v.add(fl); vBox(fl, lam('#ff8a1a'), 0.2, 0.12, 0.006, -0.1, 0, 0); S.flag = fl;
   const tl = vLit('#b0231b', '#ff2a1a', 0.3); for (const z of [-0.25, 0.25]) vBox(v, tl, 0.012, 0.04, 0.06, -0.815, 0.45, z);
@@ -345,6 +347,11 @@ function vehTick(p, m, dt, dk) {
   if (S.gun) { S.gun.rotation.y = -angDiff(p._ly, p.aim); const ap = p.aimPt, hd = ap ? Math.hypot(ap.x - p.x, ap.y - p.y) : 6; S.gun.rotation.z = lerp(S.gun.rotation.z, ap ? clamp(Math.atan2(ap.z - (p.z + 0.25), Math.max(0.5, hd)), -1.3, 0.3) : -0.3, Math.min(1, dt * 10)); }
   if (S.rotor) { const air = p.z - surfZ(p.x, p.y, skyTop(p.x, p.y)); p._rot = lerp(p._rot || 0, p.land && air < 0.15 ? 6 : 30, Math.min(1, dt * 1.5)); S.rotor.rotation.y += p._rot * dt; S.prop.rotation.x += p._rot * 1.4 * dt;
     if (air < 3.5 && air > 0.05 && FXR() < dt * 30) { const a = FXR() * 6.28, r = 0.6 + FXR() * 0.8, gz = p.z - air; addP({ x: p.x + Math.cos(a) * r, y: p.y + Math.sin(a) * r, z: gz + 0.05, vx: Math.cos(a) * 2.2, vy: Math.sin(a) * 2.2, vz: 0.15, g: -0.1, col: '#8a7e6a', s: 0.08, life: 0.5, smoke: 1 }); } } // rotor + prop spin; downwash kicks up dust close to the ground
+  if (S.load) { // (round 34d) the haul rattles over bumps (more the faster you go) and jumps when something new lands in the bed
+    if (p._ldKT && W.t >= p._ldKT) { p._ldKT = 0; p._ldK = 1; } p._ldK = Math.max(0, (p._ldK || 0) - dt * 3);
+    const shk = Math.min(1, sp / 3), kk = p._ldK || 0;
+    for (const c of S.load.children) { const u = c.userData, j = Math.abs(Math.sin(W.t * (16 + u.ph) + u.ph)) * 0.022 * shk + kk * 0.05 * Math.abs(Math.sin(W.t * 30 + u.ph)); c.position.y = u.y0 + j; c.rotation.z = u.r0 + Math.sin(W.t * (11 + u.ph) + u.ph * 2) * 0.05 * shk + kk * 0.08 * Math.sin(W.t * 25 + u.ph); }
+  }
   if (S.flag) S.flag.rotation.y = Math.sin(W.t * (6 + sp * 2) + p.i) * (0.2 + Math.min(0.3, sp * 0.06)) + Math.min(0.6, sp * 0.12);
   const hk = 0.35 + dk * 1.2; for (const mt of S.head) mt.emissiveIntensity = hk;
   const tk = 0.25 + dk * 0.35 + (p._brake || 0) * 1.1; for (const mt of S.tail) mt.emissiveIntensity = tk;
@@ -362,97 +369,131 @@ function vehTick(p, m, dt, dk) {
 const _vq = new THREE.Quaternion(), _vax2 = new THREE.Vector3();
 function rideBank(m, ly, roll, pitch) { _vax.set(Math.cos(ly), 0, Math.sin(ly)); m.g.quaternion.setFromAxisAngle(_vax, roll || 0); if (pitch) { _vax2.set(-Math.sin(ly), 0, Math.cos(ly)); _vq.setFromAxisAngle(_vax2, pitch); m.g.quaternion.premultiply(_vq); } } // pitch (nose down < 0) about the rider's left-right axis
 
-/* ---------- (round 34) mechs: three original designs, about three times a person's height ----------
-   local frame like the vehicles: +x forward, +y up, +z the mech's left. Joints rotate about z (positive = swing forward). */
-const MECH_LEG = { th: 0.74, sh: 0.76, ft: 0.16 };
+/* ---------- (round 34) mechs, (round 34d) rebuilt: rounded armour, tapered limbs, ball joints, panel lines; each of the six
+   has its own size and build (scout lanky and small, bastion huge and broad, worker hunched with long arms, howitzer stocky).
+   Local frame like the vehicles: +x forward, +y up, +z the mech's left. Joints rotate about z (positive = swing forward). */
+const MECH_DIM = { // s = overall scale; th / sh = thigh / shin; cw = chest width; arm = arm thickness; hunch = resting torso lean
+  scout: { s: 0.82, th: 0.72, sh: 0.82, ft: 0.15, cw: 0.78, arm: 0.8, hunch: 0.08 },
+  slim: { s: 1.0, th: 0.78, sh: 0.8, ft: 0.15, cw: 0.86, arm: 0.9, hunch: 0.04 },
+  worker: { s: 1.02, th: 0.6, sh: 0.62, ft: 0.17, cw: 1.04, arm: 1.2, hunch: 0.28 },
+  big: { s: 1.2, th: 0.7, sh: 0.7, ft: 0.18, cw: 1.18, arm: 1.25, hunch: 0.05 },
+  fly: { s: 0.94, th: 0.74, sh: 0.78, ft: 0.15, cw: 0.82, arm: 0.88, hunch: 0.02 },
+  cannon: { s: 1.12, th: 0.56, sh: 0.6, ft: 0.18, cw: 1.12, arm: 1.12, hunch: 0.1 },
+};
+const MECH_LEG = { th: 0.74, sh: 0.76, ft: 0.16 }; // (kept for anything that still asks; each mech carries its own J.LEG)
+const _mgeo = {};
+function mRound(w, h, d, r) { // a box with rounded edges (extruded rounded rectangle, bevelled faces), centred
+  const key = [w, h, d, r].map(v => v.toFixed(3)).join(); if (_mgeo[key]) return _mgeo[key];
+  r = Math.min(r, w / 2 - 0.004, h / 2 - 0.004); const b = Math.min(r * 0.6, d / 3), x = w / 2 - r, y = h / 2 - r, S = new THREE.Shape();
+  S.moveTo(-x, -h / 2); S.lineTo(x, -h / 2); S.quadraticCurveTo(w / 2, -h / 2, w / 2, -y); S.lineTo(w / 2, y); S.quadraticCurveTo(w / 2, h / 2, x, h / 2); S.lineTo(-x, h / 2); S.quadraticCurveTo(-w / 2, h / 2, -w / 2, y); S.lineTo(-w / 2, -y); S.quadraticCurveTo(-w / 2, -h / 2, -x, -h / 2);
+  const g = new THREE.ExtrudeGeometry(S, { depth: Math.max(0.002, d - 2 * b), bevelEnabled: true, bevelThickness: b, bevelSize: b * 0.8, bevelSegments: 1, curveSegments: 2 }); g.center(); g.computeVertexNormals();
+  return (_mgeo[key] = g);
+}
+function mPart(par, geo, mat, x, y, z, rz, ry, rx, sx, sy, sz) { const m = new THREE.Mesh(geo, mat); m.position.set(x || 0, y || 0, z || 0); m.rotation.set(rx || 0, ry || 0, rz || 0); if (sx) m.scale.set(sx, sy || sx, sz || sx); par.add(m); return m; }
+const mRB = (par, mat, w, h, d, r, x, y, z, rz, ry, rx) => mPart(par, mRound(w, h, d, r), mat, x, y, z, rz, ry, rx);
+const mTaper = (r1, r2, h, seg) => { const key = 't' + [r1, r2, h, seg || 8].join(); return _mgeo[key] || (_mgeo[key] = new THREE.CylinderGeometry(r1, r2, h, seg || 8).translate(0, -h / 2, 0)); };
+const mBall = r => _mgeo['b' + r] || (_mgeo['b' + r] = new THREE.SphereGeometry(r, 10, 7));
 function mkMech(k) {
-  const M = MECHS[k] || MECHS[4], g = new THREE.Group(), st = M.style, J = { k, st, legs: [], arms: [], flames: [], blades: [] };
-  const main = lam(M.col[0]), dark = lam(M.col[1]), acc = lam(M.col[2]), steel = lam('#7d848c'), blk = lam('#18191b'), hyd = lam('#b8b2a0');
+  const M = MECHS[k] || MECHS[4], st = M.style, D = MECH_DIM[st] || MECH_DIM.slim, g = new THREE.Group(), J = { k, st, D, LEG: { th: D.th, sh: D.sh, ft: D.ft }, legs: [], arms: [], flames: [], blades: [] };
+  const lit = c => new THREE.MeshLambertMaterial({ color: c, flatShading: false });
+  const main = lit(M.col[0]), dark = lit(M.col[1]), acc = lit(M.col[2]), steel = lit('#80878f'), blk = lit('#17181a'), hyd = lit('#c4bea9'), line = lit('#101113');
   const glow = new THREE.MeshBasicMaterial({ color: M.glow }), glowA = new THREE.MeshBasicMaterial({ color: M.glow, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false });
   const flameM = new THREE.MeshBasicMaterial({ color: '#ffb35a', transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false });
-  const big = st === 'big' || st === 'cannon', slim = st === 'slim' || st === 'scout', fly = st === 'fly', scout = st === 'scout', worker = st === 'worker', cannon = st === 'cannon', wS = big ? 1.12 : worker ? 1.05 : scout ? 0.82 : slim ? 0.9 : 0.95;
-  const pel = new THREE.Group(); pel.position.y = 1.5; g.add(pel); J.pel = pel;
-  // pelvis: hip block, groin plate, hip actuators
-  vBox(pel, dark, 0.5, 0.3, 0.62 * wS, 0, 0, 0); vBox(pel, main, 0.18, 0.34, 0.34, 0.24, -0.06, 0, -0.2); vBox(pel, acc, 0.02, 0.12, 0.2, 0.34, -0.04, 0, -0.2);
-  for (const s of [-1, 1]) { vCyl(pel, steel, 0.14, 0.14, 0.12, 0, -0.04, s * 0.33 * wS, 'z', 10); vBox(pel, main, 0.42, 0.26, 0.08, 0, -0.12, s * 0.42 * wS, 0, 0, s * 0.18); } // hip joints, skirt plates
-  // legs
+  const big = st === 'big' || st === 'cannon', fly = st === 'fly', scout = st === 'scout', worker = st === 'worker', cannon = st === 'cannon', edge = st === 'slim';
+  const cw = D.cw, A = D.arm, hipY = D.th + D.sh + D.ft - 0.05;
+  const root = new THREE.Group(); root.scale.setScalar(D.s); g.add(root); J.root = root;
+  const pel = new THREE.Group(); pel.position.y = hipY; root.add(pel); J.pel = pel;
+  // pelvis: a rounded hip block, a groin guard, ball joints, skirt plates that flare out
+  mRB(pel, dark, 0.46, 0.28, 0.6 * cw, 0.07, 0, 0, 0); mRB(pel, main, 0.2, 0.3, 0.3 * cw, 0.06, 0.22, -0.06, 0, -0.25); mRB(pel, acc, 0.03, 0.12, 0.16, 0.012, 0.33, -0.04, 0, -0.25);
+  for (const s of [-1, 1]) { mPart(pel, mBall(0.13 * A), steel, 0, -0.05, s * 0.32 * cw); mRB(pel, main, 0.4, 0.24, 0.07, 0.05, -0.02, -0.12, s * 0.42 * cw, 0, 0, s * 0.22); mRB(pel, line, 0.38, 0.015, 0.075, 0.005, -0.02, -0.06, s * 0.43 * cw, 0, 0, s * 0.22); }
+  // legs: tapered thigh with a front plate and a ram behind, a ball knee with a cap, a shin with a guard and calf, a splayed foot
   for (const s of [-1, 1]) {
-    const hip = new THREE.Group(); hip.position.set(0, -0.06, s * 0.36 * wS); pel.add(hip);
-    vBox(hip, dark, 0.3 * wS, MECH_LEG.th, 0.28 * wS, 0, -MECH_LEG.th / 2, 0);                                       // thigh frame
-    vBox(hip, main, 0.12, MECH_LEG.th * 0.8, 0.3 * wS, 0.15 * wS, -MECH_LEG.th * 0.46, 0);                            // thigh armour (front)
-    vBox(hip, main, 0.26 * wS, 0.3, 0.06, 0, -0.3, s * 0.16 * wS);                                                      // outer plate
-    vRod(hip, hyd, [-0.12, -0.12, 0], [-0.12, -MECH_LEG.th + 0.08, 0], 0.03);                                          // hydraulic ram behind
-    const kn = new THREE.Group(); kn.position.y = -MECH_LEG.th; hip.add(kn);
-    vCyl(kn, steel, 0.13 * wS, 0.13 * wS, 0.26 * wS, 0, 0, 0, 'z', 10); vBox(kn, acc, 0.16, 0.18, 0.2 * wS, 0.12, 0.02, 0, -0.3); // knee + kneecap
-    vBox(kn, dark, 0.26 * wS, MECH_LEG.sh, 0.26 * wS, -0.02, -MECH_LEG.sh / 2, 0);                                      // shin frame
-    vBox(kn, main, 0.14, MECH_LEG.sh * 0.86, 0.3 * wS, 0.13 * wS, -MECH_LEG.sh * 0.5, 0, 0.06);                        // shin guard
-    vBox(kn, main, 0.2 * wS, 0.34, 0.1, -0.1, -0.3, s * 0.15 * wS, 0, 0, s * 0.1);                                    // calf plate
-    vRod(kn, hyd, [-0.15, -0.1, s * 0.06], [-0.12, -MECH_LEG.sh + 0.1, s * 0.06], 0.025);
-    if (fly) vCyl(kn, blk, 0.07, 0.09, 0.14, -0.18, -0.5, 0, 'y', 8);                                                   // calf thrusters
-    const an = new THREE.Group(); an.position.y = -MECH_LEG.sh; kn.add(an);
-    vCyl(an, steel, 0.09, 0.09, 0.2, 0, 0, 0, 'z', 8);
-    vBox(an, dark, 0.56 * wS, MECH_LEG.ft, 0.34 * wS, 0.08, -0.08, 0); vBox(an, main, 0.2, 0.1, 0.36 * wS, 0.3 * wS, -0.06, 0, -0.25); // foot, toe cap
-    for (const t of [-1, 1]) vBox(an, blk, 0.12, 0.06, 0.1, 0.4 * wS, -0.13, t * 0.11 * wS);                         // toes
-    vBox(an, blk, 0.12, 0.08, 0.2, -0.24, -0.11, 0);                                                                   // heel spur
+    const hip = new THREE.Group(); hip.position.set(0, -0.06, s * 0.34 * cw); pel.add(hip);
+    mPart(hip, mTaper(0.15 * A, 0.12 * A, D.th), dark, 0, 0, 0, 0, 0, 0, 1, 1, 0.92);
+    mRB(hip, main, 0.13, D.th * 0.78, 0.27 * A, 0.05, 0.13 * A, -D.th * 0.45, 0, 0.05); mRB(hip, line, 0.135, 0.015, 0.275 * A, 0.006, 0.13 * A, -D.th * 0.3, 0, 0.05);
+    mRB(hip, main, 0.24 * A, D.th * 0.4, 0.06, 0.04, -0.02, -D.th * 0.35, s * 0.15 * A, 0, 0, s * 0.08);
+    vRod(hip, hyd, [-0.12, -0.1, 0], [-0.11, -D.th + 0.08, 0], 0.025);
+    const kn = new THREE.Group(); kn.position.y = -D.th; hip.add(kn);
+    mPart(kn, mBall(0.12 * A), steel, 0, 0, 0); mRB(kn, acc, 0.14, 0.2, 0.2 * A, 0.05, 0.12, 0.02, 0, -0.35);
+    mPart(kn, mTaper(0.12 * A, 0.09 * A, D.sh), dark, -0.02, 0, 0, 0, 0, 0, 1, 1, 0.95);
+    mRB(kn, main, 0.13, D.sh * 0.84, 0.28 * A, 0.05, 0.12 * A, -D.sh * 0.48, 0, 0.07); mRB(kn, line, 0.135, 0.015, 0.285 * A, 0.006, 0.12 * A, -D.sh * 0.62, 0, 0.07);
+    mPart(kn, mBall(0.14 * A), main, -0.09, -D.sh * 0.32, 0, 0, 0, 0, 0.8, 1.5, 0.95);                                      // calf
+    vRod(kn, hyd, [-0.14, -0.08, s * 0.06], [-0.11, -D.sh + 0.1, s * 0.06], 0.02);
+    if (fly) mPart(kn, mTaper(0.06, 0.085, 0.16, 10), blk, -0.17, -D.sh * 0.55, 0);
+    const an = new THREE.Group(); an.position.y = -D.sh; kn.add(an);
+    mPart(an, mBall(0.085 * A), steel, 0, 0, 0);
+    mRB(an, dark, 0.54 * A, D.ft, 0.32 * A, 0.05, 0.08, -0.08, 0); mRB(an, main, 0.22, 0.1, 0.34 * A, 0.04, 0.28 * A, -0.06, 0, -0.22);
+    for (const t of [-1, 1]) mRB(an, blk, 0.13, 0.06, 0.1, 0.025, 0.38 * A, -0.13, t * 0.1 * A, 0, t * 0.15);
+    mRB(an, blk, 0.12, 0.08, 0.18, 0.03, -0.23, -0.11, 0);
     J.legs.push({ hip, kn, an, s });
   }
-  // torso: waist (turns toward the aim), abdomen, chest with the reactor, back pack
-  const tor = new THREE.Group(); tor.position.y = 0.16; pel.add(tor); J.tor = tor;
-  vCyl(tor, steel, 0.2, 0.24, 0.2, 0, 0.06, 0, 'y', 10);
-  for (let a = 0; a < 3; a++) vBox(tor, a % 2 ? dark : main, 0.36 - a * 0.02, 0.08, 0.5 * wS + a * 0.04, 0.03, 0.18 + a * 0.09, 0);   // abdomen bands
+  // torso: waist ring (turns toward the aim), segmented abdomen, chest with the reactor, collar, back pack
+  const tor = new THREE.Group(); tor.position.y = 0.15; pel.add(tor); J.tor = tor;
+  mPart(tor, mTaper(0.2 * cw, 0.24 * cw, 0.14, 12), steel, 0, 0.14, 0);
+  for (let a = 0; a < 3; a++) mPart(tor, mTaper(0.24 * cw - a * 0.01, 0.22 * cw + a * 0.01, 0.08, 10), a % 2 ? dark : main, 0.02, 0.22 + a * 0.085, 0, 0, 0, 0, 1.15, 1, 1.25);
   const ch = new THREE.Group(); ch.position.y = 0.42; tor.add(ch); J.ch = ch;
-  vBox(ch, dark, 0.6, 0.62, 0.92 * wS, -0.02, 0.32, 0);                                                                 // chest core
-  for (const s of [-1, 1]) vBox(ch, main, 0.18, 0.5, 0.44 * wS, 0.28, 0.36, s * 0.24 * wS, 0, s * 0.22);                 // pec plates angled in
-  vBox(ch, main, 0.5, 0.12, 0.96 * wS, 0.02, 0.66, 0); vBox(ch, acc, 0.52, 0.03, 0.2, 0.03, 0.73, 0);                   // collar + stripe
-  vCyl(ch, blk, 0.2, 0.2, 0.06, 0.36, 0.34, 0, 'x', 16);                                                               // reactor housing
-  J.core = vCyl(ch, glow, 0.15, 0.15, 0.04, 0.39, 0.34, 0, 'x', 16); J.coreHalo = vCyl(ch, glowA, 0.28, 0.28, 0.02, 0.4, 0.34, 0, 'x', 16);
-  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.025, 6, 18), steel); ring.rotation.y = Math.PI / 2; ring.position.set(0.39, 0.34, 0); ch.add(ring);
-  for (let a = 0; a < 6; a++) { const q = a / 6 * Math.PI * 2; vBox(ch, steel, 0.03, 0.05, 0.02, 0.41, 0.34 + Math.sin(q) * 0.2, Math.cos(q) * 0.2, q); } // reactor clamps
-  vBox(ch, dark, 0.34, 0.56, 0.7 * wS, -0.42, 0.32, 0);                                                                 // back pack
-  for (let a = 0; a < 4; a++) vBox(ch, blk, 0.02, 0.04, 0.5 * wS, -0.6, 0.16 + a * 0.1, 0);                             // vents
-  if (big) for (const s of [-1, 1]) { vCyl(ch, steel, 0.07, 0.08, 0.5, -0.5, 0.8, s * 0.2, 'y', 8); vCyl(ch, blk, 0.05, 0.05, 0.04, -0.5, 1.06, s * 0.2, 'y', 8); } // exhaust stacks
-  if (st === 'slim') for (let a = 0; a < 4; a++) vBox(ch, acc, 0.22 - a * 0.03, 0.06, 0.03, -0.62, 0.62 - a * 0.13, 0, 0.5);   // spine fins
-  if (fly) { // wings and twin jets
-    for (const s of [-1, 1]) { const wg = new THREE.Group(); wg.position.set(-0.5, 0.5, s * 0.3); wg.rotation.set(s * 0.35, s * 0.5, 0.25); ch.add(wg); vBox(wg, main, 0.5, 0.04, 0.9, -0.1, 0, s * 0.45); vBox(wg, acc, 0.4, 0.05, 0.12, -0.08, 0.01, s * 0.86); J.wings = (J.wings || []).concat(wg); }
-    for (const s of [-1, 1]) { vCyl(ch, steel, 0.1, 0.13, 0.26, -0.62, 0.1, s * 0.16, 'y', 10); const f = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.6, 8).rotateX(Math.PI).translate(0, -0.3, 0), flameM); f.position.set(-0.62, -0.04, s * 0.16); ch.add(f); J.flames.push(f); }
+  mRB(ch, dark, 0.58, 0.6, 0.9 * cw, 0.12, -0.02, 0.32, 0);
+  for (const s of [-1, 1]) { mRB(ch, main, 0.2, 0.5, 0.44 * cw, 0.08, 0.27, 0.36, s * 0.24 * cw, 0, s * 0.24); mRB(ch, line, 0.21, 0.015, 0.4 * cw, 0.006, 0.28, 0.22, s * 0.24 * cw, 0, s * 0.24); }
+  mRB(ch, main, 0.5, 0.12, 0.94 * cw, 0.05, 0.02, 0.66, 0); mRB(ch, acc, 0.52, 0.035, 0.22, 0.012, 0.03, 0.73, 0);
+  vCyl(ch, blk, 0.2, 0.2, 0.06, 0.35, 0.34, 0, 'x', 18);
+  J.core = vCyl(ch, glow, 0.15, 0.15, 0.04, 0.38, 0.34, 0, 'x', 18); J.coreHalo = vCyl(ch, glowA, 0.28, 0.28, 0.02, 0.39, 0.34, 0, 'x', 18);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.028, 6, 22), steel); ring.rotation.y = Math.PI / 2; ring.position.set(0.38, 0.34, 0); ch.add(ring);
+  for (let a = 0; a < 6; a++) { const q = a / 6 * Math.PI * 2; vBox(ch, steel, 0.03, 0.05, 0.02, 0.4, 0.34 + Math.sin(q) * 0.2, Math.cos(q) * 0.2, q); }
+  mRB(ch, dark, 0.34, 0.54, 0.7 * cw, 0.1, -0.42, 0.32, 0);
+  for (let a = 0; a < 4; a++) mRB(ch, blk, 0.02, 0.035, 0.48 * cw, 0.01, -0.6, 0.16 + a * 0.1, 0);
+  if (big && !cannon) for (const s of [-1, 1]) { mPart(ch, mTaper(0.07, 0.085, 0.5, 10), steel, -0.5, 1.05, s * 0.2); vCyl(ch, blk, 0.05, 0.05, 0.04, -0.5, 1.06, s * 0.2, 'y', 10); }
+  if (edge) for (let a = 0; a < 4; a++) mRB(ch, acc, 0.22 - a * 0.03, 0.06, 0.03, 0.012, -0.62, 0.62 - a * 0.13, 0, 0.5);
+  if (fly) {
+    for (const s of [-1, 1]) { const wg = new THREE.Group(); wg.position.set(-0.5, 0.5, s * 0.3); wg.rotation.set(s * 0.35, s * 0.5, 0.25); ch.add(wg); mRB(wg, main, 0.5, 0.05, 0.9, 0.02, -0.1, 0, s * 0.45); mRB(wg, acc, 0.4, 0.055, 0.12, 0.02, -0.08, 0.01, s * 0.86); J.wings = (J.wings || []).concat(wg); }
+    for (const s of [-1, 1]) { mPart(ch, mTaper(0.1, 0.13, 0.26, 12), steel, -0.62, 0.23, s * 0.16); const f = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.6, 10).rotateX(Math.PI).translate(0, -0.3, 0), flameM); f.position.set(-0.62, -0.04, s * 0.16); ch.add(f); J.flames.push(f); }
   }
-  // head / cockpit
+  // head / cockpit: a rounded helmet, a wrap-around visor, a chin, a crest that differs per mech
   const hd = new THREE.Group(); hd.position.set(0.04, 0.78, 0); ch.add(hd); J.head = hd;
-  vCyl(hd, steel, 0.1, 0.12, 0.08, 0, 0.02, 0, 'y', 8);
-  vBox(hd, main, 0.34, 0.24, 0.32, 0.02, 0.17, 0); vBox(hd, dark, 0.2, 0.08, 0.34, 0.1, 0.07, 0);                    // helmet, jaw
-  vBox(hd, glow, 0.03, 0.05, 0.26, 0.2, 0.19, 0); vBox(hd, glowA, 0.04, 0.12, 0.34, 0.21, 0.19, 0);                   // visor
-  if (big) vBox(hd, acc, 0.36, 0.05, 0.36, 0.03, 0.3, 0);                                                              // armoured brow
-  if (st === 'slim') { vBox(hd, acc, 0.3, 0.05, 0.03, -0.02, 0.38, 0, 0.5); vBox(hd, acc, 0.12, 0.2, 0.025, 0.12, 0.36, 0, -0.4); } // horn crest
-  if (fly) for (const s of [-1, 1]) vBox(hd, acc, 0.26, 0.03, 0.08, -0.08, 0.3, s * 0.14, 0.35, 0, s * 0.3);          // swept fins
-  // arms
+  mPart(hd, mTaper(0.1, 0.12, 0.08, 10), steel, 0, 0.06, 0);
+  mRB(hd, main, 0.32, 0.24, 0.3, 0.09, 0.02, 0.17, 0); mRB(hd, dark, 0.18, 0.08, 0.3, 0.03, 0.1, 0.06, 0);
+  const vis = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.022, 4, 14, Math.PI * 0.8), glow); vis.rotation.set(Math.PI / 2, 0, -Math.PI * 0.4); vis.position.set(0.03, 0.19, 0); hd.add(vis);
+  vBox(hd, glowA, 0.04, 0.1, 0.32, 0.2, 0.19, 0);
+  if (big) mRB(hd, acc, 0.36, 0.05, 0.34, 0.02, 0.03, 0.3, 0);
+  if (edge) { mRB(hd, acc, 0.3, 0.05, 0.03, 0.012, -0.02, 0.38, 0, 0.5); mRB(hd, acc, 0.12, 0.2, 0.025, 0.01, 0.12, 0.36, 0, -0.4); }
+  if (fly) for (const s of [-1, 1]) mRB(hd, acc, 0.26, 0.03, 0.08, 0.012, -0.08, 0.3, s * 0.14, 0.35, 0, s * 0.3);
+  if (scout) for (const s of [-1, 1]) mRB(hd, acc, 0.06, 0.18, 0.03, 0.012, -0.02, 0.34, s * 0.12, -0.3);
+  if (worker) { mRB(hd, acc, 0.34, 0.04, 0.32, 0.015, 0.02, 0.31, 0); mPart(hd, mBall(0.04), lit('#ffcc33'), 0.05, 0.36, 0); }    // hard hat + beacon
+  // arms: ball shoulder under a curved pauldron, tapered upper arm, elbow, a gauntlet forearm, a fist with fingers
   for (const s of [-1, 1]) {
-    const sh = new THREE.Group(); sh.position.set(-0.02, 0.48, s * (0.58 * wS + 0.06)); ch.add(sh);
-    vCyl(sh, steel, 0.14, 0.14, 0.18, 0, 0, 0, 'z', 10);
-    const pd = vBox(sh, main, 0.52 * wS, 0.26, 0.4 * wS, 0, 0.12, s * 0.06, 0, 0, s * 0.3); vBox(sh, acc, 0.54 * wS, 0.05, 0.1, 0, 0.2, s * 0.2, 0, 0, s * 0.3); // pauldron + stripe
-    vBox(sh, dark, 0.22 * wS, 0.6, 0.22 * wS, 0, -0.34, 0);                                                              // upper arm
-    vRod(sh, hyd, [0.12, -0.06, 0], [0.12, -0.58, 0], 0.025);
+    const sh = new THREE.Group(); sh.position.set(-0.02, 0.48, s * (0.56 * cw + 0.06)); ch.add(sh);
+    mPart(sh, mBall(0.14 * A), steel, 0, 0, 0);
+    if (worker) { mRB(sh, main, 0.42, 0.2, 0.36, 0.08, 0, 0.1, s * 0.06, 0, 0, s * 0.25); for (let q = 0; q < 3; q++) mRB(sh, q % 2 ? blk : acc, 0.06, 0.205, 0.365, 0.01, -0.12 + q * 0.12, 0.1, s * 0.06, 0, 0, s * 0.25); } // hazard-striped shoulder guards
+    const pd = new THREE.Mesh(new THREE.SphereGeometry(0.27 * A, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.5), main); if (worker) pd.visible = false; pd.scale.set(1.15, 0.75, 1); pd.rotation.x = s * 0.35; pd.position.set(0, 0.06, s * 0.05); sh.add(pd);
+    const ps = new THREE.Mesh(new THREE.TorusGeometry(0.255 * A, 0.018, 4, 18), acc); if (worker) ps.visible = false; ps.rotation.x = Math.PI / 2 + s * 0.35; ps.scale.set(1.15, 1, 1); ps.position.set(0, 0.07, s * 0.05); sh.add(ps);
+    mPart(sh, mTaper(0.11 * A, 0.095 * A, 0.6), dark, 0, -0.04, 0);
+    vRod(sh, hyd, [0.12, -0.08, 0], [0.11, -0.58, 0], 0.02);
     const el = new THREE.Group(); el.position.y = -0.66; sh.add(el);
-    vCyl(el, steel, 0.1, 0.1, 0.22 * wS, 0, 0, 0, 'z', 8);
-    const fa = big ? 0.36 : 0.28; vBox(el, main, fa, 0.6, fa, 0, -0.32, 0); vBox(el, dark, fa * 0.7, 0.16, fa + 0.04, 0, -0.18, 0); // forearm + band
-    vBox(el, blk, 0.3 * wS, 0.26, 0.26 * wS, 0, -0.72, 0); for (let a = 0; a < 4; a++) vBox(el, steel, 0.06, 0.05, 0.06 * wS, 0.16 * wS, -0.68 - (a % 2) * 0.01, (a - 1.5) * 0.065 * wS); // fist, knuckles
-    if (big) vBox(el, acc, 0.08, 0.5, 0.42, 0, -0.32, s * 0.18);                                                        // forearm shield plates
-    if (st === 'slim') { const bl = new THREE.Group(); bl.position.set(0.1, -0.5, 0); el.add(bl); vBox(bl, lam('#e8eef2'), 0.04, 1.1, 0.12, 0, -0.42, 0); vBox(bl, glow, 0.02, 1.0, 0.03, 0.025, -0.4, 0); J.blades.push(bl); } // arm blade
-    if (fly) vCyl(el, blk, 0.06, 0.08, 0.16, -0.16, -0.3, 0, 'y', 8);
-    J.arms.push({ sh, el, s, fist: vMark(el, 0.12, -0.74, 0), tip: J.blades.length && slim ? vMark(J.blades[J.blades.length - 1], 0, -0.95, 0) : null });
+    mPart(el, mBall(0.1 * A), steel, 0, 0, 0);
+    mPart(el, mTaper(0.11 * A, 0.15 * A, 0.56, 10), main, 0, -0.02, 0, 0, 0, 0, 1.05, 1, 1);                               // gauntlet widens to the wrist
+    mRB(el, dark, 0.2 * A, 0.12, 0.32 * A, 0.04, 0.02, -0.18, 0); mRB(el, line, 0.03, 0.4, 0.1, 0.01, 0.15 * A, -0.32, 0);
+    mRB(el, blk, 0.27 * A, 0.22, 0.25 * A, 0.07, 0, -0.71, 0);                                                                  // fist
+    for (let a = 0; a < 4; a++) mRB(el, steel, 0.07, 0.06, 0.055 * A, 0.02, 0.14 * A, -0.67 - (a % 2) * 0.012, (a - 1.5) * 0.06 * A);
+    mRB(el, steel, 0.06, 0.1, 0.05, 0.02, 0.08, -0.62, -s * 0.12 * A, 0, 0, s * 0.4);                                       // thumb
+    if (big && !cannon) mRB(el, acc, 0.08, 0.5, 0.42, 0.03, 0, -0.32, s * 0.18);
+    if (edge) { const bl = new THREE.Group(); bl.position.set(0.1, -0.5, 0); el.add(bl); const blade = new THREE.Mesh(new THREE.ConeGeometry(0.07, 1.15, 4).scale(0.5, 1, 1.6).translate(0, -0.5, 0).rotateX(Math.PI), lit('#e8eef2')); blade.rotation.x = Math.PI; bl.add(blade); vBox(bl, glow, 0.012, 0.9, 0.02, 0.02, -0.42, 0); J.blades.push(bl); }
+    if (fly) mPart(el, mTaper(0.06, 0.08, 0.16, 10), blk, -0.15, -0.24, 0);
+    J.arms.push({ sh, el, s, fist: vMark(el, 0.12, -0.74, 0), tip: edge ? vMark(J.blades[J.blades.length - 1], 0, -0.95, 0) : null });
   }
-  // (round 34b) what the vehicle turned into still shows: wheels, cargo box, rotor, tracks and guns ride on the mech
-  const tyre = lam('#1a1a1c'), rim = lam('#9aa0a6');
-  const wheelOn = (par, x, y, z, r, ry) => { const w = new THREE.Group(); w.position.set(x, y, z); w.rotation.y = ry || 0; par.add(w); vCyl(w, tyre, r, r, 0.08, 0, 0, 0, 'z', 14); vCyl(w, rim, r * 0.55, r * 0.55, 0.09, 0, 0, 0, 'z', 8); return w; };
-  if (scout) { J.kib = [wheelOn(ch, -0.55, 0.45, 0, 0.32, Math.PI / 2), wheelOn(ch, -0.55, 0.05, 0, 0.32, Math.PI / 2)]; vBox(ch, acc, 0.06, 0.5, 0.04, -0.5, 0.25, 0); vRod(ch, steel, [0.1, 0.95, 0.12], [0.0, 1.45, 0.25], 0.012); } // bike wheels on the back, an antenna
-  if (st === 'slim') for (const s2 of [-1, 1]) wheelOn(J.arms[s2 < 0 ? 0 : 1].sh, -0.05, 0.22, s2 * 0.3, 0.2, 0);                       // motorbike wheels as shoulder pads
-  if (worker) { vBox(ch, lam('#6a5a3a'), 0.42, 0.5, 0.86, -0.62, 0.32, 0); for (let a2 = 0; a2 < 3; a2++) vBox(ch, lam('#4a3e28'), 0.44, 0.03, 0.88, -0.62, 0.12 + a2 * 0.2, 0); // cargo box on the back
-    for (const A of J.arms) { vBox(A.el, steel, 0.42, 0.06, 0.4, 0.14, -0.86, 0, -0.35); for (let t2 = -1; t2 <= 1; t2++) vBox(A.el, dark, 0.12, 0.05, 0.05, 0.36, -0.94, t2 * 0.14, -0.35); } } // shovel hands
-  if (fly) { const rot = new THREE.Group(); rot.position.set(-0.45, 0.95, 0); ch.add(rot); vCyl(rot, steel, 0.05, 0.05, 0.12, 0, 0, 0, 'y', 8); for (let b2 = 0; b2 < 2; b2++) vBox(rot, dark, 1.4, 0.02, 0.1, 0, 0.06, 0, 0, b2 * Math.PI / 2); J.rotor = rot; } // folded rotor on the back
-  if (cannon) { for (const s2 of [-1, 1]) { const gun = new THREE.Group(); gun.position.set(-0.15, 0.82, s2 * 0.42); ch.add(gun); vBox(gun, dark, 0.36, 0.22, 0.24, 0, 0, 0); vCyl(gun, main, 0.06, 0.07, 0.9, 0.55, 0.02, 0, 'x', 10); vBox(gun, blk, 0.08, 0.1, 0.1, 1.0, 0.02, 0); (J.guns = J.guns || []).push(gun); } // shoulder cannons
-    for (const G of J.legs) { vBox(G.kn, tyre, 0.08, 0.6, 0.3, -0.2, -0.38, 0); for (let t2 = 0; t2 < 5; t2++) vBox(G.kn, steel, 0.09, 0.03, 0.31, -0.22, -0.14 - t2 * 0.12, 0); } } // track pads on the shins
+  // what the vehicle turned into still shows: wheels, cargo box, rotor, tracks and guns ride on the mech
+  const tyre = lit('#1a1a1c'), rim = lit('#9aa0a6');
+  const wheelOn = (par, x, y, z, r, ry) => { const w = new THREE.Group(); w.position.set(x, y, z); w.rotation.y = ry || 0; par.add(w); vCyl(w, tyre, r, r, 0.08, 0, 0, 0, 'z', 16); vCyl(w, rim, r * 0.55, r * 0.55, 0.09, 0, 0, 0, 'z', 10); const tr = new THREE.Mesh(new THREE.TorusGeometry(r * 0.78, 0.01, 4, 16), rim); w.add(tr); return w; };
+  if (scout) { J.kib = [wheelOn(ch, -0.58, 0.48, 0, 0.3, Math.PI / 2), wheelOn(ch, -0.58, 0.08, 0, 0.3, Math.PI / 2)]; vRod(ch, steel, [0.1, 0.95, 0.12], [0.0, 1.45, 0.25], 0.012); }
+  if (edge) for (const A2 of J.arms) wheelOn(A2.sh, -0.05, 0.24, A2.s * 0.3, 0.2, 0);
+  if (worker) { const box = lit('#b8893a'), box2 = lit('#9a6f2e'), tape = lit('#e8d9a8'); mRB(ch, steel, 0.06, 0.7, 0.8, 0.02, -0.5, 0.36, 0); // a rack of parcels on the back
+    for (const [x, y, z, w, h, d, b] of [[-0.68, 0.16, -0.2, 0.34, 0.3, 0.36, box], [-0.68, 0.16, 0.2, 0.34, 0.28, 0.34, box2], [-0.7, 0.46, 0, 0.3, 0.3, 0.42, box], [-0.66, 0.72, -0.1, 0.26, 0.22, 0.28, box2]]) { mRB(ch, b, w, h, d, 0.02, x, y, z); mRB(ch, tape, w + 0.005, 0.04, d + 0.005, 0.005, x, y, z); mRB(ch, tape, w + 0.006, h + 0.006, 0.04, 0.005, x, y, z); }
+  }
+  if (fly) { const rot = new THREE.Group(); rot.position.set(-0.45, 0.95, 0); ch.add(rot); vCyl(rot, steel, 0.05, 0.05, 0.12, 0, 0, 0, 'y', 8); for (let b2 = 0; b2 < 2; b2++) mRB(rot, dark, 1.4, 0.02, 0.1, 0.01, 0, 0.06, 0, 0, b2 * Math.PI / 2); J.rotor = rot; }
+  if (cannon) { for (const s2 of [-1, 1]) { const gun = new THREE.Group(); gun.position.set(-0.15, 0.84, s2 * 0.44); ch.add(gun); mRB(gun, dark, 0.38, 0.24, 0.26, 0.06, 0, 0, 0); mPart(gun, mTaper(0.07, 0.06, 0.95, 12), main, 0.12, 0.02, 0, Math.PI / 2); mRB(gun, blk, 0.09, 0.11, 0.11, 0.03, 1.08, 0.02, 0); (J.guns = J.guns || []).push(gun); }
+    for (const G of J.legs) { mRB(G.kn, tyre, 0.09, D.sh * 0.8, 0.3, 0.03, -0.21, -D.sh * 0.5, 0); for (let t2 = 0; t2 < 5; t2++) vBox(G.kn, steel, 0.09, 0.025, 0.31, -0.23, -0.12 - t2 * D.sh * 0.15, 0); } }
   g.traverse(o => { if (o.isMesh && !o.material.transparent && o.material.type !== 'MeshBasicMaterial') o.castShadow = true; });
   g.userData.J = J; return g;
 }
+
 // (round 34b) pose the mech: every joint is a damped spring toward a target pose, so moves flow into each other.
 // Walking: stride matched to ground speed (no foot sliding), hips sway and drop on each step, shoulders counter-turn, fists up in a guard,
 // walks backwards instead of turning round when you back away. Attacks: a three-hit combo with wind-up, strike (torso twist, step in,
@@ -466,44 +507,49 @@ const MSTRIDE = 2.4; // ground covered per full walk cycle at full stride
 // (round 34b) the folded-up pose a mech unfolds from when a vehicle transforms: knees to the chest, arms swept back, torso turned round
 const MFOLD = { thL: 1.3, thR: 1.3, knL: 2.4, knR: 2.4, lean: 0.55, cr: 0, bob: 0, roll: 0, yawH: 0, twist: Math.PI, yaw: 0, sh0: -2.4, sh1: -2.4, el0: 2.5, el1: 2.5, ab0: 0.9, ab1: 0.9, blade: -2.9 };
 function mechTick(p, mm, dt, xf = 1) { // xf < 1: mid-transform (0 = folded up, 1 = standing)
-  const J = mm.userData.J, M = mechOf(p), L = MECH_LEG, k = J.k;
+  const J = mm.userData.J, M = mechOf(p), L = J.LEG || MECH_LEG, k = J.k, DS = J.D ? J.D.s : 1;
   // hit-stop: a landed blow freezes the attack pose for a moment
   if (p._mhs > 0) { p._mhs -= dt; dt *= 0.08; }
-  const sp = p._spd || 0, maxS = BAL.pSpeed * M.spd, a = clamp(sp / (maxS * 0.85), 0, 1.1), air = (p.jz || 0) > 0.05;
+  const sp = p._spd || 0, maxS = BAL.pSpeed * M.spd, a = clamp(sp / (maxS * 0.85), 0, 1.1), air = (p.jz || 0) > 0.05 || airborne(p);
   const back = p._mback ? -1 : 1;
   // stride: phase advances with distance walked, so the planted foot stays put
-  J.ph = (J.ph || 0) + back * (sp * dt / Math.max(0.6, MSTRIDE * (0.45 + 0.55 * Math.min(1, a)))) * Math.PI * 2;
+  J.ph = (J.ph || 0) + back * (sp * dt / Math.max(0.6, MSTRIDE * DS * (L.th + L.sh) / 1.5 * (0.45 + 0.55 * Math.min(1, a)))) * Math.PI * 2; // longer legs, longer strides
   const ph = J.ph, sw = Math.sin(ph), cw = Math.cos(ph);
   if (p._mpT != null) p._mpT += dt; if (p._msT != null) p._msT += dt;
   const sT = p._msT != null ? p._msT : 99, sk = p._msK, t = p._mpT != null ? p._mpT : 99, side = p._mpS ? 1 : 0, combo = p._mcombo || 0;
   // ---- target pose: locomotion + guard ----
-  const T = { lean: 0.1 * a, crouch: 0.04 * a, twist: 0, roll: 0, yawH: 0, sh: [0.55, 0.55], el: [1.35, 1.35], ab: [0.12, 0.12], blade: -2.9, flame: 0 };
+  const T = { lean: 0.1 * a + (J.D ? J.D.hunch : 0), crouch: 0.04 * a, twist: 0, roll: 0, yawH: 0, sh: [0.3, 0.3], el: [1.95, 1.95], /* guard: elbows down, fists up by the chin */ ab: [0.12, 0.12], blade: -2.9, flame: 0 };
   T.thL = 0.46 * a * sw; T.thR = -0.46 * a * sw;
   T.knL = 0.12 + a * (sw < 0 ? 0.25 : 0) + Math.max(0, -cw * back) * 0.85 * a; T.knR = 0.12 + a * (sw > 0 ? 0.25 : 0) + Math.max(0, cw * back) * 0.85 * a; // knee lifts on the swing leg
   T.bob = -Math.abs(cw) * 0.06 * a; T.roll = sw * 0.05 * a; T.yawH = sw * 0.1 * a; T.twist = -sw * 0.14 * a; // hips sway / drop, shoulders counter-turn
   T.sh[0] += -sw * 0.14 * a; T.sh[1] += sw * 0.14 * a;                                                      // fists bob with the stride
   if (!a) { const br = Math.sin(W.t * 1.6 + p.i) * 0.012; T.bob = br; T.sh[0] += br * 2; T.sh[1] += br * 2; } // idle: servo breathing
-  // ---- attacks: wind-up 0.12 s, strike to 0.2, hold to 0.3, recover to 0.6 ----
+  // ---- attacks (round 34d): every melee mech hits DOWN at zombie height; the ranged ones aim and fire. wind-up 0.12 s, strike to 0.2, hold to 0.3, recover to 0.6 ----
   if (t < 0.6) {
-    const f = t < 0.12 ? -ease(t / 0.12) * 0.6 : t < 0.2 ? -0.6 + ease((t - 0.12) / 0.08) * 1.6 : t < 0.3 ? 1 : 1 - ease((t - 0.3) / 0.3); // -0.6 cocked back … 1 fully out
-    const o = 1 - side, sgn = side ? 1 : -1, on = Math.max(0, f), cock = Math.max(0, -f / 0.6);
-    if (J.st === 'slim') { // 赤刃: wide horizontal slashes (forehand, backhand, then an overhead chop)
-      if (combo < 2) { T.sh[side] = 1.35; T.el[side] = 0.35 + cock * 0.6; T.ab[side] = 0.9 * cock - 0.5 * on; T.twist = sgn * (0.9 * cock - 1.1 * on); }
-      else { T.sh[side] = 2.6 * cock + 0.9 * on + (1 - cock - on) * 0.55; T.el[side] = 0.2; T.twist = 0; T.crouch += 0.18 * on; }
-      T.blade = f > -0.3 ? 0 : -2.9; T.lean += 0.15 * on;
-    } else if (combo === 2 && (J.st === 'big' || J.st === 'worker' || J.st === 'cannon')) { // heavy finisher: a double-fisted hammer blow
-      for (const s2 of [0, 1]) { T.sh[s2] = 2.7 * cock + 1.0 * on + 0.55 * (1 - cock - on); T.el[s2] = 0.3; T.ab[s2] = 0.05; } T.crouch += 0.22 * on; T.lean += 0.3 * on;
-    } else if (combo === 2) { // 苍隼 finisher: a rising uppercut
-      T.sh[side] = 0.2 * cock + 2.2 * on + 0.55 * (1 - cock - on); T.el[side] = 1.6 * cock + 0.7 * on; T.crouch += 0.15 * cock - 0.05 * on; T.twist = sgn * -0.5 * on;
-    } else { // jab / cross: cock back, then drive the fist straight out with the hips and shoulders behind it
-      T.sh[side] = 0.55 - 0.45 * cock + 0.95 * on; T.el[side] = 1.35 + 0.5 * cock - 1.3 * on; T.ab[side] = 0.12 + 0.1 * on;
-      T.sh[o] = 0.65; T.el[o] = 1.55;                                                                        // the other fist pulls back to the chin
-      T.twist = sgn * (0.35 * cock - 0.65 * on); T.yawH += sgn * -0.15 * on; T.lean += 0.2 * on; T.crouch += 0.05 * on;
+    const f = t < 0.12 ? -ease(t / 0.12) * 0.6 : t < 0.2 ? -0.6 + ease((t - 0.12) / 0.08) * 1.6 : t < 0.3 ? 1 : 1 - ease((t - 0.3) / 0.3); // -0.6 cocked … 1 struck
+    const o = 1 - side, sgn = side ? 1 : -1, on = Math.max(0, f), cock = Math.max(0, -f / 0.6), rest = 1 - cock - on, st = J.st;
+    if (st === 'slim') { // 赤刃: chops from high to the ground; the third is a two-handed cleave
+      const arms = combo === 2 ? [0, 1] : [side];
+      for (const s2 of arms) { T.sh[s2] = 2.7 * cock + 0.25 * on + 0.3 * rest; T.el[s2] = 0.25; T.ab[s2] = combo === 2 ? 0.05 : 0.3 * cock; }
+      T.blade = f > -0.3 ? 0 : -2.9; T.lean += 0.42 * on - 0.1 * cock; T.crouch += 0.26 * on; T.twist = combo === 2 ? 0 : sgn * (0.4 * cock - 0.5 * on);
+    } else if (st === 'big') { // 铁卫: hammer fist into the ground, a stomp, then the fist cannon
+      if (combo === 0) { T.sh[side] = 2.8 * cock + 0.35 * on + 0.3 * rest; T.el[side] = 0.2; T.lean += 0.45 * on; T.crouch += 0.28 * on; T.twist = sgn * -0.3 * on; T.sh[o] = 0.7; T.el[o] = 1.5; }
+      else if (combo === 1) { const up = t < 0.15 ? ease(t / 0.15) : 0, dn = t >= 0.15 && t < 0.3 ? 1 : t >= 0.3 ? 1 - ease((t - 0.3) / 0.3) : 0; if (side) { T.thL = 1.1 * up + 0.25 * dn; T.knL = 1.5 * up + 0.2 * dn; } else { T.thR = 1.1 * up + 0.25 * dn; T.knR = 1.5 * up + 0.2 * dn; } T.crouch += 0.18 * dn; T.lean += 0.1 * dn; T.ab = [0.5 * up + 0.3, 0.5 * up + 0.3]; T.sh = [0.3, 0.3]; T.el = [0.9, 0.9]; }
+      else { T.sh[side] = 0.55 + 1.0 * (on + cock * 0.6); T.el[side] = 1.3 * (1 - on) + 0.05; T.twist = sgn * (0.3 * cock - 0.5 * on); T.lean -= 0.12 * on; T.sh[o] = 0.65; T.el[o] = 1.55; }
+    } else if (st === 'worker') { // 工蜂: an overhand throw (a parcel from the rack)
+      T.sh[side] = 2.7 * cock + 1.25 * on + 0.3 * rest; T.el[side] = 0.9 * cock + 0.25; T.ab[side] = 0.25; T.twist = sgn * (0.45 * cock - 0.55 * on); T.lean += 0.25 * on - 0.12 * cock; T.sh[o] = 0.6; T.el[o] = 1.5;
+    } else if (st === 'scout') { // 疾风: low snap kicks, arms swinging against them
+      const thK = -0.45 * cock + 1.15 * on, knK = 1.3 * cock + 0.1 * on + 0.2 * rest; if (side) { T.thL = thK; T.knL = knK; } else { T.thR = thK; T.knR = knK; }
+      T.sh[side] = 0.2; T.sh[o] = 1.0 * on + 0.3 * rest; T.el = [1.6, 1.6]; T.lean -= 0.15 * on; T.twist = sgn * 0.3 * on;
+    } else if (st === 'cannon') { // 重炮: the right arm comes up as a gun and kicks back on each shot; the shoulder guns lift too
+      T.sh[1] = 1.5; T.el[1] = 0.05 + 0.35 * on * (t < 0.25 ? 1 : 0); T.twist = -0.25; T.sh[0] = 0.75; T.el[0] = 1.5; T.lean -= 0.08 * on;
+    } else { // 苍隼: rockets from the shoulder pods, arms braced
+      T.sh = [0.8, 0.8]; T.el = [1.1, 1.1]; T.lean -= 0.1 * on;
     }
-    if (on > 0.3 && !a) { T.thL += side ? 0.22 : -0.1; T.thR += side ? -0.1 : 0.22; T.knL += 0.15; T.knR += 0.15; }      // a step into the blow
   }
   // ---- skills ----
   if (sk === 'slam' && sT < 0.95) { if (sT < 0.3) { const f = ease(sT / 0.3); T.sh = [2.8 * f, 2.8 * f]; T.el = [0.3, 0.3]; T.crouch = 0.1 * f; T.lean = -0.1 * f; } else if (sT < 0.45) { const f = ease((sT - 0.3) / 0.15); T.sh = [2.8 - f * 2.2, 2.8 - f * 2.2]; T.el = [0.1, 0.1]; T.crouch = 0.1 + f * 0.38; T.lean = f * 0.45; } else { const f = ease((sT - 0.45) / 0.5); T.sh = [0.6 + 0.0 * f, 0.6]; T.crouch = 0.48 * (1 - f); T.lean = 0.45 * (1 - f); } }
+  if (sk === 'parcels' && sT < 0.7) { const f = sT < 0.25 ? ease(sT / 0.25) : 1 - ease((sT - 0.25) / 0.45); T.sh = [2.6 * f + 0.3 * (1 - f), 2.6 * f + 0.3 * (1 - f)]; T.el = [0.4, 0.4]; T.lean -= 0.2 * f; T.crouch += 0.1 * f; }
   if (sk === 'dash' && sT < 0.55) { const f = sT < 0.4 ? 1 : 1 - (sT - 0.4) / 0.15; T.lean = 0.55 * f; T.sh = [-0.5 * f + 0.55 * (1 - f), 1.4 * f + 0.55 * (1 - f)]; T.el = [0.2, 0.3]; T.ab = [0.3, 1.0 * f]; T.crouch = 0.15 * f; T.thL = 0.6 * f; T.thR = -0.5 * f; T.knL = 0.5 * f + 0.15; T.knR = 0.9 * f + 0.15; T.blade = 0; T.flame = 1; T.twist = -0.6 * f; }
   if (sk === 'leap' && sT < 1.3) { if (sT < 0.15) T.crouch = ease(sT / 0.15) * 0.35; T.flame = air || sT < 1.05 ? 1 : 0; }
   if (air) { T.thL = 0.55; T.thR = 0.15; T.knL = 1.2; T.knR = 0.75; T.sh = [0.9, 0.9]; T.el = [0.9, 0.9]; T.ab = [0.5, 0.5]; T.flame = 1; T.lean = 0.15; }
@@ -523,6 +569,7 @@ function mechTick(p, mm, dt, xf = 1) { // xf < 1: mid-transform (0 = folded up, 
   J.head.rotation.set(0, -twist * 0.4, lean * 0.4);
   J.arms.forEach((A, n) => { A.sh.rotation.z = S('sh' + n, T.sh[n], 380); A.el.rotation.z = S('el' + n, T.el[n], 380); A.sh.rotation.x = A.s * S('ab' + n, T.ab[n], 300); });
   for (const b of J.blades) b.rotation.z = S('blade', T.blade, 600);
+  if (J.buckets) { const bz = S('bucket', J.st === 'worker' && t < 0.45 && t > 0.1 ? -0.8 : 0.5, 400); for (const b of J.buckets) b.rotation.z = bz; } // the bucket curls as it scoops
   // ---- effects: reactor, thrusters, blade trail, footfalls ----
   const pulse = 0.85 + Math.sin(W.t * 4 + p.i) * 0.15; J.coreHalo.scale.set(1, pulse, pulse);
   for (const f of J.flames) { f.visible = T.flame > 0 || sp > maxS * 0.9; f.scale.y = (T.flame ? 1.4 : 0.6) * (0.85 + FXR() * 0.3); }

@@ -53,7 +53,7 @@ function frame(now) {
           if (NETROLE === 'host') hostNetTick(dt);
         }
       }
-      smoothZ(dt);
+      smoothZ(dt); visTick(); // (round 34d) who can see what (also with drawing off)
       if (!(DBG && DBG.skipDraw)) { draw(dt); drawMinimap(dt); } else updateCamera(dt);
       hudTick(dt); audioTick(dt);
     } else {
