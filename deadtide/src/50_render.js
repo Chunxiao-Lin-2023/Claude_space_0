@@ -554,6 +554,7 @@ function drawOverlay() {
   for (const z of W.zs) { const T = ZT[z.k]; if (!T || !T.elite || z.hp <= 0 || z.ck || z.ckF || z.sleep || !zSeen(z) || lcHide(Math.floor(z.x), Math.floor(z.y), z.L)) continue; // (round 35) 能力者: name and health over the head
     const [sx, sy, sz] = w2s(z.x, z.y, z.z + T.h * T.sc / 1.2 + 0.55); if (sz > 1 || sx < -60 || sx > VW + 60 || sy < -30 || sy > VH + 30) continue;
     html += `<div class="elt" style="left:${sx | 0}px;top:${sy | 0}px;color:${T.elite.col}">${T.name}<i><b style="width:${clamp(z.hp / (z.max || 100), 0, 1) * 100 | 0}%;background:${T.elite.col}"></b></i></div>`; }
+  html += kxpLabels(); // (round 36l) 破绽 labels
   for (const f of RND.floats) { const [sx, sy] = w2s(f.x, f.y, f.z); html += `<div class="fl" style="left:${sx | 0}px;top:${sy | 0}px;opacity:${clamp(2.2 - f.t, 0, 1).toFixed(2)};color:${f.col}">${f.text}</div>`; }
   // 尸城求生: sleepers show a "z", a growing "?" while they're noticing you, a "!" as they wake
   if (isSiege()) {
@@ -693,6 +694,8 @@ function fxEvent(e) {
     case 'respawn': uiMsg(W.p[e.p].name + ' 回来了' + '（在据点）', '#8fe39a'); break;
     case 'task': sfx('craft'); uiMsg('任务完成：' + e.txt + '  奖励 ' + e.rt, '#ffd76a'); toast('任务完成 · ' + e.rt, '#ffd76a'); break;
     case 'tp': if (guest && e.p === ME) { const p = W.p[ME]; p.x = e.x; p.y = e.y; p.L = e.l; p.vx = p.vy = 0; } break;
+    case 'ktell': case 'krock': case 'kspike': case 'kroar': case 'kxp': kaijuFx(e); break; // (round 36l)
+    case 'vbomb': { for (let k = 0; k < 14; k++) addP({ x: e.x, y: e.y, z: e.z + 0.2, vx: frnd(-2.5, 2.5), vy: frnd(-2.5, 2.5), vz: frnd(0.5, 3), col: k % 3 ? '#8fd14a' : '#c8f080', s: 0.08, life: 0.6 }); addDecal && addDecal(e.x, e.y, e.z, 0.9, '#5a7a2a'); sfx('flesh', e.x, e.y); break; } // (round 36l) 尸鹫 acid glob
     case 'kacid': for (let k = 0; k < 10; k++) { const a = e.a + frnd(-0.45, 0.45), v = frnd(5, 9); addP({ x: e.x + Math.cos(e.a) * 1.4, y: e.y + Math.sin(e.a) * 1.4, z: e.z, vx: Math.cos(a) * v, vy: Math.sin(a) * v, vz: frnd(-1.5, 0.5), g: -3, col: k % 3 ? '#9dff3a' : '#5f9a20', s: 0.1, life: 0.8, floor: e.z - 3 }); } if (thr('kacid', 0.3)) sfx('acid', e.x, e.y); break; // (round 34) kaiju acid breath
     case 'xform': { const q = W.p[e.o]; if (!q) break; q._xfT = 0; q._xfTo = e.to; q._xfS = -1; sfx('xform', q.x, q.y); shake(q.x, q.y, 0.12); break; } // (round 34b) start the 1 s transformation on every screen
     case 'mmove': if (guest && e.p === ME) { const p = W.p[ME]; if (e.m.dash) p.dash = e.m.dash; if (e.m.jmp) p.jmp = e.m.jmp; } break; // (round 34) a mech dash / leap the host started for this screen's survivor

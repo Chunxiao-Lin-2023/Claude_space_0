@@ -720,10 +720,11 @@ function fireWeapon(p, wi) {
 }
 function hurtZombie(z, dmg, p, kx, ky, quiet) {
   if (z.hp <= 0 || z.hidden) return;
+  if (dmg > 0 && z.xpT > 0) dmg *= BAL.xposeMul; /* (round 36l) 破绽: an opening doubles the damage */ if (dmg > 0 && z.ks && z.kt === 1) z.ks.dm = (z.ks.dm || 0) + dmg; if (dmg > 0 && z.es) z.es.dm = (z.es.dm || 0) + dmg;
   if (dmg > 0 && W.wardens && W.wardens.length) { const w = shieldFor(z, p); if (w) { // (round 35) inside a 护盾者's bubble: the bubble takes it first
     const a = Math.min(w.sh, dmg); w.sh -= a; dmg -= a; if (kx || ky) { kx *= 0.3; ky *= 0.3; }
     if (!(W.shFx > W.t)) { W.shFx = W.t + 0.12; emit({ k: 'elx', a: 'shhit', id: w.id, x: r2(z.x), y: r2(z.y), z: r2(z.z + z.h * 0.6) }); }
-    if (w.sh <= 0) { w.sh = 0; w.shT = ZT.warden.elite.cd; emit({ k: 'elx', a: 'break', id: w.id, x: r2(w.x), y: r2(w.y), z: r2(w.z) }); }
+    if (w.sh <= 0) { w.sh = 0; w.shT = ZT.warden.elite.cd; emit({ k: 'elx', a: 'break', id: w.id, x: r2(w.x), y: r2(w.y), z: r2(w.z) }); zExpose(w, 2.0, 'break'); } /* (round 36l) a broken bubble leaves it open */
     if (dmg <= 0) return; } }
   if (z.ck && dmg > 0) { z.ck = 0; z.ckT = 3; emit({ k: 'elx', a: 'reveal', id: z.id, x: r2(z.x), y: r2(z.y), z: r2(z.z) }); } // (round 35) a hit shows the 隐身者
   if (z.sleep) { if (dmg >= z.hp) z.sleep = 0; else siegeWake(z); } // killed in its sleep: nobody else hears it
@@ -733,7 +734,7 @@ function hurtZombie(z, dmg, p, kx, ky, quiet) {
 }
 let KSRC = '';
 function killZombie(z, p) {
-  z.hp = 0; W.kills++; if (p) p.kills++; if (p && inMech(p)) p.bat = Math.min(BAL.mechBat, (p.bat || 0) + 1.5); // (round 36) a mech recharges a little on every kill
+  z.hp = 0; W.kills++; if (p) p.kills++; if (z.mins && z.mins.length) for (const o of W.zs) if (o.hp > 0 && z.mins.includes(o.id)) { o.mins = null; killZombie(o, null); } /* (round 36l) the ones a 唤尸者 raised drop with it */ if (p && inMech(p)) p.bat = Math.min(BAL.mechBat, (p.bat || 0) + 1.5); // (round 36) a mech recharges a little on every kill
   taskAdd('kill'); if (ZT[z.k].boss || ZT[z.k].elite || z.k === 'brute' || z.k === 'armored') taskAdd('elite'); if (KSRC === 'nade') taskAdd('nade'); // (round 32) permanent task counters
   if (ZT[z.k].blast) zBlast(z.x, z.y, z.z + 0.5);
   emit({ k: 'zdie', x: r2(z.x), y: r2(z.y), z: r2(z.z), t: z.k, f: r2(z.face), id: z.id, gz: ZT[z.k].fly ? r2(skyTop(z.x, z.y) * FH) : undefined }); // (round 35) gz: where a shot bird lands
@@ -1032,9 +1033,9 @@ function startNight() {
   }
   if (blood) q.push({ t: dur * 0.55, k: 'boss', side: front[0] });
   // (round 35) flocks of crows from night 2 (bats too from night 4), one 能力者 elite from night 3 (one more every 3 nights, at most 4)
-  if (n >= 2) for (let f = 0, nf = Math.min(5, 1 + Math.floor((n - 2) / 2)); f < nf; f++) { const bat = n >= 4 && rand() < 0.45, k = bat ? 'bat' : 'crow', sz = bat ? 3 + Math.floor(rand() * 3) : 4 + Math.floor(rand() * 4), side = front[Math.floor(rand() * front.length)], E = W.edges[side] || [], at = E.length ? Math.floor(rand() * E.length) : -1, t0 = dur * (0.15 + rand() * 0.7), fk = W.gid = (W.gid || 0) + 1; for (let j = 0; j < sz; j++) q.push({ t: t0 + j * 0.25, k, side, at, f: 0, fk }); }
+  if (n >= 2) for (let f = 0, nf = Math.min(5, 1 + Math.floor((n - 2) / 2)); f < nf; f++) { const bat = n >= 4 && rand() < 0.45, k = bat ? 'bat' : 'crow', sz = bat ? 3 + Math.floor(rand() * 3) : 4 + Math.floor(rand() * 4), side = front[Math.floor(rand() * front.length)], E = W.edges[side] || [], at = E.length ? Math.floor(rand() * E.length) : -1, t0 = dur * (0.15 + rand() * 0.7), fk = W.gid = (W.gid || 0) + 1; for (let j = 0; j < sz; j++) q.push({ t: t0 + j * 0.25, k, side, at, f: 0, fk }); if (n >= 3 && !bat && rand() < 0.6) for (let j = 0, nv = n >= 7 ? 2 : 1; j < nv; j++) q.push({ t: t0 + 0.4 + j * 0.5, k: 'vult', side, at, f: 0, fk }); } /* (round 36l) 尸鹫 bombers ride with crow flocks from night 3 */
   if (n >= 3) for (let e = 0, ne = Math.min(4, 1 + Math.floor((n - 3) / 3)); e < ne; e++) q.push({ t: dur * (0.25 + rand() * 0.55), k: ELITES[Math.floor(rand() * ELITES.length)], side: front[e % front.length] });
-  if (KAIJU_ON && n >= 5 && n % 2 === 1) for (let k = 0; k < (n >= 11 ? 2 : 1); k++) q.push({ t: dur * (0.35 + k * 0.3), k: ['kjaw', 'ktail', 'kdig'][Math.floor(rand() * 3)], side: front[k % front.length] }); // (round 34) a kaiju every other night from night 5 (two from night 11)
+  if (KAIJU_ON && n >= 5 && n % 2 === 1) for (let k = 0; k < (n >= 11 ? 2 : 1); k++) q.push({ t: dur * (0.35 + k * 0.3), k: ['kjaw', 'ktail', 'kdig'][Math.floor(rand() * 3)], side: front[k % front.length], km: n >= 11 ? BAL.kaijuPair : 1 }); // (round 34) a kaiju every other night from night 5 (two from night 11)
   q.sort((a, b) => a.t - b.t);
   W.spawnQ = q;
   const names = ['东', '南', '西', '北'];
@@ -1071,7 +1072,7 @@ function spawnZombie(k, side, at, f, g) {
   const list = W.edges[side] && W.edges[side].length ? W.edges[side] : W.edges[0];
   let [x, y, L] = list[at != null && at >= 0 && at < list.length ? at : Math.floor(rand() * list.length)];
   if (g) { const o = Math.round(rand() * 4 - 2), nx = x + Math.sign(W.radio.x - x) * o, ny = y + Math.sign(W.radio.y - y) * o, nL = inMap(nx, ny) ? gAt(nx, ny) : -1; if (nL >= 0 && standable(nx, ny, nL, 'z') && W.ff.rw[ci(nx, ny, nL)] < Infinity) { x = nx; y = ny; L = nL; } } // a herd is a crowd, not a queue
-  const hpM = BAL.hpMul(BAL.lvN(n)) * D.hp * (k === 'boss' ? 1 + n / 10 : 1) * (activeP().length > 1 ? 1.15 : 1);
+  const hpM = (Z.kaiju ? 1 + BAL.kaijuHpPer * (BAL.lvN(n) - 1) : BAL.hpMul(BAL.lvN(n))) * D.hp * (k === 'boss' ? 1 + n / 10 : 1) * (activeP().length > 1 ? 1.15 : 1); /* (round 36l) kaiju grow half as fast */
   const z = { id: W.zid++, k, x: x + 0.5, y: y + 0.5, L, z: L * FH, r: Z.r, h: Z.h, hp: Z.hp * hpM, max: Z.hp * hpM, spd: Z.spd * BAL.spdMul(BAL.lvN(n)) * (f || (0.85 + rand() * 0.3)), face: 0, cd: rand(), st: 'walk', stun: 0, kbx: 0, kby: 0, hitT: 0, atk: 0, anim: rand() * 6, seed: (rand() * 1e6) | 0, spitT: 1 + rand() * 2, climbT: 0 };
   if (Z.fly) z.z += Z.fly.alt; // (round 35) a flyer comes in already up in the air
   if (Z.elite) { z.eCD = 2 + rand() * 2; if (Z.elite.k === 'shield') z.sh = z.shMax = z.max * 0.6; if (Z.elite.k === 'cloak') z.ck = 1; }
@@ -1088,7 +1089,7 @@ function stepPhase(dt) {
   } else if (W.phase === 'night') {
     W.nightT += dt;
     let awake = 0; for (const z of W.zs) if (!z.sleep) awake++;
-    while (W.spawnQ.length && W.spawnQ[0].t <= W.nightT && awake++ < BAL.zCap()) { const s = W.spawnQ.shift(); const z = spawnZombie(s.k, s.side, s.at, s.f, s.g); if (s.g) z.g = s.g; if (s.fk) z.fk = s.fk; if (ZT[s.k].elite) say('能力者出现：' + ZT[s.k].name + '——' + ZT[s.k].elite.tip, ZT[s.k].elite.col); }
+    while (W.spawnQ.length && W.spawnQ[0].t <= W.nightT && awake++ < BAL.zCap()) { const s = W.spawnQ.shift(); const z = spawnZombie(s.k, s.side, s.at, s.f, s.g); if (s.km) { z.hp *= s.km; z.max *= s.km; } if (s.g) z.g = s.g; if (s.fk) z.fk = s.fk; if (ZT[s.k].elite) say('能力者出现：' + ZT[s.k].name + '——' + ZT[s.k].elite.tip, ZT[s.k].elite.col); }
     const minT = BAL.nightMin(W.night);
     // after the horde, small groups keep coming until the night has run its minimum length
     if (!W.spawnQ.length && W.nightT < minT) {

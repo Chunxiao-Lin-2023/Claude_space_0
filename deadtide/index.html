@@ -16,7 +16,8 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 canvas#cv{position:fixed;inset:0;width:100%;height:100%;display:block;cursor:crosshair;touch-action:none}
 #ov{position:fixed;inset:0;z-index:4;pointer-events:none;overflow:hidden}
 #hpov{position:fixed;inset:0;z-index:4;pointer-events:none;overflow:hidden}
-#ov .elt{position:absolute;transform:translate(-50%,-100%);font-size:11px;font-weight:800;text-shadow:0 0 3px #000,0 1px 3px #000;white-space:nowrap;text-align:center;pointer-events:none}
+#ov .kxp{position:absolute;transform:translate(-50%,-100%);font:700 13px/1 system-ui,sans-serif;color:#1a1408;background:#ffe14a;padding:3px 7px;border-radius:10px;box-shadow:0 0 12px rgba(255,225,74,.8);animation:kxpP .45s ease-in-out infinite alternate;white-space:nowrap;pointer-events:none}.kxp b{font-weight:800;margin-left:3px}@keyframes kxpP{from{transform:translate(-50%,-100%) scale(1)}to{transform:translate(-50%,-100%) scale(1.12)}}
+.elt{position:absolute;transform:translate(-50%,-100%);font-size:11px;font-weight:800;text-shadow:0 0 3px #000,0 1px 3px #000;white-space:nowrap;text-align:center;pointer-events:none}
 #ov .elt i{display:block;width:40px;height:4px;margin:2px auto 0;background:rgba(0,0,0,.6);border-radius:2px;overflow:hidden}#ov .elt b{display:block;height:100%}
 #ov .zmk{position:absolute;transform:translate(-50%,-100%);font-weight:900;text-shadow:0 0 3px #000,0 1px 3px #000,0 0 6px #000;pointer-events:none;font-family:system-ui,sans-serif}
 #ov .fl{position:absolute;transform:translate(-50%,-100%);font-weight:700;font-size:14px;text-shadow:0 1px 3px #000;white-space:nowrap}
@@ -717,7 +718,8 @@ body:not(.touch) #hTL .items{flex-wrap:wrap;gap:1px 10px}body:not(.touch):not([d
       <details><summary>道具（建造）</summary>按 <kbd>B</kbd> / 点「道具」拿出道具栏：<b>墙、地板、梯子、门、掩体、陷阱、机枪塔、探照灯、跳板</b>，同类的合在一格——<b>再点一次同一格（或点上面的小条）换材料</b>，比如木墙 → 砖墙 → 钢墙。放下去不分朝向：梯子会自己贴到能爬上去的那面墙。指哪放哪，按住拖动放一排；放一个扣一份材料，右键 / 「拆除」拆掉退一半。墙、地板、梯子、门只能在营地周围的黄框里放（尸城求生哪都能放）；<b>掩体、陷阱、地雷、机枪塔、探照灯、跳板哪都能放</b>（尸城求生里有些要先找到蓝图）。方块要有支撑，断了会连锁坍塌。楼上最外圈的墙是半人高的矮墙，能探身往下打。<br><b>跳板</b>：踩上去把你朝走的方向弹出约 5 格，前面有矮楼顶（最多高 2 层）就弹上去，用一次就没——被围住时的逃生道具。</details>
       <details><summary>载具</summary><b>自行车</b>快 70%，没有发动机（攻楼时不会吵醒楼里的丧尸，别的车会），泥地不减速，骑着开枪射速几乎不降；<b>摩托车</b>快 90%，后座带一个队友；<b>货运三轮</b>坐在车上就能搜东西（够得更远、时间减半、材料 +50%）；<b>装甲车</b>受到的伤害只剩 35%，撞开挡路的丧尸，后座带一个队友；<b>旋翼机</b>会飞，越过屋顶和尸群（丧尸咬不到，喷吐者还能打到），只能在地面或楼顶起飞（头顶不能有屋顶），一箱油飞 60 秒，没满随时能加（商店「载具」栏一键加满，或在有屋顶的房间里按 <kbd>F</kbd>），飞着用机头下的机枪打（机上自己的子弹，商店「武器 · 弹药」里买，最多存 500 发），手里的枪不能用，手雷能扔；后座能带一个队友（上去后旋翼空转约 1 秒，队友这时按 <kbd>T</kbd> 上来），后座的人能开枪；再按 <kbd>T</kbd> 降落，没油会自己降落；<b>坦克</b>自带炮塔，开火打炮弹（打到哪炸到哪，120 伤害、半径 2.3，1.6 秒一发；炮弹在商店「武器 · 弹药」栏买，车里最多 200 发），受到的伤害只剩 20%，撞开丧尸，但慢、太大进不了楼（有屋顶的地方开不进去）。<b>变形成机甲</b>：骑车时按 <kbd>X</kbd>（触屏：骑车时「刀」键变成「变形」），1 秒后载具站起来变成机甲，再按变回。每种载具一台：自行车→疾风（最快，低踢、滑铲）、摩托→赤刃（臂刃下劈、冲斩）、三轮→工蜂（扔快递、快递雨，能搜刮）、装甲车→铁卫（下砸拳 / 跺脚 / 拳头炮、震地，最耐打）、旋翼机→苍隼（火箭弹，技能键起飞 / 降落一直飞）、坦克→重炮（手臂炮、齐射用炮弹）。机甲会把路上的石头、灌木、栅栏踩平。开火 = 出拳，手雷键 = 技能；装甲打光或电用完会变回载具，装甲和电下车后慢慢恢复，商店「载具」栏能马上修好 / 充满；屋顶下站不起来。在商店「载具」栏或「装备」里选一辆当默认：<kbd>T</kbd> / 点「载具」就上这辆，再按下车；<kbd>Shift</kbd>+<kbd>T</kbd> / 长按「载具」换车。车上也能开枪，只是射速慢（司机 40%、后座 70%；自行车 80%），准度不变。<br><b>怪兽</b>：第 5 夜起隔夜出现（第 11 夜起两只），血很厚，每种有自己的大招，放之前地上会有红色范围提示、身上发光——<b>裂颚兽</b>喷酸（扇形）、<b>钢尾兽</b>甩尾（一圈）或低头冲锋（一条线）、<b>掘地兽</b>钻地从你脚下冒出来还带爬行尸。蓄力时用震地、爆破手雷等把它震晕能打断。</details>
       <details><summary>白天和永久任务</summary>出门砍树（木材）、采石（砖石），搜汽车、补给箱和废墟瓦砾（钢材、零件、弹药），离家越远收获越多；回来盖楼；在任何建筑里（或营地工作台）都能造枪、买弹药（按 C / 点「商店」）。河上只有两座桥，丧尸也只能从桥上过河。每 5 夜一次血月。<br>右上角「任务」小条点开是永久任务（击杀、搜索、建造、砍树采石、手雷击杀、整夜无人倒下……），每完成一档拿一个永久提升：生命上限、背包（弹药上限）、医疗包上限、手雷上限、复活次数。</details>
-      <details><summary>飞行丧尸和能力者</summary>第 2 夜起有<b>尸鸦</b>群（第 4 夜起还有吸血的<b>尸蝠</b>）：飞过墙和屋顶，在头顶盘旋，尖叫一声后朝你当时站的位置（地上红圈）俯冲，走开就扑空；坐旋翼机在天上也会被追；躲进有屋顶的楼里它们就够不着，看地上的影子判断高度。第 3 夜起每晚有<b>能力者</b>（脚下有彩色光圈、头顶有名字）：<b>闪影者</b>会瞬移到你身后砍一刀（看到紫光就闪开）；<b>唤尸者</b>会从地下叫出丧尸（晕住它能打断）；<b>护盾者</b>给周围的丧尸套蓝色护盾，站进护盾里打才打得动，爆破弹能直接打碎；<b>隐身者</b>隐身摸过来偷袭，挨打、着火、附近爆炸或进减速雷就现形。没坐机甲时能力者和怪兽打你伤害低一些；怪兽进不了楼，躲进楼里就安全。打死能力者掉零件、钢材和特殊手雷。</details>
+      <details><summary>飞行丧尸和能力者</summary>第 2 夜起有<b>尸鸦</b>群：飞过墙和屋顶在头顶盘旋，尖叫一声后朝地上红圈俯冲（走开就扑空），有时会沿一条红线低空扫过来（往旁边躲）；第 3 夜起混着大个的<b>尸鹫</b>，在高处往你要走到的地方丢酸液（红圈，别停在里面）；第 4 夜起有<b>尸蝠</b>，咬到可能扒在你身上吸血，用刀把它打下来。躲进有屋顶的楼里它们就够不着。第 3 夜起每晚有<b>能力者</b>（头顶有名字），每个都有破解办法，破解后它会露出<b>破绽</b>（黄色标签，几秒内受到双倍伤害）：<b>闪影者</b>瞬移到你身后（紫光），出现后有一拍才砍——这时打它就能反击，或者马上走开让它砍空；<b>唤尸者</b>会躲着你、从地下叫丧尸，追上去打，叫的时候打够伤害就打断，它死了叫出来的也跟着倒；<b>护盾者</b>给周围丧尸套护盾，站进护盾里打才打得动，但它会把里面的人震出去（红圈），震之前狠打它能连护盾一起打碎，爆破弹也能；<b>隐身者</b>摸过来时地上有淡淡的红点，偷袭前会闪一下——转身面对它（或打它）就能反击，背对就挨刀。打死能力者掉零件、钢材和特殊手雷。</details>
+      <details><summary>怪兽</summary>第 5 夜起隔夜来一只（第 11 夜起两只，每只血少一些）。每个大招都有红色预警，放完会露出<b>破绽</b>（双倍伤害）：喷完酸会喘气、甩尾后站不稳、冲锋撞到结实的墙会晕 3 秒、钻地冒出来会卡住、扑击落地会僵住；预警时打出足够伤害（或用机甲重击 / 爆炸晕住）能直接<b>打断</b>。裂颚兽会远距离<b>扑过来</b>（落点有红圈），钢尾兽会<b>扔巨石</b>（能砸墙），掘地兽会放一排<b>地刺</b>（红线）。怪兽能撞烂木墙木门，砖墙以上的楼里它进不来，但会用远程招数打你。血少于一半会<b>暴怒</b>：吼一声把人震开，技能更快。</details>
       <details><summary>视野和复活</summary>只看得到你和队友视野里的丧尸（画面和地图都是）：步行 18 格，越高看得越远，夜里看得近；装甲车只有 13 格，旋翼机在天上 26 格。丧尸在你们的视野外不会扑、冲、吐、叫或放技能。血少于 30% 屏幕四周会泛红、有心跳声。队友死了，你在任何建筑里或营地按交互键就能让他在你身边复活。</details>
       <details><summary>爬梯和翻越</summary>朝梯子走就爬上去，往下要继续推一下；丧尸爬梯子很慢（攀爬者除外）。没有跳键：走路碰到沙袋、拒马、掩体、栅栏、瓦砾和一人高的墙会自己翻过去，朝一格宽的空隙走会自己跳过去；丧尸不会翻，只能砸。</details>
       <details><summary>视角</summary>滚轮或 ＋/－ 缩放，Q / E 或 ⟲⟳ 转镜头。楼层视图默认跟随你所在的层，上面的楼层会自动隐藏；▲▼ 手动看别的层，「跟随我所在的层」恢复。</details>
@@ -5074,12 +5076,13 @@ const ZT = {
   summoner: { name: '召唤尸王', hp: 2100, spd: 0.72, r: 0.5, h: 2.3, dmg: 22, bdmg: 40, cd: 1.4, sc: 2.2, boss: 1, look: 'boss', skin: '#5a5470' },
   venom: { name: '毒液尸王', hp: 2300, spd: 0.85, r: 0.52, h: 2.1, dmg: 26, bdmg: 50, cd: 1.3, sc: 2.1, range: 12, boss: 1, look: 'bloater', skin: '#7a9a3a' },
   // (round 34) kaiju: walking monsters about 40-80% of a mech, each with its own telegraphed skill; from night 5 (level 3)
-  kjaw: { name: '裂颚兽', hp: 2600, spd: 0.95, r: 0.85, h: 3.2, dmg: 42, bdmg: 260, cd: 1.4, sc: 1, kb: 8, kaiju: 'acid', skin: '#4a6a3a' },
-  ktail: { name: '钢尾兽', hp: 3000, spd: 1.0, r: 0.9, h: 2.8, dmg: 45, bdmg: 300, cd: 1.6, sc: 1, kb: 10, kaiju: 'tail', skin: '#5a5a66' },
-  kdig: { name: '掘地兽', hp: 2300, spd: 0.9, r: 0.8, h: 2.5, dmg: 40, bdmg: 220, cd: 1.4, sc: 1, kb: 8, kaiju: 'dig', skin: '#7a5a3a' },
+  kjaw: { name: '裂颚兽', hp: 2000, spd: 0.95, r: 0.85, h: 3.2, dmg: 30, /* (round 36l) hp 2600 → 2000, bite 42 → 30 */ bdmg: 260, cd: 1.4, sc: 1, kb: 8, kaiju: 'acid', skin: '#4a6a3a' },
+  ktail: { name: '钢尾兽', hp: 2300, spd: 1.0, r: 0.9, h: 2.8, dmg: 32, /* (round 36l) 3000 → 2300, 45 → 32 */ bdmg: 300, cd: 1.6, sc: 1, kb: 10, kaiju: 'tail', skin: '#5a5a66' },
+  kdig: { name: '掘地兽', hp: 1800, spd: 0.9, r: 0.8, h: 2.5, dmg: 28, /* (round 36l) 2300 → 1800, 40 → 28 */ bdmg: 220, cd: 1.4, sc: 1, kb: 8, kaiju: 'dig', skin: '#7a5a3a' },
   armored: { name: '防暴尸', hp: 260, spd: 0.9, r: 0.36, h: 1.26, dmg: 12, bdmg: 16, cd: 1.1, sc: 1.3, armor: 0.3, lunge: { r: 2.8, cd: 5, dmg: 12 } }, // a shield-first lunge
   // (round 35) flyers: flocks that cruise over walls and roofs, circle you and dive in for a peck (36_beasts); a roof over your head keeps them off
   crow: { name: '尸鸦', hp: 22, spd: 4.2, r: 0.3, h: 0.5, dmg: 6, bdmg: 0, cd: 1, sc: 1, fly: { alt: 1.9, orbit: 3.2, dive: 8, cd: 2.4, spd: 2.0 } }, /* (round 36b) peck 5 → 6, dive every 3.4 → 2.4 s, dive speed ×1.8 → ×2.0 */
+  vult: { name: '尸鹫', hp: 60, spd: 3.4, r: 0.4, h: 0.6, dmg: 12, bdmg: 0, cd: 1, sc: 1, fly: { alt: 3.4, orbit: 4.4, dive: 10, cd: 3.2, spd: 1.6, bomb: 1 } }, // (round 36l) circles high and drops acid globs on the spot you are heading for (marked)
   bat: { name: '尸蝠', hp: 34, spd: 3.7, r: 0.32, h: 0.5, dmg: 7, bdmg: 0, cd: 1, sc: 1, fly: { alt: 2.2, orbit: 2.6, dive: 9, cd: 2.0, spd: 2.2, drain: 8 } }, /* (round 36b) bite 6 → 7, 2.7 → 2.0 s, ×2.0 → ×2.2 */ // a bite heals it
   // (round 35) 能力者: rare elites, each with one strong telegraphed skill (36_beasts), a coloured aura and a name over the head
   blinker: { name: '闪影者', hp: 520, spd: 1.55, r: 0.3, h: 1.3, dmg: 14, bdmg: 12, cd: 0.8, sc: 1.2, look: 'runner', skin: '#7a66aa', elite: { k: 'blink', cd: 6.5, col: '#b47aff', tip: '会瞬移到你身后再砍一刀，看到紫光就闪开' } },
@@ -5088,12 +5091,12 @@ const ZT = {
   shade: { name: '隐身者', hp: 420, spd: 1.5, r: 0.3, h: 1.25, dmg: 12, bdmg: 10, cd: 0.9, sc: 1.2, look: 'walker', skin: '#50505e', elite: { k: 'cloak', cd: 6, col: '#c0c0e0', tip: '隐身摸到你身边偷袭，留意空气里的扭曲，附近炸一下就现形' } },
 };
 const ELITES = ['blinker', 'caller', 'warden', 'shade'];
-const BUILD_TAG = '第 36 轮之十一'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
+const BUILD_TAG = '第 36 轮之十二'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
 // aim assist (SET.assist): fire-button lock range (x weapon range), lock-on time before it fires, spread while auto-aimed, mouse/finger magnet
 const PORT = 1.25; // firing port: your own shots pass a wall / door you built if it is this close to you
 const ASSIST = [{ name: '关', range: 0, acq: 0, spread: 1, mag: 0 }, { name: '标准', range: 0.75, acq: 0.3, spread: 1.5, mag: 1 }, { name: '强', range: 1, acq: 0, spread: 1, mag: 1 }];
 const assistLv = () => ASSIST[SET.assist == null ? 1 : SET.assist] || ASSIST[1];
-const ZKEYS = ['walker', 'runner', 'climber', 'spitter', 'brute', 'boss', 'dog', 'crawler', 'bloater', 'screamer', 'armored', 'leaper', 'digger', 'summoner', 'venom', 'kjaw', 'ktail', 'kdig', 'crow', 'bat', 'blinker', 'caller', 'warden', 'shade']; // order is the net id
+const ZKEYS = ['walker', 'runner', 'climber', 'spitter', 'brute', 'boss', 'dog', 'crawler', 'bloater', 'screamer', 'armored', 'leaper', 'digger', 'summoner', 'venom', 'kjaw', 'ktail', 'kdig', 'crow', 'bat', 'blinker', 'caller', 'warden', 'shade', 'vult']; // order is the net id
 
 /* ---------- scavenging / gathering ---------- */
 // vanish: searched once and gone (restocked at random places every dawn); otherwise a fixture that refills sometimes
@@ -5229,6 +5232,7 @@ const BAL = {
   flyHover: 2.2, flyClimb: 0.8, flyDrop: 0.6, fuelLow: 10, refuelT: 4, // (round 29) gyrocopter: cruise 2.2 floors over whatever is below, climb / descend rate (of the take-off curve per second), warn at 10 s of fuel, 4 s to refuel indoors
   zSlope: 0.45, zSlopeC: 0.7, // (round 36) zombie speed going UP a hill slope (climbers barely mind)
   workerGather: 0.6, workerRegrow: 0.6, // (round 36b) and 60% of what it gathered grows back at dawn // (round 36) 工蜂 passive: flattening a tree / rock / scrap / logs / bush gathers it, at this share of a normal gather
+  kaijuHpPer: 0.09, kaijuPair: 0.8, xposeMul: 2, // (round 36l) kaiju hp grows +9% a night (was +18% like everything), two in a night ×0.8 each; a 破绽 (opening) doubles the damage it takes
   bigFoot: 0.65, // (round 36) kaiju / 能力者 damage to someone not in a mech
   vis: { foot: 18, floor: 3.5, night: 0.85, mech: 20, fly: 28 }, /* (round 35) 12 / 2.5 / 0.75 / 14 / 20 → 16 / 3 / 0.8 / 18 / 26; (round 36) → 18 / 3.5 / 0.85 / 20 / 28 */ // (round 34d) how far you see zombies (shared with your teammate): on foot, + per floor up, × at night; vehicles have their own (VEH[].vis)
   nadeRange: 12, nadeDmg: 220, nadeR: 3.0, nadeFuse: 1.9, nadeLand: 0.35, nadeMin: 0.3, // (round 18: radius 2.8 -> 3.4, damage at the edge 35% -> 50%, goes off 0.35 s after landing where you aimed)
@@ -6936,10 +6940,11 @@ function fireWeapon(p, wi) {
 }
 function hurtZombie(z, dmg, p, kx, ky, quiet) {
   if (z.hp <= 0 || z.hidden) return;
+  if (dmg > 0 && z.xpT > 0) dmg *= BAL.xposeMul; /* (round 36l) 破绽: an opening doubles the damage */ if (dmg > 0 && z.ks && z.kt === 1) z.ks.dm = (z.ks.dm || 0) + dmg; if (dmg > 0 && z.es) z.es.dm = (z.es.dm || 0) + dmg;
   if (dmg > 0 && W.wardens && W.wardens.length) { const w = shieldFor(z, p); if (w) { // (round 35) inside a 护盾者's bubble: the bubble takes it first
     const a = Math.min(w.sh, dmg); w.sh -= a; dmg -= a; if (kx || ky) { kx *= 0.3; ky *= 0.3; }
     if (!(W.shFx > W.t)) { W.shFx = W.t + 0.12; emit({ k: 'elx', a: 'shhit', id: w.id, x: r2(z.x), y: r2(z.y), z: r2(z.z + z.h * 0.6) }); }
-    if (w.sh <= 0) { w.sh = 0; w.shT = ZT.warden.elite.cd; emit({ k: 'elx', a: 'break', id: w.id, x: r2(w.x), y: r2(w.y), z: r2(w.z) }); }
+    if (w.sh <= 0) { w.sh = 0; w.shT = ZT.warden.elite.cd; emit({ k: 'elx', a: 'break', id: w.id, x: r2(w.x), y: r2(w.y), z: r2(w.z) }); zExpose(w, 2.0, 'break'); } /* (round 36l) a broken bubble leaves it open */
     if (dmg <= 0) return; } }
   if (z.ck && dmg > 0) { z.ck = 0; z.ckT = 3; emit({ k: 'elx', a: 'reveal', id: z.id, x: r2(z.x), y: r2(z.y), z: r2(z.z) }); } // (round 35) a hit shows the 隐身者
   if (z.sleep) { if (dmg >= z.hp) z.sleep = 0; else siegeWake(z); } // killed in its sleep: nobody else hears it
@@ -6949,7 +6954,7 @@ function hurtZombie(z, dmg, p, kx, ky, quiet) {
 }
 let KSRC = '';
 function killZombie(z, p) {
-  z.hp = 0; W.kills++; if (p) p.kills++; if (p && inMech(p)) p.bat = Math.min(BAL.mechBat, (p.bat || 0) + 1.5); // (round 36) a mech recharges a little on every kill
+  z.hp = 0; W.kills++; if (p) p.kills++; if (z.mins && z.mins.length) for (const o of W.zs) if (o.hp > 0 && z.mins.includes(o.id)) { o.mins = null; killZombie(o, null); } /* (round 36l) the ones a 唤尸者 raised drop with it */ if (p && inMech(p)) p.bat = Math.min(BAL.mechBat, (p.bat || 0) + 1.5); // (round 36) a mech recharges a little on every kill
   taskAdd('kill'); if (ZT[z.k].boss || ZT[z.k].elite || z.k === 'brute' || z.k === 'armored') taskAdd('elite'); if (KSRC === 'nade') taskAdd('nade'); // (round 32) permanent task counters
   if (ZT[z.k].blast) zBlast(z.x, z.y, z.z + 0.5);
   emit({ k: 'zdie', x: r2(z.x), y: r2(z.y), z: r2(z.z), t: z.k, f: r2(z.face), id: z.id, gz: ZT[z.k].fly ? r2(skyTop(z.x, z.y) * FH) : undefined }); // (round 35) gz: where a shot bird lands
@@ -7248,9 +7253,9 @@ function startNight() {
   }
   if (blood) q.push({ t: dur * 0.55, k: 'boss', side: front[0] });
   // (round 35) flocks of crows from night 2 (bats too from night 4), one 能力者 elite from night 3 (one more every 3 nights, at most 4)
-  if (n >= 2) for (let f = 0, nf = Math.min(5, 1 + Math.floor((n - 2) / 2)); f < nf; f++) { const bat = n >= 4 && rand() < 0.45, k = bat ? 'bat' : 'crow', sz = bat ? 3 + Math.floor(rand() * 3) : 4 + Math.floor(rand() * 4), side = front[Math.floor(rand() * front.length)], E = W.edges[side] || [], at = E.length ? Math.floor(rand() * E.length) : -1, t0 = dur * (0.15 + rand() * 0.7), fk = W.gid = (W.gid || 0) + 1; for (let j = 0; j < sz; j++) q.push({ t: t0 + j * 0.25, k, side, at, f: 0, fk }); }
+  if (n >= 2) for (let f = 0, nf = Math.min(5, 1 + Math.floor((n - 2) / 2)); f < nf; f++) { const bat = n >= 4 && rand() < 0.45, k = bat ? 'bat' : 'crow', sz = bat ? 3 + Math.floor(rand() * 3) : 4 + Math.floor(rand() * 4), side = front[Math.floor(rand() * front.length)], E = W.edges[side] || [], at = E.length ? Math.floor(rand() * E.length) : -1, t0 = dur * (0.15 + rand() * 0.7), fk = W.gid = (W.gid || 0) + 1; for (let j = 0; j < sz; j++) q.push({ t: t0 + j * 0.25, k, side, at, f: 0, fk }); if (n >= 3 && !bat && rand() < 0.6) for (let j = 0, nv = n >= 7 ? 2 : 1; j < nv; j++) q.push({ t: t0 + 0.4 + j * 0.5, k: 'vult', side, at, f: 0, fk }); } /* (round 36l) 尸鹫 bombers ride with crow flocks from night 3 */
   if (n >= 3) for (let e = 0, ne = Math.min(4, 1 + Math.floor((n - 3) / 3)); e < ne; e++) q.push({ t: dur * (0.25 + rand() * 0.55), k: ELITES[Math.floor(rand() * ELITES.length)], side: front[e % front.length] });
-  if (KAIJU_ON && n >= 5 && n % 2 === 1) for (let k = 0; k < (n >= 11 ? 2 : 1); k++) q.push({ t: dur * (0.35 + k * 0.3), k: ['kjaw', 'ktail', 'kdig'][Math.floor(rand() * 3)], side: front[k % front.length] }); // (round 34) a kaiju every other night from night 5 (two from night 11)
+  if (KAIJU_ON && n >= 5 && n % 2 === 1) for (let k = 0; k < (n >= 11 ? 2 : 1); k++) q.push({ t: dur * (0.35 + k * 0.3), k: ['kjaw', 'ktail', 'kdig'][Math.floor(rand() * 3)], side: front[k % front.length], km: n >= 11 ? BAL.kaijuPair : 1 }); // (round 34) a kaiju every other night from night 5 (two from night 11)
   q.sort((a, b) => a.t - b.t);
   W.spawnQ = q;
   const names = ['东', '南', '西', '北'];
@@ -7287,7 +7292,7 @@ function spawnZombie(k, side, at, f, g) {
   const list = W.edges[side] && W.edges[side].length ? W.edges[side] : W.edges[0];
   let [x, y, L] = list[at != null && at >= 0 && at < list.length ? at : Math.floor(rand() * list.length)];
   if (g) { const o = Math.round(rand() * 4 - 2), nx = x + Math.sign(W.radio.x - x) * o, ny = y + Math.sign(W.radio.y - y) * o, nL = inMap(nx, ny) ? gAt(nx, ny) : -1; if (nL >= 0 && standable(nx, ny, nL, 'z') && W.ff.rw[ci(nx, ny, nL)] < Infinity) { x = nx; y = ny; L = nL; } } // a herd is a crowd, not a queue
-  const hpM = BAL.hpMul(BAL.lvN(n)) * D.hp * (k === 'boss' ? 1 + n / 10 : 1) * (activeP().length > 1 ? 1.15 : 1);
+  const hpM = (Z.kaiju ? 1 + BAL.kaijuHpPer * (BAL.lvN(n) - 1) : BAL.hpMul(BAL.lvN(n))) * D.hp * (k === 'boss' ? 1 + n / 10 : 1) * (activeP().length > 1 ? 1.15 : 1); /* (round 36l) kaiju grow half as fast */
   const z = { id: W.zid++, k, x: x + 0.5, y: y + 0.5, L, z: L * FH, r: Z.r, h: Z.h, hp: Z.hp * hpM, max: Z.hp * hpM, spd: Z.spd * BAL.spdMul(BAL.lvN(n)) * (f || (0.85 + rand() * 0.3)), face: 0, cd: rand(), st: 'walk', stun: 0, kbx: 0, kby: 0, hitT: 0, atk: 0, anim: rand() * 6, seed: (rand() * 1e6) | 0, spitT: 1 + rand() * 2, climbT: 0 };
   if (Z.fly) z.z += Z.fly.alt; // (round 35) a flyer comes in already up in the air
   if (Z.elite) { z.eCD = 2 + rand() * 2; if (Z.elite.k === 'shield') z.sh = z.shMax = z.max * 0.6; if (Z.elite.k === 'cloak') z.ck = 1; }
@@ -7304,7 +7309,7 @@ function stepPhase(dt) {
   } else if (W.phase === 'night') {
     W.nightT += dt;
     let awake = 0; for (const z of W.zs) if (!z.sleep) awake++;
-    while (W.spawnQ.length && W.spawnQ[0].t <= W.nightT && awake++ < BAL.zCap()) { const s = W.spawnQ.shift(); const z = spawnZombie(s.k, s.side, s.at, s.f, s.g); if (s.g) z.g = s.g; if (s.fk) z.fk = s.fk; if (ZT[s.k].elite) say('能力者出现：' + ZT[s.k].name + '——' + ZT[s.k].elite.tip, ZT[s.k].elite.col); }
+    while (W.spawnQ.length && W.spawnQ[0].t <= W.nightT && awake++ < BAL.zCap()) { const s = W.spawnQ.shift(); const z = spawnZombie(s.k, s.side, s.at, s.f, s.g); if (s.km) { z.hp *= s.km; z.max *= s.km; } if (s.g) z.g = s.g; if (s.fk) z.fk = s.fk; if (ZT[s.k].elite) say('能力者出现：' + ZT[s.k].name + '——' + ZT[s.k].elite.tip, ZT[s.k].elite.col); }
     const minT = BAL.nightMin(W.night);
     // after the horde, small groups keep coming until the night has run its minimum length
     if (!W.spawnQ.length && W.nightT < minT) {
@@ -7558,7 +7563,7 @@ function stepZombies(dt) {
     if (z.conf > 0) { if (z.wa == null || rand() < dt * 0.9) z.wa = rand() * Math.PI * 2; tx = z.x + Math.cos(z.wa); ty = z.y + Math.sin(z.wa); attackI = -1; z.chg = z.slam = null; z.tl = 0; } // lost in the smoke: wander
     if (tx != null && attackI < 0 && !z.climbing && field === pf && !(DBG && DBG.noChase)) { let tp = null, td = 7; for (const p of W.p) { if (!standingP(p) || p.L !== z.L) continue; const d = Math.hypot(p.x - z.x, p.y - z.y); if (d < td) { td = d; tp = p; } } // (round 34d) close and in plain sight: straight at you
       if (tp && zLineClear(z, tp.x, tp.y)) { tx = tp.x; ty = tp.y; } }
-    if (attackI >= 0 && Z.kaiju) { attackI = -1; tx = null; z.moving = false; } // (round 36) a kaiju doesn't tear into buildings: it is too big to get in and waits outside — a roof is a refuge on foot
+    if (attackI >= 0 && Z.kaiju && !(B[W.blk[attackI]] && B[W.blk[attackI]].hp <= 330)) { attackI = -1; tx = null; z.moving = false; } // (round 36l) a kaiju smashes through wood (walls, doors, boards: hp ≤ 330) but not brick / concrete — in a solid building it switches to its ranged attacks
     if (attackI >= 0) { zAttackCell(z, attackI); tx = null; }
     // bite players in reach
     for (const p of W.p) {
@@ -7672,6 +7677,11 @@ function flyerStep(z, Z, dt) {
   const cruise = () => Math.max(flyFloor(z.x, z.y), flyFloor(z.x + Math.cos(z.face) * 1.3, z.y + Math.sin(z.face) * 1.3)) + F.alt;
   let gx = z.x, gy = z.y, gz = z.z, spd = z.spd, vzMax = 3.5;
   const D = z.dv;
+  if (z.latch) { // (round 36l) a bat hanging on you: it drains you until you hit it (the knife does) or it has had enough
+    const L = z.latch, p = W.p[L.p]; L.t -= dt; L.tick = (L.tick || 0) - dt;
+    if (!p || p.dead || p.down || L.t <= 0 || z.hp < L.hp || z.stun > 0 || inAirZ(p) != null || (p.ride && Math.hypot(p.vx || 0, p.vy || 0) > 5)) { z.latch = null; z.dvCD = F.cd; z.z += 0.6; z.kbx = (rand() - 0.5) * 6; z.kby = (rand() - 0.5) * 6; }
+    else { z.x = p.x - Math.cos(p.aim) * 0.15; z.y = p.y - Math.sin(p.aim) * 0.15; z.z = flyAimZ(p) + 0.35; z.face = p.aim; z.kt = 2; z.atk = 0.3; if (L.tick <= 0) { L.tick = 0.5; hurtPlayer(p, 2 * W.D.dmg, z); z.hp = Math.min(z.max, z.hp + 2); L.hp = z.hp; } return; } }
+  if (F.bomb && z.bomb) { const Bm = z.bomb; Bm.t += dt; if (Bm.t >= 1.0) { for (const p of W.p) { if (p.gone || p.dead || !zExposed(p)) continue; if (Math.hypot(p.x - Bm.x, p.y - Bm.y) < 1.5 && Math.abs(flyAimZ(p) - 0.9 - Bm.z) < 2) hurtPlayer(p, Z.dmg * W.D.dmg, z); } emit({ k: 'vbomb', x: r2(Bm.x), y: r2(Bm.y), z: r2(Bm.z) }); z.bomb = null; } }
   if (z.stun > 0) { z.dv = null; spd = 0; gz = Math.max(flyFloor(z.x, z.y) + 0.5, z.z - 1.4); } // stunned: flutters down a little
   else if (z.conf > 0 || !tp) { z.dv = null; if (z.wa == null || rand() < dt * 0.8) z.wa = rand() * Math.PI * 2; gx = z.x + Math.cos(z.wa) * 3; gy = z.y + Math.sin(z.wa) * 3; gz = cruise(); }
   else if (D) {
@@ -7681,9 +7691,11 @@ function flyerStep(z, Z, dt) {
       if (D.t > 0.42) { D.ph = 1; D.t = 0; } // (round 36b) tell 0.55 → 0.42 s
     } else if (D.ph === 1) { // the dive: straight at the marked spot, no homing; whoever is there when it arrives gets pecked
       z.kt = 2; z.atk = 0.3; spd = z.spd * F.spd; vzMax = 9; gx = D.x; gy = D.y; gz = D.z;
-      for (const p of W.p) { if (p.gone || p.dead || D.hit) continue; const az = flyAimZ(p); if (Math.hypot(p.x - z.x, p.y - z.y, az - z.z) < (p.r || 0.3) + z.r + 0.22 + (inMech(p) ? 0.7 : 0) && zExposed(p)) {
-        D.hit = 1; hurtPlayer(p, Z.dmg * W.D.dmg, z); if (F.drain) z.hp = Math.min(z.max, z.hp + F.drain); emit({ k: 'sfx', n: 'peck', x: z.x, y: z.y }); } }
-      if (D.hit || Math.hypot(D.x - z.x, D.y - z.y, D.z - z.z) < 0.3 || D.t > 1.4) { D.ph = 2; D.t = 0; D.a = z.face + (rand() - 0.5) * 1.4; } // carries on past and pulls up
+      if (D.strafe) { gz = D.z; const ex = D.x2 - D.x0, ey = D.y2 - D.y0, el = Math.hypot(ex, ey) || 1; gx = D.x2; gy = D.y2; spd = z.spd * F.spd * 1.15; if (!D.dn && Math.abs(z.z - D.z) > 0.25) { spd *= 0.35; } else D.dn = 1; } // (round 36l) a strafing run: low along the marked line
+      for (const p of W.p) { if (p.gone || p.dead || D.hit) continue; const az = flyAimZ(p); if (Math.hypot(p.x - z.x, p.y - z.y, az - z.z) < (p.r || 0.3) + z.r + (D.strafe ? 0.38 : 0.22) + (inMech(p) ? 0.7 : 0) && zExposed(p)) {
+        D.hit = 1; hurtPlayer(p, Z.dmg * W.D.dmg, z); if (F.drain) z.hp = Math.min(z.max, z.hp + F.drain); emit({ k: 'sfx', n: 'peck', x: z.x, y: z.y });
+        if (z.k === 'bat' && !inMech(p) && !p.ride && rand() < 0.6) { z.latch = { p: p.i, t: 2.4, hp: z.hp }; z.dv = null; if (p.i === ME || !W.batTip) { W.batTip = 1; say('尸蝠扒在你身上吸血——用刀（右键 / 刀键）把它打下来'); } return; } } } // (round 36l) a bat may cling on
+      if (D.hit && !D.strafe || (D.strafe ? Math.hypot(D.x2 - z.x, D.y2 - z.y) < 0.4 || D.t > 1.8 : Math.hypot(D.x - z.x, D.y - z.y, D.z - z.z) < 0.3 || D.t > 1.4)) { D.ph = 2; D.t = 0; D.a = z.face + (rand() - 0.5) * 1.4; } // carries on past and pulls up
     } else { // pull up and away, then back to circling
       spd = z.spd * 1.1; gx = z.x + Math.cos(D.a) * 3; gy = z.y + Math.sin(D.a) * 3; gz = cruise() + 0.6;
       if (D.t > 0.8) { z.dv = null; z.dvCD = F.cd * (0.75 + rand() * 0.5); z.fa = Math.atan2(z.y - tp.y, z.x - tp.x); }
@@ -7695,7 +7707,9 @@ function flyerStep(z, Z, dt) {
     gz = Math.max(cruise(), flyFloor(tp.x, tp.y) + F.alt, inAirZ(tp) != null ? inAirZ(tp) + 0.4 : 0);
     if (z.dvCD <= 0 && zExposed(tp) && dist < F.dive && zSeen(z) && W.phase !== 'day' && los(z.x, z.y, z.z, tp.x, tp.y, flyAimZ(tp))) {
       let busy = 0; for (const o of W.zs) if (o !== z && o.fk && o.fk === z.fk && o.dv && o.hp > 0) busy++;
-      if (busy < 3) { const az = flyAimZ(tp), lead = 0.55, lx = clamp(tp.x + (tp.vx || 0) * lead, 1, MW - 1), ly = clamp(tp.y + (tp.vy || 0) * lead, 1, MH - 1); z.dv = { ph: 0, t: 0, x: lx, y: ly, z: az }; /* (round 36b) three at a time, aimed where you're heading: turn or stop to dodge */ emit({ k: 'sfx', n: z.k === 'bat' ? 'screech' : 'caw', x: z.x, y: z.y }); emit({ k: 'fdive', x: r2(lx), y: r2(ly), z: r2(az - (inAirZ(tp) != null ? 0.6 : inMech(tp) ? 2.2 : 0.95)) }); } // the flock takes turns, two at a time
+      if (F.bomb) { if (!z.bomb && dist < F.dive + 2) { const lx = clamp(tp.x + (tp.vx || 0) * 1.0, 1, MW - 1), ly = clamp(tp.y + (tp.vy || 0) * 1.0, 1, MH - 1), gz2 = flyAimZ(tp) - (inAirZ(tp) != null ? 0.6 : inMech(tp) ? 2.2 : 0.95); z.bomb = { t: 0, x: lx, y: ly, z: gz2 }; z.dvCD = F.cd * (0.8 + rand() * 0.4); emit({ k: 'ktell', s: 'disc', x: r2(lx), y: r2(ly), z: r2(gz2), r: 1.5, t: 1.0 }); emit({ k: 'sfx', n: 'caw', x: z.x, y: z.y }); } else z.dvCD = 0.5; } // (round 36l) 尸鹫 drops an acid glob where you are heading
+      else if (busy < 3 && z.k === 'crow' && rand() < 0.4) { const az = flyAimZ(tp), a = Math.atan2(tp.y - z.y, tp.x - z.x), x2 = clamp(tp.x + Math.cos(a) * 4, 1, MW - 1), y2 = clamp(tp.y + Math.sin(a) * 4, 1, MH - 1); z.dv = { ph: 0, t: 0, strafe: 1, x: tp.x, y: tp.y, z: az, x0: z.x, y0: z.y, x2, y2 }; emit({ k: 'sfx', n: 'caw', x: z.x, y: z.y }); emit({ k: 'ktell', s: 'line', x: r2(z.x), y: r2(z.y), z: r2(az - 0.95), x2: r2(x2), y2: r2(y2), w: 1.0, t: 0.5 }); } // (round 36l) a crow strafing run along a marked line: step sideways
+      else if (busy < 3) { const az = flyAimZ(tp), lead = 0.55, lx = clamp(tp.x + (tp.vx || 0) * lead, 1, MW - 1), ly = clamp(tp.y + (tp.vy || 0) * lead, 1, MH - 1); z.dv = { ph: 0, t: 0, x: lx, y: ly, z: az }; /* (round 36b) three at a time, aimed where you're heading: turn or stop to dodge */ emit({ k: 'sfx', n: z.k === 'bat' ? 'screech' : 'caw', x: z.x, y: z.y }); emit({ k: 'fdive', x: r2(lx), y: r2(ly), z: r2(az - (inAirZ(tp) != null ? 0.6 : inMech(tp) ? 2.2 : 0.95)) }); } // the flock takes turns, two at a time
       else z.dvCD = 0.4 + rand() * 0.6;
     }
   }
@@ -7736,36 +7750,58 @@ function shieldFor(z, p) {
   }
   return null;
 }
+// (round 36l) an opening (破绽): stunned and taking double damage for a moment — shared by kaiju and 能力者
+function zExpose(z, t, w) { z.xpT = t; z.stun = Math.max(z.stun || 0, t * 0.9); z.es = null; emit({ k: 'kxp', id: z.id, x: r2(z.x), y: r2(z.y), z: r2(z.z + ZT[z.k].h + 0.3), t: r2(t), w }); }
+// (round 36l) every 能力者 move now has an answer that opens it up:
+//  闪影者 — after it appears behind you there is a beat before the cut: hit it then (parry) or step away (it whiffs and stumbles);
+//  唤尸者 — keeps its distance (chase it); enough damage while it calls breaks the call; its raised zombies fall when it dies;
+//  护盾者 — shoot from inside its bubble, but it pulses people out (marked): hit it hard during the pulse tell to break bubble and all;
+//  隐身者 — it leaves faint marks as it creeps near and flickers just before it strikes: face it (or hit it) and the ambush is turned back on it.
 // returns true while a skill holds the zombie still (it does its own thing this frame)
 function eliteStep(z, Z, dt) {
   const E = Z.elite; z.kt = 0;
-  z.eCD = (z.eCD == null ? 2 + rand() * 3 : z.eCD) - dt;
-  if (E.k === 'shield') { // the bubble: recharges after it breaks
-    if (!(z.sh > 0)) { z.shT = (z.shT == null ? 0 : z.shT) - dt; if (z.shT <= 0) { z.sh = z.shMax = z.max * 0.6; emit({ k: 'elx', a: 'shield', id: z.id, x: r2(z.x), y: r2(z.y), z: r2(z.z) }); } }
+  z.eCD = (z.eCD == null ? 2 + rand() * 3 : z.eCD) - dt; if (z.xpT > 0) z.xpT -= dt; // (round 36l) while open it is stunned, so no skill starts
+  if (E.k === 'shield') { // the bubble: recharges after it breaks; people inside get pulsed out
+    if (!(z.sh > 0)) { z.es = null; z.shT = (z.shT == null ? 0 : z.shT) - dt; if (z.shT <= 0) { z.sh = z.shMax = z.max * 0.6; emit({ k: 'elx', a: 'shield', id: z.id, x: r2(z.x), y: r2(z.y), z: r2(z.z) }); } return false; }
+    const S = z.es;
+    if (S) { S.t += dt; z.kt = 1; z.moving = false;
+      if ((S.dm || 0) >= 70 || z.stun > 0.3) { z.sh = 0; z.shT = E.cd; emit({ k: 'elx', a: 'break', id: z.id, x: r2(z.x), y: r2(z.y), z: r2(z.z) }); zExpose(z, 2.2, 'break'); return false; } // hit it hard in the tell: bubble and all go
+      if (S.t >= 0.9) { for (const p of W.p) { if (!standingP(p) || Math.abs(p.z - z.z) > 2) continue; const ex = p.x - z.x, ey = p.y - z.y, e = Math.hypot(ex, ey); if (e < SHIELD_R + 0.3) { hurtPlayer(p, 12 * W.D.dmg, z); knock(p, ex / (e || 1) * 11, ey / (e || 1) * 11); } }
+        emit({ k: 'kroar', id: z.id, x: r2(z.x), y: r2(z.y), z: r2(z.z + 2) }); z.es = null; z.eCD = 6 + rand() * 3; }
+      return true; }
+    if (z.eCD <= 0 && !(z.stun > 0) && W.phase !== 'day' && zSeen(z) && W.p.some(p => standingP(p) && Math.hypot(p.x - z.x, p.y - z.y) < SHIELD_R && Math.abs(p.z - z.z) < 2)) { z.es = { t: 0, ph: 0 }; emit({ k: 'ktell', s: 'disc', x: r2(z.x), y: r2(z.y), z: r2(z.z), r: SHIELD_R + 0.3, t: 0.9 }); emit({ k: 'sfx', n: 'shield', x: z.x, y: z.y }); return true; }
     return false;
   }
   if (E.k === 'cloak') {
     if (z.ckT > 0) z.ckT -= dt;
     let near = 1e9, tp = null; for (const p of W.p) { if (!standingP(p) || Math.abs(p.z - z.z) > 1.2) continue; const d = Math.hypot(p.x - z.x, p.y - z.y); if (d < near) { near = d; tp = p; } }
     if ((z.burn > 0 || W.cz && W.cz.length && cloudAt(z.x, z.y, z.z) & 1) && z.ck) { /* (round 36) a slow field shows it too */ z.ck = 0; z.ckT = 2; emit({ k: 'elx', a: 'reveal', id: z.id, x: r2(z.x), y: r2(z.y), z: r2(z.z) }); }
-    if (z.ck && tp && near < 1.7 && z.stun <= 0 && los(z.x, z.y, z.z + 0.8, tp.x, tp.y, tp.z + 0.8)) { // the ambush: out of thin air, a heavy blow
-      z.ck = 0; z.ckT = 4; z.face = Math.atan2(tp.y - z.y, tp.x - z.x); z.atk = 0.3; z.cd = Z.cd;
-      hurtPlayer(tp, 24 * W.D.dmg, z); knock(tp, Math.cos(z.face) * 5, Math.sin(z.face) * 5);
-      emit({ k: 'elx', a: 'ambush', id: z.id, x: r2(z.x), y: r2(z.y), z: r2(z.z) }); return false;
+    if (z.ck && tp && near < 6 && (z.stepT = (z.stepT || 0) - dt) <= 0 && z.moving) { z.stepT = 0.55; emit({ k: 'ktell', s: 'disc', x: r2(z.x), y: r2(z.y), z: r2(z.z), r: 0.32, t: 0.45 }); } // faint marks where it creeps
+    const S = z.es;
+    if (S && S.amb) { S.t += dt; z.moving = false; const p = W.p[S.p]; if (p) z.face = Math.atan2(p.y - z.y, p.x - z.x);
+      if (S.t >= 0.4) { z.es = null; if (!p || !standingP(p)) return false; const toZ = Math.atan2(z.y - p.y, z.x - p.x), facing = Math.cos(angDiff(p.aim, toZ)) > 0.55;
+        if ((S.dm || 0) > 0 || facing) { z.ck = 0; z.ckT = 5; emit({ k: 'elx', a: 'reveal', id: z.id, x: r2(z.x), y: r2(z.y), z: r2(z.z) }); zExpose(z, 2.2, 'parry'); return false; } // seen coming: turned back on it
+        z.ck = 0; z.ckT = 4; z.atk = 0.3; z.cd = Z.cd; hurtPlayer(p, 24 * W.D.dmg, z); knock(p, Math.cos(z.face) * 5, Math.sin(z.face) * 5);
+        emit({ k: 'elx', a: 'ambush', id: z.id, x: r2(z.x), y: r2(z.y), z: r2(z.z) }); return false; }
+      return true; }
+    if (z.ck && tp && near < 1.9 && z.stun <= 0 && los(z.x, z.y, z.z + 0.8, tp.x, tp.y, tp.z + 0.8)) { // the ambush: a 0.4 s flicker first (a red mark under it, a hiss), then a heavy blow
+      z.es = { amb: 1, t: 0, p: tp.i }; emit({ k: 'ktell', s: 'disc', x: r2(z.x), y: r2(z.y), z: r2(z.z), r: 0.9, t: 0.4 }); emit({ k: 'sfx', n: 'ambush', x: z.x, y: z.y }); return true;
     }
     if (!z.ck && !(z.ckT > 0) && !(z.burn > 0) && near > 4) { z.ck = 1; emit({ k: 'elx', a: 'cloak', id: z.id, x: r2(z.x), y: r2(z.y), z: r2(z.z) }); }
     return false;
   }
   if (z.sleep || z.climbing) return false;
   const S = z.es;
-  if (S && S.ph === 0 && z.stun > 0.2) { z.es = null; z.eCD = E.cd * 0.5; emit({ k: 'elx', a: 'stop', id: z.id }); return false; } // a stun breaks the wind-up
+  if (S && S.ph === 0 && (z.stun > 0.2 || (S.dm || 0) >= (E.k === 'call' ? 60 : 50))) { z.eCD = E.cd * 0.5; emit({ k: 'elx', a: 'stop', id: z.id }); zExpose(z, 2.0, 'break'); return false; } // (round 36l) a stun, or enough damage, breaks the wind-up and opens it up
   let tp = null, td = 1e9; for (const p of W.p) { if (!standingP(p) || inAirZ(p) != null) continue; const d = Math.hypot(p.x - z.x, p.y - z.y); if (d < td && Math.abs(p.z - z.z) < 2.7) { td = d; tp = p; } }
   if (E.k === 'blink') {
     if (S) {
       S.t += dt; z.moving = false;
-      if (S.ph === 0) { z.kt = 1; if (tp) z.face = Math.atan2(tp.y - z.y, tp.x - z.x); if (S.t >= 0.8) { /* (round 36) tell 0.6 → 0.8 s */ const ox = z.x, oy = z.y, oz = z.z; z.x = S.x; z.y = S.y; z.L = S.L; z.z = surfZ(z.x, z.y, z.L); S.ph = 1; S.t = 0; if (tp) z.face = Math.atan2(tp.y - z.y, tp.x - z.x); emit({ k: 'elx', a: 'blink1', id: z.id, x: r2(ox), y: r2(oy), z: r2(oz), tx: r2(z.x), ty: r2(z.y), tz: r2(z.z) }); } return true; }
+      if (S.ph === 0) { z.kt = 1; if (tp) z.face = Math.atan2(tp.y - z.y, tp.x - z.x); if (S.t >= 0.8) { /* (round 36) tell 0.6 → 0.8 s */ const ox = z.x, oy = z.y, oz = z.z; z.x = S.x; z.y = S.y; z.L = S.L; z.z = surfZ(z.x, z.y, z.L); S.ph = 1; S.t = 0; S.dm = 0; S.tp = tp ? tp.i : -1; S.px = tp ? tp.x : 0; S.py = tp ? tp.y : 0; if (tp) z.face = Math.atan2(tp.y - z.y, tp.x - z.x); emit({ k: 'sfx', n: 'clink', x: z.x, y: z.y }); emit({ k: 'elx', a: 'blink1', id: z.id, x: r2(ox), y: r2(oy), z: r2(oz), tx: r2(z.x), ty: r2(z.y), tz: r2(z.z) }); } return true; }
       z.kt = 2; z.atk = 0.3; if (tp) z.face += angDiff(z.face, Math.atan2(tp.y - z.y, tp.x - z.x)) * Math.min(1, dt * 6);
-      if (S.t >= 0.32) { // the slash
+      if ((S.dm || 0) >= 40) { zExpose(z, 2.0, 'parry'); z.eCD = E.cd; return false; } // (round 36l) hit it in the beat after it appears: parried
+      if (S.t >= 0.45) { // the slash (round 36l: 0.32 → 0.45 s to react)
+        const q = W.p[S.tp]; if (q && Math.hypot(q.x - S.px, q.y - S.py) > 1.2 && !(Math.hypot(q.x - z.x, q.y - z.y) < 1.4)) { emit({ k: 'elx', a: 'slash', id: z.id, x: r2(z.x), y: r2(z.y), z: r2(z.z), f: r2(z.face) }); zExpose(z, 1.6, 'whiff'); z.eCD = E.cd; return false; } // stepped away: it cuts air and stumbles
         for (const p of W.p) { if (!standingP(p) || Math.abs(p.z - z.z) > 1.1) continue; const dx = p.x - z.x, dy = p.y - z.y, d = Math.hypot(dx, dy); if (d < 1.8 && (d < 0.6 || Math.cos(angDiff(Math.atan2(dy, dx), z.face)) > 0.1)) { hurtPlayer(p, 20 * W.D.dmg, z); knock(p, dx / (d || 1) * 4, dy / (d || 1) * 4); } }
         emit({ k: 'elx', a: 'slash', id: z.id, x: r2(z.x), y: r2(z.y), z: r2(z.z), f: r2(z.face) }); z.es = null; z.eCD = E.cd * (0.8 + rand() * 0.4);
       }
@@ -7793,6 +7829,7 @@ function eliteStep(z, Z, dt) {
       }
       return true;
     }
+    if (tp && td < 4.5 && z.stun <= 0 && zSeen(z) && W.phase !== 'day') { const a = Math.atan2(z.y - tp.y, z.x - tp.x); moveEnt(z, Math.cos(a) * z.spd * 1.15 * dt, Math.sin(a) * z.spd * 1.15 * dt, 'z', false); z.z = surfZ(z.x, z.y, z.L); z.face = a; z.moving = true; return true; } // (round 36l) keeps its distance: you have to chase it down
     if (tp && z.eCD <= 0 && z.stun <= 0 && td < 14 && zSeen(z) && W.phase !== 'day') { z.es = { ph: 0, t: 0 }; z.kt = 1; emit({ k: 'elx', a: 'call0', id: z.id, x: r2(z.x), y: r2(z.y), z: r2(z.z) }); emit({ k: 'sfx', n: 'groan', x: z.x, y: z.y }); return true; }
     return false;
   }
@@ -8094,54 +8131,99 @@ function bossStep(z, dt) {
 }
 /* ---------- (round 34) kaiju skills (host): every one is telegraphed (z.kt 1 = winding up, 2 = doing it) ---------- */
 function kaijuStep(z, dt) {
-  const T = ZT[z.k], D = W.D.dmg || 1; z.kcd = (z.kcd == null ? 3 + rand() * 2 : z.kcd) - dt;
+  // (round 36l) kaiju fights are about reading and punishing: every big move has a tell and leaves an opening (破绽, damage ×2) —
+  // after a breath it pants, a sweep leaves it off balance, a charge into a wall knocks it silly (3 s), a burrow leaves it stuck half out, a pounce lands heavy;
+  // enough damage during a tell (8% of its health) or a hard stun breaks the move and opens it up. At half health it goes berserk (roar, faster, shorter cooldowns).
+  // It also presses you: a pounce (裂颚兽), a thrown boulder (钢尾兽) and a spike line (掘地兽) reach you at range or inside a solid building, and it smashes through wood.
+  const T = ZT[z.k], D = W.D.dmg || 1, CDK = z.rage2 ? 0.6 : 1; z.kcd = (z.kcd == null ? 2.5 + rand() * 1.5 : z.kcd) - dt;
+  if (z.xpT > 0) z.xpT -= dt;
   const tgt = alivePl().filter(p => !p.down).sort((a, b) => Math.hypot(a.x - z.x, a.y - z.y) - Math.hypot(b.x - z.x, b.y - z.y))[0];
-  if (z.ks && z.stun > 0.3 && z.kt === 1 && z.ks.k !== 'burrow') { z.ks = null; z.kt = 0; z.kc = 0; z.kcd = 3; emit({ k: 'sfx', n: 'clank', x: z.x, y: z.y }); } // a hard stun (mech slam, blast) breaks the wind-up
+  const expose = (t, w) => { z.xpT = t; z.stun = Math.max(z.stun || 0, t * 0.9); z.ks = null; z.kt = 0; z.kc = 0; z.hidden = 0; emit({ k: 'kxp', id: z.id, x: r2(z.x), y: r2(z.y), z: r2(z.z + T.h), t: r2(t), w }); };
+  const breakWeak = (x, y, R, dmg) => { const x0 = Math.floor(x), y0 = Math.floor(y), Rc = Math.ceil(R); for (let dy = -Rc; dy <= Rc; dy++) for (let dx = -Rc; dx <= Rc; dx++) { if (dx * dx + dy * dy > R * R + 0.5) continue; const cx = x0 + dx, cy = y0 + dy; if (!inMap(cx, cy)) continue; for (const L of [z.L, z.L + 1]) { if (L >= ML) continue; const i = ci(cx, cy, L); if (W.blk[i] && B[W.blk[i]].brk) damageCell(i, dmg); } } };
+  const hitRound = (x, y, zz, R, dmg, kb) => { for (const p of alivePl()) { const ex = p.x - x, ey = p.y - y, e = Math.hypot(ex, ey); if (e < R && Math.abs(p.z - zz) < 2.2) { hurtPlayer(p, dmg * D, z); knock(p, ex / (e || 1) * kb, ey / (e || 1) * kb); } } };
+  if (!z.rage2 && z.hp < z.max * 0.5 && !z.hidden) { z.rage2 = 1; z.spd *= 1.2; z.kcd = Math.min(z.kcd, 1.2); // berserk: a roar that shoves everyone back, a few crawlers dig up
+    for (const p of alivePl()) { const ex = p.x - z.x, ey = p.y - z.y, e = Math.hypot(ex, ey); if (e < 6) knock(p, ex / (e || 1) * 9, ey / (e || 1) * 9); }
+    for (let k = 0; k < 3; k++) { const m = zAround('crawler', z.x, z.y, 2, 4.5); if (m) m.mz = 1; }
+    emit({ k: 'kroar', id: z.id, x: r2(z.x), y: r2(z.y), z: r2(z.z + T.h * 0.8) }); emit({ k: 'sfx', n: 'scream', x: z.x, y: z.y }); say(T.name + '暴怒了！技能更快——躲开大招，抓住破绽'); }
   const S = z.ks;
+  if (S && z.kt === 1 && S.k !== 'burrow' && (z.stun > 0.3 || (S.dm || 0) >= z.max * 0.08)) { expose(2.0, 'break'); z.kcd = 3 * CDK; emit({ k: 'sfx', n: 'clank', x: z.x, y: z.y }); return true; } // broke the tell
   if (S) {
     S.t += dt;
-    if (S.k === 'breath') { // acid breath: a 1 s wind-up (head back, glowing throat), then 1.6 s of acid in a cone
+    if (S.k === 'breath') { // acid breath: a 1 s wind-up (head back, glowing throat), then 1.6 s of acid in a cone; it pants afterwards
       if (S.t < 1) { z.kt = 1; if (tgt) z.face = angLerp(z.face, Math.atan2(tgt.y - z.y, tgt.x - z.x), Math.min(1, dt * 4)); return true; }
-      z.kt = 2; if ((S.tick = (S.tick || 0) - dt) <= 0) { S.tick = 0.25;
-        for (const p of alivePl()) { const dx = p.x - z.x, dy = p.y - z.y, d = Math.hypot(dx, dy); if (d < 7.5 && Math.abs(p.z - z.z) < 2.5 && Math.cos(angDiff(Math.atan2(dy, dx), z.face)) > Math.cos(0.5)) hurtPlayer(p, 11 * D, z); }
+      z.kt = 2; if (tgt) z.face = angLerp(z.face, Math.atan2(tgt.y - z.y, tgt.x - z.x), Math.min(1, dt * 0.9)); if ((S.tick = (S.tick || 0) - dt) <= 0) { S.tick = 0.25;
+        for (const p of alivePl()) { const dx = p.x - z.x, dy = p.y - z.y, d = Math.hypot(dx, dy); if (d < 7.5 && Math.abs(p.z - z.z) < 2.5 && Math.cos(angDiff(Math.atan2(dy, dx), z.face)) > Math.cos(0.5)) hurtPlayer(p, 8 * D, z); }
         emit({ k: 'kacid', x: r2(z.x), y: r2(z.y), z: r2(z.z + T.h * 0.75), a: r2(z.face) }); }
-      if (S.t >= 2.6) { z.ks = null; z.kt = 0; z.kcd = 7; } return true;
+      if (S.t >= 2.6) { expose(1.3, 'tired'); z.kcd = 5 * CDK; } return true;
     }
-    if (S.k === 'sweep') { // tail sweep all round: 0.8 s wind-up (crouch, tail raised), then a 4.2 radius hit
+    if (S.k === 'sweep') { // tail sweep all round: 0.8 s wind-up (crouch, tail raised), then a 4.2 radius hit; off balance after
       z.kt = S.t < 0.8 ? 1 : 2;
-      if (S.t >= 0.8 && !S.done) { S.done = 1;
-        for (const p of alivePl()) { const dx = p.x - z.x, dy = p.y - z.y, d = Math.hypot(dx, dy); if (d < 4.2 && Math.abs(p.z - z.z) < 2) { hurtPlayer(p, 55 * D, z); knock(p, dx / (d || 1) * 12, dy / (d || 1) * 12); } }
-        const x0 = Math.floor(z.x), y0 = Math.floor(z.y); for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) { const x = x0 + dx, y = y0 + dy; if (!inMap(x, y)) continue; const i = ci(x, y, z.L); if (W.blk[i] && B[W.blk[i]].brk) damageCell(i, 200); }
+      if (S.t >= 0.8 && !S.done) { S.done = 1; hitRound(z.x, z.y, z.z, 4.2, 38, 12); breakWeak(z.x, z.y, 2.2, 200);
         emit({ k: 'slam', x: r2(z.x), y: r2(z.y), z: r2(z.z), r: 2 }); emit({ k: 'sfx', n: 'smash', x: z.x, y: z.y }); }
-      if (S.t >= 1.25) { z.ks = null; z.kt = 0; z.kcd = 6; } return true;
+      if (S.t >= 1.25) { expose(1.0, 'rec'); z.kcd = 4 * CDK; } return true;
     }
-    if (S.k === 'charge') { // a head-down charge: 0.8 s wind-up facing the target, then up to 1.1 s at speed through anything light
+    if (S.k === 'charge') { // a head-down charge: 0.8 s wind-up facing the target, then up to 1.1 s at speed through anything light — dodge it into a wall and it is stunned silly
       z.kc = 1; z.face = S.a;
       if (S.t < 0.8) { z.kt = 1; return true; }
       z.kt = 2; const ox = z.x, oy = z.y, ca = Math.cos(S.a), sa = Math.sin(S.a); moveEnt(z, ca * 9 * dt, sa * 9 * dt, 'z', false); z.z = surfZ(z.x, z.y, z.L);
-      for (const p of alivePl()) { if (S.hit.includes(p.i) || Math.abs(p.z - z.z) > 1.5) continue; if (Math.hypot(p.x - z.x, p.y - z.y) < z.r + 0.9) { S.hit.push(p.i); hurtPlayer(p, 60 * D, z); knock(p, ca * 14 - sa * 3, sa * 14 + ca * 3); emit({ k: 'sfx', n: 'smash', x: p.x, y: p.y }); } }
-      const stuck = Math.hypot(z.x - ox, z.y - oy) < 9 * dt * 0.35;
+      for (const p of alivePl()) { if (S.hit.includes(p.i) || Math.abs(p.z - z.z) > 1.5) continue; if (Math.hypot(p.x - z.x, p.y - z.y) < z.r + 0.9) { S.hit.push(p.i); hurtPlayer(p, 40 * D, z); knock(p, ca * 14 - sa * 3, sa * 14 + ca * 3); emit({ k: 'sfx', n: 'smash', x: p.x, y: p.y }); } }
+      const stuck = Math.hypot(z.x - ox, z.y - oy) < 9 * dt * 0.35, weak = stuck && z.bump >= 0 && W.blk[z.bump] && B[W.blk[z.bump]].brk && B[W.blk[z.bump]].hp <= 330;
       if (stuck && z.bump >= 0 && W.blk[z.bump] && B[W.blk[z.bump]].brk) { damageCell(z.bump, 500); emit({ k: 'slam', x: r2(z.x + ca), y: r2(z.y + sa), z: r2(z.z), r: 1 }); }
-      if (stuck || S.t >= 1.9) { z.ks = null; z.kt = 0; z.kc = 0; z.kcd = 7; if (stuck) z.stun = 0.8; } return true;
+      if (stuck && !weak) { expose(3.0, 'wall'); z.kcd = 6 * CDK; emit({ k: 'sfx', n: 'clank', x: z.x, y: z.y }); return true; } // slammed into something solid
+      if (S.t >= 1.9) { expose(0.8, 'skid'); z.kcd = 6 * CDK; } return true;
     }
-    if (S.k === 'burrow') { // dives under, homes in unseen and bursts out under the target with crawlers
+    if (S.k === 'burrow') { // dives under, homes in unseen and bursts out under the target with crawlers — then it is stuck half out of the ground
       z.hidden = 1; z.kt = 2; if (tgt) { S.tx = tgt.x; S.ty = tgt.y; S.L = tgt.L; }
       const dx = S.tx - z.x, dy = S.ty - z.y, d = Math.hypot(dx, dy), sp = 6 * dt; if (d > 0.1) { z.x += dx / d * Math.min(d, sp); z.y += dy / d * Math.min(d, sp); }
       if (Math.random() < dt * 14) emit({ k: 'dig', x: r2(z.x), y: r2(z.y), z: r2(z.z), big: 1 });
-      if (S.t > 2.6 || d < 0.3) { z.ks = null; z.hidden = 0; z.kt = 0; z.kcd = 9; z.L = S.L != null ? S.L : z.L; z.z = surfZ(z.x, z.y, z.L);
-        for (const p of alivePl()) { const ex = p.x - z.x, ey = p.y - z.y, e = Math.hypot(ex, ey); if (e < 3 && Math.abs(p.z - z.z) < 2) { hurtPlayer(p, 65 * D, z); knock(p, ex / (e || 1) * 10, ey / (e || 1) * 10); } }
-        for (let k = 0; k < 3; k++) { const m = zAround('crawler', z.x, z.y, 1.5, 3.5); if (m) m.mz = 1; }
-        emit({ k: 'boom', x: r2(z.x), y: r2(z.y), z: r2(z.z + 0.2), s: 1 }); emit({ k: 'slam', x: r2(z.x), y: r2(z.y), z: r2(z.z), r: 2 }); }
+      if (!S.warn && (S.t > 2.0 || d < 1.2)) { S.warn = 1; S.wt = S.t; emit({ k: 'ktell', s: 'disc', x: r2(z.x), y: r2(z.y), z: r2(surfZ(z.x, z.y, S.L != null ? S.L : z.L)), r: 3, t: 0.55 }); } // the ground bulges first: a beat to step out
+      if (S.warn && S.t - S.wt > 0.55) { z.hidden = 0; z.L = S.L != null ? S.L : z.L; z.z = surfZ(z.x, z.y, z.L);
+        hitRound(z.x, z.y, z.z, 3, 42, 10); breakWeak(z.x, z.y, 1.5, 300);
+        for (let k = 0; k < 2; k++) { const m = zAround('crawler', z.x, z.y, 1.5, 3.5); if (m) m.mz = 1; }
+        emit({ k: 'boom', x: r2(z.x), y: r2(z.y), z: r2(z.z + 0.2), s: 1 }); emit({ k: 'slam', x: r2(z.x), y: r2(z.y), z: r2(z.z), r: 2 }); expose(1.6, 'stuck'); z.kcd = 8 * CDK; }
+      return true;
+    }
+    if (S.k === 'pounce') { // 裂颚兽: crouches 0.9 s (the landing spot is marked), leaps 0.55 s and lands heavy
+      if (S.t < 0.9) { z.kt = 1; z.face = Math.atan2(S.y - z.y, S.x - z.x); return true; }
+      z.kt = 2; const f = Math.min(1, (S.t - 0.9) / 0.55); z.x = S.ox + (S.x - S.ox) * f; z.y = S.oy + (S.y - S.oy) * f; z.z = surfZ(z.x, z.y, z.L) + Math.sin(f * Math.PI) * 3.2;
+      if (f >= 1) { z.z = surfZ(z.x, z.y, z.L); hitRound(z.x, z.y, z.z, 2.4, 30, 9); breakWeak(z.x, z.y, 1.2, 260); emit({ k: 'slam', x: r2(z.x), y: r2(z.y), z: r2(z.z), r: 2 }); emit({ k: 'sfx', n: 'smash', x: z.x, y: z.y }); expose(1.0, 'land'); z.kcd = 5 * CDK; }
+      return true;
+    }
+    if (S.k === 'rock') { // 钢尾兽: rips up a boulder (1 s), hurls it in a high arc at where you will be (the spot is marked), it smashes walls too
+      z.kt = S.t < 1 ? 1 : 2; if (S.t < 1 && tgt) z.face = Math.atan2(tgt.y - z.y, tgt.x - z.x);
+      if (S.t >= 1 && !S.thrown) { S.thrown = 1; emit({ k: 'krock', x: r2(z.x), y: r2(z.y), z: r2(z.z + T.h * 0.9), x2: r2(S.x), y2: r2(S.y), z2: r2(S.z), t: 0.9 }); emit({ k: 'sfx', n: 'launcher', x: z.x, y: z.y }); }
+      if (S.t >= 1.9) { hitRound(S.x, S.y, S.z, 2.2, 28, 8); const L = Math.max(0, Math.round(S.z / FH)); { const x0 = Math.floor(S.x), y0 = Math.floor(S.y); for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) for (const L2 of [L, L + 1]) { if (!inMap(x0 + dx, y0 + dy) || L2 >= ML) continue; const i = ci(x0 + dx, y0 + dy, L2); if (W.blk[i] && B[W.blk[i]].brk) damageCell(i, 220); } }
+        emit({ k: 'boom', x: r2(S.x), y: r2(S.y), z: r2(S.z + 0.2), s: 1 }); emit({ k: 'slam', x: r2(S.x), y: r2(S.y), z: r2(S.z), r: 2 }); z.ks = null; z.kt = 0; z.kcd = 5 * CDK; }
+      return true;
+    }
+    if (S.k === 'spikes') { // 掘地兽: a line of cracks runs at you (1 s), then spikes burst up along it, one after another
+      z.kt = S.t < 1 ? 1 : 2;
+      if (S.t >= 1) { const f = Math.min(1, (S.t - 1) / 0.4), n = Math.floor(f * S.n);
+        for (let k = S.k2 || 0; k < n; k++) { const x = z.x + Math.cos(S.a) * (k + 1.2), y = z.y + Math.sin(S.a) * (k + 1.2), zz = surfZ(x, y, z.L);
+          for (const p of alivePl()) { if (S.hit.includes(p.i)) continue; if (Math.hypot(p.x - x, p.y - y) < 0.95 && Math.abs(p.z - zz) < 2) { S.hit.push(p.i); hurtPlayer(p, 26 * D, z); knock(p, -Math.sin(S.a) * 6, Math.cos(S.a) * 6); } }
+          breakWeak(x, y, 0.6, 250); emit({ k: 'kspike', x: r2(x), y: r2(y), z: r2(zz) }); }
+        S.k2 = n; if (f >= 1) { z.ks = null; z.kt = 0; z.kcd = 5 * CDK; } }
       return true;
     }
     z.ks = null; return false;
   }
   z.kt = 0; z.kc = 0;
-  if (!tgt || z.kcd > 0 || z.stun > 0 || z.sleep || !zSeen(z) || W.phase === 'day') return false; // (round 36) no skills from out of sight
-  const d = Math.hypot(tgt.x - z.x, tgt.y - z.y);
-  if (T.kaiju === 'acid' && d < 7) { z.ks = { k: 'breath', t: 0 }; emit({ k: 'sfx', n: 'scream', x: z.x, y: z.y }); return true; }
-  if (T.kaiju === 'tail') { if (d < 3.8) { z.ks = { k: 'sweep', t: 0 }; return true; } if (d > 4.5 && d < 14) { z.ks = { k: 'charge', t: 0, a: Math.atan2(tgt.y - z.y, tgt.x - z.x), hit: [] }; emit({ k: 'sfx', n: 'smash', x: z.x, y: z.y }); return true; } }
-  if (T.kaiju === 'dig' && d > 4 && d < 26) { z.ks = { k: 'burrow', t: 0, tx: tgt.x, ty: tgt.y, L: tgt.L }; emit({ k: 'dig', x: r2(z.x), y: r2(z.y), z: r2(z.z), big: 1 }); return true; }
+  if (!tgt || z.kcd > 0 || z.stun > 0 || z.xpT > 0 || z.sleep || !zSeen(z) || W.phase === 'day') return false; // (round 36) no skills from out of sight
+  const d = Math.hypot(tgt.x - z.x, tgt.y - z.y), hide = skyTop(tgt.x, tgt.y) > tgt.L || !los(z.x, z.y, z.z + T.h * 0.7, tgt.x, tgt.y, tgt.z + 1), r = rand();
+  const lead = t => ({ x: clamp(tgt.x + (tgt.vx || 0) * t, 1, MW - 1), y: clamp(tgt.y + (tgt.vy || 0) * t, 1, MH - 1) });
+  if (T.kaiju === 'acid') {
+    if (d < 6.5 && (r < 0.65 || hide)) { z.ks = { k: 'breath', t: 0 }; emit({ k: 'sfx', n: 'scream', x: z.x, y: z.y }); return true; }
+    if (d > 4.5 && d < 12 && !hide) { const L = lead(0.5), at = zSpotNear(L.x, L.y, z.L, 0, 1.2, 10) || { x: L.x, y: L.y }; z.ks = { k: 'pounce', t: 0, ox: z.x, oy: z.y, x: at.x, y: at.y }; emit({ k: 'ktell', s: 'disc', x: r2(at.x), y: r2(at.y), z: r2(surfZ(at.x, at.y, z.L)), r: 2.4, t: 1.45 }); emit({ k: 'sfx', n: 'groan', x: z.x, y: z.y }); return true; }
+  }
+  if (T.kaiju === 'tail') {
+    if (d < 3.8) { z.ks = { k: 'sweep', t: 0 }; emit({ k: 'ktell', s: 'disc', x: r2(z.x), y: r2(z.y), z: r2(z.z), r: 4.2, t: 0.8 }); return true; }
+    if ((hide || d >= 11 || r < 0.45) && d > 5 && d < 18) { const L = lead(1.6); z.ks = { k: 'rock', t: 0, x: L.x, y: L.y, z: tgt.z }; emit({ k: 'ktell', s: 'disc', x: r2(L.x), y: r2(L.y), z: r2(tgt.z), r: 2.2, t: 1.9 }); emit({ k: 'sfx', n: 'smash', x: z.x, y: z.y }); return true; }
+    if (d > 4.5 && d < 11 && !hide) { const a = Math.atan2(tgt.y - z.y, tgt.x - z.x); z.ks = { k: 'charge', t: 0, a, hit: [] }; emit({ k: 'ktell', s: 'line', x: r2(z.x), y: r2(z.y), z: r2(z.z), x2: r2(z.x + Math.cos(a) * 10), y2: r2(z.y + Math.sin(a) * 10), w: 1.6, t: 0.8 }); emit({ k: 'sfx', n: 'smash', x: z.x, y: z.y }); return true; }
+  }
+  if (T.kaiju === 'dig') {
+    if (d > 3 && d < 13 && (r < 0.55 || hide)) { const a = Math.atan2(tgt.y - z.y, tgt.x - z.x), n = Math.min(14, Math.ceil(d + 2)); z.ks = { k: 'spikes', t: 0, a, n, hit: [] }; emit({ k: 'ktell', s: 'line', x: r2(z.x), y: r2(z.y), z: r2(z.z), x2: r2(z.x + Math.cos(a) * (n + 1.2)), y2: r2(z.y + Math.sin(a) * (n + 1.2)), w: 1.2, t: 1.0 }); emit({ k: 'sfx', n: 'smash', x: z.x, y: z.y }); return true; }
+    if (d > 4 && d < 26) { z.ks = { k: 'burrow', t: 0, tx: tgt.x, ty: tgt.y, L: tgt.L }; emit({ k: 'dig', x: r2(z.x), y: r2(z.y), z: r2(z.z), big: 1 }); return true; }
+  }
   return false;
 }
 function bossSlam(z, R, dmg) {
@@ -8909,6 +8991,7 @@ function drawOverlay() {
   for (const z of W.zs) { const T = ZT[z.k]; if (!T || !T.elite || z.hp <= 0 || z.ck || z.ckF || z.sleep || !zSeen(z) || lcHide(Math.floor(z.x), Math.floor(z.y), z.L)) continue; // (round 35) 能力者: name and health over the head
     const [sx, sy, sz] = w2s(z.x, z.y, z.z + T.h * T.sc / 1.2 + 0.55); if (sz > 1 || sx < -60 || sx > VW + 60 || sy < -30 || sy > VH + 30) continue;
     html += `<div class="elt" style="left:${sx | 0}px;top:${sy | 0}px;color:${T.elite.col}">${T.name}<i><b style="width:${clamp(z.hp / (z.max || 100), 0, 1) * 100 | 0}%;background:${T.elite.col}"></b></i></div>`; }
+  html += kxpLabels(); // (round 36l) 破绽 labels
   for (const f of RND.floats) { const [sx, sy] = w2s(f.x, f.y, f.z); html += `<div class="fl" style="left:${sx | 0}px;top:${sy | 0}px;opacity:${clamp(2.2 - f.t, 0, 1).toFixed(2)};color:${f.col}">${f.text}</div>`; }
   // 尸城求生: sleepers show a "z", a growing "?" while they're noticing you, a "!" as they wake
   if (isSiege()) {
@@ -9048,6 +9131,8 @@ function fxEvent(e) {
     case 'respawn': uiMsg(W.p[e.p].name + ' 回来了' + '（在据点）', '#8fe39a'); break;
     case 'task': sfx('craft'); uiMsg('任务完成：' + e.txt + '  奖励 ' + e.rt, '#ffd76a'); toast('任务完成 · ' + e.rt, '#ffd76a'); break;
     case 'tp': if (guest && e.p === ME) { const p = W.p[ME]; p.x = e.x; p.y = e.y; p.L = e.l; p.vx = p.vy = 0; } break;
+    case 'ktell': case 'krock': case 'kspike': case 'kroar': case 'kxp': kaijuFx(e); break; // (round 36l)
+    case 'vbomb': { for (let k = 0; k < 14; k++) addP({ x: e.x, y: e.y, z: e.z + 0.2, vx: frnd(-2.5, 2.5), vy: frnd(-2.5, 2.5), vz: frnd(0.5, 3), col: k % 3 ? '#8fd14a' : '#c8f080', s: 0.08, life: 0.6 }); addDecal && addDecal(e.x, e.y, e.z, 0.9, '#5a7a2a'); sfx('flesh', e.x, e.y); break; } // (round 36l) 尸鹫 acid glob
     case 'kacid': for (let k = 0; k < 10; k++) { const a = e.a + frnd(-0.45, 0.45), v = frnd(5, 9); addP({ x: e.x + Math.cos(e.a) * 1.4, y: e.y + Math.sin(e.a) * 1.4, z: e.z, vx: Math.cos(a) * v, vy: Math.sin(a) * v, vz: frnd(-1.5, 0.5), g: -3, col: k % 3 ? '#9dff3a' : '#5f9a20', s: 0.1, life: 0.8, floor: e.z - 3 }); } if (thr('kacid', 0.3)) sfx('acid', e.x, e.y); break; // (round 34) kaiju acid breath
     case 'xform': { const q = W.p[e.o]; if (!q) break; q._xfT = 0; q._xfTo = e.to; q._xfS = -1; sfx('xform', q.x, q.y); shake(q.x, q.y, 0.12); break; } // (round 34b) start the 1 s transformation on every screen
     case 'mmove': if (guest && e.p === ME) { const p = W.p[ME]; if (e.m.dash) p.dash = e.m.dash; if (e.m.jmp) p.jmp = e.m.jmp; } break; // (round 34) a mech dash / leap the host started for this screen's survivor
@@ -10980,8 +11065,8 @@ function drawModeFx() {
 // a 唤尸者's summoning circle, and a 隐身者's shimmer while it is cloaked (then nothing else is drawn).
 const FLY = new Map(), ELX = new Map();
 function mkFlyer(k) {
-  const bat = k === 'bat', g = new THREE.Group(), J = { k, wings: [] };
-  const body = lam(bat ? '#4a3838' : '#1d1d24'), dark = lam(bat ? '#2c2222' : '#0d0d12'), beakM = lam('#8a7a58'), memb = lam(bat ? '#5c4242' : '#24242c', { side: THREE.DoubleSide });
+  const bat = k === 'bat', vult = k === 'vult', g = new THREE.Group(), J = { k, wings: [] };
+  const body = lam(bat ? '#4a3838' : vult ? '#4a3a2c' : '#1d1d24'), dark = lam(bat ? '#2c2222' : vult ? '#c9b89a' : '#0d0d12'), /* (round 36l) 尸鹫: brown with a pale ruff */ beakM = lam('#8a7a58'), memb = lam(bat ? '#5c4242' : '#24242c', { side: THREE.DoubleSide });
   const eyeM = new THREE.MeshBasicMaterial({ color: bat ? '#ffcf3a' : '#ff3a2a' });
   const B = kjGrp(g, 0, 0.25, 0); J.body = B;
   kjPart(B, kjBlob(0.12, bat ? 1.15 : 1.7, bat ? 0.95 : 0.85, bat ? 0.9 : 0.8, 5), body);
@@ -11015,7 +11100,7 @@ function drawFlyer(z, corpse, dt) {
   const key = (corpse ? 'c' : 'z') + (z.id != null ? z.id : z.seed) + z.k; let K = FLY.get(key);
   if (!K) { if (!FLYSH) FLYSH = new THREE.MeshBasicMaterial({ color: '#000000', transparent: true, opacity: 0.3, depthWrite: false });
     const g = mkFlyer(z.k), sh = new THREE.Mesh(new THREE.CircleGeometry(0.22, 12).rotateX(-Math.PI / 2), FLYSH.clone()); SCN.add(g); SCN.add(sh); K = { g, J: g.userData.J, sh }; FLY.set(key, K); }
-  K.seen = 1; const g = K.g, J = K.J, bat = z.k === 'bat', t = W.t, S = bat ? 1.55 : 1.4; g.visible = K.sh.visible = true;
+  K.seen = 1; const g = K.g, J = K.J, bat = z.k === 'bat', t = W.t, S = bat ? 1.55 : z.k === 'vult' ? 2.3 : 1.4; g.visible = K.sh.visible = true;
   if (z._f == null) { z._f = z.face || 0; z._ph = (z.seed || 0) % 7; z._roll = 0; z._pz = z.z; }
   const kt = corpse ? 0 : z.kt || 0, f0 = z._f; z._f = angLerp(z._f, z.face || 0, Math.min(1, dt * 7));
   const turn = dt > 0 ? angDiff(f0, z._f) / dt : 0; z._roll = lerp(z._roll, clamp(-turn * 0.18, -0.7, 0.7), Math.min(1, dt * 5));
@@ -11128,6 +11213,7 @@ function fxMesh(kind) {
 // o: { kind, x, y, z, s0, s1 (scale over life), life, col, op, yaw, roll, pitch }
 function fxAdd(o) { const m = fxMesh(o.kind); m.material.color.set(o.col || '#ffffff'); m.position.set(o.x, o.z, o.y); m.rotation.set(o.roll || 0, -(o.yaw || 0), o.pitch || 0, 'YXZ'); FXM.live.push(Object.assign({ m, t: 0, op: 0.9 }, o)); }
 function fxTick(dt) {
+  kaijuFxTick(dt);
   for (const m of KTRL) if (m.visible && !(W.t - (m.userData.seen || 0) < 0.1)) m.visible = false; /* (round 36f) a sword trail whose mech is gone */
   for (const f of FXM.live) { f.t += dt; const k = Math.min(1, f.t / f.life), s = lerp(f.s0, f.s1, 1 - (1 - k) * (1 - k)); f.m.scale.set(s, f.sy != null ? f.sy : s, s); f.m.material.opacity = f.op * (1 - k * k); if (k >= 1) { f.m.visible = false; FXM.pool[f.m.userData.kind].push(f.m); f.dead = 1; } }
   if (FXM.live.length) FXM.live = FXM.live.filter(f => !f.dead);
@@ -11164,6 +11250,43 @@ function mechDamageFx(p, mm, dt) {
   if (f < 0.35) { const w = 1 - f / 0.35; if (FXR() < dt * (4 + 14 * w)) addP({ x: px + frnd(-0.3, 0.3), y: py + frnd(-0.3, 0.3), z: pz + frnd(1.4, 2.4) * s, vx: frnd(-0.3, 0.3), vy: frnd(-0.3, 0.3), vz: frnd(0.6, 1.2), g: -0.3, col: w > 0.6 ? '#2a2a2a' : '#5a5650', s: frnd(0.12, 0.22), life: 1.1, smoke: 1 });
     if (FXR() < dt * (1 + 6 * w)) for (let k = 0; k < 4; k++) addP({ x: px + frnd(-0.35, 0.35), y: py + frnd(-0.35, 0.35), z: pz + frnd(0.8, 2.2) * s, vx: frnd(-2.5, 2.5), vy: frnd(-2.5, 2.5), vz: frnd(0.5, 3), g: 9, col: k % 2 ? '#ffe080' : '#ff9a3a', s: 0.04, life: 0.45, floor: pz }); }
   const low = (p.bat || 0) < BAL.mechLow; if (J.core) J.core.visible = !low || (W.t * 7 % 1) > 0.35;
+}
+
+/* ================= (round 36l) kaiju / elite fight feedback: telegraphs, boulders, spikes, the 破绽 (opening) label ================= */
+const KXP = new Map(), ROCKS = [], SPIKES = [];
+const kNow = () => performance.now() / 1000;
+function kaijuFx(e) {
+  if (e.k === 'ktell') { // red warning on the ground: a disc that fills in, or a strip of discs along a line
+    const t = e.t || 1, col = '#ff3b2b';
+    if (e.s === 'disc') { fxAdd({ kind: 'disc', x: e.x, y: e.y, z: e.z + 0.06, s0: e.r * 0.15, s1: e.r, life: t, col, op: 0.32 }); fxAdd({ kind: 'ring', x: e.x, y: e.y, z: e.z + 0.07, s0: e.r, s1: e.r, life: t, col, op: 0.7 }); }
+    else { const L = Math.hypot(e.x2 - e.x, e.y2 - e.y), n = Math.max(2, Math.ceil(L / 0.8)); for (let k = 1; k <= n; k++) { const f = k / n, x = e.x + (e.x2 - e.x) * f, y = e.y + (e.y2 - e.y) * f, zz = surfZ(x, y, Math.max(0, Math.round(e.z / FH))); fxAdd({ kind: 'disc', x, y, z: zz + 0.06, s0: e.w * 0.25, s1: e.w * 0.55, life: t, col, op: 0.3 }); } }
+    return;
+  }
+  if (e.k === 'krock') { // a boulder in a high arc
+    let m = (ROCKS.pool || (ROCKS.pool = [])).pop(); if (!m) { m = new THREE.Mesh(new THREE.DodecahedronGeometry(0.55, 0), new THREE.MeshLambertMaterial({ color: '#6e6258', flatShading: true })); SCN.add(m); }
+    m.visible = true; ROCKS.push({ m, x: e.x, y: e.y, z: e.z, x2: e.x2, y2: e.y2, z2: e.z2, t: 0, T: e.t || 0.9 }); return;
+  }
+  if (e.k === 'kspike') { // a spike bursts up and sinks back
+    let m = (SPIKES.pool || (SPIKES.pool = [])).pop(); if (!m) { m = new THREE.Group(); const mat = new THREE.MeshLambertMaterial({ color: '#7a5a3a', flatShading: true }); for (let k = 0; k < 3; k++) { const c = new THREE.Mesh(new THREE.ConeGeometry(0.22 - k * 0.04, 1.4 - k * 0.3, 5), mat); c.position.set((k - 1) * 0.22, (1.4 - k * 0.3) / 2, (k % 2 ? 0.15 : -0.12)); c.rotation.z = (k - 1) * 0.25; m.add(c); } SCN.add(m); }
+    m.visible = true; m.position.set(e.x, e.z, e.y); m.rotation.y = Math.random() * 6; SPIKES.push({ m, t: 0 }); for (let k = 0; k < 4; k++) addP({ x: e.x, y: e.y, z: e.z + 0.2, vx: frnd(-2, 2), vy: frnd(-2, 2), vz: frnd(2, 4), col: '#6a5040', s: 0.08, life: 0.5 }); sfx('bash', e.x, e.y); return;
+  }
+  if (e.k === 'kroar') { fxAdd({ kind: 'ring', x: e.x, y: e.y, z: e.z - 2, s0: 1, s1: 7, life: 0.7, col: '#ff5a3a', op: 0.8 }); fxAdd({ kind: 'ring', x: e.x, y: e.y, z: e.z - 2, s0: 0.5, s1: 5, life: 0.5, col: '#ffd0a0', op: 0.6 }); RND.floats.push({ x: e.x, y: e.y, z: e.z + 0.6, text: '暴怒！', col: '#ff6a4a', t: 0 }); return; }
+  if (e.k === 'kxp') { // an opening: a flash, sparks, and a label that stays while it lasts
+    KXP.set(e.id, kNow() + (e.t || 1)); fxAdd({ kind: 'ring', x: e.x, y: e.y, z: e.z - 0.2, s0: 0.4, s1: 2.2, life: 0.4, col: '#ffe14a', op: 0.9 });
+    for (let k = 0; k < 10; k++) addP({ x: e.x, y: e.y, z: e.z, vx: frnd(-3, 3), vy: frnd(-3, 3), vz: frnd(1, 4), col: k % 2 ? '#ffe14a' : '#ffffff', s: 0.06, life: 0.5 });
+    RND.floats.push({ x: e.x, y: e.y, z: e.z + 0.3, text: e.w === 'break' ? '打断！' : e.w === 'wall' ? '撞晕了！' : e.w === 'parry' ? '反击！' : '破绽！', col: '#ffe14a', t: 0 }); sfx('clink', e.x, e.y); return;
+  }
+}
+function kaijuFxTick(dt) {
+  for (let k = ROCKS.length - 1; k >= 0; k--) { const r = ROCKS[k]; r.t += dt; const f = Math.min(1, r.t / r.T); r.m.position.set(lerp(r.x, r.x2, f), lerp(r.z, r.z2, f) + Math.sin(f * Math.PI) * 4.5, lerp(r.y, r.y2, f)); r.m.rotation.x += dt * 7; r.m.rotation.z += dt * 5; if (f >= 1) { r.m.visible = false; ROCKS.pool.push(r.m); ROCKS.splice(k, 1); } }
+  for (let k = SPIKES.length - 1; k >= 0; k--) { const s = SPIKES[k]; s.t += dt; const f = s.t < 0.12 ? s.t / 0.12 : s.t < 0.6 ? 1 : Math.max(0, 1 - (s.t - 0.6) / 0.35); s.m.scale.set(1, Math.max(0.01, f), 1); if (s.t > 0.95) { s.m.visible = false; SPIKES.pool.push(s.m); SPIKES.splice(k, 1); } }
+}
+// overlay: a pulsing 「破绽 ×2」 over anything that is open right now
+function kxpLabels() {
+  let h = ''; const now = kNow();
+  for (const [id, until] of KXP) { if (now > until) { KXP.delete(id); continue; } const z = W.zs.find(q => q.id === id); if (!z || z.hp <= 0) continue; const T = ZT[z.k]; const [sx, sy, sz] = w2s(z.x, z.y, z.z + T.h * (T.sc || 1) / 1.1 + 0.9); if (sz > 1) continue;
+    h += `<div class="kxp" style="left:${sx | 0}px;top:${sy | 0}px">破绽 伤害×2 <b>${(until - now).toFixed(1)}</b></div>`; }
+  return h;
 }
 
 /* ---- 60_audio.js ---- */

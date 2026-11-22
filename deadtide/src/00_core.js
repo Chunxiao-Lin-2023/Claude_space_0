@@ -200,12 +200,13 @@ const ZT = {
   summoner: { name: '召唤尸王', hp: 2100, spd: 0.72, r: 0.5, h: 2.3, dmg: 22, bdmg: 40, cd: 1.4, sc: 2.2, boss: 1, look: 'boss', skin: '#5a5470' },
   venom: { name: '毒液尸王', hp: 2300, spd: 0.85, r: 0.52, h: 2.1, dmg: 26, bdmg: 50, cd: 1.3, sc: 2.1, range: 12, boss: 1, look: 'bloater', skin: '#7a9a3a' },
   // (round 34) kaiju: walking monsters about 40-80% of a mech, each with its own telegraphed skill; from night 5 (level 3)
-  kjaw: { name: '裂颚兽', hp: 2600, spd: 0.95, r: 0.85, h: 3.2, dmg: 42, bdmg: 260, cd: 1.4, sc: 1, kb: 8, kaiju: 'acid', skin: '#4a6a3a' },
-  ktail: { name: '钢尾兽', hp: 3000, spd: 1.0, r: 0.9, h: 2.8, dmg: 45, bdmg: 300, cd: 1.6, sc: 1, kb: 10, kaiju: 'tail', skin: '#5a5a66' },
-  kdig: { name: '掘地兽', hp: 2300, spd: 0.9, r: 0.8, h: 2.5, dmg: 40, bdmg: 220, cd: 1.4, sc: 1, kb: 8, kaiju: 'dig', skin: '#7a5a3a' },
+  kjaw: { name: '裂颚兽', hp: 2000, spd: 0.95, r: 0.85, h: 3.2, dmg: 30, /* (round 36l) hp 2600 → 2000, bite 42 → 30 */ bdmg: 260, cd: 1.4, sc: 1, kb: 8, kaiju: 'acid', skin: '#4a6a3a' },
+  ktail: { name: '钢尾兽', hp: 2300, spd: 1.0, r: 0.9, h: 2.8, dmg: 32, /* (round 36l) 3000 → 2300, 45 → 32 */ bdmg: 300, cd: 1.6, sc: 1, kb: 10, kaiju: 'tail', skin: '#5a5a66' },
+  kdig: { name: '掘地兽', hp: 1800, spd: 0.9, r: 0.8, h: 2.5, dmg: 28, /* (round 36l) 2300 → 1800, 40 → 28 */ bdmg: 220, cd: 1.4, sc: 1, kb: 8, kaiju: 'dig', skin: '#7a5a3a' },
   armored: { name: '防暴尸', hp: 260, spd: 0.9, r: 0.36, h: 1.26, dmg: 12, bdmg: 16, cd: 1.1, sc: 1.3, armor: 0.3, lunge: { r: 2.8, cd: 5, dmg: 12 } }, // a shield-first lunge
   // (round 35) flyers: flocks that cruise over walls and roofs, circle you and dive in for a peck (36_beasts); a roof over your head keeps them off
   crow: { name: '尸鸦', hp: 22, spd: 4.2, r: 0.3, h: 0.5, dmg: 6, bdmg: 0, cd: 1, sc: 1, fly: { alt: 1.9, orbit: 3.2, dive: 8, cd: 2.4, spd: 2.0 } }, /* (round 36b) peck 5 → 6, dive every 3.4 → 2.4 s, dive speed ×1.8 → ×2.0 */
+  vult: { name: '尸鹫', hp: 60, spd: 3.4, r: 0.4, h: 0.6, dmg: 12, bdmg: 0, cd: 1, sc: 1, fly: { alt: 3.4, orbit: 4.4, dive: 10, cd: 3.2, spd: 1.6, bomb: 1 } }, // (round 36l) circles high and drops acid globs on the spot you are heading for (marked)
   bat: { name: '尸蝠', hp: 34, spd: 3.7, r: 0.32, h: 0.5, dmg: 7, bdmg: 0, cd: 1, sc: 1, fly: { alt: 2.2, orbit: 2.6, dive: 9, cd: 2.0, spd: 2.2, drain: 8 } }, /* (round 36b) bite 6 → 7, 2.7 → 2.0 s, ×2.0 → ×2.2 */ // a bite heals it
   // (round 35) 能力者: rare elites, each with one strong telegraphed skill (36_beasts), a coloured aura and a name over the head
   blinker: { name: '闪影者', hp: 520, spd: 1.55, r: 0.3, h: 1.3, dmg: 14, bdmg: 12, cd: 0.8, sc: 1.2, look: 'runner', skin: '#7a66aa', elite: { k: 'blink', cd: 6.5, col: '#b47aff', tip: '会瞬移到你身后再砍一刀，看到紫光就闪开' } },
@@ -214,12 +215,12 @@ const ZT = {
   shade: { name: '隐身者', hp: 420, spd: 1.5, r: 0.3, h: 1.25, dmg: 12, bdmg: 10, cd: 0.9, sc: 1.2, look: 'walker', skin: '#50505e', elite: { k: 'cloak', cd: 6, col: '#c0c0e0', tip: '隐身摸到你身边偷袭，留意空气里的扭曲，附近炸一下就现形' } },
 };
 const ELITES = ['blinker', 'caller', 'warden', 'shade'];
-const BUILD_TAG = '第 36 轮之十一'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
+const BUILD_TAG = '第 36 轮之十二'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
 // aim assist (SET.assist): fire-button lock range (x weapon range), lock-on time before it fires, spread while auto-aimed, mouse/finger magnet
 const PORT = 1.25; // firing port: your own shots pass a wall / door you built if it is this close to you
 const ASSIST = [{ name: '关', range: 0, acq: 0, spread: 1, mag: 0 }, { name: '标准', range: 0.75, acq: 0.3, spread: 1.5, mag: 1 }, { name: '强', range: 1, acq: 0, spread: 1, mag: 1 }];
 const assistLv = () => ASSIST[SET.assist == null ? 1 : SET.assist] || ASSIST[1];
-const ZKEYS = ['walker', 'runner', 'climber', 'spitter', 'brute', 'boss', 'dog', 'crawler', 'bloater', 'screamer', 'armored', 'leaper', 'digger', 'summoner', 'venom', 'kjaw', 'ktail', 'kdig', 'crow', 'bat', 'blinker', 'caller', 'warden', 'shade']; // order is the net id
+const ZKEYS = ['walker', 'runner', 'climber', 'spitter', 'brute', 'boss', 'dog', 'crawler', 'bloater', 'screamer', 'armored', 'leaper', 'digger', 'summoner', 'venom', 'kjaw', 'ktail', 'kdig', 'crow', 'bat', 'blinker', 'caller', 'warden', 'shade', 'vult']; // order is the net id
 
 /* ---------- scavenging / gathering ---------- */
 // vanish: searched once and gone (restocked at random places every dawn); otherwise a fixture that refills sometimes
@@ -355,6 +356,7 @@ const BAL = {
   flyHover: 2.2, flyClimb: 0.8, flyDrop: 0.6, fuelLow: 10, refuelT: 4, // (round 29) gyrocopter: cruise 2.2 floors over whatever is below, climb / descend rate (of the take-off curve per second), warn at 10 s of fuel, 4 s to refuel indoors
   zSlope: 0.45, zSlopeC: 0.7, // (round 36) zombie speed going UP a hill slope (climbers barely mind)
   workerGather: 0.6, workerRegrow: 0.6, // (round 36b) and 60% of what it gathered grows back at dawn // (round 36) 工蜂 passive: flattening a tree / rock / scrap / logs / bush gathers it, at this share of a normal gather
+  kaijuHpPer: 0.09, kaijuPair: 0.8, xposeMul: 2, // (round 36l) kaiju hp grows +9% a night (was +18% like everything), two in a night ×0.8 each; a 破绽 (opening) doubles the damage it takes
   bigFoot: 0.65, // (round 36) kaiju / 能力者 damage to someone not in a mech
   vis: { foot: 18, floor: 3.5, night: 0.85, mech: 20, fly: 28 }, /* (round 35) 12 / 2.5 / 0.75 / 14 / 20 → 16 / 3 / 0.8 / 18 / 26; (round 36) → 18 / 3.5 / 0.85 / 20 / 28 */ // (round 34d) how far you see zombies (shared with your teammate): on foot, + per floor up, × at night; vehicles have their own (VEH[].vis)
   nadeRange: 12, nadeDmg: 220, nadeR: 3.0, nadeFuse: 1.9, nadeLand: 0.35, nadeMin: 0.3, // (round 18: radius 2.8 -> 3.4, damage at the edge 35% -> 50%, goes off 0.35 s after landing where you aimed)

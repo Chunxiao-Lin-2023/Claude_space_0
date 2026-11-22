@@ -61,7 +61,7 @@ const { chromium } = require('playwright');
   // 隐身者: unseen while cloaked (shimmer up close), a hit shows it, an ambush from up close
   s = await p.evaluate(() => { const o = spot(true); put(o); const me = W.p[ME]; W.edges = { 0: [[Math.floor(o.x) + 8, Math.floor(o.y), o.L]] }; const z = spawnZombie('shade', 0); z.x = o.x + 8; z.y = o.y; z.z = surfZ(z.x, z.y, z.L); visTick();
     const out = { ck: z.ck, seenFar: zSeen(z) }; hurtZombie(z, 1, me); out.shown = !z.ck && zSeen(z); z.ckT = 0; me.x = o.x - 6; run(0.2); out.recloak = z.ck;
-    me.x = o.x; z.x = o.x + 1.4; z.y = o.y; const hp0 = me.hp; run(0.2, () => { me.invT = 0; }); out.ambush = hp0 - me.hp; out.after = z.ck; return out; });
+    me.x = o.x; z.x = o.x + 1.4; z.y = o.y; me.aim = Math.PI; const hp0 = me.hp; run(0.7, () => { me.invT = 0; me.aim = Math.PI; }); out.ambush = hp0 - me.hp; /* (round 36l) back turned: facing it would parry the ambush */ out.after = z.ck; return out; });
   check('隐身者: invisible from afar while cloaked, a hit reveals it, it re-cloaks away from you and ambushes up close', s.ck && !s.seenFar && s.shown && s.recloak && s.ambush >= 15 && !s.after, JSON.stringify(s));
   // (round 36) counters: step out of a bird's marked dive spot and it misses; a blast grenade pops the bubble; a blast shows a cloaked one; kaiju / elites hit people on foot softer; no skills from out of sight
   s = await p.evaluate(() => { const o = spot(true); put(o); const me = W.p[ME]; const out = {}; W.edges = { 0: [[Math.floor(o.x) + 5, Math.floor(o.y), o.L]] };

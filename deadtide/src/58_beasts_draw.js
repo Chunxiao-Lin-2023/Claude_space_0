@@ -4,8 +4,8 @@
 // a 唤尸者's summoning circle, and a 隐身者's shimmer while it is cloaked (then nothing else is drawn).
 const FLY = new Map(), ELX = new Map();
 function mkFlyer(k) {
-  const bat = k === 'bat', g = new THREE.Group(), J = { k, wings: [] };
-  const body = lam(bat ? '#4a3838' : '#1d1d24'), dark = lam(bat ? '#2c2222' : '#0d0d12'), beakM = lam('#8a7a58'), memb = lam(bat ? '#5c4242' : '#24242c', { side: THREE.DoubleSide });
+  const bat = k === 'bat', vult = k === 'vult', g = new THREE.Group(), J = { k, wings: [] };
+  const body = lam(bat ? '#4a3838' : vult ? '#4a3a2c' : '#1d1d24'), dark = lam(bat ? '#2c2222' : vult ? '#c9b89a' : '#0d0d12'), /* (round 36l) 尸鹫: brown with a pale ruff */ beakM = lam('#8a7a58'), memb = lam(bat ? '#5c4242' : '#24242c', { side: THREE.DoubleSide });
   const eyeM = new THREE.MeshBasicMaterial({ color: bat ? '#ffcf3a' : '#ff3a2a' });
   const B = kjGrp(g, 0, 0.25, 0); J.body = B;
   kjPart(B, kjBlob(0.12, bat ? 1.15 : 1.7, bat ? 0.95 : 0.85, bat ? 0.9 : 0.8, 5), body);
@@ -39,7 +39,7 @@ function drawFlyer(z, corpse, dt) {
   const key = (corpse ? 'c' : 'z') + (z.id != null ? z.id : z.seed) + z.k; let K = FLY.get(key);
   if (!K) { if (!FLYSH) FLYSH = new THREE.MeshBasicMaterial({ color: '#000000', transparent: true, opacity: 0.3, depthWrite: false });
     const g = mkFlyer(z.k), sh = new THREE.Mesh(new THREE.CircleGeometry(0.22, 12).rotateX(-Math.PI / 2), FLYSH.clone()); SCN.add(g); SCN.add(sh); K = { g, J: g.userData.J, sh }; FLY.set(key, K); }
-  K.seen = 1; const g = K.g, J = K.J, bat = z.k === 'bat', t = W.t, S = bat ? 1.55 : 1.4; g.visible = K.sh.visible = true;
+  K.seen = 1; const g = K.g, J = K.J, bat = z.k === 'bat', t = W.t, S = bat ? 1.55 : z.k === 'vult' ? 2.3 : 1.4; g.visible = K.sh.visible = true;
   if (z._f == null) { z._f = z.face || 0; z._ph = (z.seed || 0) % 7; z._roll = 0; z._pz = z.z; }
   const kt = corpse ? 0 : z.kt || 0, f0 = z._f; z._f = angLerp(z._f, z.face || 0, Math.min(1, dt * 7));
   const turn = dt > 0 ? angDiff(f0, z._f) / dt : 0; z._roll = lerp(z._roll, clamp(-turn * 0.18, -0.7, 0.7), Math.min(1, dt * 5));
@@ -152,6 +152,7 @@ function fxMesh(kind) {
 // o: { kind, x, y, z, s0, s1 (scale over life), life, col, op, yaw, roll, pitch }
 function fxAdd(o) { const m = fxMesh(o.kind); m.material.color.set(o.col || '#ffffff'); m.position.set(o.x, o.z, o.y); m.rotation.set(o.roll || 0, -(o.yaw || 0), o.pitch || 0, 'YXZ'); FXM.live.push(Object.assign({ m, t: 0, op: 0.9 }, o)); }
 function fxTick(dt) {
+  kaijuFxTick(dt);
   for (const m of KTRL) if (m.visible && !(W.t - (m.userData.seen || 0) < 0.1)) m.visible = false; /* (round 36f) a sword trail whose mech is gone */
   for (const f of FXM.live) { f.t += dt; const k = Math.min(1, f.t / f.life), s = lerp(f.s0, f.s1, 1 - (1 - k) * (1 - k)); f.m.scale.set(s, f.sy != null ? f.sy : s, s); f.m.material.opacity = f.op * (1 - k * k); if (k >= 1) { f.m.visible = false; FXM.pool[f.m.userData.kind].push(f.m); f.dead = 1; } }
   if (FXM.live.length) FXM.live = FXM.live.filter(f => !f.dead);
@@ -188,4 +189,41 @@ function mechDamageFx(p, mm, dt) {
   if (f < 0.35) { const w = 1 - f / 0.35; if (FXR() < dt * (4 + 14 * w)) addP({ x: px + frnd(-0.3, 0.3), y: py + frnd(-0.3, 0.3), z: pz + frnd(1.4, 2.4) * s, vx: frnd(-0.3, 0.3), vy: frnd(-0.3, 0.3), vz: frnd(0.6, 1.2), g: -0.3, col: w > 0.6 ? '#2a2a2a' : '#5a5650', s: frnd(0.12, 0.22), life: 1.1, smoke: 1 });
     if (FXR() < dt * (1 + 6 * w)) for (let k = 0; k < 4; k++) addP({ x: px + frnd(-0.35, 0.35), y: py + frnd(-0.35, 0.35), z: pz + frnd(0.8, 2.2) * s, vx: frnd(-2.5, 2.5), vy: frnd(-2.5, 2.5), vz: frnd(0.5, 3), g: 9, col: k % 2 ? '#ffe080' : '#ff9a3a', s: 0.04, life: 0.45, floor: pz }); }
   const low = (p.bat || 0) < BAL.mechLow; if (J.core) J.core.visible = !low || (W.t * 7 % 1) > 0.35;
+}
+
+/* ================= (round 36l) kaiju / elite fight feedback: telegraphs, boulders, spikes, the 破绽 (opening) label ================= */
+const KXP = new Map(), ROCKS = [], SPIKES = [];
+const kNow = () => performance.now() / 1000;
+function kaijuFx(e) {
+  if (e.k === 'ktell') { // red warning on the ground: a disc that fills in, or a strip of discs along a line
+    const t = e.t || 1, col = '#ff3b2b';
+    if (e.s === 'disc') { fxAdd({ kind: 'disc', x: e.x, y: e.y, z: e.z + 0.06, s0: e.r * 0.15, s1: e.r, life: t, col, op: 0.32 }); fxAdd({ kind: 'ring', x: e.x, y: e.y, z: e.z + 0.07, s0: e.r, s1: e.r, life: t, col, op: 0.7 }); }
+    else { const L = Math.hypot(e.x2 - e.x, e.y2 - e.y), n = Math.max(2, Math.ceil(L / 0.8)); for (let k = 1; k <= n; k++) { const f = k / n, x = e.x + (e.x2 - e.x) * f, y = e.y + (e.y2 - e.y) * f, zz = surfZ(x, y, Math.max(0, Math.round(e.z / FH))); fxAdd({ kind: 'disc', x, y, z: zz + 0.06, s0: e.w * 0.25, s1: e.w * 0.55, life: t, col, op: 0.3 }); } }
+    return;
+  }
+  if (e.k === 'krock') { // a boulder in a high arc
+    let m = (ROCKS.pool || (ROCKS.pool = [])).pop(); if (!m) { m = new THREE.Mesh(new THREE.DodecahedronGeometry(0.55, 0), new THREE.MeshLambertMaterial({ color: '#6e6258', flatShading: true })); SCN.add(m); }
+    m.visible = true; ROCKS.push({ m, x: e.x, y: e.y, z: e.z, x2: e.x2, y2: e.y2, z2: e.z2, t: 0, T: e.t || 0.9 }); return;
+  }
+  if (e.k === 'kspike') { // a spike bursts up and sinks back
+    let m = (SPIKES.pool || (SPIKES.pool = [])).pop(); if (!m) { m = new THREE.Group(); const mat = new THREE.MeshLambertMaterial({ color: '#7a5a3a', flatShading: true }); for (let k = 0; k < 3; k++) { const c = new THREE.Mesh(new THREE.ConeGeometry(0.22 - k * 0.04, 1.4 - k * 0.3, 5), mat); c.position.set((k - 1) * 0.22, (1.4 - k * 0.3) / 2, (k % 2 ? 0.15 : -0.12)); c.rotation.z = (k - 1) * 0.25; m.add(c); } SCN.add(m); }
+    m.visible = true; m.position.set(e.x, e.z, e.y); m.rotation.y = Math.random() * 6; SPIKES.push({ m, t: 0 }); for (let k = 0; k < 4; k++) addP({ x: e.x, y: e.y, z: e.z + 0.2, vx: frnd(-2, 2), vy: frnd(-2, 2), vz: frnd(2, 4), col: '#6a5040', s: 0.08, life: 0.5 }); sfx('bash', e.x, e.y); return;
+  }
+  if (e.k === 'kroar') { fxAdd({ kind: 'ring', x: e.x, y: e.y, z: e.z - 2, s0: 1, s1: 7, life: 0.7, col: '#ff5a3a', op: 0.8 }); fxAdd({ kind: 'ring', x: e.x, y: e.y, z: e.z - 2, s0: 0.5, s1: 5, life: 0.5, col: '#ffd0a0', op: 0.6 }); RND.floats.push({ x: e.x, y: e.y, z: e.z + 0.6, text: '暴怒！', col: '#ff6a4a', t: 0 }); return; }
+  if (e.k === 'kxp') { // an opening: a flash, sparks, and a label that stays while it lasts
+    KXP.set(e.id, kNow() + (e.t || 1)); fxAdd({ kind: 'ring', x: e.x, y: e.y, z: e.z - 0.2, s0: 0.4, s1: 2.2, life: 0.4, col: '#ffe14a', op: 0.9 });
+    for (let k = 0; k < 10; k++) addP({ x: e.x, y: e.y, z: e.z, vx: frnd(-3, 3), vy: frnd(-3, 3), vz: frnd(1, 4), col: k % 2 ? '#ffe14a' : '#ffffff', s: 0.06, life: 0.5 });
+    RND.floats.push({ x: e.x, y: e.y, z: e.z + 0.3, text: e.w === 'break' ? '打断！' : e.w === 'wall' ? '撞晕了！' : e.w === 'parry' ? '反击！' : '破绽！', col: '#ffe14a', t: 0 }); sfx('clink', e.x, e.y); return;
+  }
+}
+function kaijuFxTick(dt) {
+  for (let k = ROCKS.length - 1; k >= 0; k--) { const r = ROCKS[k]; r.t += dt; const f = Math.min(1, r.t / r.T); r.m.position.set(lerp(r.x, r.x2, f), lerp(r.z, r.z2, f) + Math.sin(f * Math.PI) * 4.5, lerp(r.y, r.y2, f)); r.m.rotation.x += dt * 7; r.m.rotation.z += dt * 5; if (f >= 1) { r.m.visible = false; ROCKS.pool.push(r.m); ROCKS.splice(k, 1); } }
+  for (let k = SPIKES.length - 1; k >= 0; k--) { const s = SPIKES[k]; s.t += dt; const f = s.t < 0.12 ? s.t / 0.12 : s.t < 0.6 ? 1 : Math.max(0, 1 - (s.t - 0.6) / 0.35); s.m.scale.set(1, Math.max(0.01, f), 1); if (s.t > 0.95) { s.m.visible = false; SPIKES.pool.push(s.m); SPIKES.splice(k, 1); } }
+}
+// overlay: a pulsing 「破绽 ×2」 over anything that is open right now
+function kxpLabels() {
+  let h = ''; const now = kNow();
+  for (const [id, until] of KXP) { if (now > until) { KXP.delete(id); continue; } const z = W.zs.find(q => q.id === id); if (!z || z.hp <= 0) continue; const T = ZT[z.k]; const [sx, sy, sz] = w2s(z.x, z.y, z.z + T.h * (T.sc || 1) / 1.1 + 0.9); if (sz > 1) continue;
+    h += `<div class="kxp" style="left:${sx | 0}px;top:${sy | 0}px">破绽 伤害×2 <b>${(until - now).toFixed(1)}</b></div>`; }
+  return h;
 }

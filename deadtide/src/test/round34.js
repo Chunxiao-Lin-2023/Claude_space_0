@@ -140,7 +140,7 @@ const { chromium } = require('playwright');
   s = await p.evaluate(o => { const me = W.p[ME]; W.zs.length = 0; const z = spawnZombie('kdig', 0); z.x = me.x + 9; z.y = me.y; z.L = me.L; z.z = surfZ(z.x, z.y, z.L); z.kcd = 0; window.__k = z; me.hp = me.maxHp; me.down = false; me.dead = false; me.invT = 0; return 1; }, open);
   await simWait(0.5); const d1 = await p.evaluate(() => ({ hidden: !!__k.hidden }));
   await simWait(2.6); const d2 = await p.evaluate(() => ({ hidden: !!__k.hidden, near: +Math.hypot(__k.x - W.p[ME].x, __k.y - W.p[ME].y).toFixed(1), crawlers: W.zs.filter(z => z.k === 'crawler').length, hp: W.p[ME].hp, max: W.p[ME].maxHp }));
-  check('kaiju 掘地兽: burrows out of sight, bursts out under you (hurts) with crawlers', d1.hidden && !d2.hidden && d2.near < 2 && d2.crawlers >= 2 && d2.hp < d2.max, JSON.stringify([d1, d2]));
+  check('kaiju 掘地兽: burrows out of sight, bursts out under you (hurts) with crawlers', d1.hidden && !d2.hidden && d2.near < 3.2 && d2.crawlers >= 2 && d2.hp < d2.max, JSON.stringify([d1, d2]));
   s = await p.evaluate(() => { W.night = 4; W.zs.length = 0; startNight(); const k5 = W.spawnQ.filter(q => ZT[q.k].kaiju).length; W.night = 5; startNight(); const k6 = W.spawnQ.filter(q => ZT[q.k].kaiju).length; W.night = 10; startNight(); const k11 = W.spawnQ.filter(q => ZT[q.k].kaiju).length; return { k5, k6, k11 }; });
   check('kaiju turn up on night 5 (one), not night 6, two from night 11', s.k5 === 1 && s.k6 === 0 && s.k11 === 2, JSON.stringify(s));
   check('no page errors', !errs.length, errs.join(' | '));

@@ -152,7 +152,7 @@ function stepZombies(dt) {
     if (z.conf > 0) { if (z.wa == null || rand() < dt * 0.9) z.wa = rand() * Math.PI * 2; tx = z.x + Math.cos(z.wa); ty = z.y + Math.sin(z.wa); attackI = -1; z.chg = z.slam = null; z.tl = 0; } // lost in the smoke: wander
     if (tx != null && attackI < 0 && !z.climbing && field === pf && !(DBG && DBG.noChase)) { let tp = null, td = 7; for (const p of W.p) { if (!standingP(p) || p.L !== z.L) continue; const d = Math.hypot(p.x - z.x, p.y - z.y); if (d < td) { td = d; tp = p; } } // (round 34d) close and in plain sight: straight at you
       if (tp && zLineClear(z, tp.x, tp.y)) { tx = tp.x; ty = tp.y; } }
-    if (attackI >= 0 && Z.kaiju) { attackI = -1; tx = null; z.moving = false; } // (round 36) a kaiju doesn't tear into buildings: it is too big to get in and waits outside — a roof is a refuge on foot
+    if (attackI >= 0 && Z.kaiju && !(B[W.blk[attackI]] && B[W.blk[attackI]].hp <= 330)) { attackI = -1; tx = null; z.moving = false; } // (round 36l) a kaiju smashes through wood (walls, doors, boards: hp ≤ 330) but not brick / concrete — in a solid building it switches to its ranged attacks
     if (attackI >= 0) { zAttackCell(z, attackI); tx = null; }
     // bite players in reach
     for (const p of W.p) {
