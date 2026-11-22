@@ -16,6 +16,8 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 canvas#cv{position:fixed;inset:0;width:100%;height:100%;display:block;cursor:crosshair;touch-action:none}
 #ov{position:fixed;inset:0;z-index:4;pointer-events:none;overflow:hidden}
 #hpov{position:fixed;inset:0;z-index:4;pointer-events:none;overflow:hidden}
+#ov .elt{position:absolute;transform:translate(-50%,-100%);font-size:11px;font-weight:800;text-shadow:0 0 3px #000,0 1px 3px #000;white-space:nowrap;text-align:center;pointer-events:none}
+#ov .elt i{display:block;width:40px;height:4px;margin:2px auto 0;background:rgba(0,0,0,.6);border-radius:2px;overflow:hidden}#ov .elt b{display:block;height:100%}
 #ov .zmk{position:absolute;transform:translate(-50%,-100%);font-weight:900;text-shadow:0 0 3px #000,0 1px 3px #000,0 0 6px #000;pointer-events:none;font-family:system-ui,sans-serif}
 #ov .fl{position:absolute;transform:translate(-50%,-100%);font-weight:700;font-size:14px;text-shadow:0 1px 3px #000;white-space:nowrap}
 #ov .tag{position:absolute;transform:translate(-50%,-100%);text-align:center;font-size:11px;font-weight:600;color:#fff;text-shadow:0 1px 2px #000}
@@ -664,7 +666,8 @@ body.aiming canvas#cv{cursor:none}body.touch #reticle b{left:-34px;top:-38px}
       <details><summary>道具（建造）</summary>按 <kbd>B</kbd> / 点「道具」拿出道具栏：<b>墙、地板、梯子、门、掩体、陷阱、机枪塔、探照灯、跳板</b>，同类的合在一格——<b>再点一次同一格（或点上面的小条）换材料</b>，比如木墙 → 砖墙 → 钢墙。放下去不分朝向：梯子会自己贴到能爬上去的那面墙。指哪放哪，按住拖动放一排；放一个扣一份材料，右键 / 「拆除」拆掉退一半。墙、地板、梯子、门只能在营地周围的黄框里放（尸城求生哪都能放）；<b>掩体、陷阱、地雷、机枪塔、探照灯、跳板哪都能放</b>（尸城求生里有些要先找到蓝图）。方块要有支撑，断了会连锁坍塌。楼上最外圈的墙是半人高的矮墙，能探身往下打。<br><b>跳板</b>：踩上去把你朝走的方向弹出约 5 格，前面有矮楼顶（最多高 2 层）就弹上去，用一次就没——被围住时的逃生道具。</details>
       <details><summary>载具</summary><b>自行车</b>快 70%，没有发动机（攻楼时不会吵醒楼里的丧尸，别的车会），泥地不减速，骑着开枪射速几乎不降；<b>摩托车</b>快 90%，后座带一个队友；<b>货运三轮</b>坐在车上就能搜东西（够得更远、时间减半、材料 +50%）；<b>装甲车</b>受到的伤害只剩 35%，撞开挡路的丧尸，后座带一个队友；<b>旋翼机</b>会飞，越过屋顶和尸群（丧尸咬不到，喷吐者还能打到），只能在地面或楼顶起飞（头顶不能有屋顶），一箱油飞 60 秒，没满随时能加（商店「载具」栏一键加满，或在有屋顶的房间里按 <kbd>F</kbd>），飞着用机头下的机枪打（机上自己的子弹，商店「武器 · 弹药」里买，最多存 500 发），手里的枪不能用，手雷能扔；后座能带一个队友（上去后旋翼空转约 1 秒，队友这时按 <kbd>T</kbd> 上来），后座的人能开枪；再按 <kbd>T</kbd> 降落，没油会自己降落；<b>坦克</b>自带炮塔，开火打炮弹（打到哪炸到哪，120 伤害、半径 2.3，1.6 秒一发；炮弹在商店「武器 · 弹药」栏买，车里最多 200 发），受到的伤害只剩 20%，撞开丧尸，但慢、太大进不了楼（有屋顶的地方开不进去）。<b>变形成机甲</b>：骑车时按 <kbd>X</kbd>（触屏：骑车时「刀」键变成「变形」），1 秒后载具站起来变成机甲，再按变回。每种载具一台：自行车→疾风（最快，低踢、滑铲）、摩托→赤刃（臂刃下劈、冲斩）、三轮→工蜂（扔快递、快递雨，能搜刮）、装甲车→铁卫（下砸拳 / 跺脚 / 拳头炮、震地，最耐打）、旋翼机→苍隼（火箭弹，技能键起飞 / 降落一直飞）、坦克→重炮（手臂炮、齐射用炮弹）。机甲会把路上的石头、灌木、栅栏踩平。开火 = 出拳，手雷键 = 技能；装甲打光或电用完会变回载具，装甲和电下车后慢慢恢复，商店「载具」栏能马上修好 / 充满；屋顶下站不起来。在商店「载具」栏或「装备」里选一辆当默认：<kbd>T</kbd> / 点「载具」就上这辆，再按下车；<kbd>Shift</kbd>+<kbd>T</kbd> / 长按「载具」换车。车上也能开枪，只是射速慢（司机 40%、后座 70%；自行车 80%），准度不变。<br><b>怪兽</b>：第 5 夜起隔夜出现（第 11 夜起两只），血很厚，每种有自己的大招，放之前地上会有红色范围提示、身上发光——<b>裂颚兽</b>喷酸（扇形）、<b>钢尾兽</b>甩尾（一圈）或低头冲锋（一条线）、<b>掘地兽</b>钻地从你脚下冒出来还带爬行尸。蓄力时用震地、爆破手雷等把它震晕能打断。</details>
       <details><summary>白天和永久任务</summary>出门砍树（木材）、采石（砖石），搜汽车、补给箱和废墟瓦砾（钢材、零件、弹药），离家越远收获越多；回来盖楼；在任何建筑里（或营地工作台）都能造枪、买弹药（按 C / 点「商店」）。河上只有两座桥，丧尸也只能从桥上过河。每 5 夜一次血月。<br>右上角「任务」小条点开是永久任务（击杀、搜索、建造、砍树采石、手雷击杀、整夜无人倒下……），每完成一档拿一个永久提升：生命上限、背包（弹药上限）、医疗包上限、手雷上限、复活次数。</details>
-      <details><summary>视野和复活</summary>只看得到你和队友视野里的丧尸（画面和地图都是）：步行 12 格，越高看得越远，夜里看得近；装甲车只有 8 格，旋翼机在天上 18 格。血少于 30% 屏幕四周会泛红、有心跳声。队友死了，你在任何建筑里或营地按交互键就能让他在你身边复活。</details>
+      <details><summary>飞行丧尸和能力者</summary>第 2 夜起有<b>尸鸦</b>群（第 4 夜起还有吸血的<b>尸蝠</b>）：飞过墙和屋顶，在头顶盘旋、轮流俯冲啄人，坐旋翼机在天上也会被追；躲进有屋顶的楼里它们就够不着，看地上的影子判断高度。第 3 夜起每晚有<b>能力者</b>（脚下有彩色光圈、头顶有名字）：<b>闪影者</b>会瞬移到你身后砍一刀（看到紫光就闪开）；<b>唤尸者</b>会从地下叫出丧尸（晕住它能打断）；<b>护盾者</b>给周围的丧尸套蓝色护盾，站进护盾里打才打得动；<b>隐身者</b>隐身摸过来偷袭，挨打或着火就现形。打死能力者掉零件、钢材和特殊手雷。</details>
+      <details><summary>视野和复活</summary>只看得到你和队友视野里的丧尸（画面和地图都是）：步行 16 格，越高看得越远，夜里看得近；装甲车只有 11 格，旋翼机在天上 24 格。血少于 30% 屏幕四周会泛红、有心跳声。队友死了，你在任何建筑里或营地按交互键就能让他在你身边复活。</details>
       <details><summary>爬梯和翻越</summary>朝梯子走就爬上去，往下要继续推一下；丧尸爬梯子很慢（攀爬者除外）。没有跳键：走路碰到沙袋、拒马、掩体、栅栏、瓦砾和一人高的墙会自己翻过去，朝一格宽的空隙走会自己跳过去；丧尸不会翻，只能砸。</details>
       <details><summary>视角</summary>滚轮或 ＋/－ 缩放，Q / E 或 ⟲⟳ 转镜头。楼层视图默认跟随你所在的层，上面的楼层会自动隐藏；▲▼ 手动看别的层，「跟随我所在的层」恢复。</details>
       <details class="kbd"><summary>键鼠</summary><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 移动　鼠标瞄准，左键射击（准星圆圈 = 散布；变黄 = 爆头）<br><kbd>1</kbd>–<kbd>4</kbd> 快捷武器　<kbd>Z</kbd> 切回上一把　<kbd>I</kbd> 装备　<kbd>R</kbd> 换弹　<kbd>右键</kbd> / <kbd>V</kbd> 近战（刀 / 盾，<kbd>X</kbd> 切换）　按住 <kbd>G</kbd> 瞄手雷、松开扔（按住时滚轮换种类）　<kbd>5</kbd>–<kbd>8</kbd> 破片 / 减速 / 烟雾 / 爆破　<kbd>H</kbd> 医疗包<br><kbd>F</kbd> 交互（砍树 / 搜索 / 扶人）　<kbd>C</kbd> 商店　<kbd>T</kbd> 上下车（<kbd>Shift</kbd>+<kbd>T</kbd> 换车）<br><kbd>B</kbd> 道具：<kbd>1</kbd>–<kbd>9</kbd> 选道具，再按一次 / <kbd>R</kbd> 换材料，左键放，右键拆，<kbd>X</kbd> 拆除模式<br><kbd>Q</kbd><kbd>E</kbd> 转镜头　滚轮缩放　<kbd>PageUp</kbd><kbd>PageDown</kbd> 楼层视图　<kbd>M</kbd> / <kbd>Tab</kbd> 大地图　<kbd>N</kbd> 准备入夜　<kbd>Esc</kbd> 菜单</details>
@@ -4939,12 +4942,12 @@ for (const g of ITEMS) if (!['build', 'ladder'].includes(g.k)) for (const id of 
 const itemOf = id => ITEMS.find(g => g.ids.includes(id)) || ITEMS[0];
 // vehicles (round 22: their own category; you pick a default and T gets on it). spd = walking speed multiplier, seats 2 = a pillion seat
 const VEH = [null,
-  { k: 'bike', name: '自行车', vis: 12,  spd: 1.7, quiet: 1, mud: 1, tag: '便宜、安静、灵活：走得快 70%；没有发动机，攻楼时骑着不会把楼里的丧尸吵醒；泥地不减速；单手骑车，开枪的射速几乎不降（别的车上射速减半还多）' },
-  { k: 'moto', name: '摩托车', vis: 12,  spd: 1.9, seats: 2, noise: 6, tag: '最快：走得快 90%，后座能带一个队友；发动机响，攻楼时会吵醒附近楼里的丧尸' },
-  { k: 'cargo', name: '货运三轮', vis: 11,  spd: 1.45, search: 1, noise: 5, tag: '搜刮用：坐在车上就能搜（够得更远、时间减半），搜到的材料 +50%' },
-  { k: 'armor', name: '装甲车', vis: 8,  spd: 1.3, seats: 2, armor: 0.35, ram: 1, noise: 8, tag: '保护用：受到的伤害只剩 35%，撞开挡路的丧尸，后座能带一个队友' },
-  { k: 'gyro', name: '旋翼机', vis: 18,  spd: 1.9, fly: 1, fuel: 60, seats: 2, gun: 'chin', noise: 9, tag: '会飞：越过屋顶和尸群。只能从地面或楼顶起飞（头顶不能有屋顶）；一箱油飞 60 秒，没满就能加：商店「载具」栏一键加满，或在有屋顶的房间里按 F；飞着用机头下的机枪打（机上自己的子弹，商店里买），手里的枪不能用；后座能带一个队友，队友能开枪' }, // (round 29)
-  { k: 'tank', name: '坦克', vis: 10,  spd: 1.0, armor: 0.2, ram: 1, gun: 'cannon', outdoor: 1, noise: 10, tag: '自带炮塔：开火打炮弹（落点爆炸 120，半径 2.3），炮弹商店里买；受到的伤害只剩 20%，撞开丧尸；慢，太大进不了楼' }, // (round 31)
+  { k: 'bike', name: '自行车', vis: 16,  spd: 1.7, quiet: 1, mud: 1, tag: '便宜、安静、灵活：走得快 70%；没有发动机，攻楼时骑着不会把楼里的丧尸吵醒；泥地不减速；单手骑车，开枪的射速几乎不降（别的车上射速减半还多）' },
+  { k: 'moto', name: '摩托车', vis: 16,  spd: 1.9, seats: 2, noise: 6, tag: '最快：走得快 90%，后座能带一个队友；发动机响，攻楼时会吵醒附近楼里的丧尸' },
+  { k: 'cargo', name: '货运三轮', vis: 15,  spd: 1.45, search: 1, noise: 5, tag: '搜刮用：坐在车上就能搜（够得更远、时间减半），搜到的材料 +50%' },
+  { k: 'armor', name: '装甲车', vis: 11,  spd: 1.3, seats: 2, armor: 0.35, ram: 1, noise: 8, tag: '保护用：受到的伤害只剩 35%，撞开挡路的丧尸，后座能带一个队友' },
+  { k: 'gyro', name: '旋翼机', vis: 24,  spd: 1.9, fly: 1, fuel: 60, seats: 2, gun: 'chin', noise: 9, tag: '会飞：越过屋顶和尸群。只能从地面或楼顶起飞（头顶不能有屋顶）；一箱油飞 60 秒，没满就能加：商店「载具」栏一键加满，或在有屋顶的房间里按 F；飞着用机头下的机枪打（机上自己的子弹，商店里买），手里的枪不能用；后座能带一个队友，队友能开枪' }, // (round 29)
+  { k: 'tank', name: '坦克', vis: 14,  spd: 1.0, armor: 0.2, ram: 1, gun: 'cannon', outdoor: 1, noise: 10, tag: '自带炮塔：开火打炮弹（落点爆炸 120，半径 2.3），炮弹商店里买；受到的伤害只剩 20%，撞开丧尸；慢，太大进不了楼' }, // (round 31)
 ];
 const NVEH = VEH.length - 1;
 const MECH_ON = true;
@@ -4953,12 +4956,12 @@ const KAIJU_ON = MECH_ON; // (round 34) kaiju come with the mechs
 // (round 34b) every vehicle has a second stage: press 变形 while driving and in 1 s it stands up as a mech (no blueprint).
 // hp = hull, armor = share of damage the hull takes, dmg / rate / reach / arc / kb = the punch, spd = walking speed, skill + cooldown, noise (攻楼)
 const MECHS = [null,
-  { k: 'gale', name: '疾风', hp: 800, armor: 1.15, dmg: 42, rate: 0.32, reach: 2.2, arc: 1.0, kb: 3, spd: 1.65, skill: 'slide', sn: '滑铲', cd: 6, noise: 0, style: 'scout', atk: 'kick', col: ['#e8c02a', '#232326', '#f2f2ee'], glow: '#ffe066', tag: '最快最安静，普攻是快速低踢；装甲薄（800，挨打 ×1.15）。技能「滑铲」：贴地冲 6 格，铲倒路上的丧尸（90 伤害、倒地 1.2 秒），冷却 6 秒' },
-  { k: 'edge', name: '赤刃', hp: 1200, armor: 1.0, dmg: 65, rate: 0.42, reach: 2.7, arc: 1.05, kb: 4, spd: 1.45, skill: 'dash', sn: '冲斩', cd: 10, noise: 6, style: 'slim', atk: 'chop', col: ['#a8262a', '#2a1d20', '#e8e2d6'], glow: '#ffa040', tag: '臂刃往下劈，快、够得远；装甲 1200。技能「冲斩」：朝目标冲 8 格，路上的丧尸受 180，冷却 10 秒' },
-  { k: 'worker', name: '工蜂', hp: 1600, armor: 0.9, dmg: 45, rate: 0.55, reach: 2.4, arc: 1.2, kb: 4, spd: 1.0, skill: 'parcels', sn: '快递雨', cd: 9, noise: 5, style: 'worker', atk: 'parcel', range: 12, blast: 1.1, col: ['#e07a1f', '#3b3d2e', '#f0d040'], glow: '#ffd07a', tag: '快递机甲：普攻扔小快递箱砸丧尸（45、半径 1.1、射程 12）；技能「快递雨」：朝目标扔出一堆大快递箱，5 个箱子砸在周围（每个 90、半径 1.6、砸晕），冷却 9 秒；机甲形态照样能搜刮（够得远、材料 +50%）；慢，装甲 1600（×0.9）' },
-  { k: 'bastion', name: '铁卫', hp: 2400, armor: 0.7, dmg: 95, rate: 0.75, reach: 2.5, arc: 1.25, kb: 7, spd: 0.95, skill: 'slam', sn: '震地', cd: 12, noise: 8, style: 'big', atk: 'heavy', col: ['#55606c', '#2c333b', '#e2b93b'], glow: '#5fe0ff', tag: '最耐打（2400，挨打 ×0.7），普攻三连：下砸拳、跺脚、拳头炮（打出 7 格），走路撞开丧尸；慢。技能「震地」：周围 4.5 格 220 伤害并震晕 1.6 秒，冷却 12 秒' },
-  { k: 'falcon', name: '苍隼', hp: 1000, armor: 1.1, dmg: 55, rate: 0.5, reach: 2.4, arc: 1.15, kb: 5, spd: 1.3, skill: 'fly', sn: '飞行', cd: 1, noise: 9, style: 'fly', atk: 'rocket', range: 16, blast: 1.6, col: ['#dfe6ee', '#3a5a7a', '#59b8ff'], glow: '#9fe8ff', tag: '会飞：技能键起飞 / 降落，像旋翼机一样越过屋顶一直飞（飞着耗电 ×2，丧尸够不着，喷吐者能打到）；普攻是肩上的火箭弹（55、半径 1.6、射程 16）；装甲薄（1000，挨打 ×1.1）' },
-  { k: 'howitzer', name: '重炮', hp: 2000, armor: 0.8, dmg: 60, rate: 0.6, reach: 2.4, arc: 1.1, kb: 6, spd: 0.8, skill: 'volley', sn: '齐射', cd: 7, noise: 10, style: 'cannon', atk: 'cannon', range: 18, blast: 1.4, dmg2: 60, col: ['#5a6b3a', '#2e3622', '#c8b88a'], glow: '#ff9a3a', tag: '普攻是手臂炮（60、半径 1.4、射程 18，不耗弹药），耐打（2000，挨打 ×0.8）；最慢。技能「齐射」：朝目标打 3 发炮弹（每发 110、半径 2.2，用坦克的炮弹），冷却 7 秒' },
+  { k: 'gale', name: '疾风', hp: 800, armor: 1.15, dmg: 42, rate: 0.32, reach: 3.2, arc: 1.4, /* (round 35) reach 2.2 → 3.2, arc 1.0 → 1.4 */ kb: 3, spd: 1.65, skill: 'slide', sn: '滑铲', cd: 6, noise: 0, style: 'scout', atk: 'kick', col: ['#e8c02a', '#232326', '#f2f2ee'], glow: '#ffe066', tag: '最快最安静，普攻是快速低踢；装甲薄（800，挨打 ×1.15）。技能「滑铲」：贴地冲 6 格，铲倒路上的丧尸（90 伤害、倒地 1.2 秒），冷却 6 秒' },
+  { k: 'edge', name: '赤刃', hp: 1200, armor: 1.0, dmg: 65, rate: 0.42, reach: 3.6, arc: 1.5, /* (round 35) 2.7 → 3.6, 1.05 → 1.5 */ kb: 4, spd: 1.45, skill: 'dash', sn: '冲斩', cd: 10, noise: 6, style: 'slim', atk: 'chop', col: ['#a8262a', '#2a1d20', '#e8e2d6'], glow: '#ffa040', tag: '臂刃往下劈，快、够得远；装甲 1200。技能「冲斩」：朝目标冲 8 格，路上的丧尸受 180，冷却 10 秒' },
+  { k: 'worker', name: '工蜂', hp: 1600, armor: 0.9, dmg: 45, rate: 0.55, reach: 2.4, arc: 1.2, kb: 4, spd: 1.0, skill: 'parcels', sn: '快递雨', cd: 9, noise: 5, style: 'worker', atk: 'parcel', range: 12, blast: 1.6, /* (round 35) 1.1 → 1.6 */ col: ['#e07a1f', '#3b3d2e', '#f0d040'], glow: '#ffd07a', tag: '快递机甲：普攻扔小快递箱砸丧尸（45、半径 1.6、射程 12）；技能「快递雨」：朝目标扔出一堆大快递箱，5 个箱子砸在周围（每个 90、半径 1.6、砸晕），冷却 9 秒；机甲形态照样能搜刮（够得远、材料 +50%）；慢，装甲 1600（×0.9）' },
+  { k: 'bastion', name: '铁卫', hp: 2400, armor: 0.7, dmg: 95, rate: 0.75, reach: 3.4, arc: 1.6, /* (round 35) 2.5 → 3.4, 1.25 → 1.6 */ kb: 7, spd: 0.95, skill: 'slam', sn: '震地', cd: 12, noise: 8, style: 'big', atk: 'heavy', col: ['#55606c', '#2c333b', '#e2b93b'], glow: '#5fe0ff', tag: '最耐打（2400，挨打 ×0.7），普攻三连：下砸拳、跺脚、拳头炮（打出 7 格），走路撞开丧尸；慢。技能「震地」：周围 4.5 格 220 伤害并震晕 1.6 秒，冷却 12 秒' },
+  { k: 'falcon', name: '苍隼', hp: 1000, armor: 1.1, dmg: 55, rate: 0.5, reach: 2.4, arc: 1.15, kb: 5, spd: 1.3, skill: 'fly', sn: '飞行', cd: 1, noise: 9, style: 'fly', atk: 'rocket', range: 16, blast: 2.0, /* (round 35) 1.6 → 2.0 */ col: ['#dfe6ee', '#3a5a7a', '#59b8ff'], glow: '#9fe8ff', tag: '会飞：技能键起飞 / 降落，像旋翼机一样越过屋顶一直飞（飞着耗电 ×2，丧尸够不着，喷吐者能打到）；普攻是肩上的火箭弹（55、半径 2.0、射程 16）；装甲薄（1000，挨打 ×1.1）' },
+  { k: 'howitzer', name: '重炮', hp: 2000, armor: 0.8, dmg: 60, rate: 0.6, reach: 2.4, arc: 1.1, kb: 6, spd: 0.8, skill: 'volley', sn: '齐射', cd: 7, noise: 10, style: 'cannon', atk: 'cannon', range: 18, blast: 1.9, /* (round 35) 1.4 → 1.9 */ dmg2: 60, col: ['#5a6b3a', '#2e3622', '#c8b88a'], glow: '#ff9a3a', tag: '普攻是手臂炮（60、半径 1.9、射程 18，不耗弹药），耐打（2000，挨打 ×0.8）；最慢。技能「齐射」：朝目标打 3 发炮弹（每发 110、半径 2.2，用坦克的炮弹），冷却 7 秒' },
 ];
 const MECH_CRUSH = new Set([21, 22, 27, 29, 32, 39, 40, 41]); // (round 34d) what a mech just walks over and flattens: rocks, trees, fences, rubble, bins, scrap, logs, bushes
 const inMech = p => !!(p && p.ride && p.mform === 1 && MECHS[p.veh]);
@@ -5024,12 +5027,21 @@ const ZT = {
   ktail: { name: '钢尾兽', hp: 3000, spd: 1.0, r: 0.9, h: 2.8, dmg: 45, bdmg: 300, cd: 1.6, sc: 1, kb: 10, kaiju: 'tail', skin: '#5a5a66' },
   kdig: { name: '掘地兽', hp: 2300, spd: 0.9, r: 0.8, h: 2.5, dmg: 40, bdmg: 220, cd: 1.4, sc: 1, kb: 8, kaiju: 'dig', skin: '#7a5a3a' },
   armored: { name: '防暴尸', hp: 260, spd: 0.9, r: 0.36, h: 1.26, dmg: 12, bdmg: 16, cd: 1.1, sc: 1.3, armor: 0.3, lunge: { r: 2.8, cd: 5, dmg: 12 } }, // a shield-first lunge
+  // (round 35) flyers: flocks that cruise over walls and roofs, circle you and dive in for a peck (36_beasts); a roof over your head keeps them off
+  crow: { name: '尸鸦', hp: 22, spd: 4.2, r: 0.3, h: 0.5, dmg: 5, bdmg: 0, cd: 1, sc: 1, fly: { alt: 1.9, orbit: 3.2, dive: 7, cd: 3.4, spd: 1.8 } },
+  bat: { name: '尸蝠', hp: 34, spd: 3.7, r: 0.32, h: 0.5, dmg: 6, bdmg: 0, cd: 1, sc: 1, fly: { alt: 2.2, orbit: 2.6, dive: 8, cd: 2.7, spd: 2.0, drain: 8 } }, // a bite heals it
+  // (round 35) 能力者: rare elites, each with one strong telegraphed skill (36_beasts), a coloured aura and a name over the head
+  blinker: { name: '闪影者', hp: 520, spd: 1.55, r: 0.3, h: 1.3, dmg: 14, bdmg: 12, cd: 0.8, sc: 1.2, look: 'runner', skin: '#7a66aa', elite: { k: 'blink', cd: 6.5, col: '#b47aff', tip: '会瞬移到你身后再砍一刀，看到紫光就闪开' } },
+  caller: { name: '唤尸者', hp: 650, spd: 0.85, r: 0.32, h: 1.3, dmg: 12, bdmg: 10, cd: 1.0, sc: 1.28, look: 'screamer', skin: '#5e8268', elite: { k: 'call', cd: 11, col: '#6aff9a', tip: '会从地下叫出一群丧尸，打断它（晕住）就叫不出来' } },
+  warden: { name: '护盾者', hp: 800, spd: 0.8, r: 0.36, h: 1.3, dmg: 16, bdmg: 16, cd: 1.1, sc: 1.3, look: 'spitter', skin: '#5e7eae', elite: { k: 'shield', cd: 9, col: '#6ac8ff', tip: '给周围的丧尸套护盾，钻进蓝色护盾里打才打得动' } },
+  shade: { name: '隐身者', hp: 420, spd: 1.5, r: 0.3, h: 1.25, dmg: 12, bdmg: 10, cd: 0.9, sc: 1.2, look: 'walker', skin: '#50505e', elite: { k: 'cloak', cd: 6, col: '#c0c0e0', tip: '隐身摸到你身边偷袭，留意空气里的扭曲' } },
 };
+const ELITES = ['blinker', 'caller', 'warden', 'shade'];
 // aim assist (SET.assist): fire-button lock range (x weapon range), lock-on time before it fires, spread while auto-aimed, mouse/finger magnet
 const PORT = 1.25; // firing port: your own shots pass a wall / door you built if it is this close to you
 const ASSIST = [{ name: '关', range: 0, acq: 0, spread: 1, mag: 0 }, { name: '标准', range: 0.75, acq: 0.3, spread: 1.5, mag: 1 }, { name: '强', range: 1, acq: 0, spread: 1, mag: 1 }];
 const assistLv = () => ASSIST[SET.assist == null ? 1 : SET.assist] || ASSIST[1];
-const ZKEYS = ['walker', 'runner', 'climber', 'spitter', 'brute', 'boss', 'dog', 'crawler', 'bloater', 'screamer', 'armored', 'leaper', 'digger', 'summoner', 'venom', 'kjaw', 'ktail', 'kdig']; // order is the net id
+const ZKEYS = ['walker', 'runner', 'climber', 'spitter', 'brute', 'boss', 'dog', 'crawler', 'bloater', 'screamer', 'armored', 'leaper', 'digger', 'summoner', 'venom', 'kjaw', 'ktail', 'kdig', 'crow', 'bat', 'blinker', 'caller', 'warden', 'shade']; // order is the net id
 
 /* ---------- scavenging / gathering ---------- */
 // vanish: searched once and gone (restocked at random places every dawn); otherwise a fixture that refills sometimes
@@ -5163,7 +5175,7 @@ const BAL = {
   mechBat: 120, mechLow: 20, mechPass: 0.1, mechRegen: 0.015, batRegen: 0.4, xformT: 1.0, // (round 34b) mech energy (s), low warning, share of a hit the pilot still feels, hull / energy coming back while not a mech (/s), transform time
   gyroDmg: 12, gyroRate: 0.12, gyroSpread: 0.06, gyroRange: 22, gyroCap: 500, gyroStart: 250, // (round 30) gyrocopter chin gun: its own ammo, bought in the shop
   flyHover: 2.2, flyClimb: 0.8, flyDrop: 0.6, fuelLow: 10, refuelT: 4, // (round 29) gyrocopter: cruise 2.2 floors over whatever is below, climb / descend rate (of the take-off curve per second), warn at 10 s of fuel, 4 s to refuel indoors
-  vis: { foot: 12, floor: 2.5, night: 0.75, mech: 14, fly: 20 }, // (round 34d) how far you see zombies (shared with your teammate): on foot, + per floor up, × at night; vehicles have their own (VEH[].vis)
+  vis: { foot: 16, floor: 3, night: 0.8, mech: 18, fly: 26 }, /* (round 35) wider all round: 12 / 2.5 / 0.75 / 14 / 20 → 16 / 3 / 0.8 / 18 / 26 */ // (round 34d) how far you see zombies (shared with your teammate): on foot, + per floor up, × at night; vehicles have their own (VEH[].vis)
   nadeRange: 12, nadeDmg: 220, nadeR: 3.0, nadeFuse: 1.9, nadeLand: 0.35, nadeMin: 0.3, // (round 18: radius 2.8 -> 3.4, damage at the edge 35% -> 50%, goes off 0.35 s after landing where you aimed)
   headshot: 1.6,
   radioHp: 1500, radioDmg: 0.5,
@@ -6240,7 +6252,8 @@ function visR(p) { if (!p || p.gone || p.dead) return 0; const V = BAL.vis; let 
   return r * (W.phase === 'night' ? V.night : 1); }
 let VIS = [];
 function visTick() { VIS = W.p.filter(p => !p.gone && !p.dead).map(p => ({ x: p.rx != null ? p.rx : p.x, y: p.ry != null ? p.ry : p.y, r2: visR(p) ** 2 })); }
-const zSeen = z => { if (W.demo) return true; for (const v of VIS) { const dx = z.x - v.x, dy = z.y - v.y; if (dx * dx + dy * dy < v.r2) return true; } return !VIS.length; };
+const zSeen = z => { if (W.demo) return true; if (z.ck || z.ckF) { for (const v of VIS) if ((z.x - v.x) ** 2 + (z.y - v.y) ** 2 < 12.25) return true; return false; } // (round 35) a cloaked 隐身者: only a shimmer, and only up close
+  for (const v of VIS) { const dx = z.x - v.x, dy = z.y - v.y; if (dx * dx + dy * dy < v.r2) return true; } return !VIS.length; };
 const vehGun = p => p && p.ride ? (inMech(p) ? 'mech' : p.mtr > 0 ? 'busy' : VEH[p.veh] && VEH[p.veh].gun || null) : null; // (round 34b) mid-transform nothing fires
 /* ---------- (round 34) mechs ---------- */
 // why you can't climb into the mech right now ('' = you can)
@@ -6259,18 +6272,35 @@ function startXform(p, to, why) {
 }
 function mechEject(p, why) { if (inMech(p)) startXform(p, 0, why); }
 // fire: a punch / blade swing in front, hits everything in the arc (alternating arms)
+// (round 35) what a mech's next attack goes for: the zombie you picked if it is in range, else the best one in front of you (closer to where you aim
+// and nearer scores higher), in sight, awake and not cloaked. Melee looks a little past its reach (it steps in); ranged within its range.
+const mechRanged = M => M.atk === 'rocket' || M.atk === 'cannon' || M.atk === 'parcel';
+function mechLock(p, M, far) {
+  M = M || mechOf(p); if (!M) return null; const ranged = mechRanged(M) || far, range = far || (ranged ? M.range || 16 : M.reach + 2.4), cmin = ranged ? 0.64 : 0.17, a = p.aim;
+  const ok = z => z && z.hp > 0 && !z.hidden && !z.sleep && !(z.ck || z.ckF) && Math.abs(z.z - p.z) < (ranged ? 6 : 2.6);
+  const pz = p.z + 1.6, zb = p.aimPt && p.aimPt.zb; if (ok(zb) && Math.hypot(zb.x - p.x, zb.y - p.y) <= range + zb.r && los(p.x, p.y, pz, zb.x, zb.y, zb.z + zb.h * 0.5)) return zb;
+  let best = null, bs = -1e9;
+  for (const z of W.zs) { if (!ok(z)) continue; const dx = z.x - p.x, dy = z.y - p.y, d = Math.hypot(dx, dy); if (d > range + z.r || d < 0.3) continue; const c = Math.cos(angDiff(Math.atan2(dy, dx), a)); if (c < cmin && d > 1.2) continue;
+    const sc = c * 1.5 - d / range + (ZT[z.k].fly && !ranged ? -0.5 : 0); if (sc > bs && los(p.x, p.y, pz, z.x, z.y, z.z + z.h * 0.5)) { bs = sc; best = z; } }
+  return best;
+}
 function mechPunch(p) {
   if (p.gcd > 0) return; const M = mechOf(p); p.gcd = M.rate; p.mside = 1 - (p.mside || 0);
   p.mcmb = W.t - (p.mlastT || -9) < M.rate + 0.5 ? ((p.mcmb || 0) + 1) % 3 : 0; p.mlastT = W.t; // (round 34d) a quick follow-up continues the combo (the host decides, every screen shows the same move)
-  emit({ k: 'mpunch', o: p.i, s: p.mside, c: p.mcmb });
-  if (M.atk === 'rocket' || M.atk === 'cannon' || M.atk === 'parcel' || (M.atk === 'heavy' && p.mcmb === 2)) return mechShoot(p, M.atk === 'heavy' ? 'fist' : M.atk);
-  (W.dly = W.dly || []).push({ t: 0.13, punch: p.i, c: p.mcmb }); // the blow lands when the swing does (after the wind-up)
+  // (round 35) turn to the target (and step in if it is just out of reach) so the blow / shot goes where the zombie is
+  const fistN = M.atk === 'heavy' && p.mcmb === 2, T = mechLock(p, M, fistN ? 7 : 0), ranged = mechRanged(M) || fistN; let a = p.aim; // the fist cannon reaches 7
+  if (T) { a = Math.atan2(T.y - p.y, T.x - p.x); const d = Math.hypot(T.x - p.x, T.y - p.y), want = M.reach * 0.75;
+    if (!ranged && d > want + 0.2 && !airborne(p)) { const st = Math.min(d - want, 2.2); mechMove(p, { dash: { dx: Math.cos(a) * st, dy: Math.sin(a) * st, t: 0, T: 0.12 } }); } }
+  p.mAim = a; p.mTgt = T ? T.id : -1;
+  emit({ k: 'mpunch', o: p.i, s: p.mside, c: p.mcmb, a: r2(a) });
+  if (M.atk === 'rocket' || M.atk === 'cannon' || M.atk === 'parcel' || (M.atk === 'heavy' && p.mcmb === 2)) return mechShoot(p, M.atk === 'heavy' ? 'fist' : M.atk, T, a);
+  (W.dly = W.dly || []).push({ t: 0.13, punch: p.i, c: p.mcmb, a }); // the blow lands when the swing does (after the wind-up)
 }
 // a melee blow lands: every style hits the ground in front of the mech (zombie height), some in a sector, some round a point
-function mechPunchHit(p, cmb) {
-  if (!inMech(p)) return; const M = mechOf(p), a = p.aim, ca = Math.cos(a), sa = Math.sin(a); let n = 0;
+function mechPunchHit(p, cmb, aa) {
+  if (!inMech(p)) return; const M = mechOf(p), a = aa != null ? aa : p.aim, ca = Math.cos(a), sa = Math.sin(a); let n = 0;
   const stomp = M.atk === 'heavy' && cmb === 1, hammer = M.atk === 'heavy' && cmb === 0, cleave = M.atk === 'chop' && cmb === 2;
-  const cx = p.x + ca * (stomp ? 0.9 : hammer ? 1.7 : M.reach * 0.7), cy = p.y + sa * (stomp ? 0.9 : hammer ? 1.7 : M.reach * 0.7), R = stomp ? 2.0 : hammer ? 1.5 : 0;
+  const cx = p.x + ca * (stomp ? 0.9 : hammer ? 2.2 : M.reach * 0.7), cy = p.y + sa * (stomp ? 0.9 : hammer ? 2.2 : M.reach * 0.7), R = stomp ? 2.8 : hammer ? 2.2 : 0; /* (round 35) hammer 1.7 / r 1.5 → 2.2 / 2.2, stomp r 2.0 → 2.8 */
   for (const z of W.zs) {
     if (z.hp <= 0 || z.hidden || Math.abs(z.z - p.z) > 2.6) continue; const dx = z.x - p.x, dy = z.y - p.y, d = Math.hypot(dx, dy);
     let hit; if (R) hit = Math.hypot(z.x - cx, z.y - cy) < R + z.r; else hit = d <= M.reach + z.r && (d <= 0.6 || Math.cos(angDiff(Math.atan2(dy, dx), a)) >= Math.cos(M.arc));
@@ -6280,17 +6310,17 @@ function mechPunchHit(p, cmb) {
   }
   // knocks over light stuff in front (fences, barricades; not walls, not what you built)
   const fx = Math.floor(p.x + ca * 1.6), fy = Math.floor(p.y + sa * 1.6);
-  if (inMap(fx, fy)) for (let l = p.L; l < p.L + 2 && l < ML; l++) { const i = ci(fx, fy, l); if (W.blk[i] && B[W.blk[i]].brk && !B[W.blk[i]].st && !(W.mine && W.mine.has(i))) damageCell(i, M.dmg * 1.5); }
+  if (inMap(fx, fy)) for (let l = p.L; l < p.L + 2 && l < ML; l++) { const i = ci(fx, fy, l); if (W.blk[i] && B[W.blk[i]].brk && !B[W.blk[i]].st && !(W.mine && W.mine.has(i))) { const b0 = W.blk[i], d0 = W.bdir[i]; damageCell(i, M.dmg * 1.5); if (!W.blk[i]) mechScar(i, b0, d0); } }
   emit({ k: 'mhit', o: p.i, h: n ? 1 : 0, x: r2(cx), y: r2(cy), z: r2(p.z + 0.15), g: R || M.atk === 'chop' || M.atk === 'shovel' ? 1 : 0, r: R || 1 }); noiseAt(p.x, p.y, 6, p.z);
 }
 // (round 34d) ranged mech attacks: 苍隼's shoulder rockets, 重炮's arm cannon, 铁卫's fist cannon (the third blow of its combo).
 // A straight shot to the first zombie / wall / where you aim; rockets and the cannon burst there, the fist hits the first zombie hard.
-function mechShoot(p, kind) {
-  const M = mechOf(p), a = p.aim, fist = kind === 'fist', range = fist ? 7 : M.range || 16, side = p.mside ? 1 : -1, ca = Math.cos(a), sa = Math.sin(a);
-  const sh = kind === 'rocket' ? [-0.3, side * 0.5, 2.7] : kind === 'cannon' ? [0.9, -0.55, 2.1] : [1.3, side * 0.6, 1.9]; // where it leaves the mech (forward, left, up), at the mech's own size
+function mechShoot(p, kind, LK, aa) {
+  const M = mechOf(p), a = aa != null ? aa : p.aim, fist = kind === 'fist', range = fist ? 7 : M.range || 16, side = p.mside ? 1 : -1, ca = Math.cos(a), sa = Math.sin(a);
+  const sh = kind === 'rocket' ? [-0.1, side * 0.42, 2.75] : kind === 'cannon' ? [1.5, -0.6, 2.05] : kind === 'parcel' ? [-0.55, side * 0.25, 2.35] : [1.3, side * 0.6, 1.9]; /* (round 35) rockets from the shoulder pods, shells from the arm barrel's muzzle, parcels off the back rack */ // where it leaves the mech (forward, left, up), at the mech's own size
   const s = (MECH_DIM[M.style] || {}).s || 1, sx = p.x + (ca * sh[0] - sa * sh[1]) * s, sy = p.y + (sa * sh[0] + ca * sh[1]) * s, z0 = pZ(p) + sh[2] * s;
   let T = p.aimPt ? { x: p.aimPt.x, y: p.aimPt.y, z: p.aimPt.z } : { x: p.x + ca * 10, y: p.y + sa * 10, z: pZ(p) + 0.6 };
-  { let best = null, bs = -1; for (const z of W.zs) { if (z.hp <= 0 || z.hidden || z.sleep) continue; const dx = z.x - p.x, dy = z.y - p.y, d = Math.hypot(dx, dy); if (d > range || d < 0.8) continue; const c = Math.cos(angDiff(Math.atan2(dy, dx), a)); if (c < 0.9) continue; const sc = c * 2 - d / range; if (sc > bs) { bs = sc; best = z; } } // (round 34d) mech guns lock onto the zombie you're pointing at
+  { const best = LK && LK.hp > 0 && Math.hypot(LK.x - p.x, LK.y - p.y) <= range + LK.r ? LK : LK === undefined ? mechLock(p, M) : null; // (round 35) the target mechPunch picked (mechLock: a wider cone, in sight)
     if (best) T = { x: best.x, y: best.y, z: best.z + best.h * 0.45 }; }
   if (kind === 'parcel') { const d = Math.min(range, Math.hypot(T.x - p.x, T.y - p.y)), ex = p.x + Math.cos(Math.atan2(T.y - p.y, T.x - p.x)) * d, ey = p.y + Math.sin(Math.atan2(T.y - p.y, T.x - p.x)) * d, cx = Math.floor(ex), cy = Math.floor(ey), L = inMap(cx, cy) ? gAt(cx, cy) : p.L, gz = L * FH + 0.15, tt = 0.25 + d / 14; // a parcel lobbed in an arc
     emit({ k: 'mrkt', o: p.i, kd: 'parcel', x: r2(sx), y: r2(sy), z: r2(z0), e: [r2(ex), r2(ey), r2(gz)], t: r2(tt) }); (W.dly = W.dly || []).push({ t: tt, box: 1, x: ex, y: ey, zz: gz, R: M.blast, dmg: M.dmg, o: p.i }); noiseAt(p.x, p.y, 5, p.z); return; }
@@ -6370,7 +6400,7 @@ function stepDelayed(dt) {
   for (const q of W.dly) { q.t -= dt;
     if (q.thr != null) { const z = W.zs.find(z => z.id === q.thr); if (z && z.hp > 0) { const f = clamp(1 - q.t / q.T, 0, 1), gz = surfZ(q.x, q.y, q.L); z.x = lerp(q.x0, q.x, f); z.y = lerp(q.y0, q.y, f); z.z = lerp(q.z0, gz, f) + Math.sin(f * Math.PI) * 3; z.stun = Math.max(z.stun || 0, 0.3);
       if (q.t <= 0) { z.L = q.L; z.z = gz; const o = W.p[q.o]; hurtZombie(z, 200, o, 0, 0); for (const y of W.zs) { if (y === z || y.hp <= 0 || y.hidden) continue; const d = Math.hypot(y.x - q.x, y.y - q.y); if (d < 2) { hurtZombie(y, 100, o, (y.x - q.x) / (d || 1) * 5, (y.y - q.y) / (d || 1) * 5); y.stun = Math.max(y.stun || 0, 0.8); } } emit({ k: 'slam', x: r2(q.x), y: r2(q.y), z: r2(gz), r: 2 }); emit({ k: 'sfx', n: 'smash', x: q.x, y: q.y }); } } else q.t = 0; continue; } // (round 34b) a thrown zombie flies, then smashes down
-    if (q.t > 0) continue; if (q.punch != null) { if (W.p[q.punch]) mechPunchHit(W.p[q.punch], q.c); continue; } const o = W.p[q.o];
+    if (q.t > 0) continue; if (q.punch != null) { if (W.p[q.punch]) mechPunchHit(W.p[q.punch], q.c, q.a); continue; } const o = W.p[q.o];
     if (q.fistZ != null) { const z = W.zs.find(z => z.id === q.fistZ); if (z && z.hp > 0) { const big = ZT[z.k].boss || ZT[z.k].kaiju; hurtZombie(z, 140, o, q.dx * (big ? 2 : 9), q.dy * (big ? 2 : 9)); z.stun = Math.max(z.stun || 0, big ? 0.2 : 1); emit({ k: 'mhit', o: q.o, h: 1, x: r2(z.x), y: r2(z.y), z: r2(z.z + 0.8), r: 1 }); } continue; }
     if (q.shell) { explode(q.x, q.y, q.zz != null ? q.zz : surfZ(q.x, q.y, q.L) + 0.3, o, q.R, q.dmg); continue; }
     if (q.box) { let n = 0; for (const z of W.zs) { if (z.hp <= 0 || z.hidden || Math.abs(z.z - q.zz) > 2) continue; const dx = z.x - q.x, dy = z.y - q.y, d = Math.hypot(dx, dy); if (d > q.R + z.r) continue; const big = ZT[z.k].boss || ZT[z.k].kaiju; hurtZombie(z, q.dmg * (d < q.R * 0.5 ? 1 : 0.7), o, dx / (d || 1) * (big ? 1 : 4), dy / (d || 1) * (big ? 1 : 4)); z.stun = Math.max(z.stun || 0, big ? 0.1 : q.big ? 0.8 : 0.3); n++; } emit({ k: 'mhit', o: q.o, h: n ? 1 : 0, x: r2(q.x), y: r2(q.y), z: r2(q.zz), g: 1, r: q.R, box: q.big ? 2 : 1 }); continue; } // (round 34d) a parcel smashes down
@@ -6825,6 +6855,12 @@ function fireWeapon(p, wi) {
 }
 function hurtZombie(z, dmg, p, kx, ky, quiet) {
   if (z.hp <= 0 || z.hidden) return;
+  if (dmg > 0 && W.wardens && W.wardens.length) { const w = shieldFor(z, p); if (w) { // (round 35) inside a 护盾者's bubble: the bubble takes it first
+    const a = Math.min(w.sh, dmg); w.sh -= a; dmg -= a; if (kx || ky) { kx *= 0.3; ky *= 0.3; }
+    if (!(W.shFx > W.t)) { W.shFx = W.t + 0.12; emit({ k: 'elx', a: 'shhit', id: w.id, x: r2(z.x), y: r2(z.y), z: r2(z.z + z.h * 0.6) }); }
+    if (w.sh <= 0) { w.sh = 0; w.shT = ZT.warden.elite.cd; emit({ k: 'elx', a: 'break', id: w.id, x: r2(w.x), y: r2(w.y), z: r2(w.z) }); }
+    if (dmg <= 0) return; } }
+  if (z.ck && dmg > 0) { z.ck = 0; z.ckT = 3; emit({ k: 'elx', a: 'reveal', id: z.id, x: r2(z.x), y: r2(z.y), z: r2(z.z) }); } // (round 35) a hit shows the 隐身者
   if (z.sleep) { if (dmg >= z.hp) z.sleep = 0; else siegeWake(z); } // killed in its sleep: nobody else hears it
   z.hp -= dmg; if (!quiet) z.hitT = 0.12;
   if (kx || ky) { z.kbx = (z.kbx || 0) + kx; z.kby = (z.kby || 0) + ky; }
@@ -6833,10 +6869,11 @@ function hurtZombie(z, dmg, p, kx, ky, quiet) {
 let KSRC = '';
 function killZombie(z, p) {
   z.hp = 0; W.kills++; if (p) p.kills++;
-  taskAdd('kill'); if (ZT[z.k].boss || z.k === 'brute' || z.k === 'armored') taskAdd('elite'); if (KSRC === 'nade') taskAdd('nade'); // (round 32) permanent task counters
+  taskAdd('kill'); if (ZT[z.k].boss || ZT[z.k].elite || z.k === 'brute' || z.k === 'armored') taskAdd('elite'); if (KSRC === 'nade') taskAdd('nade'); // (round 32) permanent task counters
   if (ZT[z.k].blast) zBlast(z.x, z.y, z.z + 0.5);
-  emit({ k: 'zdie', x: r2(z.x), y: r2(z.y), z: r2(z.z), t: z.k, f: r2(z.face), id: z.id });
-  if (ZT[z.k].kaiju) { W.res.parts += 20; W.res.steel += 12; emit({ k: 'loot', p: -1, x: z.x, y: z.y, z: z.z + z.h, text: '+20 零件 +12 钢材' }); } // (round 34)
+  emit({ k: 'zdie', x: r2(z.x), y: r2(z.y), z: r2(z.z), t: z.k, f: r2(z.face), id: z.id, gz: ZT[z.k].fly ? r2(skyTop(z.x, z.y) * FH) : undefined }); // (round 35) gz: where a shot bird lands
+  if (ZT[z.k].elite) { W.res.parts += 6; W.res.steel += 4; for (const q of activeP()) { const t = Math.floor(rand() * 3); q.gn = q.gn || [0, 0, 0]; if (q.gn[t] < BAL.gnCap) q.gn[t]++; } emit({ k: 'loot', p: -1, x: z.x, y: z.y, z: z.z + z.h, text: '能力者倒下：+6 零件 +4 钢材 +1 特殊手雷' }); } // (round 35)
+  else if (ZT[z.k].kaiju) { W.res.parts += 20; W.res.steel += 12; emit({ k: 'loot', p: -1, x: z.x, y: z.y, z: z.z + z.h, text: '+20 零件 +12 钢材' }); } // (round 34)
   else if (rand() < (z.k === 'boss' ? 1 : z.k === 'brute' ? 0.6 : 0.07)) { const n = z.k === 'boss' ? 15 : z.k === 'brute' ? 3 : 1; W.res.parts += n; emit({ k: 'loot', p: -1, x: z.x, y: z.y, z: z.z + z.h, text: '+' + n + ' 零件' }); }
 }
 function hurtPlayer(p, dmg, src) {
@@ -6929,7 +6966,7 @@ function doAct(p, a, v) {
     case 'craft': doCraft(p, v); break;
     case 'build': doBuild(p, v.x, v.y, v.l, v.b, v.d); break;
     case 'demo': doDemolish(p, v.x, v.y, v.l); break;
-    case 'crush': if (inMech(p) && typeof v === 'number' && v >= 0 && v < NC && MECH_CRUSH.has(W.blk[v]) && !(W.mine && W.mine.has(v)) && Math.hypot(cx_(v) + 0.5 - p.x, cy_(v) + 0.5 - p.y) < 2.6) { const r = B[W.blk[v]].res; setCell(v, 0, W.slab[v], null, 'brk'); if (r && rand() < 0.5) W.res[r] = (W.res[r] || 0) + 1; emit({ k: 'sfx', n: 'bash', x: cx_(v) + 0.5, y: cy_(v) + 0.5 }); } break; // (round 34d) a mech flattens what is in its way
+    case 'crush': if (inMech(p) && typeof v === 'number' && v >= 0 && v < NC && MECH_CRUSH.has(W.blk[v]) && !(W.mine && W.mine.has(v)) && Math.hypot(cx_(v) + 0.5 - p.x, cy_(v) + 0.5 - p.y) < 2.6) { const r = B[W.blk[v]].res; mechScar(v); setCell(v, 0, W.slab[v], null, 'brk'); if (r && rand() < 0.5) W.res[r] = (W.res[r] || 0) + 1; emit({ k: 'sfx', n: 'bash', x: cx_(v) + 0.5, y: cy_(v) + 0.5 }); } break; // (round 34d) a mech flattens what is in its way
     case 'xform': { const to = p.mform === 1 ? 0 : 1, why = xformDeny(p, to); if (why) emit({ k: 'deny', p: p.i, why }); else startXform(p, to); } break; // (round 34b)
     case 'vdef': if (v >= 1 && ownsVeh(p, v) && p.ride && v !== p.veh && (p.mform === 1 || p.mtr > 0)) { emit({ k: 'deny', p: p.i, why: '先变回载具再换车' }); break; } if (v >= 1 && ownsVeh(p, v) && p.ride && VEH[v].outdoor && v !== p.veh && skyTop(p.x, p.y) > p.L) { emit({ k: 'deny', p: p.i, why: VEH[v].name + '太大，只能在室外开' }); break; } if (v >= 1 && ownsVeh(p, v) && p.ride && (airborne(p) || VEH[v].fly) && v !== p.veh) { emit({ k: 'deny', p: p.i, why: airborne(p) ? '先落地再换车' : '先下车，再坐旋翼机起飞' }); break; } if (v >= 1 && ownsVeh(p, v)) { p.veh = v; if (p.ride && !vehSeats(p)) for (const q of W.p) if (q.pass === p.i) q.pass = -1; } break; // pick the default vehicle (switches the one you're on too)
     case 'pad': if (v && inMap(v.x, v.y) && v.l >= 0 && v.l < ML) { const i = ci(v.x, v.y, v.l); if (W.blk[i] === 56) { setCell(i, 0, W.slab[i], null, 'demo'); emit({ k: 'sfx', n: 'jump', x: v.x + 0.5, y: v.y + 0.5 }); } } break;
@@ -7127,6 +7164,9 @@ function startNight() {
     k += type === 'dog' ? 1 : size;
   }
   if (blood) q.push({ t: dur * 0.55, k: 'boss', side: front[0] });
+  // (round 35) flocks of crows from night 2 (bats too from night 4), one 能力者 elite from night 3 (one more every 3 nights, at most 4)
+  if (n >= 2) for (let f = 0, nf = Math.min(5, 1 + Math.floor((n - 2) / 2)); f < nf; f++) { const bat = n >= 4 && rand() < 0.45, k = bat ? 'bat' : 'crow', sz = bat ? 3 + Math.floor(rand() * 3) : 4 + Math.floor(rand() * 4), side = front[Math.floor(rand() * front.length)], E = W.edges[side] || [], at = E.length ? Math.floor(rand() * E.length) : -1, t0 = dur * (0.15 + rand() * 0.7), fk = W.gid = (W.gid || 0) + 1; for (let j = 0; j < sz; j++) q.push({ t: t0 + j * 0.25, k, side, at, f: 0, fk }); }
+  if (n >= 3) for (let e = 0, ne = Math.min(4, 1 + Math.floor((n - 3) / 3)); e < ne; e++) q.push({ t: dur * (0.25 + rand() * 0.55), k: ELITES[Math.floor(rand() * ELITES.length)], side: front[e % front.length] });
   if (KAIJU_ON && n >= 5 && n % 2 === 1) for (let k = 0; k < (n >= 11 ? 2 : 1); k++) q.push({ t: dur * (0.35 + k * 0.3), k: ['kjaw', 'ktail', 'kdig'][Math.floor(rand() * 3)], side: front[k % front.length] }); // (round 34) a kaiju every other night from night 5 (two from night 11)
   q.sort((a, b) => a.t - b.t);
   W.spawnQ = q;
@@ -7134,7 +7174,17 @@ function startNight() {
   modeNight(n);
   emit({ k: 'night', n, lv: BAL.nightLv(n), up: n > 1 && BAL.nightLv(n) > BAL.nightLv(n - 1) ? 1 : 0, blood: blood ? 1 : 0, count: q.length, from: front.map(s => names[s]).join('、') });
 }
+// (round 35) what a mech flattened (rocks, bushes, fences, trees…) grows / gets put back at dawn, unless something now stands there
+function mechScar(i, b, d) { (W.scar = W.scar || []).push([i, b != null ? b : W.blk[i], d != null ? d : W.bdir[i]]); if (W.scar.length > 3000) W.scar.shift(); }
+function scarRegrow() {
+  if (!W.scar || !W.scar.length) return; let n = 0;
+  for (const [i, b, d] of W.scar) { if (W.blk[i]) continue; const x = cx_(i) + 0.5, y = cy_(i) + 0.5, L = cl_(i);
+    if (W.p.some(p => !p.gone && p.L === L && Math.abs(p.x - x) < 0.9 && Math.abs(p.y - y) < 0.9) || W.zs.some(z => z.L === L && Math.abs(z.x - x) < 0.8 && Math.abs(z.y - y) < 0.8)) continue;
+    setCell(i, b, W.slab[i], d, 'grow'); n++; }
+  W.scar = [];
+}
 function dawn() {
+  scarRegrow();
   if (W.clean && W.night > 0) taskAdd('clean');
   if (W.mode === 'classic' && W.night >= BAL.nights && !W.endless) return endGame('win', '救援直升机到了');
   W.phase = 'day'; W.dayLen = W.clock = BAL.dayFor(W.night + 1); // (round 34b) days get shorter
@@ -7156,6 +7206,8 @@ function spawnZombie(k, side, at, f, g) {
   if (g) { const o = Math.round(rand() * 4 - 2), nx = x + Math.sign(W.radio.x - x) * o, ny = y + Math.sign(W.radio.y - y) * o, nL = inMap(nx, ny) ? gAt(nx, ny) : -1; if (nL >= 0 && standable(nx, ny, nL, 'z') && W.ff.rw[ci(nx, ny, nL)] < Infinity) { x = nx; y = ny; L = nL; } } // a herd is a crowd, not a queue
   const hpM = BAL.hpMul(BAL.lvN(n)) * D.hp * (k === 'boss' ? 1 + n / 10 : 1) * (activeP().length > 1 ? 1.15 : 1);
   const z = { id: W.zid++, k, x: x + 0.5, y: y + 0.5, L, z: L * FH, r: Z.r, h: Z.h, hp: Z.hp * hpM, max: Z.hp * hpM, spd: Z.spd * BAL.spdMul(BAL.lvN(n)) * (f || (0.85 + rand() * 0.3)), face: 0, cd: rand(), st: 'walk', stun: 0, kbx: 0, kby: 0, hitT: 0, atk: 0, anim: rand() * 6, seed: (rand() * 1e6) | 0, spitT: 1 + rand() * 2, climbT: 0 };
+  if (Z.fly) z.z += Z.fly.alt; // (round 35) a flyer comes in already up in the air
+  if (Z.elite) { z.eCD = 2 + rand() * 2; if (Z.elite.k === 'shield') z.sh = z.shMax = z.max * 0.6; if (Z.elite.k === 'cloak') z.ck = 1; }
   W.zs.push(z);
   return z;
 }
@@ -7169,7 +7221,7 @@ function stepPhase(dt) {
   } else if (W.phase === 'night') {
     W.nightT += dt;
     let awake = 0; for (const z of W.zs) if (!z.sleep) awake++;
-    while (W.spawnQ.length && W.spawnQ[0].t <= W.nightT && awake++ < BAL.zCap()) { const s = W.spawnQ.shift(); const z = spawnZombie(s.k, s.side, s.at, s.f, s.g); if (s.g) z.g = s.g; }
+    while (W.spawnQ.length && W.spawnQ[0].t <= W.nightT && awake++ < BAL.zCap()) { const s = W.spawnQ.shift(); const z = spawnZombie(s.k, s.side, s.at, s.f, s.g); if (s.g) z.g = s.g; if (s.fk) z.fk = s.fk; if (ZT[s.k].elite) say('能力者出现：' + ZT[s.k].name + '——' + ZT[s.k].elite.tip, ZT[s.k].elite.col); }
     const minT = BAL.nightMin(W.night);
     // after the horde, small groups keep coming until the night has run its minimum length
     if (!W.spawnQ.length && W.nightT < minT) {
@@ -7283,6 +7335,7 @@ function zAttackCell(z, i) {
 }
 function stepZombies(dt) {
   const F = W.ff, zs = W.zs;
+  W.wardens = zs.filter(o => o.k === 'warden' && o.hp > 0); // (round 35) whose bubbles hurtZombie has to check
   const grid = new Map();
   for (const z of zs) { if (z.hp <= 0) continue; const key = ci(Math.floor(z.x), Math.floor(z.y), z.L); let a = grid.get(key); if (!a) grid.set(key, a = []); a.push(z); }
   // herds: how far along the way each herd is on average (player field), so stragglers can hurry and the ones out in front hang back
@@ -7303,6 +7356,8 @@ function stepZombies(dt) {
       z.burn -= dt; hurtZombie(z, BAL.burnDps * dt, W.p[z.burnBy] || null, 0, 0, true); if (z.hp <= 0) continue;
       if (rand() < dt * BAL.burnSpread) { const fx = Math.floor(z.x), fy = Math.floor(z.y); for (let gy = fy - 2; gy <= fy + 2; gy++) for (let gx = fx - 2; gx <= fx + 2; gx++) { const a = inMap(gx, gy) && grid.get(ci(gx, gy, z.L)); if (a) for (const o of a) if (o !== z && o.hp > 0 && !(o.burn > 0) && Math.hypot(o.x - z.x, o.y - z.y) < BAL.burnSpreadR) { o.burn = 2.5; o.burnBy = z.burnBy; } } }
     }
+    if (Z.fly) { flyerStep(z, Z, dt); continue; } // (round 35) birds / bats: their own flight (36_beasts)
+    if (Z.elite && eliteStep(z, Z, dt)) continue; // (round 35) 能力者: a skill in progress
     if (z.sleep) { z.moving = false; z.st = 'walk'; continue; } // a sleeper in a building: still until something wakes it (41_siege)
     z.st = 'walk';
     // wall climbing in progress
@@ -7379,7 +7434,7 @@ function stepZombies(dt) {
           if (Math.hypot(z.x - ox, z.y - oy) < BAL.chgSpd * dt * 0.35) { // ran into something
             if (z.bump >= 0 && B[W.blk[z.bump]].brk) { W.bhp[z.bump] -= BAL.chgWall; W.dirty.add(z.bump); if (W.bhp[z.bump] <= 0) destroyBlk(z.bump); }
             z.stun = BAL.chgStun; z.chg = null; z.chgCD = BAL.chgCD; emit({ k: 'sfx', n: 'smash', x: z.x, y: z.y }); emit({ k: 'slam', x: r2(z.x + ca * 0.5), y: r2(z.y + sa * 0.5), z: r2(z.z), r: 1 });
-          } else if (Cg.t >= BAL.chgTime) { z.chg = null; z.chgCD = BAL.chgCD; }
+          } else if (Cg.t >= BAL.chgTime || (Cg.L != null && z.L !== Cg.L)) { z.chg = null; z.chgCD = BAL.chgCD; } // (round 35) went off an edge / down the stairs: the charge is over
         }
       } else if (z.slam) {
         hold = true; z.tl = 3; z.slam.t += dt;
@@ -7388,9 +7443,9 @@ function stepZombies(dt) {
           z.slam = null; z.slamCD = BAL.slamCD; emit({ k: 'sfx', n: 'smash', x: z.x, y: z.y }); emit({ k: 'slam', x: r2(z.x), y: r2(z.y), z: r2(z.z), r: BAL.slamR });
         }
       } else {
-        let tp = null, td = 1e9; for (const p of W.p) { if (!standingP(p) || Math.abs(p.z - z.z) > 0.9) continue; const d = d2(p.x, p.y, z.x, z.y); if (d < td) { td = d; tp = p; } }
+        let tp = null, td = 1e9; const onSt = B[W.blk[ci(Math.floor(z.x), Math.floor(z.y), z.L)]].stairs; for (const p of W.p) { if (!standingP(p) || onSt || p.L !== z.L || Math.abs(p.z - z.z) > 0.9) continue; const d = d2(p.x, p.y, z.x, z.y); if (d < td) { td = d; tp = p; } } // (round 35) only at someone on its own floor: on the stairs it used to see you upstairs and charge off along the floor below
         if (tp && td < BAL.slamR - 0.5 && z.slamCD <= 0) { z.slam = { t: 0 }; hold = true; z.tl = 3; z.face = Math.atan2(tp.y - z.y, tp.x - z.x); emit({ k: 'sfx', n: 'groan', x: z.x, y: z.y }); }
-        else if (tp && z.chgCD <= 0 && td > BAL.chgMin && td < BAL.chgMax && los(z.x, z.y, z.z + 1, tp.x, tp.y, tp.z + 0.8)) { z.chg = { ph: 0, t: 0, a: Math.atan2(tp.y - z.y, tp.x - z.x), hit: [] }; hold = true; z.tl = 1; z.face = z.chg.a; emit({ k: 'sfx', n: 'groan', x: z.x, y: z.y }); }
+        else if (tp && z.chgCD <= 0 && td > BAL.chgMin && td < BAL.chgMax && los(z.x, z.y, z.z + 1, tp.x, tp.y, tp.z + 0.8) && zLineClear(z, tp.x, tp.y)) { z.chg = { ph: 0, t: 0, a: Math.atan2(tp.y - z.y, tp.x - z.x), hit: [], L: z.L }; /* (round 35) only down a clear lane on its floor */ hold = true; z.tl = 1; z.face = z.chg.a; emit({ k: 'sfx', n: 'groan', x: z.x, y: z.y }); }
       }
     }
     // choose the next step
@@ -7450,19 +7505,19 @@ function stepZombies(dt) {
   }
   // separation within a cell neighbourhood
   for (const z of zs) {
-    if (z.hp <= 0 || z.climbing) continue;
+    if (z.hp <= 0 || z.climbing || ZT[z.k].fly) continue;
     const cx = Math.floor(z.x), cy = Math.floor(z.y);
     for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
       const a = grid.get(inMap(cx + dx, cy + dy) ? ci(cx + dx, cy + dy, z.L) : -1); if (!a) continue;
       for (const o of a) {
-        if (o === z || o.hp <= 0 || o.id < z.id || o.L !== z.L) continue;
+        if (o === z || o.hp <= 0 || o.id < z.id || o.L !== z.L || ZT[o.k].fly) continue;
         const ex = o.x - z.x, ey = o.y - z.y, d = Math.hypot(ex, ey), min = (o.r + z.r) * 0.85;
         if (d < min && d > 1e-4) { const push = (min - d) * 0.5, ux = ex / d * push, uy = ey / d * push; moveEnt(z, -ux, -uy, 'z', false); moveEnt(o, ux, uy, 'z', false); }
         else if (d <= 1e-4) { moveEnt(o, 0.05, 0.03, 'z', false); }
       }
     }
   }
-  for (const z of zs) if (z.hp > 0 && !z.climbing) z.z = surfZ(z.x, z.y, z.L);
+  for (const z of zs) if (z.hp > 0 && !z.climbing && !ZT[z.k].fly) z.z = surfZ(z.x, z.y, z.L);
   W.zs = zs.filter(z => z.hp > 0);
 }
 
@@ -7502,11 +7557,156 @@ function zSkill(z, Z, dt) {
 
 // (round 34d) can a zombie walk straight from where it is to (x, y) on its floor? (every cell on the way open to it, no corner cutting through walls)
 function zLineClear(z, x, y) {
+  const stairy = (cx, cy) => B[W.blk[ci(cx, cy, z.L)]].stairs || z.L > 0 && B[W.blk[ci(cx, cy, z.L - 1)]].stairs; // (round 35) never straight across a stairwell: stepping over the top of the stairs takes it back down (it went up and down for ever)
+  if (stairy(Math.floor(z.x), Math.floor(z.y))) return false;
   const dx = x - z.x, dy = y - z.y, d = Math.hypot(dx, dy), n = Math.ceil(d / 0.35); let pcx = Math.floor(z.x), pcy = Math.floor(z.y);
   for (let k = 1; k <= n; k++) { const cx = Math.floor(z.x + dx * k / n), cy = Math.floor(z.y + dy * k / n); if (cx === pcx && cy === pcy) continue; if (!inMap(cx, cy)) return false;
-    if (!navNode(cx, cy, z.L) || solidFor(W.blk[ci(cx, cy, z.L)], 'z')) return false;
-    if (cx !== pcx && cy !== pcy && (solidFor(W.blk[ci(cx, pcy, z.L)], 'z') || solidFor(W.blk[ci(pcx, cy, z.L)], 'z'))) return false; pcx = cx; pcy = cy; }
+    if (!navNode(cx, cy, z.L) || solidFor(W.blk[ci(cx, cy, z.L)], 'z') || stairy(cx, cy)) return false;
+    if (cx !== pcx && cy !== pcy && (solidFor(W.blk[ci(cx, pcy, z.L)], 'z') || solidFor(W.blk[ci(pcx, cy, z.L)], 'z') || !navNode(cx, pcy, z.L) || !navNode(pcx, cy, z.L) || stairy(cx, pcy) || stairy(pcx, cy))) return false; /* (round 35) nor past a hole / the stairwell on a diagonal */ pcx = cx; pcy = cy; }
   return true;
+}
+
+/* ---- 36_beasts.js ---- */
+/* ================= (round 35) flyers and 能力者 elites (host side AI) ================= */
+// Flyers (尸鸦 / 尸蝠) ignore walls and paths: they cruise over the roofs toward the nearest survivor, circle overhead and take turns diving in.
+// They can only get at you in the open (no roof over your cell) or in the air — a building is a shelter, a gyrocopter is not.
+// Elites (能力者) walk like any zombie but carry one strong, telegraphed skill (eliteStep): blink behind you, raise more zombies, shield the pack, go invisible.
+
+// someone the birds can reach: out under the sky, or flying
+function zExposed(p) { if (!p || p.gone || p.dead) return false; if (inAirZ(p) != null) return true; return skyTop(p.x, p.y) <= p.L; }
+// the height a bird dives at: the chest, a mech's cockpit, a pilot's seat
+const flyAimZ = p => inAirZ(p) != null ? inAirZ(p) + 0.6 : inMech(p) ? p.z + 2.2 : p.z + (p.down ? 0.35 : 0.95);
+const flyFloor = (x, y) => skyTop(x, y) * FH;
+
+function flyerStep(z, Z, dt) {
+  const F = Z.fly; z.st = 'walk'; z.kt = 0; z.atk = 0;
+  z.dvCD = (z.dvCD == null ? 0.8 + rand() * F.cd : z.dvCD) - dt;
+  if (z.fa == null) z.fa = rand() * Math.PI * 2;
+  let tp = null, td = 1e9; // the nearest survivor (the ones under a roof count as further away: the birds prefer someone they can reach)
+  for (const p of W.p) { if (p.gone || p.dead) continue; const d = Math.hypot(p.x - z.x, p.y - z.y) * (zExposed(p) ? 1 : 1.6); if (d < td) { td = d; tp = p; } }
+  const cruise = () => Math.max(flyFloor(z.x, z.y), flyFloor(z.x + Math.cos(z.face) * 1.3, z.y + Math.sin(z.face) * 1.3)) + F.alt;
+  let gx = z.x, gy = z.y, gz = z.z, spd = z.spd, vzMax = 3.5;
+  const D = z.dv;
+  if (z.stun > 0) { z.dv = null; spd = 0; gz = Math.max(flyFloor(z.x, z.y) + 0.5, z.z - 1.4); } // stunned: flutters down a little
+  else if (z.conf > 0 || !tp) { z.dv = null; if (z.wa == null || rand() < dt * 0.8) z.wa = rand() * Math.PI * 2; gx = z.x + Math.cos(z.wa) * 3; gy = z.y + Math.sin(z.wa) * 3; gz = cruise(); }
+  else if (D) {
+    D.t += dt; const ex = zExposed(tp);
+    if (D.ph === 0) { // a short hover and a cry: the tell
+      z.kt = 1; spd = 0; gz = z.z + 0.3; z.face += angDiff(z.face, Math.atan2(tp.y - z.y, tp.x - z.x)) * Math.min(1, dt * 10);
+      if (!ex) z.dv = null; else if (D.t > 0.35) { D.ph = 1; D.t = 0; }
+    } else if (D.ph === 1) { // the dive: homes in on you
+      z.kt = 2; z.atk = 0.3; spd = z.spd * F.spd; vzMax = 9; gx = tp.x; gy = tp.y; gz = flyAimZ(tp);
+      const d3 = Math.hypot(tp.x - z.x, tp.y - z.y, gz - z.z);
+      if (d3 < (tp.r || 0.3) + z.r + 0.25 + (inMech(tp) ? 0.7 : 0)) {
+        hurtPlayer(tp, Z.dmg * W.D.dmg, z); if (F.drain) z.hp = Math.min(z.max, z.hp + F.drain);
+        emit({ k: 'sfx', n: 'peck', x: z.x, y: z.y }); D.ph = 2; D.t = 0; D.a = Math.atan2(z.y - tp.y, z.x - tp.x) + (rand() - 0.5) * 1.4;
+      } else if (D.t > 1.6 || !ex) { D.ph = 2; D.t = 0; D.a = z.face + Math.PI + (rand() - 0.5); }
+    } else { // pull up and away, then back to circling
+      spd = z.spd * 1.1; gx = z.x + Math.cos(D.a) * 3; gy = z.y + Math.sin(D.a) * 3; gz = cruise() + 0.6;
+      if (D.t > 0.8) { z.dv = null; z.dvCD = F.cd * (0.75 + rand() * 0.5); z.fa = Math.atan2(z.y - tp.y, z.x - tp.x); }
+    }
+  } else { // circle over the target's head (over the roof when it is indoors)
+    const R = F.orbit + (z.seed % 7) * 0.12, dir = z.seed % 2 ? 1 : -1, dist = Math.hypot(tp.x - z.x, tp.y - z.y);
+    if (dist < R + 3) z.fa += dir * z.spd / R * dt * 0.8; else z.fa = Math.atan2(z.y - tp.y, z.x - tp.x);
+    gx = tp.x + Math.cos(z.fa) * R; gy = tp.y + Math.sin(z.fa) * R;
+    gz = Math.max(cruise(), flyFloor(tp.x, tp.y) + F.alt, inAirZ(tp) != null ? inAirZ(tp) + 0.4 : 0);
+    if (z.dvCD <= 0 && zExposed(tp) && dist < F.dive && los(z.x, z.y, z.z, tp.x, tp.y, flyAimZ(tp))) {
+      let busy = 0; for (const o of W.zs) if (o !== z && o.fk && o.fk === z.fk && o.dv && o.hp > 0) busy++;
+      if (busy < 2) { z.dv = { ph: 0, t: 0 }; emit({ k: 'sfx', n: z.k === 'bat' ? 'screech' : 'caw', x: z.x, y: z.y }); } // the flock takes turns, two at a time
+      else z.dvCD = 0.4 + rand() * 0.6;
+    }
+  }
+  // steer toward (gx, gy), ease the height toward gz (never into a roof or a wall: the floor is the top of whatever is under it)
+  const dx = gx - z.x, dy = gy - z.y, d = Math.hypot(dx, dy);
+  let mx = 0, my = 0; if (d > 0.05 && spd > 0) { const v = Math.min(spd, d / Math.max(dt, 1e-3)); mx = dx / d * v; my = dy / d * v; }
+  for (const o of W.zs) { if (o === z || o.hp <= 0 || !ZT[o.k].fly) continue; const ex = z.x - o.x, ey = z.y - o.y, e = Math.hypot(ex, ey); if (e < 0.6 && e > 1e-3 && Math.abs(o.z - z.z) < 0.7) { mx += ex / e * 1.6; my += ey / e * 1.6; } }
+  if (z.kt !== 1 && Math.hypot(mx, my) > 0.1) z.face += angDiff(z.face, Math.atan2(my, mx)) * Math.min(1, dt * 8);
+  z.kbx = (z.kbx || 0) * Math.max(0, 1 - dt * 5); z.kby = (z.kby || 0) * Math.max(0, 1 - dt * 5);
+  z.x = clamp(z.x + (mx + z.kbx) * dt, 1, MW - 1.01); z.y = clamp(z.y + (my + z.kby) * dt, 1, MH - 1.01);
+  z.z += clamp((gz - z.z) * 3, -vzMax, vzMax) * dt; z.z = Math.max(z.z, flyFloor(z.x, z.y) + 0.25);
+  z.L = clamp(Math.floor((z.z - 1.0) / FH), 0, ML - 1); z.moving = true;
+}
+
+// a spot for something next to (x, y) on floor L: open, walkable, in sight of (x, y)
+function zSpotNear(x, y, L, rmin, rmax, tries) {
+  for (let t = 0; t < (tries || 24); t++) {
+    const a = rand() * Math.PI * 2, d = rmin + rand() * (rmax - rmin), px = x + Math.cos(a) * d, py = y + Math.sin(a) * d, cx = Math.floor(px), cy = Math.floor(py);
+    if (!inMap(cx, cy) || !navNode(cx, cy, L) || solidFor(W.blk[ci(cx, cy, L)], 'z') || ttAt(cx, cy) === TT.water && L === 0) continue;
+    if (!los(x, y, L * FH + 0.8, cx + 0.5, cy + 0.5, L * FH + 0.8)) continue;
+    return { x: cx + 0.5, y: cy + 0.5, L };
+  }
+  return null;
+}
+const SHIELD_R = 3.2;
+// (round 35) a 护盾者's bubble covers the zombies near it: hits from outside go into the bubble; you can shoot from inside it
+function shieldFor(z, p) {
+  for (const w of W.wardens || []) {
+    if (w.hp <= 0 || !(w.sh > 0) || Math.abs(w.z - z.z) > 2 || Math.hypot(z.x - w.x, z.y - w.y) > SHIELD_R) continue;
+    if (p && Math.hypot(p.x - w.x, p.y - w.y) < SHIELD_R && Math.abs(p.z - w.z) < 2) continue;
+    return w;
+  }
+  return null;
+}
+// returns true while a skill holds the zombie still (it does its own thing this frame)
+function eliteStep(z, Z, dt) {
+  const E = Z.elite; z.kt = 0;
+  z.eCD = (z.eCD == null ? 2 + rand() * 3 : z.eCD) - dt;
+  if (E.k === 'shield') { // the bubble: recharges after it breaks
+    if (!(z.sh > 0)) { z.shT = (z.shT == null ? 0 : z.shT) - dt; if (z.shT <= 0) { z.sh = z.shMax = z.max * 0.6; emit({ k: 'elx', a: 'shield', id: z.id, x: r2(z.x), y: r2(z.y), z: r2(z.z) }); } }
+    return false;
+  }
+  if (E.k === 'cloak') {
+    if (z.ckT > 0) z.ckT -= dt;
+    let near = 1e9, tp = null; for (const p of W.p) { if (!standingP(p) || Math.abs(p.z - z.z) > 1.2) continue; const d = Math.hypot(p.x - z.x, p.y - z.y); if (d < near) { near = d; tp = p; } }
+    if (z.burn > 0 && z.ck) { z.ck = 0; z.ckT = 2; emit({ k: 'elx', a: 'reveal', id: z.id, x: r2(z.x), y: r2(z.y), z: r2(z.z) }); }
+    if (z.ck && tp && near < 1.7 && z.stun <= 0 && los(z.x, z.y, z.z + 0.8, tp.x, tp.y, tp.z + 0.8)) { // the ambush: out of thin air, a heavy blow
+      z.ck = 0; z.ckT = 4; z.face = Math.atan2(tp.y - z.y, tp.x - z.x); z.atk = 0.3; z.cd = Z.cd;
+      hurtPlayer(tp, 24 * W.D.dmg, z); knock(tp, Math.cos(z.face) * 5, Math.sin(z.face) * 5);
+      emit({ k: 'elx', a: 'ambush', id: z.id, x: r2(z.x), y: r2(z.y), z: r2(z.z) }); return false;
+    }
+    if (!z.ck && !(z.ckT > 0) && !(z.burn > 0) && near > 3) { z.ck = 1; emit({ k: 'elx', a: 'cloak', id: z.id, x: r2(z.x), y: r2(z.y), z: r2(z.z) }); }
+    return false;
+  }
+  if (z.sleep || z.climbing) return false;
+  const S = z.es;
+  if (S && S.ph === 0 && z.stun > 0.2) { z.es = null; z.eCD = E.cd * 0.5; emit({ k: 'elx', a: 'stop', id: z.id }); return false; } // a stun breaks the wind-up
+  let tp = null, td = 1e9; for (const p of W.p) { if (!standingP(p) || inAirZ(p) != null) continue; const d = Math.hypot(p.x - z.x, p.y - z.y); if (d < td && Math.abs(p.z - z.z) < 2.7) { td = d; tp = p; } }
+  if (E.k === 'blink') {
+    if (S) {
+      S.t += dt; z.moving = false;
+      if (S.ph === 0) { z.kt = 1; if (tp) z.face = Math.atan2(tp.y - z.y, tp.x - z.x); if (S.t >= 0.6) { const ox = z.x, oy = z.y, oz = z.z; z.x = S.x; z.y = S.y; z.L = S.L; z.z = surfZ(z.x, z.y, z.L); S.ph = 1; S.t = 0; if (tp) z.face = Math.atan2(tp.y - z.y, tp.x - z.x); emit({ k: 'elx', a: 'blink1', id: z.id, x: r2(ox), y: r2(oy), z: r2(oz), tx: r2(z.x), ty: r2(z.y), tz: r2(z.z) }); } return true; }
+      z.kt = 2; z.atk = 0.3; if (tp) z.face += angDiff(z.face, Math.atan2(tp.y - z.y, tp.x - z.x)) * Math.min(1, dt * 6);
+      if (S.t >= 0.32) { // the slash
+        for (const p of W.p) { if (!standingP(p) || Math.abs(p.z - z.z) > 1.1) continue; const dx = p.x - z.x, dy = p.y - z.y, d = Math.hypot(dx, dy); if (d < 1.8 && (d < 0.6 || Math.cos(angDiff(Math.atan2(dy, dx), z.face)) > 0.1)) { hurtPlayer(p, 20 * W.D.dmg, z); knock(p, dx / (d || 1) * 4, dy / (d || 1) * 4); } }
+        emit({ k: 'elx', a: 'slash', id: z.id, x: r2(z.x), y: r2(z.y), z: r2(z.z), f: r2(z.face) }); z.es = null; z.eCD = E.cd * (0.8 + rand() * 0.4);
+      }
+      return true;
+    }
+    if (tp && z.eCD <= 0 && z.stun <= 0 && !(z.conf > 0) && td > 2.6 && td < 13 && los(z.x, z.y, z.z + 1, tp.x, tp.y, tp.z + 1)) {
+      const back = tp.aim + Math.PI; let to = null;
+      for (const da of [0, 0.6, -0.6, 1.2, -1.2, 1.9, -1.9]) { const px = tp.x + Math.cos(back + da) * 1.35, py = tp.y + Math.sin(back + da) * 1.35, cx = Math.floor(px), cy = Math.floor(py);
+        if (inMap(cx, cy) && navNode(cx, cy, tp.L) && !solidFor(W.blk[ci(cx, cy, tp.L)], 'z') && los(px, py, tp.z + 0.8, tp.x, tp.y, tp.z + 0.8)) { to = { x: px, y: py, L: tp.L }; break; } }
+      if (to) { z.es = { ph: 0, t: 0, x: to.x, y: to.y, L: to.L }; z.kt = 1; emit({ k: 'elx', a: 'blink0', id: z.id, x: r2(z.x), y: r2(z.y), z: r2(z.z), tx: r2(to.x), ty: r2(to.y), tz: r2(surfZ(to.x, to.y, to.L)) }); emit({ k: 'sfx', n: 'blink', x: z.x, y: z.y }); return true; }
+      z.eCD = 1;
+    }
+    return false;
+  }
+  if (E.k === 'call') {
+    if (S) {
+      S.t += dt; z.kt = 1; z.moving = false; z.scr = 0.4; if (tp) z.face = Math.atan2(tp.y - z.y, tp.x - z.x);
+      if (S.t >= 1.1) { // up they come
+        const n = W.night || 1, pool = n < 5 ? ['crawler', 'walker', 'runner'] : ['crawler', 'runner', 'dog', 'climber'], cnt = 2 + (n >= 6 ? 1 : 0) + (rand() < 0.5 ? 1 : 0), pts = [];
+        let awake = 0; for (const o of W.zs) if (!o.sleep && o.hp > 0) awake++;
+        for (let k = 0; k < cnt && awake < BAL.zCap() + 6; k++) { const at = zSpotNear(z.x, z.y, z.L, 1, 2.6); if (!at) continue; const q = spawnZombie(pool[Math.floor(rand() * pool.length)], 0); q.x = at.x; q.y = at.y; q.L = at.L; q.z = surfZ(q.x, q.y, q.L); q.stun = 0.6; q.rage = 4; pts.push([r2(q.x), r2(q.y), r2(q.z)]); awake++; }
+        for (const o of W.zs) if (o !== z && o.hp > 0 && Math.hypot(o.x - z.x, o.y - z.y) < 5) o.rage = Math.max(o.rage || 0, 4);
+        emit({ k: 'elx', a: 'call1', id: z.id, x: r2(z.x), y: r2(z.y), z: r2(z.z), p: pts }); z.es = null; z.eCD = E.cd * (0.8 + rand() * 0.4);
+      }
+      return true;
+    }
+    if (tp && z.eCD <= 0 && z.stun <= 0 && td < 14) { z.es = { ph: 0, t: 0 }; z.kt = 1; emit({ k: 'elx', a: 'call0', id: z.id, x: r2(z.x), y: r2(z.y), z: r2(z.z) }); emit({ k: 'sfx', n: 'groan', x: z.x, y: z.y }); return true; }
+    return false;
+  }
+  return false;
 }
 
 /* ---- 40_modes.js ---- */
@@ -8394,10 +8594,10 @@ function addP(o) { if (RND.parts.length < 880) RND.parts.push(Object.assign({ vx
 function bloodFx(x, y, z, n, green) { for (let k = 0; k < n; k++) addP({ x, y, z, vx: frnd(-2, 2), vy: frnd(-2, 2), vz: frnd(0, 3), col: green ? (k % 2 ? '#7fb53a' : '#4f7a1e') : (k % 2 ? '#6e0d0b' : '#9b1712'), s: frnd(0.04, 0.09), life: frnd(0.35, 0.8), floor: z - 1.2 }); }
 function debrisFx(x, y, z, col, n) { for (let k = 0; k < n; k++) addP({ x: x + frnd(-0.4, 0.4), y: y + frnd(-0.4, 0.4), z: z + frnd(0, 1), vx: frnd(-2.5, 2.5), vy: frnd(-2.5, 2.5), vz: frnd(0, 4), col, s: frnd(0.06, 0.16), life: frnd(0.7, 1.4), floor: z - 0.05 }); for (let k = 0; k < n / 3; k++) addP({ x, y, z: z + 0.3, vx: frnd(-0.4, 0.4), vy: frnd(-0.4, 0.4), vz: frnd(0.2, 0.7), g: -0.3, col: '#5f5850', s: frnd(0.16, 0.26), life: frnd(0.4, 0.7), smoke: 1 }); }
 function stepFx(dt) {
-  if (RND.mrk && RND.mrk.length) { for (const r of RND.mrk) { r.t += dt; const f = Math.min(1, r.t / r.T), x = lerp(r.x, r.e[0], f), y = lerp(r.y, r.e[1], f), box = r.kd === 'parcel' || r.kd === 'bigparcel', z = lerp(r.z, r.e[2], f) + (box ? Math.sin(f * Math.PI) * (0.8 + Math.hypot(r.e[0] - r.x, r.e[1] - r.y) * 0.18) : 0); if (box) { addP({ x, y, z, vx: 0, vy: 0, vz: 0, g: 0, col: (Math.floor(r.t * 20) % 2) ? '#b8893a' : '#9a6f2e', s: r.kd === 'bigparcel' ? 0.3 : 0.17, life: 0.05 }); continue; } // (round 34d) a bright head and a smoke trail along the shot
+  if (RND.mrk && RND.mrk.length) { for (const r of RND.mrk) { r.t += dt; const f = Math.min(1, r.t / r.T), x = lerp(r.x, r.e[0], f), y = lerp(r.y, r.e[1], f), box = r.kd === 'parcel' || r.kd === 'bigparcel', z = lerp(r.z, r.e[2], f) + (box ? Math.sin(f * Math.PI) * (0.8 + Math.hypot(r.e[0] - r.x, r.e[1] - r.y) * 0.18) : 0); mprjDraw(r, x, y, z); if (box) { if (Math.random() < 0.3) addP({ x, y, z, vx: 0, vy: 0, vz: 0, g: 1, col: '#c8b088', s: 0.04, life: 0.3 }); continue; } /* (round 35) a real parcel model tumbling through the air */ // (round 34d) a bright head and a smoke trail along the shot
       addP({ x, y, z, vx: 0, vy: 0, vz: 0, g: 0, col: r.kd === 'fist' ? '#cfd6dc' : '#ffd27a', s: r.kd === 'fist' ? 0.16 : 0.1, life: 0.06 });
       if (r.kd !== 'cannon') addP({ x, y, z, vx: frnd(-0.3, 0.3), vy: frnd(-0.3, 0.3), vz: 0.4, g: -0.3, col: r.kd === 'fist' ? '#ffb060' : '#9a958c', s: 0.09, life: 0.5, smoke: 1 }); }
-    RND.mrk = RND.mrk.filter(r => r.t < r.T); }
+    RND.mrk = RND.mrk.filter(r => r.t < r.T || (mprjFree(r), false)); }
   for (const q of RND.parts) { q.t += dt; q.vz -= q.g * dt; q.x += q.vx * dt; q.y += q.vy * dt; q.z += q.vz * dt; if (q.z < q.floor && q.vz < 0) { q.z = q.floor; q.vz *= -0.3; q.vx *= 0.5; q.vy *= 0.5; } }
   RND.parts = RND.parts.filter(q => q.t < q.life);
   RND.tracers = RND.tracers.filter(t => (t.t += dt) < t.life);
@@ -8588,7 +8788,7 @@ function draw(dt) {
   if (key !== CUT_KEY) { CUT_KEY = key; rebuildCells(); }
   if (STATE.mode === 'play' && !W.demo) qualTick(dt);
   applyTime(darkness()); archFrame();
-  drawZombies(vl, dt); drawPlayers(vl, dt); drawFx(); drawGhost(me); drawPlan(); drawNadeMark(); drawTells(); drawClouds(); drawTrapAreas(vl);
+  drawZombies(vl, dt); drawPlayers(vl, dt); drawFx(); drawGhost(me); drawPlan(); drawNadeMark(); drawTells(); drawMechLock(me, dt); drawClouds(); drawTrapAreas(vl);
   OBJ.zone.visible = (!W.demo && W.phase === 'day' || !!(me && me.build)) && !modeDef().anyBuild;
   RENDER.render(SCN, CAMO);
   drawOverlay();
@@ -8616,6 +8816,9 @@ function drawOverlay() {
   let html = '';
   // (round 34d) a health bar over every survivor (an orange hull line under it in a mech); it pulses red when low
   hpBars();
+  for (const z of W.zs) { const T = ZT[z.k]; if (!T || !T.elite || z.hp <= 0 || z.ck || z.ckF || z.sleep || !zSeen(z) || lcHide(Math.floor(z.x), Math.floor(z.y), z.L)) continue; // (round 35) 能力者: name and health over the head
+    const [sx, sy, sz] = w2s(z.x, z.y, z.z + T.h * T.sc / 1.2 + 0.55); if (sz > 1 || sx < -60 || sx > VW + 60 || sy < -30 || sy > VH + 30) continue;
+    html += `<div class="elt" style="left:${sx | 0}px;top:${sy | 0}px;color:${T.elite.col}">${T.name}<i><b style="width:${clamp(z.hp / (z.max || 100), 0, 1) * 100 | 0}%;background:${T.elite.col}"></b></i></div>`; }
   for (const f of RND.floats) { const [sx, sy] = w2s(f.x, f.y, f.z); html += `<div class="fl" style="left:${sx | 0}px;top:${sy | 0}px;opacity:${clamp(2.2 - f.t, 0, 1).toFixed(2)};color:${f.col}">${f.text}</div>`; }
   // 尸城求生: sleepers show a "z", a growing "?" while they're noticing you, a "!" as they wake
   if (isSiege()) {
@@ -8718,7 +8921,7 @@ function fxEvent(e) {
     case 'hit': if (e.a) { for (let k = 0; k < 6; k++) addP({ x: e.x, y: e.y, z: e.z, vx: frnd(-3, 3), vy: frnd(-3, 3), vz: frnd(0.5, 3), col: k % 2 ? '#ffe9a0' : '#ffffff', s: 0.035, life: 0.25, floor: e.z - 1 }); if (thr('clank', 0.06)) sfx('clank', e.x, e.y); break; }
       bloodFx(e.x, e.y, e.z, e.h ? 9 : 5, e.g); if (Math.random() < 0.45) addDecal(e.x + frnd(-0.3, 0.3), e.y + frnd(-0.3, 0.3), e.z - 0.6, frnd(0.08, 0.16), e.g ? '#3c5a14' : null); if (thr('flesh', 0.05)) sfx(e.h ? 'head' : 'flesh', e.x, e.y); break;
     case 'zdie':
-      RND.corpses.push({ corpse: 1, x: e.x, y: e.y, z: e.z, k: e.t, face: e.f, t: 0, seed: e.id * 7, id: e.id, L: Math.floor((e.z + 0.1) / FH) }); if (RND.corpses.length > 60) RND.corpses.shift();
+      RND.corpses.push({ corpse: 1, x: e.x, y: e.y, z: e.gz != null ? e.gz : e.z, fz: e.gz != null ? e.z : null, k: e.t, face: e.f, t: 0, seed: e.id * 7, id: e.id, L: Math.floor(((e.gz != null ? e.gz : e.z) + 0.1) / FH) }); /* (round 35) a shot bird falls to the ground */ if (RND.corpses.length > 60) RND.corpses.shift();
       bloodFx(e.x, e.y, e.z + 0.6, 10, e.t === 'spitter'); addDecal(e.x, e.y, e.z, (e.t === 'boss' ? 0.9 : e.t === 'brute' ? 0.6 : 0.32) + Math.random() * 0.15, e.t === 'spitter' ? '#3c5a14' : null);
       if (thr('zdie', 0.12)) sfx(e.t === 'brute' || e.t === 'boss' ? 'bigdie' : 'zdie', e.x, e.y);
       if (guest) { const z = W.zs.find(z => z.id === e.id); if (z) z.hp = 0; }
@@ -8758,8 +8961,8 @@ function fxEvent(e) {
     case 'kacid': for (let k = 0; k < 10; k++) { const a = e.a + frnd(-0.45, 0.45), v = frnd(5, 9); addP({ x: e.x + Math.cos(e.a) * 1.4, y: e.y + Math.sin(e.a) * 1.4, z: e.z, vx: Math.cos(a) * v, vy: Math.sin(a) * v, vz: frnd(-1.5, 0.5), g: -3, col: k % 3 ? '#9dff3a' : '#5f9a20', s: 0.1, life: 0.8, floor: e.z - 3 }); } if (thr('kacid', 0.3)) sfx('acid', e.x, e.y); break; // (round 34) kaiju acid breath
     case 'xform': { const q = W.p[e.o]; if (!q) break; q._xfT = 0; q._xfTo = e.to; q._xfS = -1; sfx('swap', q.x, q.y); shake(q.x, q.y, 0.12); break; } // (round 34b) start the 1 s transformation on every screen
     case 'mmove': if (guest && e.p === ME) { const p = W.p[ME]; if (e.m.dash) p.dash = e.m.dash; if (e.m.jmp) p.jmp = e.m.jmp; } break; // (round 34) a mech dash / leap the host started for this screen's survivor
-    case 'mpunch': { const q = W.p[e.o]; if (!q) break; q._mcombo = e.c != null ? e.c : q._mpT != null && q._mpT < 0.95 ? ((q._mcombo || 0) + 1) % 3 : 0; q._mpT = 0; q._mpS = e.s; sfx('swap', q.x, q.y); break; } // (round 34b) a quick follow-up continues the combo
-    case 'mrkt': (RND.mrk = RND.mrk || []).push({ x: e.x, y: e.y, z: e.z, e: e.e, T: Math.max(0.05, e.t), t: 0, kd: e.kd }); { const q = W.p[e.o]; if (q) { q._mrec = 1; } sfx(e.kd === 'cannon' ? 'sniper' : e.kd === 'parcel' || e.kd === 'bigparcel' ? 'swap' : 'launcher', e.x, e.y); RND.flashes.push({ x: e.x, y: e.y, z: e.z, t: 0, life: 0.06 }); } break; // (round 34d) rockets / shells / the fist cannon in flight
+    case 'mpunch': { const q = W.p[e.o]; if (!q) break; q._mcombo = e.c != null ? e.c : q._mpT != null && q._mpT < 0.95 ? ((q._mcombo || 0) + 1) % 3 : 0; q._mpT = 0; q._mpS = e.s; if (e.a != null) { q._mA = e.a; q._mAT = 0.5; } sfx('swap', q.x, q.y); break; } /* (round 35) e.a: the mech turns to the zombie it locked onto */ // (round 34b) a quick follow-up continues the combo
+    case 'mrkt': (RND.mrk = RND.mrk || []).push({ x: e.x, y: e.y, z: e.z, e: e.e, T: Math.max(0.05, e.t), t: 0, kd: e.kd }); if (e.kd === 'parcel') for (let k = 0; k < 2; k++) RND.mrk.push({ x: e.x + frnd(-0.15, 0.15), y: e.y + frnd(-0.15, 0.15), z: e.z + frnd(0, 0.2), e: [e.e[0] + frnd(-0.8, 0.8), e.e[1] + frnd(-0.8, 0.8), e.e[2]], T: Math.max(0.05, e.t * frnd(0.85, 1.15)), t: 0, kd: 'parcel', sm: 0.65, fake: 1 }); /* (round 35) a little spray of parcels, not one */ { const q = W.p[e.o]; if (q) { q._mrec = 1; } sfx(e.kd === 'cannon' ? 'sniper' : e.kd === 'parcel' || e.kd === 'bigparcel' ? 'swap' : 'launcher', e.x, e.y); RND.flashes.push({ x: e.x, y: e.y, z: e.z, t: 0, life: 0.06 }); } break; // (round 34d) rockets / shells / the fist cannon in flight
     case 'mhit': { const q = W.p[e.o]; if (!q) break; if (e.box) { debrisFx(e.x, e.y, e.z + 0.1, '#b8893a', e.box > 1 ? 16 : 8); debrisFx(e.x, e.y, e.z + 0.1, '#e8d9a8', e.box > 1 ? 6 : 3); sfx('smash', e.x, e.y); if (e.box > 1) shake(e.x, e.y, 0.15); } if (e.g) { debrisFx(e.x, e.y, e.z, '#8a7e6a', 8); for (let k = 0; k < 14; k++) { const a = k / 14 * Math.PI * 2, r = (e.r || 1) * 0.5; addP({ x: e.x + Math.cos(a) * r, y: e.y + Math.sin(a) * r, z: e.z + 0.05, vx: Math.cos(a) * 3.5 * (e.r || 1), vy: Math.sin(a) * 3.5 * (e.r || 1), vz: 0.3, g: -0.2, col: '#a89878', s: 0.1, life: 0.45, smoke: 1 }); } } if (e.h) { q._mhs = 0.07; sfx('smash', e.x, e.y); shake(e.x, e.y, 0.18); for (let k = 0; k < 12; k++) addP({ x: e.x, y: e.y, z: e.z, vx: frnd(-3, 3), vy: frnd(-3, 3), vz: frnd(0.5, 3), col: k % 3 ? '#ffd27a' : '#7a1010', s: 0.07, life: 0.35 }); RND.flashes.push({ x: e.x, y: e.y, z: e.z, t: 0, life: 0.06 }); } break; }
     case 'mskill': { const q = W.p[e.o]; if (q) { q._msT = 0; q._msK = e.t; }
       if (e.t === 'slam') { shake(e.x, e.y, 0.6); debrisFx(e.x, e.y, e.z + 0.2, '#9a8a70', 26); for (let k = 0; k < 36; k++) { const a = k / 36 * Math.PI * 2; addP({ x: e.x + Math.cos(a) * 0.8, y: e.y + Math.sin(a) * 0.8, z: e.z + 0.1, vx: Math.cos(a) * 7, vy: Math.sin(a) * 7, vz: 0.4, g: -0.3, col: '#a89878', s: 0.13, life: 0.55, smoke: 1 }); } sfx('collapse', e.x, e.y); }
@@ -8770,6 +8973,7 @@ function fxEvent(e) {
     case 'night': sfx(e.blood ? 'blood' : 'night'); banner((e.blood ? '第 ' + e.n + ' 夜 · 血月' : '第 ' + e.n + ' 夜') + (e.lv ? ' · Lv ' + e.lv : ''), (e.up ? '尸潮升到 Lv ' + e.lv + '：更多、更硬、更快 · ' : '') + (e.blood ? '尸潮从四面八方涌来，巨尸出没' : '尸潮从' + e.from + '边来了') + '，守住堡垒', e.blood ? '#ff5a4a' : e.up ? '#ff9a5a' : '#ffd27a'); break; // (round 31) level every two nights
     case 'dawn': document.getElementById('over').classList.add('hidden'); sfx('dawn'); banner('天亮了', '撑过了第 ' + e.n + ' 夜 · 新的任务已刷新（点上方「今日任务」展开）', '#ffe7b0'); break;
     case 'say': uiMsg(e.text, e.col); break;
+    case 'elx': eliteEvent(e); break; // (round 35) 能力者 skill moments
     case 'mbanner': banner(e.t, '', e.c); sfx('ready'); break;
     case 'dig': for (let k = 0; k < (e.big ? 14 : 4); k++) addP({ x: e.x + frnd(-0.4, 0.4), y: e.y + frnd(-0.4, 0.4), z: e.z + 0.05, vx: frnd(-1.2, 1.2), vy: frnd(-1.2, 1.2), vz: frnd(1, 3), col: k % 2 ? '#6a5236' : '#4a3a28', s: frnd(0.08, 0.16), life: 0.8, floor: e.z }); if (e.big) sfx('collapse', e.x, e.y); break;
     case 'craft': if (e.p === ME) { sfx('craft'); toast('制作完成：' + e.name); } break;
@@ -9224,9 +9428,11 @@ function drawZombies(vl, dt) {
     if (L > vl || lcHide(Math.floor(z.x), Math.floor(z.y), L)) continue;
     drawn++;
     if (ZT[z.k] && ZT[z.k].kaiju) { drawKaiju(z, corpse, dt); continue; } // (round 34)
+    if (ZT[z.k] && ZT[z.k].fly) { drawFlyer(z, corpse, dt); continue; } // (round 35) birds / bats
+    if (ZT[z.k] && ZT[z.k].elite && !corpse) { drawElite(z, dt); if (z.ck || z.ckF) continue; } // (round 35) aura etc.; cloaked: only the shimmer
     rigZombie(z, corpse, dt, dk);
   }
-  kaijuSweep();
+  kaijuSweep(); flySweep(); eliteSweep(dt);
   for (const k in ZPOOL) { const q = ZPOOL[k]; q.m.count = q.n; q.m.instanceMatrix.needsUpdate = true; if (q.m.instanceColor) q.m.instanceColor.needsUpdate = true; }
 }
 function rigZombie(z, corpse, dt, dk) {
@@ -9316,7 +9522,7 @@ function rigZombie(z, corpse, dt, dk) {
   const hs = Bd.hs;
   zput('head', head, hs, hs, hs, skin);
   zput('jaw', J(ZM[9], head, 0.02 * hs, 0.05 * hs, 0, 0, 0, -jaw), hs, hs, hs, skin);
-  const ec = z.rage > 0 || z.rageF ? '#ff2a1a' : ZEYE[z.k] || '#ffd36a';
+  const ec = z.rage > 0 || z.rageF ? '#ff2a1a' : ZEYE[z.k] || (ZT[z.k] && ZT[z.k].elite && ZT[z.k].elite.col) || '#ffd36a';
   if (zk === 'screamer') zput('limb', J(ZM[11], tor, 0.03, TH * 0.97 + 0.12, 0, 0, 0, Math.PI - hPitch * 0.5), 0.035, 0.13, 0.035, skin); // the long neck
   if (zk === 'armored') zput('helmet', head, hs, hs, hs, white('#2a3442'));
   if (zk === 'armored' && !corpse) zput('shield', J(ZM[15], tor, 0.24, TH * 0.62, -0.08, 0, 0.15, hunch - flinch), 1, 1, 1, white('#3a4656')); // riot shield held upright in front
@@ -9536,7 +9742,7 @@ function drawPlayers(vl, dt) {
       if (p._px == null || p._ly == null) { p._px = gx; p._py = gy; p._ly = p.aim; p._spd = 0; }
       const mvx = gx - p._px, mvy = gy - p._py; p._spd = lerp(p._spd || 0, dt > 0 ? Math.min(8, Math.hypot(mvx, mvy) / dt) : 0, Math.min(1, dt * 10)); p._px = gx; p._py = gy;
       if (p._spd > 0.4 && Math.hypot(mvx, mvy) > 1e-4) { const md = Math.atan2(mvy, mvx); p._mback = Math.cos(angDiff(md, p.aim)) < (p._mback ? -0.2 : -0.45); p._ly = angLerp(p._ly, p._mback ? md + Math.PI : md, Math.min(1, dt * 4)); } else if (p._spd < 0.25) { p._mback = false; p._ly = angLerp(p._ly, p.aim, Math.min(1, dt * 1.6)); } // (round 34b) backing away: walk backwards, still facing the fight
-      p._uy = p.aim; m.mech.rotation.y = -p._ly; if (m.mech.visible) mechTick(p, m.mech, dt, xfing ? clamp((f - 0.2) / 0.8, 0, 1) : 1); return;
+      if (p._mAT > 0) { p._mAT -= dt; p._ly = angLerp(p._ly, p._mA, Math.min(1, dt * 14)); } p._uy = p._mAT > 0 ? p._mA : p.aim; m.mech.rotation.y = -p._ly; /* (round 35) swing / shoot toward the locked target */ if (m.mech.visible) mechTick(p, m.mech, dt, xfing ? clamp((f - 0.2) / 0.8, 0, 1) : 1); return;
     }
     if (m.mech) m.mech.visible = false; m.lower.visible = m.upper.visible = true;
     if (m.veh && m.veh.userData.all) for (const q of m.veh.userData.all) if (q && (q.rotation.z || q.position.y || q.scale.x !== 1)) { q.rotation.z = 0; q.position.y = 0; q.scale.set(1, 1, 1); } // undo the fold
@@ -10236,7 +10442,11 @@ function mkMech(k) {
   if (big && !cannon) for (const s of [-1, 1]) { mPart(ch, mTaper(0.07, 0.085, 0.5, 10), steel, -0.5, 1.05, s * 0.2); vCyl(ch, blk, 0.05, 0.05, 0.04, -0.5, 1.06, s * 0.2, 'y', 10); }
   if (edge) for (let a = 0; a < 4; a++) mRB(ch, acc, 0.22 - a * 0.03, 0.06, 0.03, 0.012, -0.62, 0.62 - a * 0.13, 0, 0.5);
   if (fly) {
-    for (const s of [-1, 1]) { const wg = new THREE.Group(); wg.position.set(-0.5, 0.5, s * 0.3); wg.rotation.set(s * 0.35, s * 0.5, 0.25); ch.add(wg); mRB(wg, main, 0.5, 0.05, 0.9, 0.02, -0.1, 0, s * 0.45); mRB(wg, acc, 0.4, 0.055, 0.12, 0.02, -0.08, 0.01, s * 0.86); J.wings = (J.wings || []).concat(wg); }
+    for (const s of [-1, 1]) { const wg = new THREE.Group(); wg.position.set(-0.5, 0.5, s * 0.3); wg.rotation.set(s * 0.35, s * 0.5, 0.25); ch.add(wg); wg.userData.s = s; // (round 35) a two-part wing that folds along the back and spreads to fly
+      mRB(wg, main, 0.5, 0.05, 0.9, 0.02, -0.1, 0, s * 0.45); mRB(wg, acc, 0.4, 0.055, 0.12, 0.02, -0.08, 0.01, s * 0.86); vBox(wg, glow, 0.36, 0.02, 0.03, -0.06, 0.03, s * 0.62);
+      const tip = new THREE.Group(); tip.position.set(-0.05, 0, s * 0.9); wg.add(tip); mRB(tip, main, 0.36, 0.04, 0.6, 0.02, -0.12, 0, s * 0.28, 0, s * -0.25); mRB(tip, dark, 0.2, 0.045, 0.3, 0.015, -0.24, 0.005, s * 0.5, 0, s * -0.5); vBox(tip, glow, 0.03, 0.03, 0.4, -0.02, 0.02, s * 0.3); wg.userData.tip = tip;
+      J.wings = (J.wings || []).concat(wg); }
+    for (const s of [-1, 1]) { const pod = new THREE.Group(); pod.position.set(-0.18, 0.74, s * 0.36 * cw); ch.add(pod); mRB(pod, dark, 0.42, 0.2, 0.26, 0.05, 0.08, 0.1, 0); for (let r2 = 0; r2 < 2; r2++) for (let c2 = 0; c2 < 2; c2++) { vCyl(pod, blk, 0.045, 0.045, 0.06, 0.3, 0.06 + r2 * 0.09, (c2 - 0.5) * 0.11, 'x', 8); vCyl(pod, glow, 0.025, 0.025, 0.065, 0.305, 0.06 + r2 * 0.09, (c2 - 0.5) * 0.11, 'x', 8); } mRB(pod, acc, 0.44, 0.03, 0.27, 0.01, 0.08, 0.21, 0); (J.pods = J.pods || []).push(pod); } // shoulder rocket pods: lie flat, swing up to fire
     for (const s of [-1, 1]) { mPart(ch, mTaper(0.1, 0.13, 0.26, 12), steel, -0.62, 0.23, s * 0.16); const f = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.6, 10).rotateX(Math.PI).translate(0, -0.3, 0), flameM); f.position.set(-0.62, -0.04, s * 0.16); ch.add(f); J.flames.push(f); }
   }
   // head / cockpit: a rounded helmet, a wrap-around visor, a chin, a crest that differs per mech
@@ -10267,20 +10477,23 @@ function mkMech(k) {
     for (let a = 0; a < 4; a++) mRB(el, steel, 0.07, 0.06, 0.055 * A, 0.02, 0.14 * A, -0.67 - (a % 2) * 0.012, (a - 1.5) * 0.06 * A);
     mRB(el, steel, 0.06, 0.1, 0.05, 0.02, 0.08, -0.62, -s * 0.12 * A, 0, 0, s * 0.4);                                       // thumb
     if (big && !cannon) mRB(el, acc, 0.08, 0.5, 0.42, 0.03, 0, -0.32, s * 0.18);
-    if (edge) { const bl = new THREE.Group(); bl.position.set(0.1, -0.5, 0); el.add(bl); const blade = new THREE.Mesh(new THREE.ConeGeometry(0.07, 1.15, 4).scale(0.5, 1, 1.6).translate(0, -0.5, 0).rotateX(Math.PI), lit('#e8eef2')); blade.rotation.x = Math.PI; bl.add(blade); vBox(bl, glow, 0.012, 0.9, 0.02, 0.02, -0.42, 0); J.blades.push(bl); }
+    if (edge) { const bl = new THREE.Group(); bl.position.set(0.1, -0.5, 0); el.add(bl); const blade = new THREE.Mesh(new THREE.ConeGeometry(0.09, 1.5, 4).scale(0.5, 1, 1.7).translate(0, -0.66, 0).rotateX(Math.PI), lit('#e8eef2')); blade.rotation.x = Math.PI; bl.add(blade); vBox(bl, glow, 0.014, 1.2, 0.024, 0.025, -0.56, 0); vBox(bl, dark, 0.07, 0.12, 0.2, 0, 0.02, 0); /* (round 35) longer blade with a guard */ J.blades.push(bl); }
     if (fly) mPart(el, mTaper(0.06, 0.08, 0.16, 10), blk, -0.15, -0.24, 0);
-    J.arms.push({ sh, el, s, fist: vMark(el, 0.12, -0.74, 0), tip: edge ? vMark(J.blades[J.blades.length - 1], 0, -0.95, 0) : null });
+    J.arms.push({ sh, el, s, fist: vMark(el, 0.12, -0.74, 0), tip: edge ? vMark(J.blades[J.blades.length - 1], 0, -1.3, 0) : null });
   }
   // what the vehicle turned into still shows: wheels, cargo box, rotor, tracks and guns ride on the mech
   const tyre = lit('#1a1a1c'), rim = lit('#9aa0a6');
   const wheelOn = (par, x, y, z, r, ry) => { const w = new THREE.Group(); w.position.set(x, y, z); w.rotation.y = ry || 0; par.add(w); vCyl(w, tyre, r, r, 0.08, 0, 0, 0, 'z', 16); vCyl(w, rim, r * 0.55, r * 0.55, 0.09, 0, 0, 0, 'z', 10); const tr = new THREE.Mesh(new THREE.TorusGeometry(r * 0.78, 0.01, 4, 16), rim); w.add(tr); return w; };
   if (scout) { J.kib = [wheelOn(ch, -0.58, 0.48, 0, 0.3, Math.PI / 2), wheelOn(ch, -0.58, 0.08, 0, 0.3, Math.PI / 2)]; vRod(ch, steel, [0.1, 0.95, 0.12], [0.0, 1.45, 0.25], 0.012); }
   if (edge) for (const A2 of J.arms) wheelOn(A2.sh, -0.05, 0.24, A2.s * 0.3, 0.2, 0);
-  if (worker) { const box = lit('#b8893a'), box2 = lit('#9a6f2e'), tape = lit('#e8d9a8'); mRB(ch, steel, 0.06, 0.7, 0.8, 0.02, -0.5, 0.36, 0); // a rack of parcels on the back
-    for (const [x, y, z, w, h, d, b] of [[-0.68, 0.16, -0.2, 0.34, 0.3, 0.36, box], [-0.68, 0.16, 0.2, 0.34, 0.28, 0.34, box2], [-0.7, 0.46, 0, 0.3, 0.3, 0.42, box], [-0.66, 0.72, -0.1, 0.26, 0.22, 0.28, box2]]) { mRB(ch, b, w, h, d, 0.02, x, y, z); mRB(ch, tape, w + 0.005, 0.04, d + 0.005, 0.005, x, y, z); mRB(ch, tape, w + 0.006, h + 0.006, 0.04, 0.005, x, y, z); }
+  if (worker) { const box = lit('#b8893a'), box2 = lit('#9a6f2e'), tape = lit('#e8d9a8'); mRB(ch, steel, 0.06, 0.7, 0.8, 0.02, -0.5, 0.36, 0); // a rack of parcels on the back (round 35: on a hinge — it kicks up as it launches them)
+    const rack = new THREE.Group(); rack.position.set(-0.5, 0.0, 0); ch.add(rack); J.rack = rack; J.rackBoxes = [];
+    for (const [x, y, z, w, h, d, b] of [[-0.18, 0.16, -0.2, 0.34, 0.3, 0.36, box], [-0.18, 0.16, 0.2, 0.34, 0.28, 0.34, box2], [-0.2, 0.46, 0, 0.3, 0.3, 0.42, box], [-0.16, 0.72, -0.1, 0.26, 0.22, 0.28, box2]]) { const q = new THREE.Group(); q.position.set(x, y, z); rack.add(q); mRB(q, b, w, h, d, 0.02, 0, 0, 0); mRB(q, tape, w + 0.005, 0.04, d + 0.005, 0.005, 0, 0, 0); mRB(q, tape, w + 0.006, h + 0.006, 0.04, 0.005, 0, 0, 0); J.rackBoxes.push(q); }
+    for (const s2 of [-1, 1]) mRB(rack, steel, 0.5, 0.04, 0.04, 0.01, -0.18, 0.9, s2 * 0.3); mRB(rack, lit('#ffcc33'), 0.04, 0.05, 0.64, 0.01, -0.42, 0.9, 0);
   }
   if (fly) { const rot = new THREE.Group(); rot.position.set(-0.45, 0.95, 0); ch.add(rot); vCyl(rot, steel, 0.05, 0.05, 0.12, 0, 0, 0, 'y', 8); for (let b2 = 0; b2 < 2; b2++) mRB(rot, dark, 1.4, 0.02, 0.1, 0.01, 0, 0.06, 0, 0, b2 * Math.PI / 2); J.rotor = rot; }
-  if (cannon) { for (const s2 of [-1, 1]) { const gun = new THREE.Group(); gun.position.set(-0.15, 0.84, s2 * 0.44); ch.add(gun); mRB(gun, dark, 0.38, 0.24, 0.26, 0.06, 0, 0, 0); mPart(gun, mTaper(0.07, 0.06, 0.95, 12), main, 0.12, 0.02, 0, Math.PI / 2); mRB(gun, blk, 0.09, 0.11, 0.11, 0.03, 1.08, 0.02, 0); (J.guns = J.guns || []).push(gun); }
+  if (cannon) { { const A1 = J.arms[1], ag = new THREE.Group(); A1.el.add(ag); J.armGun = ag; mPart(ag, mTaper(0.075, 0.065, 0.85, 12), steel, 0, 0, 0); mPart(ag, mTaper(0.09, 0.09, 0.08, 12), blk, 0, -0.78, 0); vCyl(ag, glow, 0.04, 0.04, 0.01, 0, -0.86, 0, 'y', 10); ag.position.y = -0.2; } // (round 35) slides out past the fist to fire
+    for (const s2 of [-1, 1]) { const gun = new THREE.Group(); gun.position.set(-0.15, 0.84, s2 * 0.44); ch.add(gun); mRB(gun, dark, 0.38, 0.24, 0.26, 0.06, 0, 0, 0); mPart(gun, mTaper(0.07, 0.06, 0.95, 12), main, 0.12, 0.02, 0, Math.PI / 2); mRB(gun, blk, 0.09, 0.11, 0.11, 0.03, 1.08, 0.02, 0); (J.guns = J.guns || []).push(gun); }
     for (const G of J.legs) { mRB(G.kn, tyre, 0.09, D.sh * 0.8, 0.3, 0.03, -0.21, -D.sh * 0.5, 0); for (let t2 = 0; t2 < 5; t2++) vBox(G.kn, steel, 0.09, 0.025, 0.31, -0.23, -0.12 - t2 * D.sh * 0.15, 0); } }
   g.traverse(o => { if (o.isMesh && !o.material.transparent && o.material.type !== 'MeshBasicMaterial') o.castShadow = true; });
   g.userData.J = J; return g;
@@ -10290,7 +10503,7 @@ function mkMech(k) {
 // Walking: stride matched to ground speed (no foot sliding), hips sway and drop on each step, shoulders counter-turn, fists up in a guard,
 // walks backwards instead of turning round when you back away. Attacks: a three-hit combo with wind-up, strike (torso twist, step in,
 // full extension), follow-through and recovery; 赤刃 slashes in wide arcs with a trail; a hit freezes the pose for a blink (hit-stop).
-const MSPR = { k: 260, z: 0.82 };
+const MSPR = { k: 260, z: 0.82 }, _vw2 = new THREE.Vector3();
 function mSpring(J, key, target, dt, k) {
   const S = J.sp || (J.sp = {}), q = S[key] || (S[key] = { x: target, v: 0 }), K = k || MSPR.k, C = 2 * Math.sqrt(K) * MSPR.z;
   const n = Math.max(1, Math.ceil(dt / 0.008)), h = dt / n; for (let i = 0; i < n; i++) { q.v += (K * (target - q.x) - C * q.v) * h; q.x += q.v * h; } return q.x;
@@ -10310,38 +10523,42 @@ function mechTick(p, mm, dt, xf = 1) { // xf < 1: mid-transform (0 = folded up, 
   if (p._mpT != null) p._mpT += dt; if (p._msT != null) p._msT += dt;
   const sT = p._msT != null ? p._msT : 99, sk = p._msK, t = p._mpT != null ? p._mpT : 99, side = p._mpS ? 1 : 0, combo = p._mcombo || 0;
   // ---- target pose: locomotion + guard ----
-  const T = { lean: 0.1 * a + (J.D ? J.D.hunch : 0), crouch: 0.04 * a, twist: 0, roll: 0, yawH: 0, sh: [0.3, 0.3], el: [1.95, 1.95], /* guard: elbows down, fists up by the chin */ ab: [0.12, 0.12], blade: -2.9, flame: 0 };
+  const T = { lean: 0.1 * a + (J.D ? J.D.hunch : 0), crouch: 0.04 * a, twist: 0, roll: 0, yawH: 0, sh: [0.3, 0.3], el: [1.95, 1.95], ab: [0.12, 0.12], blade: -2.9, flame: 0 };
   T.thL = 0.46 * a * sw; T.thR = -0.46 * a * sw;
+  // (round 35) out of a fight the arms hang and swing with the stride like a walker's (opposite to the legs); the guard (fists up) only for a moment after an attack
+  const cmb = t < 1.2 || sT < 1 ? 1 : t < 1.8 ? 1 - ease((t - 1.2) / 0.6) : 0; J.cmb = cmb;
+  for (let n = 0; n < 2; n++) { const leg = n ? T.thR : T.thL; T.sh[n] = lerp(0.06 - leg * 0.85, 0.45, cmb); T.el[n] = lerp(0.25 + 0.35 * a, 1.7, cmb); T.ab[n] = lerp(0.08, 0.15, cmb); }
   T.knL = 0.12 + a * (sw < 0 ? 0.25 : 0) + Math.max(0, -cw * back) * 0.85 * a; T.knR = 0.12 + a * (sw > 0 ? 0.25 : 0) + Math.max(0, cw * back) * 0.85 * a; // knee lifts on the swing leg
   T.bob = -Math.abs(cw) * 0.06 * a; T.roll = sw * 0.05 * a; T.yawH = sw * 0.1 * a; T.twist = -sw * 0.14 * a; // hips sway / drop, shoulders counter-turn
-  T.sh[0] += -sw * 0.14 * a; T.sh[1] += sw * 0.14 * a;                                                      // fists bob with the stride
+  T.sh[0] += -sw * 0.14 * a * cmb; T.sh[1] += sw * 0.14 * a * cmb;                                          // in the guard the fists bob with the stride
   if (!a) { const br = Math.sin(W.t * 1.6 + p.i) * 0.012; T.bob = br; T.sh[0] += br * 2; T.sh[1] += br * 2; } // idle: servo breathing
   // ---- attacks (round 34d): every melee mech hits DOWN at zombie height; the ranged ones aim and fire. wind-up 0.12 s, strike to 0.2, hold to 0.3, recover to 0.6 ----
   if (t < 0.6) {
     const f = t < 0.12 ? -ease(t / 0.12) * 0.6 : t < 0.2 ? -0.6 + ease((t - 0.12) / 0.08) * 1.6 : t < 0.3 ? 1 : 1 - ease((t - 0.3) / 0.3); // -0.6 cocked … 1 struck
     const o = 1 - side, sgn = side ? 1 : -1, on = Math.max(0, f), cock = Math.max(0, -f / 0.6), rest = 1 - cock - on, st = J.st;
-    if (st === 'slim') { // 赤刃: chops from high to the ground; the third is a two-handed cleave
-      const arms = combo === 2 ? [0, 1] : [side];
-      for (const s2 of arms) { T.sh[s2] = 2.7 * cock + 0.25 * on + 0.3 * rest; T.el[s2] = 0.25; T.ab[s2] = combo === 2 ? 0.05 : 0.3 * cock; }
-      T.blade = f > -0.3 ? 0 : -2.9; T.lean += 0.42 * on - 0.1 * cock; T.crouch += 0.26 * on; T.twist = combo === 2 ? 0 : sgn * (0.4 * cock - 0.5 * on);
+    if (st === 'slim') { // 赤刃 (round 35): a diagonal cut from high outside to low across, a wide sweep back the other way, then a two-handed overhead cleave
+      if (combo === 0) { T.sh[side] = 2.5 * cock + 0.45 * on + 0.3 * rest; T.ab[side] = 1.0 * cock - 0.55 * on; T.el[side] = 0.35 * cock + 0.12; T.twist = sgn * (0.55 * cock - 0.65 * on); T.lean += 0.35 * on; T.crouch += 0.18 * on; }
+      else if (combo === 1) { T.sh[side] = 1.35 + 0.2 * cock; T.ab[side] = 1.35 * cock - 0.75 * on + 0.2 * rest; T.el[side] = 0.2; T.twist = sgn * (0.75 * cock - 0.85 * on); T.crouch += 0.22 * on; T.lean += 0.15 * on; }
+      else { for (const s2 of [0, 1]) { T.sh[s2] = 2.8 * cock + 0.3 * on + 0.3 * rest; T.el[s2] = 0.25; T.ab[s2] = -0.1; } T.lean += 0.45 * on - 0.12 * cock; T.crouch += 0.3 * on; }
+      T.sh[o] = combo === 2 ? T.sh[o] : 0.6; T.el[o] = combo === 2 ? T.el[o] : 1.2; T.blade = 0;
     } else if (st === 'big') { // 铁卫: hammer fist into the ground, a stomp, then the fist cannon
       if (combo === 0) { T.sh[side] = 2.8 * cock + 0.35 * on + 0.3 * rest; T.el[side] = 0.2; T.lean += 0.45 * on; T.crouch += 0.28 * on; T.twist = sgn * -0.3 * on; T.sh[o] = 0.7; T.el[o] = 1.5; }
       else if (combo === 1) { const up = t < 0.15 ? ease(t / 0.15) : 0, dn = t >= 0.15 && t < 0.3 ? 1 : t >= 0.3 ? 1 - ease((t - 0.3) / 0.3) : 0; if (side) { T.thL = 1.1 * up + 0.25 * dn; T.knL = 1.5 * up + 0.2 * dn; } else { T.thR = 1.1 * up + 0.25 * dn; T.knR = 1.5 * up + 0.2 * dn; } T.crouch += 0.18 * dn; T.lean += 0.1 * dn; T.ab = [0.5 * up + 0.3, 0.5 * up + 0.3]; T.sh = [0.3, 0.3]; T.el = [0.9, 0.9]; }
       else { T.sh[side] = 0.55 + 1.0 * (on + cock * 0.6); T.el[side] = 1.3 * (1 - on) + 0.05; T.twist = sgn * (0.3 * cock - 0.5 * on); T.lean -= 0.12 * on; T.sh[o] = 0.65; T.el[o] = 1.55; }
-    } else if (st === 'worker') { // 工蜂: an overhand throw (a parcel from the rack)
-      T.sh[side] = 2.7 * cock + 1.25 * on + 0.3 * rest; T.el[side] = 0.9 * cock + 0.25; T.ab[side] = 0.25; T.twist = sgn * (0.45 * cock - 0.55 * on); T.lean += 0.25 * on - 0.12 * cock; T.sh[o] = 0.6; T.el[o] = 1.5;
+    } else if (st === 'worker') { // 工蜂 (round 35): points where it wants them and the back rack kicks up, flinging parcels out over the shoulder
+      T.sh[side] = 1.45 * (on + cock) + 0.3 * rest; T.el[side] = 0.15; T.ab[side] = 0.1; T.twist = sgn * -0.25 * on; T.lean -= 0.12 * on - 0.1 * cock; T.crouch += 0.12 * cock; T.sh[o] = 0.5; T.el[o] = 1.3; T.rack = 0.55 * on - 0.1 * cock;
     } else if (st === 'scout') { // 疾风: low snap kicks, arms swinging against them
       const thK = -0.45 * cock + 1.15 * on, knK = 1.3 * cock + 0.1 * on + 0.2 * rest; if (side) { T.thL = thK; T.knL = knK; } else { T.thR = thK; T.knR = knK; }
       T.sh[side] = 0.2; T.sh[o] = 1.0 * on + 0.3 * rest; T.el = [1.6, 1.6]; T.lean -= 0.15 * on; T.twist = sgn * 0.3 * on;
-    } else if (st === 'cannon') { // 重炮: the right arm comes up as a gun and kicks back on each shot; the shoulder guns lift too
-      T.sh[1] = 1.5; T.el[1] = 0.05 + 0.35 * on * (t < 0.25 ? 1 : 0); T.twist = -0.25; T.sh[0] = 0.75; T.el[0] = 1.5; T.lean -= 0.08 * on;
-    } else { // 苍隼: rockets from the shoulder pods, arms braced
-      T.sh = [0.8, 0.8]; T.el = [1.1, 1.1]; T.lean -= 0.1 * on;
+    } else if (st === 'cannon') { // 重炮: the right arm comes up, the barrel slides out of the forearm and kicks back on each shot; the shoulder guns swing up off the back
+      T.sh[1] = 1.55; T.el[1] = 0.05 + 0.35 * on * (t < 0.25 ? 1 : 0); T.twist = -0.25; T.sh[0] = 0.75; T.el[0] = 1.5; T.lean -= 0.08 * on;
+    } else { // 苍隼: the shoulder pods swing up and fire, arms braced
+      T.sh = [0.6, 0.6]; T.el = [1.3, 1.3]; T.lean -= 0.1 * on; T.podK = on;
     }
   }
   // ---- skills ----
   if (sk === 'slam' && sT < 0.95) { if (sT < 0.3) { const f = ease(sT / 0.3); T.sh = [2.8 * f, 2.8 * f]; T.el = [0.3, 0.3]; T.crouch = 0.1 * f; T.lean = -0.1 * f; } else if (sT < 0.45) { const f = ease((sT - 0.3) / 0.15); T.sh = [2.8 - f * 2.2, 2.8 - f * 2.2]; T.el = [0.1, 0.1]; T.crouch = 0.1 + f * 0.38; T.lean = f * 0.45; } else { const f = ease((sT - 0.45) / 0.5); T.sh = [0.6 + 0.0 * f, 0.6]; T.crouch = 0.48 * (1 - f); T.lean = 0.45 * (1 - f); } }
-  if (sk === 'parcels' && sT < 0.7) { const f = sT < 0.25 ? ease(sT / 0.25) : 1 - ease((sT - 0.25) / 0.45); T.sh = [2.6 * f + 0.3 * (1 - f), 2.6 * f + 0.3 * (1 - f)]; T.el = [0.4, 0.4]; T.lean -= 0.2 * f; T.crouch += 0.1 * f; }
+  if (sk === 'parcels' && sT < 0.9) { const f = sT < 0.25 ? ease(sT / 0.25) : 1 - ease((sT - 0.25) / 0.65); T.sh = [2.2 * f + 0.3 * (1 - f), 2.2 * f + 0.3 * (1 - f)]; T.ab = [0.8 * f, 0.8 * f]; T.el = [0.3, 0.3]; T.lean -= 0.25 * f; T.crouch += 0.15 * f; T.rack = 1.1 * f; } // (round 35) the rack tips right up and sprays the lot
   if (sk === 'dash' && sT < 0.55) { const f = sT < 0.4 ? 1 : 1 - (sT - 0.4) / 0.15; T.lean = 0.55 * f; T.sh = [-0.5 * f + 0.55 * (1 - f), 1.4 * f + 0.55 * (1 - f)]; T.el = [0.2, 0.3]; T.ab = [0.3, 1.0 * f]; T.crouch = 0.15 * f; T.thL = 0.6 * f; T.thR = -0.5 * f; T.knL = 0.5 * f + 0.15; T.knR = 0.9 * f + 0.15; T.blade = 0; T.flame = 1; T.twist = -0.6 * f; }
   if (sk === 'leap' && sT < 1.3) { if (sT < 0.15) T.crouch = ease(sT / 0.15) * 0.35; T.flame = air || sT < 1.05 ? 1 : 0; }
   if (air) { T.thL = 0.55; T.thR = 0.15; T.knL = 1.2; T.knR = 0.75; T.sh = [0.9, 0.9]; T.el = [0.9, 0.9]; T.ab = [0.5, 0.5]; T.flame = 1; T.lean = 0.15; }
@@ -10360,15 +10577,23 @@ function mechTick(p, mm, dt, xf = 1) { // xf < 1: mid-transform (0 = folded up, 
   J.tor.rotation.set(-roll * 0.6, yaw, -lean * 0.7);
   J.head.rotation.set(0, -twist * 0.4, lean * 0.4);
   J.arms.forEach((A, n) => { A.sh.rotation.z = S('sh' + n, T.sh[n], 380); A.el.rotation.z = S('el' + n, T.el[n], 380); A.sh.rotation.x = A.s * S('ab' + n, T.ab[n], 300); });
-  for (const b of J.blades) b.rotation.z = S('blade', T.blade, 600);
+  for (const b of J.blades) b.rotation.z = S('blade', J.cmb > 0.25 ? 0 : T.blade, 600); // (round 35) the arm blades flick out for a fight, fold back along the forearm after
+  // (round 35) weapons deploy: 重炮's arm barrel slides out and its shoulder guns swing up off the back; 苍隼's pods rise; 工蜂's rack kicks; 苍隼's wings spread to fly
+  const dep = S('dep', J.cmb > 0.05 ? 1 : 0, 120);
+  if (J.armGun) J.armGun.position.y = lerp(0.05, -0.55, dep) + (t < 0.18 ? 0.12 * (1 - t / 0.18) : 0);
+  if (J.guns) for (const G of J.guns) G.rotation.z = lerp(1.2, 0, dep);
+  if (J.pods) { const pk = S('pod', J.cmb > 0.05 ? 1 : 0, 160); for (const P of J.pods) { P.rotation.z = lerp(-1.3, 0.15, pk) + (T.podK ? -0.06 * T.podK : 0); P.scale.setScalar(lerp(0.75, 1, pk)); } }
+  if (J.rack) J.rack.rotation.z = S('rack', T.rack || 0, 300);
+  if (J.wings) { const wo = S('wing', p.mfly || air ? 1 : sp > maxS * 0.8 ? 0.25 : 0, 90); for (const Wg of J.wings) { const s2 = Wg.userData.s; Wg.rotation.set(s2 * lerp(0.2, 0.05, wo), s2 * lerp(1.25, 0.08, wo), lerp(0.75, 0.12, wo) + (wo > 0.6 ? Math.sin(W.t * 3 + s2) * 0.04 : 0)); if (Wg.userData.tip) Wg.userData.tip.rotation.y = s2 * lerp(2.2, 0, wo); } }
   if (J.buckets) { const bz = S('bucket', J.st === 'worker' && t < 0.45 && t > 0.1 ? -0.8 : 0.5, 400); for (const b of J.buckets) b.rotation.z = bz; } // the bucket curls as it scoops
   // ---- effects: reactor, thrusters, blade trail, footfalls ----
   const pulse = 0.85 + Math.sin(W.t * 4 + p.i) * 0.15; J.coreHalo.scale.set(1, pulse, pulse);
   for (const f of J.flames) { f.visible = T.flame > 0 || sp > maxS * 0.9; f.scale.y = (T.flame ? 1.4 : 0.6) * (0.85 + FXR() * 0.3); }
   const pz = (p.zv != null ? p.zv : p.z) + (p.rjz != null ? p.rjz : p.jz || 0), px = p.rx != null ? p.rx : p.x, py = p.ry != null ? p.ry : p.y;
   if (T.flame && FXR() < dt * 40) addP({ x: px - Math.cos(p._ly) * 0.7, y: py - Math.sin(p._ly) * 0.7, z: pz + 1.6, vx: frnd(-0.4, 0.4), vy: frnd(-0.4, 0.4), vz: -2, g: -0.3, col: '#ffb060', s: 0.09, life: 0.3 });
-  if (J.st === 'slim' && t > 0.1 && t < 0.32) for (const A of J.arms) if (A.tip && A.s === (side ? 1 : -1)) { A.tip.getWorldPosition(_vw); addP({ x: _vw.x, y: _vw.z, z: _vw.y, vx: 0, vy: 0, vz: 0, g: 0, col: '#ffc07a', s: 0.1, life: 0.18 }); } // slash trail
-  const st = Math.sign(Math.sin(ph)); if (a > 0.3 && st !== J.st && !air) { const s2 = st > 0 ? 1 : -1, aa = p._ly + Math.PI / 2 * s2; for (let q = 0; q < 5; q++) addP({ x: px + Math.cos(aa) * 0.38, y: py + Math.sin(aa) * 0.38, z: pz + 0.05, vx: frnd(-0.9, 0.9), vy: frnd(-0.9, 0.9), vz: 0.35, g: -0.2, col: '#8a7e6a', s: 0.12, life: 0.5, smoke: 1 }); if (p.i === ME) { shake(px, py, J.st === 'big' || J.st === 'cannon' ? 0.07 : J.st === 'scout' ? 0.02 : 0.04); if (thr('mstep', 0.25)) sfx('bash', px, py); } } J.st = st;
+  if (J.st === 'slim' && t > 0.1 && t < 0.34) for (const A of J.arms) if (A.tip && (combo === 2 || A.s === (side ? 1 : -1))) { A.tip.getWorldPosition(_vw); const q = A.mid || (A.mid = vMark(J.blades[J.arms.indexOf(A)], 0, -0.55, 0)); q.getWorldPosition(_vw2);
+    for (let k = 0; k < 3; k++) { const f2 = k / 2; addP({ x: lerp(_vw2.x, _vw.x, f2), y: lerp(_vw2.z, _vw.z, f2), z: lerp(_vw2.y, _vw.y, f2), vx: 0, vy: 0, vz: 0, g: 0, col: k === 2 ? '#fff0d0' : '#ffb060', s: 0.07 + f2 * 0.05, life: 0.16 + f2 * 0.08 }); } } // (round 35) a fuller slash trail along the blade
+  const st = Math.sign(Math.sin(ph)); if (a > 0.3 && st !== J.fs && !air) { const s2 = st > 0 ? 1 : -1, aa = p._ly + Math.PI / 2 * s2; for (let q = 0; q < 5; q++) addP({ x: px + Math.cos(aa) * 0.38, y: py + Math.sin(aa) * 0.38, z: pz + 0.05, vx: frnd(-0.9, 0.9), vy: frnd(-0.9, 0.9), vz: 0.35, g: -0.2, col: '#8a7e6a', s: 0.12, life: 0.5, smoke: 1 }); if (p.i === ME) { shake(px, py, J.st === 'big' || J.st === 'cannon' ? 0.07 : J.st === 'scout' ? 0.02 : 0.04); if (thr('mstep', 0.25)) sfx('bash', px, py); } } J.fs = st; /* (round 35) was J.st = st: overwrote the mech's style after the first footstep, so the style's attack poses stopped playing */
 }
 
 /* ---- 56_props.js ---- */
@@ -10504,6 +10729,148 @@ function drawModeFx() {
   B_.material.opacity = 0.22 + Math.sin(W.t * 3) * 0.08;
 }
 
+/* ---- 58_beasts_draw.js ---- */
+/* ---------- (round 35) flyers and 能力者 elites: models, auras, telegraphs ---------- */
+// Flyers are small articulated groups (body, head, two two-part wings, tail) with a soft shadow on the ground under them so you can read their height.
+// Elites are drawn with the normal zombie rig (their own skin and eye colour) plus an overlay group: a pulsing aura ring, a 护盾者's bubble,
+// a 唤尸者's summoning circle, and a 隐身者's shimmer while it is cloaked (then nothing else is drawn).
+const FLY = new Map(), ELX = new Map();
+function mkFlyer(k) {
+  const bat = k === 'bat', g = new THREE.Group(), J = { k, wings: [] };
+  const body = lam(bat ? '#4a3838' : '#1d1d24'), dark = lam(bat ? '#2c2222' : '#0d0d12'), beakM = lam('#8a7a58'), memb = lam(bat ? '#5c4242' : '#24242c', { side: THREE.DoubleSide });
+  const eyeM = new THREE.MeshBasicMaterial({ color: bat ? '#ffcf3a' : '#ff3a2a' });
+  const B = kjGrp(g, 0, 0.25, 0); J.body = B;
+  kjPart(B, kjBlob(0.12, bat ? 1.15 : 1.7, bat ? 0.95 : 0.85, bat ? 0.9 : 0.8, 5), body);
+  if (!bat) kjPart(B, kjBlob(0.08, 1.4, 0.6, 0.9, 11), dark, -0.03, -0.06, 0); // a darker belly
+  const H = kjGrp(B, bat ? 0.13 : 0.21, bat ? 0.04 : 0.06, 0); J.head = H;
+  kjPart(H, kjBlob(0.08, 1.05, 0.95, 0.95, 7), body);
+  if (bat) { for (const s of [1, -1]) kjPart(H, new THREE.ConeGeometry(0.03, 0.11, 4), dark, -0.01, 0.1, s * 0.04, 0.25 * s, 0, 0); kjPart(H, kjBlob(0.04, 1.2, 0.7, 0.9, 2), dark, 0.07, -0.02, 0); for (const s of [1, -1]) kjPart(H, new THREE.ConeGeometry(0.008, 0.03, 3), lam('#e8e0d0'), 0.08, -0.05, s * 0.015, Math.PI, 0, 0); }
+  else { kjPart(H, new THREE.ConeGeometry(0.028, 0.13, 5).rotateZ(-Math.PI / 2), beakM, 0.12, -0.01, 0); kjPart(H, boxG(0.05, 0.02, 0.06), dark, -0.04, 0.07, 0, 0, 0, 0.3); } // beak, ragged crest
+  for (const s of [1, -1]) kjPart(H, new THREE.IcosahedronGeometry(bat ? 0.016 : 0.018, 0), eyeM, 0.055, 0.025, s * 0.042);
+  // tail: a fan of feathers (crow) / a stub (bat)
+  if (!bat) { const T = kjGrp(B, -0.18, 0.01, 0); J.tail = T; for (let k = -2; k <= 2; k++) kjPart(T, boxG(0.2, 0.012, 0.04, -0.1, 0, 0), body, 0, 0, k * 0.022, 0, k * 0.16, 0); }
+  else kjPart(B, new THREE.ConeGeometry(0.03, 0.12, 4).rotateZ(Math.PI / 2), dark, -0.16, 0, 0);
+  // wings: an inner and an outer part on each side; crows get fanned feathers, bats a stretched membrane between finger bones
+  for (const s of [1, -1]) {
+    const W0 = kjGrp(B, 0.02, 0.05, s * 0.07), O = kjGrp(W0, 0, 0, s * (bat ? 0.24 : 0.22));
+    if (bat) {
+      const mem = (pts) => { const sh = new THREE.Shape(); sh.moveTo(pts[0][0], pts[0][1]); for (const q of pts.slice(1)) sh.lineTo(q[0], q[1]); const geo = new THREE.ShapeGeometry(sh).rotateX(Math.PI / 2); if (s < 0) geo.scale(1, 1, -1); return geo; };
+      kjPart(W0, mem([[0.06, 0], [0.04, 0.24], [-0.14, 0.22], [-0.16, 0]]), memb);
+      kjPart(O, mem([[0.04, 0], [0.12, 0.26], [-0.02, 0.16], [-0.12, 0.3], [-0.14, 0.08], [-0.14, 0]]), memb);
+      kjPart(W0, boxG(0.02, 0.02, 0.24, 0.05, 0, s * 0.12), dark); kjPart(O, boxG(0.015, 0.015, 0.3, 0.06, 0, s * 0.14).rotateY(s * -0.3), dark);
+    } else {
+      kjPart(W0, boxG(0.17, 0.016, 0.23, -0.03, 0, s * 0.115), body);
+      for (let k = 0; k < 5; k++) kjPart(O, boxG(0.24 - k * 0.02, 0.01, 0.045, -0.1 + k * 0.01, 0, 0), k % 2 ? body : dark, 0.02 - k * 0.035, 0, s * (0.04 + k * 0.035), 0, s * (0.15 + k * 0.17), 0);
+    }
+    J.wings.push({ g: W0, o: O, s });
+  }
+  g.userData.J = J; return g;
+}
+let FLYSH = null;
+function drawFlyer(z, corpse, dt) {
+  const key = (corpse ? 'c' : 'z') + (z.id != null ? z.id : z.seed) + z.k; let K = FLY.get(key);
+  if (!K) { if (!FLYSH) FLYSH = new THREE.MeshBasicMaterial({ color: '#000000', transparent: true, opacity: 0.3, depthWrite: false });
+    const g = mkFlyer(z.k), sh = new THREE.Mesh(new THREE.CircleGeometry(0.22, 12).rotateX(-Math.PI / 2), FLYSH.clone()); SCN.add(g); SCN.add(sh); K = { g, J: g.userData.J, sh }; FLY.set(key, K); }
+  K.seen = 1; const g = K.g, J = K.J, bat = z.k === 'bat', t = W.t, S = bat ? 1.55 : 1.4; g.visible = K.sh.visible = true;
+  if (z._f == null) { z._f = z.face || 0; z._ph = (z.seed || 0) % 7; z._roll = 0; z._pz = z.z; }
+  const kt = corpse ? 0 : z.kt || 0, f0 = z._f; z._f = angLerp(z._f, z.face || 0, Math.min(1, dt * 7));
+  const turn = dt > 0 ? angDiff(f0, z._f) / dt : 0; z._roll = lerp(z._roll, clamp(-turn * 0.18, -0.7, 0.7), Math.min(1, dt * 5));
+  const vz = dt > 0 ? (z.z - z._pz) / dt : 0; z._pz = z.z;
+  // flap: cruising beats, a fast flutter while hovering for the dive, wings tucked back in the dive, gliding as it pulls up
+  const rate = kt === 1 ? 22 : kt === 2 ? 0 : (bat ? 14 : 9) * (vz > 0.4 ? 1.4 : 1); z._ph += dt * rate;
+  const amp = corpse ? 0 : kt === 2 ? 0.1 : kt === 1 ? 0.75 : vz < -0.5 ? 0.25 : 0.62, tuck = kt === 2 ? 1 : 0;
+  for (const Wg of J.wings) { const lift = Math.sin(z._ph) * amp + (corpse ? -0.1 : 0.12), lo = Math.sin(z._ph - 0.7) * amp * 0.8;
+    Wg.g.rotation.x = -Wg.s * lift; Wg.g.rotation.y = lerp(Wg.g.rotation.y, -Wg.s * (tuck ? 0.95 : 0.05), Math.min(1, dt * 12)); Wg.o.rotation.x = -Wg.s * (lo * 0.7 + (tuck ? -0.3 : 0)); Wg.o.rotation.y = -Wg.s * (tuck ? 0.6 : 0); }
+  const pitch = corpse ? 0 : kt === 2 ? -0.55 : kt === 1 ? 0.35 : clamp(vz * 0.12, -0.4, 0.3);
+  J.body.rotation.z = lerp(J.body.rotation.z, pitch, Math.min(1, dt * 8)); J.body.position.y = 0.25 + (corpse ? 0 : Math.sin(z._ph) * 0.025 * amp);
+  if (J.head) J.head.rotation.z = kt === 1 ? -0.4 + Math.sin(t * 30) * 0.08 : 0; // crying out
+  if (J.tail) J.tail.rotation.z = kt === 2 ? 0.25 : Math.sin(z._ph * 0.5) * 0.08;
+  let zz = z.z; if (corpse) { const k = Math.min(1, z.t / 0.45); zz = lerp(z.fz != null ? z.fz : z.z, z.z, k * k); }
+  g.position.set(z.x, zz, z.y); g.rotation.set(corpse ? Math.min(1.3, z.t * 3) : z._roll, -z._f, 0);
+  g.scale.setScalar(S * (!corpse && z.hitT > 0 ? 1.12 : 1)); if (corpse && z.t > 7) g.visible = false;
+  // shadow on whatever is under it: darker and smaller the lower it flies
+  const gz = skyTop(z.x, z.y) * FH, h = Math.max(0, zz - gz); K.sh.position.set(z.x, gz + 0.03, z.y); K.sh.scale.setScalar(clamp(1.3 - h * 0.12, 0.6, 1.3) * S); K.sh.material.opacity = clamp(0.38 - h * 0.05, 0.08, 0.38); K.sh.visible = g.visible && !corpse;
+}
+function flySweep() { for (const [k, K] of FLY) { if (!K.seen) { K.g.visible = K.sh.visible = false; if (k[0] === 'c' ? !RND.corpses.some(c => 'c' + (c.id != null ? c.id : c.seed) + c.k === k) : !W.zs.some(z => 'z' + z.id + z.k === k)) { SCN.remove(K.g); SCN.remove(K.sh); FLY.delete(k); } } K.seen = 0; } }
+
+// ---- elites ----
+function mkEliteFx(k) {
+  const E = ZT[k].elite, g = new THREE.Group(), add = (geo, op) => { const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: E.col, transparent: true, opacity: op, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide })); g.add(m); return m; };
+  const X = { g };
+  X.ring = add(new THREE.RingGeometry(0.42, 0.56, 28).rotateX(-Math.PI / 2), 0.55);
+  X.ring2 = add(new THREE.RingGeometry(0.62, 0.68, 28).rotateX(-Math.PI / 2), 0.3);
+  if (E.k === 'shield') { X.bub = add(new THREE.SphereGeometry(SHIELD_R, 28, 14, 0, Math.PI * 2, 0, Math.PI / 2), 0.1); X.edge = add(new THREE.RingGeometry(SHIELD_R - 0.08, SHIELD_R, 48).rotateX(-Math.PI / 2), 0.5); }
+  if (E.k === 'call') X.circle = add(new THREE.RingGeometry(2.3, 2.6, 40).rotateX(-Math.PI / 2), 0.4);
+  if (E.k === 'cloak') { X.ghost = new THREE.Mesh(new THREE.CapsuleGeometry(0.26, 0.75, 4, 8).translate(0, 0.65, 0), new THREE.MeshBasicMaterial({ color: '#c8c8e8', transparent: true, opacity: 0.08, depthWrite: false })); g.add(X.ghost);
+    X.eyes = new THREE.Mesh(merge([new THREE.IcosahedronGeometry(0.03, 0).translate(0.2, 1.22, -0.06), new THREE.IcosahedronGeometry(0.03, 0).translate(0.2, 1.22, 0.06)]), new THREE.MeshBasicMaterial({ color: '#e0e0ff', transparent: true, opacity: 0.6 })); g.add(X.eyes); }
+  return X;
+}
+function drawElite(z, dt) {
+  let X = ELX.get(z.id); if (!X) { X = mkEliteFx(z.k); SCN.add(X.g); ELX.set(z.id, X); }
+  X.seen = 1; const E = ZT[z.k].elite, t = W.t, kt = z.kt || 0, ck = !!(z.ck || z.ckF);
+  X.g.visible = true; X.g.position.set(z.x, z.z + 0.04, z.y); X.g.rotation.y = -(z._f != null ? z._f : z.face || 0);
+  const pulse = 0.5 + 0.5 * Math.sin(t * 4 + z.id);
+  X.ring.visible = X.ring2.visible = !ck; X.ring.material.opacity = (kt ? 0.85 : 0.4 + pulse * 0.25); X.ring.scale.setScalar(kt ? 1 + Math.sin(t * 20) * 0.12 : 1); X.ring2.rotation.y = t * 1.5; X.ring2.scale.setScalar(1 + pulse * 0.15);
+  if (!ck && Math.random() < dt * (kt ? 30 : 6)) addP({ x: z.x + frnd(-0.3, 0.3), y: z.y + frnd(-0.3, 0.3), z: z.z + frnd(0.1, 1.2), vx: 0, vy: 0, vz: frnd(0.4, 1.0), g: -0.2, col: E.col, s: 0.05, life: 0.7 });
+  if (X.bub) { const up = !!(z.sh > 0 || z.shF); X.bub.visible = X.edge.visible = up; if (up) { X.bub.material.opacity = 0.07 + pulse * 0.04 + (X.flash > 0 ? X.flash * 0.6 : 0); X.edge.material.opacity = 0.35 + pulse * 0.2; X.bub.rotation.y = t * 0.3; } if (X.flash > 0) X.flash -= dt * 4; }
+  if (X.circle) { X.circle.visible = kt === 1; if (kt === 1) { X.circle.material.opacity = 0.3 + Math.sin(t * 14) * 0.15; X.circle.rotation.y = -t * 2; } }
+  if (X.ghost) { X.ghost.visible = X.eyes.visible = ck; if (ck) { X.ghost.material.opacity = 0.05 + Math.abs(Math.sin(t * 7 + z.id)) * 0.07; X.ghost.scale.set(1 + Math.sin(t * 9) * 0.06, 1, 1 + Math.cos(t * 8) * 0.06); X.eyes.material.opacity = 0.3 + pulse * 0.4; } }
+}
+// telegraph marks left by events (where a 闪影者 is about to appear)
+function eliteMarks(dt) {
+  if (!RND.elm || !RND.elm.length) return;
+  for (const m of RND.elm) { m.t += dt; if (Math.random() < dt * 40) { const a = Math.random() * 6.28, r = 0.5 * (1 - m.t / m.life) + 0.1; addP({ x: m.x + Math.cos(a) * r, y: m.y + Math.sin(a) * r, z: m.z + frnd(0, 1.4), vx: -Math.sin(a) * 1.5, vy: Math.cos(a) * 1.5, vz: 0.6, g: 0, col: m.col, s: 0.07, life: 0.4 }); } }
+  RND.elm = RND.elm.filter(m => m.t < m.life);
+}
+function eliteSweep(dt) { eliteMarks(dt); for (const [id, X] of ELX) { if (!X.seen) { X.g.visible = false; if (!W.zs.some(z => z.id === id)) { SCN.remove(X.g); ELX.delete(id); } } X.seen = 0; } }
+// the host's / guest's event for an elite skill moment
+function eliteEvent(e) {
+  const Z = W.zs.find(z => z.id === e.id), col = Z && ZT[Z.k].elite ? ZT[Z.k].elite.col : '#ffffff', burst = (x, y, z, c, n, sp) => { for (let k = 0; k < n; k++) { const a = Math.random() * 6.28, v = frnd(0.5, sp || 3); addP({ x, y, z: z + frnd(0.2, 1.3), vx: Math.cos(a) * v, vy: Math.sin(a) * v, vz: frnd(-0.5, 2), g: 1, col: c, s: frnd(0.05, 0.1), life: 0.6 }); } };
+  switch (e.a) {
+    case 'blink0': (RND.elm = RND.elm || []).push({ x: e.tx, y: e.ty, z: e.tz, t: 0, life: 0.65, col: '#b47aff' }); burst(e.x, e.y, e.z, '#b47aff', 10, 1.5); break;
+    case 'blink1': burst(e.x, e.y, e.z, '#b47aff', 18); burst(e.tx, e.ty, e.tz, '#d8b0ff', 18); for (let k = 0; k <= 10; k++) { const f = k / 10; addP({ x: lerp(e.x, e.tx, f), y: lerp(e.y, e.ty, f), z: lerp(e.z, e.tz, f) + 0.8, g: 0, col: '#b47aff', s: 0.08, life: 0.35 }); } sfx('blink', e.tx, e.ty); break;
+    case 'slash': for (let k = 0; k < 14; k++) { const a = e.f + (k / 13 - 0.5) * 2.2; addP({ x: e.x + Math.cos(a) * 1.3, y: e.y + Math.sin(a) * 1.3, z: e.z + 0.9 + (k / 13 - 0.5) * 0.4, vx: Math.cos(a) * 0.5, vy: Math.sin(a) * 0.5, g: 0, col: k % 2 ? '#e8d0ff' : '#b47aff', s: 0.08, life: 0.25 }); } sfx('slash', e.x, e.y); break;
+    case 'call0': burst(e.x, e.y, e.z, '#6aff9a', 10, 1); if (thr('callMsg', 10)) uiMsg('唤尸者在召唤——晕住它可以打断', '#6aff9a'); break;
+    case 'call1': for (const q of e.p || []) { debrisFx(q[0], q[1], q[2] + 0.1, '#5a4a36', 8); burst(q[0], q[1], q[2], '#6aff9a', 6, 1.5); } sfx('summon', e.x, e.y); break;
+    case 'shield': burst(e.x, e.y, e.z, '#6ac8ff', 14, 2); sfx('shield', e.x, e.y); break;
+    case 'shhit': { const X = ELX.get(e.id); if (X) X.flash = 0.25; for (let k = 0; k < 3; k++) addP({ x: e.x + frnd(-0.2, 0.2), y: e.y + frnd(-0.2, 0.2), z: e.z, vx: frnd(-1, 1), vy: frnd(-1, 1), vz: frnd(0, 1), g: 2, col: '#a8e4ff', s: 0.06, life: 0.3 }); if (thr('shMsg', 14)) uiMsg('打在护盾上了——走进蓝色护盾里再打', '#6ac8ff'); break; }
+    case 'break': for (let k = 0; k < 30; k++) { const a = Math.random() * 6.28, b = Math.random() * 1.4; addP({ x: e.x + Math.cos(a) * SHIELD_R * Math.cos(b), y: e.y + Math.sin(a) * SHIELD_R * Math.cos(b), z: e.z + SHIELD_R * Math.sin(b) * 0.8, vx: Math.cos(a) * 2, vy: Math.sin(a) * 2, vz: frnd(0, 2), g: 6, col: k % 2 ? '#6ac8ff' : '#d8f4ff', s: 0.08, life: 0.8 }); } sfx('brk', e.x, e.y); if (thr('brMsg', 6)) uiMsg('护盾碎了！', '#6ac8ff'); break;
+    case 'cloak': burst(e.x, e.y, e.z, '#8a8aa0', 8, 1); break;
+    case 'reveal': burst(e.x, e.y, e.z, '#c0c0e0', 10, 1.5); break;
+    case 'ambush': burst(e.x, e.y, e.z, '#ff4a4a', 12, 2.5); sfx('ambush', e.x, e.y); shake(e.x, e.y, 0.35); if (thr('ambMsg', 12)) uiMsg('隐身者偷袭！', '#ff8080'); break;
+  }
+}
+// (round 35) mech target marker: a ring on the zombie your next mech attack will go for (the same pick the host makes), so you can see what you'll hit
+let MLOCK = null;
+function drawMechLock(me, dt) {
+  if (!MLOCK) { MLOCK = new THREE.Group(); const mat = new THREE.MeshBasicMaterial({ color: '#ffe066', transparent: true, opacity: 0.85, depthTest: false, side: THREE.DoubleSide });
+    const r = new THREE.Mesh(new THREE.RingGeometry(0.5, 0.6, 32).rotateX(-Math.PI / 2), mat); MLOCK.add(r);
+    for (let k = 0; k < 4; k++) { const t = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.22, 3).rotateZ(Math.PI / 2).translate(0.82, 0, 0), mat); t.rotation.y = k * Math.PI / 2; MLOCK.add(t); }
+    MLOCK.renderOrder = 998; MLOCK.children.forEach(c => c.renderOrder = 998); SCN.add(MLOCK); }
+  const T = me && !me.dead && inMech(me) && !W.demo ? mechLock(me) : null; MLOCK.visible = !!T && zSeen(T); if (!MLOCK.visible) return;
+  const M = mechOf(me), col = M.glow || '#ffe066'; MLOCK.children[0].material.color.set(col);
+  MLOCK.position.set(T.x, T.z + 0.05, T.y); MLOCK.rotation.y = W.t * 2; MLOCK.scale.setScalar(Math.max(0.8, T.r * 2.6) * (1 + Math.sin(W.t * 8) * 0.06));
+}
+// (round 35) mech projectiles as real little models (they were coloured dots): taped cardboard parcels that tumble, finned rockets with a flame, brass shells, a glowing fist
+const MPRJ = {};
+function mprjMake(kd) {
+  const g = new THREE.Group(), L = c => lam(c), B = (w, h, d, c, x, y, z) => { const m = new THREE.Mesh(boxG(w, h, d, x || 0, y || 0, z || 0), L(c)); g.add(m); return m; };
+  if (kd === 'parcel' || kd === 'bigparcel') { const s = kd === 'bigparcel' ? 0.58 : 0.34; B(s, s * 0.78, s * 0.9, '#b8893a'); B(s + 0.01, s * 0.12, s * 0.92, '#e8d9a8'); B(s * 0.12, s * 0.8, s * 0.92, '#e8d9a8'); B(s * 0.4, s * 0.3, 0.01, '#f4f0e6', s * 0.15, -s * 0.12, s * 0.455); B(s * 0.25, s * 0.06, 0.012, '#c03030', s * 0.15, -s * 0.06, s * 0.46); }
+  else if (kd === 'rocket') { const body = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.42, 8).rotateZ(Math.PI / 2), L('#d8dde2')); g.add(body); const nose = new THREE.Mesh(new THREE.ConeGeometry(0.055, 0.14, 8).rotateZ(-Math.PI / 2).translate(0.28, 0, 0), L('#d04030')); g.add(nose);
+    for (let k = 0; k < 4; k++) { const f = new THREE.Mesh(boxG(0.12, 0.01, 0.09, -0.18, 0, 0.06), L('#5a6a7a')); f.rotation.x = k * Math.PI / 2; g.add(f); }
+    const fl = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.32, 8).rotateZ(Math.PI / 2).translate(-0.36, 0, 0), new THREE.MeshBasicMaterial({ color: '#ffb84a', transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false })); g.add(fl); g.userData.fl = fl; }
+  else if (kd === 'cannon') { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.22, 8).rotateZ(Math.PI / 2), L('#c8a040')); g.add(m); const n = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6).translate(0.11, 0, 0), L('#c8a040')); g.add(n); const gl = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 6).translate(-0.08, 0, 0), new THREE.MeshBasicMaterial({ color: '#ffd27a', transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false })); g.add(gl); }
+  else { const m = new THREE.Mesh(new THREE.SphereGeometry(0.2, 10, 8), new THREE.MeshBasicMaterial({ color: '#9fe8ff', transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false })); g.add(m); const c = new THREE.Mesh(boxG(0.26, 0.22, 0.24), L('#3a4048')); g.add(c); }
+  g.traverse(o => { if (o.isMesh && o.material.type !== 'MeshBasicMaterial') o.castShadow = true; }); SCN.add(g); return g;
+}
+function mprjDraw(r, x, y, z) {
+  if (!r.m) { const q = MPRJ[r.kd] || (MPRJ[r.kd] = []); r.m = q.pop() || mprjMake(r.kd); r.m.visible = true; r.m.scale.setScalar(r.sm || 1); r.rs = (Math.random() - 0.5) * 2; }
+  const m = r.m; m.position.set(x, z, y);
+  if (r.kd === 'parcel' || r.kd === 'bigparcel') m.rotation.set(r.t * 7 * r.rs, -Math.atan2(r.e[1] - r.y, r.e[0] - r.x), r.t * 9);
+  else { const dx = r.e[0] - r.x, dy = r.e[1] - r.y, dz = r.e[2] - r.z; m.rotation.set(0, -Math.atan2(dy, dx), Math.atan2(dz, Math.hypot(dx, dy))); if (m.userData.fl) m.userData.fl.scale.set(0.8 + Math.random() * 0.5, 1, 1); }
+}
+function mprjFree(r) { if (!r.m) return; r.m.visible = false; (MPRJ[r.kd] || (MPRJ[r.kd] = [])).push(r.m); r.m = null; if (r.fake) debrisFx(r.e[0], r.e[1], r.e[2] + 0.1, '#b8893a', 4); }
+
 /* ---- 60_audio.js ---- */
 /* ================= synthesized audio (Web Audio, no files) ================= */
 const AU = { ctx: null, master: null, noise: null, amb: null, ambG: null, last: {} };
@@ -10554,6 +10921,13 @@ function sfx(n, x, y) {
     case 'flamer': noise(0.3, 0.32 * v, 'lowpass', 900 * r, 400, 0.7); noise(0.25, 0.12 * v, 'bandpass', 2400, 1800, 2); break;
     case 'launcher': noise(0.25, 0.6 * v, 'lowpass', 700 * r, 150, 0.7); tone('sine', 140 * r, 60, 0.2, 0.4 * v); break;
     case 'scream': tone('sawtooth', 900 * r, 1500, 0.7, 0.18 * v, 0, 2400); tone('square', 640 * r, 1200, 0.6, 0.08 * v, 0.05, 1800); noise(0.6, 0.15 * v, 'bandpass', 2600, 3200, 3); break;
+    case 'caw': tone('sawtooth', 620 * r, 420 * r, 0.18, 0.12 * v, 0, 1400); tone('sawtooth', 560 * r, 380 * r, 0.16, 0.1 * v, 0.2, 1300); break; // (round 35) crows
+    case 'screech': tone('square', 2200 * r, 3200 * r, 0.22, 0.06 * v, 0, 4000); noise(0.2, 0.08 * v, 'highpass', 3500, 3500, 2); break; // bats
+    case 'peck': noise(0.06, 0.25 * v, 'bandpass', 1800, 1200, 2); tone('triangle', 900, 400, 0.05, 0.1 * v); break;
+    case 'blink': tone('sine', 300 * r, 1400 * r, 0.25, 0.14 * v, 0, 3000); noise(0.25, 0.08 * v, 'bandpass', 1500, 4000, 3); break; // (round 35) elites
+    case 'summon': tone('sawtooth', 60 * r, 40, 0.8, 0.16 * v, 0, 300); noise(0.7, 0.2 * v, 'lowpass', 400, 200, 1); break;
+    case 'shield': tone('sine', 520 * r, 880 * r, 0.35, 0.12 * v); tone('sine', 780 * r, 1320 * r, 0.3, 0.06 * v, 0.05); break;
+    case 'ambush': noise(0.18, 0.4 * v, 'bandpass', 900, 400, 1); tone('sawtooth', 160 * r, 60, 0.2, 0.2 * v, 0, 900); break;
     case 'jump': noise(0.12, 0.14, 'bandpass', 900, 1600, 1.5); break;
     case 'heart': tone('sine', 70, 45, 0.11, 0.32); tone('sine', 62, 40, 0.12, 0.26, 0.17); break; // (round 34d) low-health heartbeat
     case 'vault': noise(0.2, 0.18, 'bandpass', 700, 1300, 1.2); tone('triangle', 200, 160, 0.08, 0.06, 0.1); break;
@@ -11328,7 +11702,7 @@ const ZI = ZKEYS;
 function pFlags(p) { return (p.down ? 1 : 0) | (p.dead ? 2 : 0) | (p.gone ? 4 : 0) | (p.build ? 32 : 0) | (p.ready ? 64 : 0) | (p.selfRev ? 128 : 0) | (p.ride ? 256 : 0) | ((p.veh || 0) << 9) | ((p.pass != null && p.pass >= 0 ? p.pass + 1 : 0) << 12) | (p.land ? 1 << 15 : 0); } // (round 29) bit 15: the gyrocopter is coming down // veh: 3 bits (round 22: four vehicles)
 function makeSnap() {
   const P = p => [r2(p.x), r2(p.y), p.L, r2(p.vx), r2(p.vy), r2(p.aim), Math.ceil(p.hp), pFlags(p), Math.round(p.downT * 10) / 10, p.wpn, p.mag.join(','), p.ammo.join(','), p.owned.join(''), p.nades, p.meds, Math.round(p.useT * 100), Math.round(p.medT * 10) / 10, Math.round(p.reloadT * 10) / 10, p.kills, Math.round(p.anim * 10) / 10, p.sel, p.aimPt ? [r2(p.aimPt.x), r2(p.aimPt.y), r2(p.aimPt.z)] : 0, p.vehs || 0, p.shield ? 1 : 0, p.melee || 0, p.gn || [0, 0, 0], p.lives || 0, Math.round((p.fuel || 0) * 10) / 10, airborne(p) ? r2(p.z) : 0, p.gam || 0, p.shl || 0, p.vehs & 126 ? [p.mform || 0, Math.round((p.mtr || 0) * 10) / 10, [1, 2, 3, 4, 5, 6].map(v => p.mh && p.mh[v] != null ? Math.round(p.mh[v]) : -1), Math.round((p.bat || 0) * 10) / 10, Math.round((p.mcd || 0) * 10) / 10] : 0];
-  const z = []; for (const q of W.zs) z.push(q.id, ZI.indexOf(q.k), Math.round(q.x * 100), Math.round(q.y * 100), q.L, Math.round(q.z * 100), Math.round(q.face * 100), Math.ceil(q.hp / q.max * 100), (q.climbing ? 1 : 0) | (q.atk > 0 ? 2 : 0) | (q.hitT > 0 ? 4 : 0) | (q.moving ? 8 : 0) | (q.burn > 0 ? 16 : 0) | (q.scr > 0 ? 32 : 0) | (q.rage > 0 ? 64 : 0) | (q.hidden ? 128 : 0) | (q.sleep ? 256 : 0) | ((q.aw || 0) > 0.15 ? 512 : 0) | ((q.tl || 0) << 10) | ((q.kt || 0) << 12) | (q.kc ? 16384 : 0)); // tl (round 23): brute tells, 2 bits; kt / kc (round 34): kaiju skill state
+  const z = []; for (const q of W.zs) z.push(q.id, ZI.indexOf(q.k), Math.round(q.x * 100), Math.round(q.y * 100), q.L, Math.round(q.z * 100), Math.round(q.face * 100), Math.ceil(q.hp / q.max * 100), (q.climbing ? 1 : 0) | (q.atk > 0 ? 2 : 0) | (q.hitT > 0 ? 4 : 0) | (q.moving ? 8 : 0) | (q.burn > 0 ? 16 : 0) | (q.scr > 0 ? 32 : 0) | (q.rage > 0 ? 64 : 0) | (q.hidden ? 128 : 0) | (q.sleep ? 256 : 0) | ((q.aw || 0) > 0.15 ? 512 : 0) | ((q.tl || 0) << 10) | ((q.kt || 0) << 12) | (q.kc ? 16384 : 0) | (q.sh > 0 ? 32768 : 0) | (q.ck ? 65536 : 0)); // (round 35) bit 15: a 护盾者's bubble is up, bit 16: cloaked; kt also carries a flyer's dive / an elite's skill // tl (round 23): brute tells, 2 bits; kt / kc (round 34): kaiju skill state
   const pr = []; for (const b of W.proj) pr.push(b.k === 'nade' ? (b.gt ? 2 + b.gt : 0) : b.k === 'gl' ? 2 : 1, r2(b.x), r2(b.y), r2(b.z), r2(b.vx), r2(b.vy), r2(b.vz));
   const d = []; for (const i of W.dirty) d.push(i, Math.round(W.bhp[i]), Math.round(W.shp[i])); W.dirty.clear();
   return { t: 's', T: r2(W.t), ph: W.phase, cl: Math.round(W.clock * 10) / 10, dl: W.dayLen, n: W.night, nt: Math.round(W.nightT), tk: NET.tkv === W.tkv && (NET.tkN = (NET.tkN || 0) + 1) % 12 ? 0 : (NET.tkv = W.tkv, W.tasks.map(t => [t.k, t.need, t.got, t.done, t.txt, t.rt])), res: RES.map(r => W.res[r.k]), u: W.upg, k: W.kills, p: W.p.map(P), z, pr, d, sl: W.spawnQ.length, cz: (W.cz || []).map(c => [c.k, c.x, c.y, c.z, c.r, r2(c.t)]), ob: NET.obv === W.obv ? 0 : (NET.obv = W.obv, W.obj), pk: W.perk || 0 }; // (round 32) permanent upgrades (the caps read them)
@@ -11398,7 +11772,7 @@ function applySnap(s) {
     let z = old.get(id);
     if (!z) z = { id, k: key, x: s.z[k + 2] / 100, y: s.z[k + 3] / 100, z: s.z[k + 5] / 100, r: T.r, h: T.h, face: 0, hp: 100, max: 100, anim: Math.random() * 6, seed: id * 7, hitT: 0, atk: 0 };
     z.tx = s.z[k + 2] / 100; z.ty = s.z[k + 3] / 100; z.L = s.z[k + 4]; z.tz = s.z[k + 5] / 100; z.face = s.z[k + 6] / 100; z.hp = s.z[k + 7]; z.max = 100;
-    const b = s.z[k + 8]; z.climbing = b & 1 ? {} : null; if (b & 2) z.atk = 0.3; if (b & 4) z.hitT = 0.12; z.moving = !!(b & 8); z.burnF = !!(b & 16); z.scr = b & 32 ? 0.6 : 0; z.sleepF = !!(b & 256); z.awF = !!(b & 512); z.tl = (b >> 10) & 3; z.kt = (b >> 12) & 3; z.kc = !!(b & 16384); z.rageF = !!(b & 64); z.hidden = !!(b & 128);
+    const b = s.z[k + 8]; z.climbing = b & 1 ? {} : null; if (b & 2) z.atk = 0.3; if (b & 4) z.hitT = 0.12; z.moving = !!(b & 8); z.burnF = !!(b & 16); z.scr = b & 32 ? 0.6 : 0; z.sleepF = !!(b & 256); z.awF = !!(b & 512); z.tl = (b >> 10) & 3; z.kt = (b >> 12) & 3; z.kc = !!(b & 16384); z.shF = !!(b & 32768); z.ckF = !!(b & 65536); z.rageF = !!(b & 64); z.hidden = !!(b & 128);
     zs.push(z);
   }
   W.zs = zs;

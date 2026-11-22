@@ -98,9 +98,11 @@ function drawZombies(vl, dt) {
     if (L > vl || lcHide(Math.floor(z.x), Math.floor(z.y), L)) continue;
     drawn++;
     if (ZT[z.k] && ZT[z.k].kaiju) { drawKaiju(z, corpse, dt); continue; } // (round 34)
+    if (ZT[z.k] && ZT[z.k].fly) { drawFlyer(z, corpse, dt); continue; } // (round 35) birds / bats
+    if (ZT[z.k] && ZT[z.k].elite && !corpse) { drawElite(z, dt); if (z.ck || z.ckF) continue; } // (round 35) aura etc.; cloaked: only the shimmer
     rigZombie(z, corpse, dt, dk);
   }
-  kaijuSweep();
+  kaijuSweep(); flySweep(); eliteSweep(dt);
   for (const k in ZPOOL) { const q = ZPOOL[k]; q.m.count = q.n; q.m.instanceMatrix.needsUpdate = true; if (q.m.instanceColor) q.m.instanceColor.needsUpdate = true; }
 }
 function rigZombie(z, corpse, dt, dk) {
@@ -190,7 +192,7 @@ function rigZombie(z, corpse, dt, dk) {
   const hs = Bd.hs;
   zput('head', head, hs, hs, hs, skin);
   zput('jaw', J(ZM[9], head, 0.02 * hs, 0.05 * hs, 0, 0, 0, -jaw), hs, hs, hs, skin);
-  const ec = z.rage > 0 || z.rageF ? '#ff2a1a' : ZEYE[z.k] || '#ffd36a';
+  const ec = z.rage > 0 || z.rageF ? '#ff2a1a' : ZEYE[z.k] || (ZT[z.k] && ZT[z.k].elite && ZT[z.k].elite.col) || '#ffd36a';
   if (zk === 'screamer') zput('limb', J(ZM[11], tor, 0.03, TH * 0.97 + 0.12, 0, 0, 0, Math.PI - hPitch * 0.5), 0.035, 0.13, 0.035, skin); // the long neck
   if (zk === 'armored') zput('helmet', head, hs, hs, hs, white('#2a3442'));
   if (zk === 'armored' && !corpse) zput('shield', J(ZM[15], tor, 0.24, TH * 0.62, -0.08, 0, 0.15, hunch - flinch), 1, 1, 1, white('#3a4656')); // riot shield held upright in front
@@ -410,7 +412,7 @@ function drawPlayers(vl, dt) {
       if (p._px == null || p._ly == null) { p._px = gx; p._py = gy; p._ly = p.aim; p._spd = 0; }
       const mvx = gx - p._px, mvy = gy - p._py; p._spd = lerp(p._spd || 0, dt > 0 ? Math.min(8, Math.hypot(mvx, mvy) / dt) : 0, Math.min(1, dt * 10)); p._px = gx; p._py = gy;
       if (p._spd > 0.4 && Math.hypot(mvx, mvy) > 1e-4) { const md = Math.atan2(mvy, mvx); p._mback = Math.cos(angDiff(md, p.aim)) < (p._mback ? -0.2 : -0.45); p._ly = angLerp(p._ly, p._mback ? md + Math.PI : md, Math.min(1, dt * 4)); } else if (p._spd < 0.25) { p._mback = false; p._ly = angLerp(p._ly, p.aim, Math.min(1, dt * 1.6)); } // (round 34b) backing away: walk backwards, still facing the fight
-      p._uy = p.aim; m.mech.rotation.y = -p._ly; if (m.mech.visible) mechTick(p, m.mech, dt, xfing ? clamp((f - 0.2) / 0.8, 0, 1) : 1); return;
+      if (p._mAT > 0) { p._mAT -= dt; p._ly = angLerp(p._ly, p._mA, Math.min(1, dt * 14)); } p._uy = p._mAT > 0 ? p._mA : p.aim; m.mech.rotation.y = -p._ly; /* (round 35) swing / shoot toward the locked target */ if (m.mech.visible) mechTick(p, m.mech, dt, xfing ? clamp((f - 0.2) / 0.8, 0, 1) : 1); return;
     }
     if (m.mech) m.mech.visible = false; m.lower.visible = m.upper.visible = true;
     if (m.veh && m.veh.userData.all) for (const q of m.veh.userData.all) if (q && (q.rotation.z || q.position.y || q.scale.x !== 1)) { q.rotation.z = 0; q.position.y = 0; q.scale.set(1, 1, 1); } // undo the fold

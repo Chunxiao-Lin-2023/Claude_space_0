@@ -92,7 +92,8 @@ function visR(p) { if (!p || p.gone || p.dead) return 0; const V = BAL.vis; let 
   return r * (W.phase === 'night' ? V.night : 1); }
 let VIS = [];
 function visTick() { VIS = W.p.filter(p => !p.gone && !p.dead).map(p => ({ x: p.rx != null ? p.rx : p.x, y: p.ry != null ? p.ry : p.y, r2: visR(p) ** 2 })); }
-const zSeen = z => { if (W.demo) return true; for (const v of VIS) { const dx = z.x - v.x, dy = z.y - v.y; if (dx * dx + dy * dy < v.r2) return true; } return !VIS.length; };
+const zSeen = z => { if (W.demo) return true; if (z.ck || z.ckF) { for (const v of VIS) if ((z.x - v.x) ** 2 + (z.y - v.y) ** 2 < 12.25) return true; return false; } // (round 35) a cloaked 隐身者: only a shimmer, and only up close
+  for (const v of VIS) { const dx = z.x - v.x, dy = z.y - v.y; if (dx * dx + dy * dy < v.r2) return true; } return !VIS.length; };
 const vehGun = p => p && p.ride ? (inMech(p) ? 'mech' : p.mtr > 0 ? 'busy' : VEH[p.veh] && VEH[p.veh].gun || null) : null; // (round 34b) mid-transform nothing fires
 /* ---------- (round 34) mechs ---------- */
 // why you can't climb into the mech right now ('' = you can)
@@ -111,18 +112,35 @@ function startXform(p, to, why) {
 }
 function mechEject(p, why) { if (inMech(p)) startXform(p, 0, why); }
 // fire: a punch / blade swing in front, hits everything in the arc (alternating arms)
+// (round 35) what a mech's next attack goes for: the zombie you picked if it is in range, else the best one in front of you (closer to where you aim
+// and nearer scores higher), in sight, awake and not cloaked. Melee looks a little past its reach (it steps in); ranged within its range.
+const mechRanged = M => M.atk === 'rocket' || M.atk === 'cannon' || M.atk === 'parcel';
+function mechLock(p, M, far) {
+  M = M || mechOf(p); if (!M) return null; const ranged = mechRanged(M) || far, range = far || (ranged ? M.range || 16 : M.reach + 2.4), cmin = ranged ? 0.64 : 0.17, a = p.aim;
+  const ok = z => z && z.hp > 0 && !z.hidden && !z.sleep && !(z.ck || z.ckF) && Math.abs(z.z - p.z) < (ranged ? 6 : 2.6);
+  const pz = p.z + 1.6, zb = p.aimPt && p.aimPt.zb; if (ok(zb) && Math.hypot(zb.x - p.x, zb.y - p.y) <= range + zb.r && los(p.x, p.y, pz, zb.x, zb.y, zb.z + zb.h * 0.5)) return zb;
+  let best = null, bs = -1e9;
+  for (const z of W.zs) { if (!ok(z)) continue; const dx = z.x - p.x, dy = z.y - p.y, d = Math.hypot(dx, dy); if (d > range + z.r || d < 0.3) continue; const c = Math.cos(angDiff(Math.atan2(dy, dx), a)); if (c < cmin && d > 1.2) continue;
+    const sc = c * 1.5 - d / range + (ZT[z.k].fly && !ranged ? -0.5 : 0); if (sc > bs && los(p.x, p.y, pz, z.x, z.y, z.z + z.h * 0.5)) { bs = sc; best = z; } }
+  return best;
+}
 function mechPunch(p) {
   if (p.gcd > 0) return; const M = mechOf(p); p.gcd = M.rate; p.mside = 1 - (p.mside || 0);
   p.mcmb = W.t - (p.mlastT || -9) < M.rate + 0.5 ? ((p.mcmb || 0) + 1) % 3 : 0; p.mlastT = W.t; // (round 34d) a quick follow-up continues the combo (the host decides, every screen shows the same move)
-  emit({ k: 'mpunch', o: p.i, s: p.mside, c: p.mcmb });
-  if (M.atk === 'rocket' || M.atk === 'cannon' || M.atk === 'parcel' || (M.atk === 'heavy' && p.mcmb === 2)) return mechShoot(p, M.atk === 'heavy' ? 'fist' : M.atk);
-  (W.dly = W.dly || []).push({ t: 0.13, punch: p.i, c: p.mcmb }); // the blow lands when the swing does (after the wind-up)
+  // (round 35) turn to the target (and step in if it is just out of reach) so the blow / shot goes where the zombie is
+  const fistN = M.atk === 'heavy' && p.mcmb === 2, T = mechLock(p, M, fistN ? 7 : 0), ranged = mechRanged(M) || fistN; let a = p.aim; // the fist cannon reaches 7
+  if (T) { a = Math.atan2(T.y - p.y, T.x - p.x); const d = Math.hypot(T.x - p.x, T.y - p.y), want = M.reach * 0.75;
+    if (!ranged && d > want + 0.2 && !airborne(p)) { const st = Math.min(d - want, 2.2); mechMove(p, { dash: { dx: Math.cos(a) * st, dy: Math.sin(a) * st, t: 0, T: 0.12 } }); } }
+  p.mAim = a; p.mTgt = T ? T.id : -1;
+  emit({ k: 'mpunch', o: p.i, s: p.mside, c: p.mcmb, a: r2(a) });
+  if (M.atk === 'rocket' || M.atk === 'cannon' || M.atk === 'parcel' || (M.atk === 'heavy' && p.mcmb === 2)) return mechShoot(p, M.atk === 'heavy' ? 'fist' : M.atk, T, a);
+  (W.dly = W.dly || []).push({ t: 0.13, punch: p.i, c: p.mcmb, a }); // the blow lands when the swing does (after the wind-up)
 }
 // a melee blow lands: every style hits the ground in front of the mech (zombie height), some in a sector, some round a point
-function mechPunchHit(p, cmb) {
-  if (!inMech(p)) return; const M = mechOf(p), a = p.aim, ca = Math.cos(a), sa = Math.sin(a); let n = 0;
+function mechPunchHit(p, cmb, aa) {
+  if (!inMech(p)) return; const M = mechOf(p), a = aa != null ? aa : p.aim, ca = Math.cos(a), sa = Math.sin(a); let n = 0;
   const stomp = M.atk === 'heavy' && cmb === 1, hammer = M.atk === 'heavy' && cmb === 0, cleave = M.atk === 'chop' && cmb === 2;
-  const cx = p.x + ca * (stomp ? 0.9 : hammer ? 1.7 : M.reach * 0.7), cy = p.y + sa * (stomp ? 0.9 : hammer ? 1.7 : M.reach * 0.7), R = stomp ? 2.0 : hammer ? 1.5 : 0;
+  const cx = p.x + ca * (stomp ? 0.9 : hammer ? 2.2 : M.reach * 0.7), cy = p.y + sa * (stomp ? 0.9 : hammer ? 2.2 : M.reach * 0.7), R = stomp ? 2.8 : hammer ? 2.2 : 0; /* (round 35) hammer 1.7 / r 1.5 → 2.2 / 2.2, stomp r 2.0 → 2.8 */
   for (const z of W.zs) {
     if (z.hp <= 0 || z.hidden || Math.abs(z.z - p.z) > 2.6) continue; const dx = z.x - p.x, dy = z.y - p.y, d = Math.hypot(dx, dy);
     let hit; if (R) hit = Math.hypot(z.x - cx, z.y - cy) < R + z.r; else hit = d <= M.reach + z.r && (d <= 0.6 || Math.cos(angDiff(Math.atan2(dy, dx), a)) >= Math.cos(M.arc));
@@ -132,17 +150,17 @@ function mechPunchHit(p, cmb) {
   }
   // knocks over light stuff in front (fences, barricades; not walls, not what you built)
   const fx = Math.floor(p.x + ca * 1.6), fy = Math.floor(p.y + sa * 1.6);
-  if (inMap(fx, fy)) for (let l = p.L; l < p.L + 2 && l < ML; l++) { const i = ci(fx, fy, l); if (W.blk[i] && B[W.blk[i]].brk && !B[W.blk[i]].st && !(W.mine && W.mine.has(i))) damageCell(i, M.dmg * 1.5); }
+  if (inMap(fx, fy)) for (let l = p.L; l < p.L + 2 && l < ML; l++) { const i = ci(fx, fy, l); if (W.blk[i] && B[W.blk[i]].brk && !B[W.blk[i]].st && !(W.mine && W.mine.has(i))) { const b0 = W.blk[i], d0 = W.bdir[i]; damageCell(i, M.dmg * 1.5); if (!W.blk[i]) mechScar(i, b0, d0); } }
   emit({ k: 'mhit', o: p.i, h: n ? 1 : 0, x: r2(cx), y: r2(cy), z: r2(p.z + 0.15), g: R || M.atk === 'chop' || M.atk === 'shovel' ? 1 : 0, r: R || 1 }); noiseAt(p.x, p.y, 6, p.z);
 }
 // (round 34d) ranged mech attacks: 苍隼's shoulder rockets, 重炮's arm cannon, 铁卫's fist cannon (the third blow of its combo).
 // A straight shot to the first zombie / wall / where you aim; rockets and the cannon burst there, the fist hits the first zombie hard.
-function mechShoot(p, kind) {
-  const M = mechOf(p), a = p.aim, fist = kind === 'fist', range = fist ? 7 : M.range || 16, side = p.mside ? 1 : -1, ca = Math.cos(a), sa = Math.sin(a);
-  const sh = kind === 'rocket' ? [-0.3, side * 0.5, 2.7] : kind === 'cannon' ? [0.9, -0.55, 2.1] : [1.3, side * 0.6, 1.9]; // where it leaves the mech (forward, left, up), at the mech's own size
+function mechShoot(p, kind, LK, aa) {
+  const M = mechOf(p), a = aa != null ? aa : p.aim, fist = kind === 'fist', range = fist ? 7 : M.range || 16, side = p.mside ? 1 : -1, ca = Math.cos(a), sa = Math.sin(a);
+  const sh = kind === 'rocket' ? [-0.1, side * 0.42, 2.75] : kind === 'cannon' ? [1.5, -0.6, 2.05] : kind === 'parcel' ? [-0.55, side * 0.25, 2.35] : [1.3, side * 0.6, 1.9]; /* (round 35) rockets from the shoulder pods, shells from the arm barrel's muzzle, parcels off the back rack */ // where it leaves the mech (forward, left, up), at the mech's own size
   const s = (MECH_DIM[M.style] || {}).s || 1, sx = p.x + (ca * sh[0] - sa * sh[1]) * s, sy = p.y + (sa * sh[0] + ca * sh[1]) * s, z0 = pZ(p) + sh[2] * s;
   let T = p.aimPt ? { x: p.aimPt.x, y: p.aimPt.y, z: p.aimPt.z } : { x: p.x + ca * 10, y: p.y + sa * 10, z: pZ(p) + 0.6 };
-  { let best = null, bs = -1; for (const z of W.zs) { if (z.hp <= 0 || z.hidden || z.sleep) continue; const dx = z.x - p.x, dy = z.y - p.y, d = Math.hypot(dx, dy); if (d > range || d < 0.8) continue; const c = Math.cos(angDiff(Math.atan2(dy, dx), a)); if (c < 0.9) continue; const sc = c * 2 - d / range; if (sc > bs) { bs = sc; best = z; } } // (round 34d) mech guns lock onto the zombie you're pointing at
+  { const best = LK && LK.hp > 0 && Math.hypot(LK.x - p.x, LK.y - p.y) <= range + LK.r ? LK : LK === undefined ? mechLock(p, M) : null; // (round 35) the target mechPunch picked (mechLock: a wider cone, in sight)
     if (best) T = { x: best.x, y: best.y, z: best.z + best.h * 0.45 }; }
   if (kind === 'parcel') { const d = Math.min(range, Math.hypot(T.x - p.x, T.y - p.y)), ex = p.x + Math.cos(Math.atan2(T.y - p.y, T.x - p.x)) * d, ey = p.y + Math.sin(Math.atan2(T.y - p.y, T.x - p.x)) * d, cx = Math.floor(ex), cy = Math.floor(ey), L = inMap(cx, cy) ? gAt(cx, cy) : p.L, gz = L * FH + 0.15, tt = 0.25 + d / 14; // a parcel lobbed in an arc
     emit({ k: 'mrkt', o: p.i, kd: 'parcel', x: r2(sx), y: r2(sy), z: r2(z0), e: [r2(ex), r2(ey), r2(gz)], t: r2(tt) }); (W.dly = W.dly || []).push({ t: tt, box: 1, x: ex, y: ey, zz: gz, R: M.blast, dmg: M.dmg, o: p.i }); noiseAt(p.x, p.y, 5, p.z); return; }
@@ -222,7 +240,7 @@ function stepDelayed(dt) {
   for (const q of W.dly) { q.t -= dt;
     if (q.thr != null) { const z = W.zs.find(z => z.id === q.thr); if (z && z.hp > 0) { const f = clamp(1 - q.t / q.T, 0, 1), gz = surfZ(q.x, q.y, q.L); z.x = lerp(q.x0, q.x, f); z.y = lerp(q.y0, q.y, f); z.z = lerp(q.z0, gz, f) + Math.sin(f * Math.PI) * 3; z.stun = Math.max(z.stun || 0, 0.3);
       if (q.t <= 0) { z.L = q.L; z.z = gz; const o = W.p[q.o]; hurtZombie(z, 200, o, 0, 0); for (const y of W.zs) { if (y === z || y.hp <= 0 || y.hidden) continue; const d = Math.hypot(y.x - q.x, y.y - q.y); if (d < 2) { hurtZombie(y, 100, o, (y.x - q.x) / (d || 1) * 5, (y.y - q.y) / (d || 1) * 5); y.stun = Math.max(y.stun || 0, 0.8); } } emit({ k: 'slam', x: r2(q.x), y: r2(q.y), z: r2(gz), r: 2 }); emit({ k: 'sfx', n: 'smash', x: q.x, y: q.y }); } } else q.t = 0; continue; } // (round 34b) a thrown zombie flies, then smashes down
-    if (q.t > 0) continue; if (q.punch != null) { if (W.p[q.punch]) mechPunchHit(W.p[q.punch], q.c); continue; } const o = W.p[q.o];
+    if (q.t > 0) continue; if (q.punch != null) { if (W.p[q.punch]) mechPunchHit(W.p[q.punch], q.c, q.a); continue; } const o = W.p[q.o];
     if (q.fistZ != null) { const z = W.zs.find(z => z.id === q.fistZ); if (z && z.hp > 0) { const big = ZT[z.k].boss || ZT[z.k].kaiju; hurtZombie(z, 140, o, q.dx * (big ? 2 : 9), q.dy * (big ? 2 : 9)); z.stun = Math.max(z.stun || 0, big ? 0.2 : 1); emit({ k: 'mhit', o: q.o, h: 1, x: r2(z.x), y: r2(z.y), z: r2(z.z + 0.8), r: 1 }); } continue; }
     if (q.shell) { explode(q.x, q.y, q.zz != null ? q.zz : surfZ(q.x, q.y, q.L) + 0.3, o, q.R, q.dmg); continue; }
     if (q.box) { let n = 0; for (const z of W.zs) { if (z.hp <= 0 || z.hidden || Math.abs(z.z - q.zz) > 2) continue; const dx = z.x - q.x, dy = z.y - q.y, d = Math.hypot(dx, dy); if (d > q.R + z.r) continue; const big = ZT[z.k].boss || ZT[z.k].kaiju; hurtZombie(z, q.dmg * (d < q.R * 0.5 ? 1 : 0.7), o, dx / (d || 1) * (big ? 1 : 4), dy / (d || 1) * (big ? 1 : 4)); z.stun = Math.max(z.stun || 0, big ? 0.1 : q.big ? 0.8 : 0.3); n++; } emit({ k: 'mhit', o: q.o, h: n ? 1 : 0, x: r2(q.x), y: r2(q.y), z: r2(q.zz), g: 1, r: q.R, box: q.big ? 2 : 1 }); continue; } // (round 34d) a parcel smashes down
@@ -677,6 +695,12 @@ function fireWeapon(p, wi) {
 }
 function hurtZombie(z, dmg, p, kx, ky, quiet) {
   if (z.hp <= 0 || z.hidden) return;
+  if (dmg > 0 && W.wardens && W.wardens.length) { const w = shieldFor(z, p); if (w) { // (round 35) inside a 护盾者's bubble: the bubble takes it first
+    const a = Math.min(w.sh, dmg); w.sh -= a; dmg -= a; if (kx || ky) { kx *= 0.3; ky *= 0.3; }
+    if (!(W.shFx > W.t)) { W.shFx = W.t + 0.12; emit({ k: 'elx', a: 'shhit', id: w.id, x: r2(z.x), y: r2(z.y), z: r2(z.z + z.h * 0.6) }); }
+    if (w.sh <= 0) { w.sh = 0; w.shT = ZT.warden.elite.cd; emit({ k: 'elx', a: 'break', id: w.id, x: r2(w.x), y: r2(w.y), z: r2(w.z) }); }
+    if (dmg <= 0) return; } }
+  if (z.ck && dmg > 0) { z.ck = 0; z.ckT = 3; emit({ k: 'elx', a: 'reveal', id: z.id, x: r2(z.x), y: r2(z.y), z: r2(z.z) }); } // (round 35) a hit shows the 隐身者
   if (z.sleep) { if (dmg >= z.hp) z.sleep = 0; else siegeWake(z); } // killed in its sleep: nobody else hears it
   z.hp -= dmg; if (!quiet) z.hitT = 0.12;
   if (kx || ky) { z.kbx = (z.kbx || 0) + kx; z.kby = (z.kby || 0) + ky; }
@@ -685,10 +709,11 @@ function hurtZombie(z, dmg, p, kx, ky, quiet) {
 let KSRC = '';
 function killZombie(z, p) {
   z.hp = 0; W.kills++; if (p) p.kills++;
-  taskAdd('kill'); if (ZT[z.k].boss || z.k === 'brute' || z.k === 'armored') taskAdd('elite'); if (KSRC === 'nade') taskAdd('nade'); // (round 32) permanent task counters
+  taskAdd('kill'); if (ZT[z.k].boss || ZT[z.k].elite || z.k === 'brute' || z.k === 'armored') taskAdd('elite'); if (KSRC === 'nade') taskAdd('nade'); // (round 32) permanent task counters
   if (ZT[z.k].blast) zBlast(z.x, z.y, z.z + 0.5);
-  emit({ k: 'zdie', x: r2(z.x), y: r2(z.y), z: r2(z.z), t: z.k, f: r2(z.face), id: z.id });
-  if (ZT[z.k].kaiju) { W.res.parts += 20; W.res.steel += 12; emit({ k: 'loot', p: -1, x: z.x, y: z.y, z: z.z + z.h, text: '+20 零件 +12 钢材' }); } // (round 34)
+  emit({ k: 'zdie', x: r2(z.x), y: r2(z.y), z: r2(z.z), t: z.k, f: r2(z.face), id: z.id, gz: ZT[z.k].fly ? r2(skyTop(z.x, z.y) * FH) : undefined }); // (round 35) gz: where a shot bird lands
+  if (ZT[z.k].elite) { W.res.parts += 6; W.res.steel += 4; for (const q of activeP()) { const t = Math.floor(rand() * 3); q.gn = q.gn || [0, 0, 0]; if (q.gn[t] < BAL.gnCap) q.gn[t]++; } emit({ k: 'loot', p: -1, x: z.x, y: z.y, z: z.z + z.h, text: '能力者倒下：+6 零件 +4 钢材 +1 特殊手雷' }); } // (round 35)
+  else if (ZT[z.k].kaiju) { W.res.parts += 20; W.res.steel += 12; emit({ k: 'loot', p: -1, x: z.x, y: z.y, z: z.z + z.h, text: '+20 零件 +12 钢材' }); } // (round 34)
   else if (rand() < (z.k === 'boss' ? 1 : z.k === 'brute' ? 0.6 : 0.07)) { const n = z.k === 'boss' ? 15 : z.k === 'brute' ? 3 : 1; W.res.parts += n; emit({ k: 'loot', p: -1, x: z.x, y: z.y, z: z.z + z.h, text: '+' + n + ' 零件' }); }
 }
 function hurtPlayer(p, dmg, src) {
@@ -781,7 +806,7 @@ function doAct(p, a, v) {
     case 'craft': doCraft(p, v); break;
     case 'build': doBuild(p, v.x, v.y, v.l, v.b, v.d); break;
     case 'demo': doDemolish(p, v.x, v.y, v.l); break;
-    case 'crush': if (inMech(p) && typeof v === 'number' && v >= 0 && v < NC && MECH_CRUSH.has(W.blk[v]) && !(W.mine && W.mine.has(v)) && Math.hypot(cx_(v) + 0.5 - p.x, cy_(v) + 0.5 - p.y) < 2.6) { const r = B[W.blk[v]].res; setCell(v, 0, W.slab[v], null, 'brk'); if (r && rand() < 0.5) W.res[r] = (W.res[r] || 0) + 1; emit({ k: 'sfx', n: 'bash', x: cx_(v) + 0.5, y: cy_(v) + 0.5 }); } break; // (round 34d) a mech flattens what is in its way
+    case 'crush': if (inMech(p) && typeof v === 'number' && v >= 0 && v < NC && MECH_CRUSH.has(W.blk[v]) && !(W.mine && W.mine.has(v)) && Math.hypot(cx_(v) + 0.5 - p.x, cy_(v) + 0.5 - p.y) < 2.6) { const r = B[W.blk[v]].res; mechScar(v); setCell(v, 0, W.slab[v], null, 'brk'); if (r && rand() < 0.5) W.res[r] = (W.res[r] || 0) + 1; emit({ k: 'sfx', n: 'bash', x: cx_(v) + 0.5, y: cy_(v) + 0.5 }); } break; // (round 34d) a mech flattens what is in its way
     case 'xform': { const to = p.mform === 1 ? 0 : 1, why = xformDeny(p, to); if (why) emit({ k: 'deny', p: p.i, why }); else startXform(p, to); } break; // (round 34b)
     case 'vdef': if (v >= 1 && ownsVeh(p, v) && p.ride && v !== p.veh && (p.mform === 1 || p.mtr > 0)) { emit({ k: 'deny', p: p.i, why: '先变回载具再换车' }); break; } if (v >= 1 && ownsVeh(p, v) && p.ride && VEH[v].outdoor && v !== p.veh && skyTop(p.x, p.y) > p.L) { emit({ k: 'deny', p: p.i, why: VEH[v].name + '太大，只能在室外开' }); break; } if (v >= 1 && ownsVeh(p, v) && p.ride && (airborne(p) || VEH[v].fly) && v !== p.veh) { emit({ k: 'deny', p: p.i, why: airborne(p) ? '先落地再换车' : '先下车，再坐旋翼机起飞' }); break; } if (v >= 1 && ownsVeh(p, v)) { p.veh = v; if (p.ride && !vehSeats(p)) for (const q of W.p) if (q.pass === p.i) q.pass = -1; } break; // pick the default vehicle (switches the one you're on too)
     case 'pad': if (v && inMap(v.x, v.y) && v.l >= 0 && v.l < ML) { const i = ci(v.x, v.y, v.l); if (W.blk[i] === 56) { setCell(i, 0, W.slab[i], null, 'demo'); emit({ k: 'sfx', n: 'jump', x: v.x + 0.5, y: v.y + 0.5 }); } } break;
@@ -979,6 +1004,9 @@ function startNight() {
     k += type === 'dog' ? 1 : size;
   }
   if (blood) q.push({ t: dur * 0.55, k: 'boss', side: front[0] });
+  // (round 35) flocks of crows from night 2 (bats too from night 4), one 能力者 elite from night 3 (one more every 3 nights, at most 4)
+  if (n >= 2) for (let f = 0, nf = Math.min(5, 1 + Math.floor((n - 2) / 2)); f < nf; f++) { const bat = n >= 4 && rand() < 0.45, k = bat ? 'bat' : 'crow', sz = bat ? 3 + Math.floor(rand() * 3) : 4 + Math.floor(rand() * 4), side = front[Math.floor(rand() * front.length)], E = W.edges[side] || [], at = E.length ? Math.floor(rand() * E.length) : -1, t0 = dur * (0.15 + rand() * 0.7), fk = W.gid = (W.gid || 0) + 1; for (let j = 0; j < sz; j++) q.push({ t: t0 + j * 0.25, k, side, at, f: 0, fk }); }
+  if (n >= 3) for (let e = 0, ne = Math.min(4, 1 + Math.floor((n - 3) / 3)); e < ne; e++) q.push({ t: dur * (0.25 + rand() * 0.55), k: ELITES[Math.floor(rand() * ELITES.length)], side: front[e % front.length] });
   if (KAIJU_ON && n >= 5 && n % 2 === 1) for (let k = 0; k < (n >= 11 ? 2 : 1); k++) q.push({ t: dur * (0.35 + k * 0.3), k: ['kjaw', 'ktail', 'kdig'][Math.floor(rand() * 3)], side: front[k % front.length] }); // (round 34) a kaiju every other night from night 5 (two from night 11)
   q.sort((a, b) => a.t - b.t);
   W.spawnQ = q;
@@ -986,7 +1014,17 @@ function startNight() {
   modeNight(n);
   emit({ k: 'night', n, lv: BAL.nightLv(n), up: n > 1 && BAL.nightLv(n) > BAL.nightLv(n - 1) ? 1 : 0, blood: blood ? 1 : 0, count: q.length, from: front.map(s => names[s]).join('、') });
 }
+// (round 35) what a mech flattened (rocks, bushes, fences, trees…) grows / gets put back at dawn, unless something now stands there
+function mechScar(i, b, d) { (W.scar = W.scar || []).push([i, b != null ? b : W.blk[i], d != null ? d : W.bdir[i]]); if (W.scar.length > 3000) W.scar.shift(); }
+function scarRegrow() {
+  if (!W.scar || !W.scar.length) return; let n = 0;
+  for (const [i, b, d] of W.scar) { if (W.blk[i]) continue; const x = cx_(i) + 0.5, y = cy_(i) + 0.5, L = cl_(i);
+    if (W.p.some(p => !p.gone && p.L === L && Math.abs(p.x - x) < 0.9 && Math.abs(p.y - y) < 0.9) || W.zs.some(z => z.L === L && Math.abs(z.x - x) < 0.8 && Math.abs(z.y - y) < 0.8)) continue;
+    setCell(i, b, W.slab[i], d, 'grow'); n++; }
+  W.scar = [];
+}
 function dawn() {
+  scarRegrow();
   if (W.clean && W.night > 0) taskAdd('clean');
   if (W.mode === 'classic' && W.night >= BAL.nights && !W.endless) return endGame('win', '救援直升机到了');
   W.phase = 'day'; W.dayLen = W.clock = BAL.dayFor(W.night + 1); // (round 34b) days get shorter
@@ -1008,6 +1046,8 @@ function spawnZombie(k, side, at, f, g) {
   if (g) { const o = Math.round(rand() * 4 - 2), nx = x + Math.sign(W.radio.x - x) * o, ny = y + Math.sign(W.radio.y - y) * o, nL = inMap(nx, ny) ? gAt(nx, ny) : -1; if (nL >= 0 && standable(nx, ny, nL, 'z') && W.ff.rw[ci(nx, ny, nL)] < Infinity) { x = nx; y = ny; L = nL; } } // a herd is a crowd, not a queue
   const hpM = BAL.hpMul(BAL.lvN(n)) * D.hp * (k === 'boss' ? 1 + n / 10 : 1) * (activeP().length > 1 ? 1.15 : 1);
   const z = { id: W.zid++, k, x: x + 0.5, y: y + 0.5, L, z: L * FH, r: Z.r, h: Z.h, hp: Z.hp * hpM, max: Z.hp * hpM, spd: Z.spd * BAL.spdMul(BAL.lvN(n)) * (f || (0.85 + rand() * 0.3)), face: 0, cd: rand(), st: 'walk', stun: 0, kbx: 0, kby: 0, hitT: 0, atk: 0, anim: rand() * 6, seed: (rand() * 1e6) | 0, spitT: 1 + rand() * 2, climbT: 0 };
+  if (Z.fly) z.z += Z.fly.alt; // (round 35) a flyer comes in already up in the air
+  if (Z.elite) { z.eCD = 2 + rand() * 2; if (Z.elite.k === 'shield') z.sh = z.shMax = z.max * 0.6; if (Z.elite.k === 'cloak') z.ck = 1; }
   W.zs.push(z);
   return z;
 }
@@ -1021,7 +1061,7 @@ function stepPhase(dt) {
   } else if (W.phase === 'night') {
     W.nightT += dt;
     let awake = 0; for (const z of W.zs) if (!z.sleep) awake++;
-    while (W.spawnQ.length && W.spawnQ[0].t <= W.nightT && awake++ < BAL.zCap()) { const s = W.spawnQ.shift(); const z = spawnZombie(s.k, s.side, s.at, s.f, s.g); if (s.g) z.g = s.g; }
+    while (W.spawnQ.length && W.spawnQ[0].t <= W.nightT && awake++ < BAL.zCap()) { const s = W.spawnQ.shift(); const z = spawnZombie(s.k, s.side, s.at, s.f, s.g); if (s.g) z.g = s.g; if (s.fk) z.fk = s.fk; if (ZT[s.k].elite) say('能力者出现：' + ZT[s.k].name + '——' + ZT[s.k].elite.tip, ZT[s.k].elite.col); }
     const minT = BAL.nightMin(W.night);
     // after the horde, small groups keep coming until the night has run its minimum length
     if (!W.spawnQ.length && W.nightT < minT) {

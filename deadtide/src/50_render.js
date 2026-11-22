@@ -329,10 +329,10 @@ function addP(o) { if (RND.parts.length < 880) RND.parts.push(Object.assign({ vx
 function bloodFx(x, y, z, n, green) { for (let k = 0; k < n; k++) addP({ x, y, z, vx: frnd(-2, 2), vy: frnd(-2, 2), vz: frnd(0, 3), col: green ? (k % 2 ? '#7fb53a' : '#4f7a1e') : (k % 2 ? '#6e0d0b' : '#9b1712'), s: frnd(0.04, 0.09), life: frnd(0.35, 0.8), floor: z - 1.2 }); }
 function debrisFx(x, y, z, col, n) { for (let k = 0; k < n; k++) addP({ x: x + frnd(-0.4, 0.4), y: y + frnd(-0.4, 0.4), z: z + frnd(0, 1), vx: frnd(-2.5, 2.5), vy: frnd(-2.5, 2.5), vz: frnd(0, 4), col, s: frnd(0.06, 0.16), life: frnd(0.7, 1.4), floor: z - 0.05 }); for (let k = 0; k < n / 3; k++) addP({ x, y, z: z + 0.3, vx: frnd(-0.4, 0.4), vy: frnd(-0.4, 0.4), vz: frnd(0.2, 0.7), g: -0.3, col: '#5f5850', s: frnd(0.16, 0.26), life: frnd(0.4, 0.7), smoke: 1 }); }
 function stepFx(dt) {
-  if (RND.mrk && RND.mrk.length) { for (const r of RND.mrk) { r.t += dt; const f = Math.min(1, r.t / r.T), x = lerp(r.x, r.e[0], f), y = lerp(r.y, r.e[1], f), box = r.kd === 'parcel' || r.kd === 'bigparcel', z = lerp(r.z, r.e[2], f) + (box ? Math.sin(f * Math.PI) * (0.8 + Math.hypot(r.e[0] - r.x, r.e[1] - r.y) * 0.18) : 0); if (box) { addP({ x, y, z, vx: 0, vy: 0, vz: 0, g: 0, col: (Math.floor(r.t * 20) % 2) ? '#b8893a' : '#9a6f2e', s: r.kd === 'bigparcel' ? 0.3 : 0.17, life: 0.05 }); continue; } // (round 34d) a bright head and a smoke trail along the shot
+  if (RND.mrk && RND.mrk.length) { for (const r of RND.mrk) { r.t += dt; const f = Math.min(1, r.t / r.T), x = lerp(r.x, r.e[0], f), y = lerp(r.y, r.e[1], f), box = r.kd === 'parcel' || r.kd === 'bigparcel', z = lerp(r.z, r.e[2], f) + (box ? Math.sin(f * Math.PI) * (0.8 + Math.hypot(r.e[0] - r.x, r.e[1] - r.y) * 0.18) : 0); mprjDraw(r, x, y, z); if (box) { if (Math.random() < 0.3) addP({ x, y, z, vx: 0, vy: 0, vz: 0, g: 1, col: '#c8b088', s: 0.04, life: 0.3 }); continue; } /* (round 35) a real parcel model tumbling through the air */ // (round 34d) a bright head and a smoke trail along the shot
       addP({ x, y, z, vx: 0, vy: 0, vz: 0, g: 0, col: r.kd === 'fist' ? '#cfd6dc' : '#ffd27a', s: r.kd === 'fist' ? 0.16 : 0.1, life: 0.06 });
       if (r.kd !== 'cannon') addP({ x, y, z, vx: frnd(-0.3, 0.3), vy: frnd(-0.3, 0.3), vz: 0.4, g: -0.3, col: r.kd === 'fist' ? '#ffb060' : '#9a958c', s: 0.09, life: 0.5, smoke: 1 }); }
-    RND.mrk = RND.mrk.filter(r => r.t < r.T); }
+    RND.mrk = RND.mrk.filter(r => r.t < r.T || (mprjFree(r), false)); }
   for (const q of RND.parts) { q.t += dt; q.vz -= q.g * dt; q.x += q.vx * dt; q.y += q.vy * dt; q.z += q.vz * dt; if (q.z < q.floor && q.vz < 0) { q.z = q.floor; q.vz *= -0.3; q.vx *= 0.5; q.vy *= 0.5; } }
   RND.parts = RND.parts.filter(q => q.t < q.life);
   RND.tracers = RND.tracers.filter(t => (t.t += dt) < t.life);
@@ -523,7 +523,7 @@ function draw(dt) {
   if (key !== CUT_KEY) { CUT_KEY = key; rebuildCells(); }
   if (STATE.mode === 'play' && !W.demo) qualTick(dt);
   applyTime(darkness()); archFrame();
-  drawZombies(vl, dt); drawPlayers(vl, dt); drawFx(); drawGhost(me); drawPlan(); drawNadeMark(); drawTells(); drawClouds(); drawTrapAreas(vl);
+  drawZombies(vl, dt); drawPlayers(vl, dt); drawFx(); drawGhost(me); drawPlan(); drawNadeMark(); drawTells(); drawMechLock(me, dt); drawClouds(); drawTrapAreas(vl);
   OBJ.zone.visible = (!W.demo && W.phase === 'day' || !!(me && me.build)) && !modeDef().anyBuild;
   RENDER.render(SCN, CAMO);
   drawOverlay();
@@ -551,6 +551,9 @@ function drawOverlay() {
   let html = '';
   // (round 34d) a health bar over every survivor (an orange hull line under it in a mech); it pulses red when low
   hpBars();
+  for (const z of W.zs) { const T = ZT[z.k]; if (!T || !T.elite || z.hp <= 0 || z.ck || z.ckF || z.sleep || !zSeen(z) || lcHide(Math.floor(z.x), Math.floor(z.y), z.L)) continue; // (round 35) 能力者: name and health over the head
+    const [sx, sy, sz] = w2s(z.x, z.y, z.z + T.h * T.sc / 1.2 + 0.55); if (sz > 1 || sx < -60 || sx > VW + 60 || sy < -30 || sy > VH + 30) continue;
+    html += `<div class="elt" style="left:${sx | 0}px;top:${sy | 0}px;color:${T.elite.col}">${T.name}<i><b style="width:${clamp(z.hp / (z.max || 100), 0, 1) * 100 | 0}%;background:${T.elite.col}"></b></i></div>`; }
   for (const f of RND.floats) { const [sx, sy] = w2s(f.x, f.y, f.z); html += `<div class="fl" style="left:${sx | 0}px;top:${sy | 0}px;opacity:${clamp(2.2 - f.t, 0, 1).toFixed(2)};color:${f.col}">${f.text}</div>`; }
   // 尸城求生: sleepers show a "z", a growing "?" while they're noticing you, a "!" as they wake
   if (isSiege()) {
@@ -653,7 +656,7 @@ function fxEvent(e) {
     case 'hit': if (e.a) { for (let k = 0; k < 6; k++) addP({ x: e.x, y: e.y, z: e.z, vx: frnd(-3, 3), vy: frnd(-3, 3), vz: frnd(0.5, 3), col: k % 2 ? '#ffe9a0' : '#ffffff', s: 0.035, life: 0.25, floor: e.z - 1 }); if (thr('clank', 0.06)) sfx('clank', e.x, e.y); break; }
       bloodFx(e.x, e.y, e.z, e.h ? 9 : 5, e.g); if (Math.random() < 0.45) addDecal(e.x + frnd(-0.3, 0.3), e.y + frnd(-0.3, 0.3), e.z - 0.6, frnd(0.08, 0.16), e.g ? '#3c5a14' : null); if (thr('flesh', 0.05)) sfx(e.h ? 'head' : 'flesh', e.x, e.y); break;
     case 'zdie':
-      RND.corpses.push({ corpse: 1, x: e.x, y: e.y, z: e.z, k: e.t, face: e.f, t: 0, seed: e.id * 7, id: e.id, L: Math.floor((e.z + 0.1) / FH) }); if (RND.corpses.length > 60) RND.corpses.shift();
+      RND.corpses.push({ corpse: 1, x: e.x, y: e.y, z: e.gz != null ? e.gz : e.z, fz: e.gz != null ? e.z : null, k: e.t, face: e.f, t: 0, seed: e.id * 7, id: e.id, L: Math.floor(((e.gz != null ? e.gz : e.z) + 0.1) / FH) }); /* (round 35) a shot bird falls to the ground */ if (RND.corpses.length > 60) RND.corpses.shift();
       bloodFx(e.x, e.y, e.z + 0.6, 10, e.t === 'spitter'); addDecal(e.x, e.y, e.z, (e.t === 'boss' ? 0.9 : e.t === 'brute' ? 0.6 : 0.32) + Math.random() * 0.15, e.t === 'spitter' ? '#3c5a14' : null);
       if (thr('zdie', 0.12)) sfx(e.t === 'brute' || e.t === 'boss' ? 'bigdie' : 'zdie', e.x, e.y);
       if (guest) { const z = W.zs.find(z => z.id === e.id); if (z) z.hp = 0; }
@@ -693,8 +696,8 @@ function fxEvent(e) {
     case 'kacid': for (let k = 0; k < 10; k++) { const a = e.a + frnd(-0.45, 0.45), v = frnd(5, 9); addP({ x: e.x + Math.cos(e.a) * 1.4, y: e.y + Math.sin(e.a) * 1.4, z: e.z, vx: Math.cos(a) * v, vy: Math.sin(a) * v, vz: frnd(-1.5, 0.5), g: -3, col: k % 3 ? '#9dff3a' : '#5f9a20', s: 0.1, life: 0.8, floor: e.z - 3 }); } if (thr('kacid', 0.3)) sfx('acid', e.x, e.y); break; // (round 34) kaiju acid breath
     case 'xform': { const q = W.p[e.o]; if (!q) break; q._xfT = 0; q._xfTo = e.to; q._xfS = -1; sfx('swap', q.x, q.y); shake(q.x, q.y, 0.12); break; } // (round 34b) start the 1 s transformation on every screen
     case 'mmove': if (guest && e.p === ME) { const p = W.p[ME]; if (e.m.dash) p.dash = e.m.dash; if (e.m.jmp) p.jmp = e.m.jmp; } break; // (round 34) a mech dash / leap the host started for this screen's survivor
-    case 'mpunch': { const q = W.p[e.o]; if (!q) break; q._mcombo = e.c != null ? e.c : q._mpT != null && q._mpT < 0.95 ? ((q._mcombo || 0) + 1) % 3 : 0; q._mpT = 0; q._mpS = e.s; sfx('swap', q.x, q.y); break; } // (round 34b) a quick follow-up continues the combo
-    case 'mrkt': (RND.mrk = RND.mrk || []).push({ x: e.x, y: e.y, z: e.z, e: e.e, T: Math.max(0.05, e.t), t: 0, kd: e.kd }); { const q = W.p[e.o]; if (q) { q._mrec = 1; } sfx(e.kd === 'cannon' ? 'sniper' : e.kd === 'parcel' || e.kd === 'bigparcel' ? 'swap' : 'launcher', e.x, e.y); RND.flashes.push({ x: e.x, y: e.y, z: e.z, t: 0, life: 0.06 }); } break; // (round 34d) rockets / shells / the fist cannon in flight
+    case 'mpunch': { const q = W.p[e.o]; if (!q) break; q._mcombo = e.c != null ? e.c : q._mpT != null && q._mpT < 0.95 ? ((q._mcombo || 0) + 1) % 3 : 0; q._mpT = 0; q._mpS = e.s; if (e.a != null) { q._mA = e.a; q._mAT = 0.5; } sfx('swap', q.x, q.y); break; } /* (round 35) e.a: the mech turns to the zombie it locked onto */ // (round 34b) a quick follow-up continues the combo
+    case 'mrkt': (RND.mrk = RND.mrk || []).push({ x: e.x, y: e.y, z: e.z, e: e.e, T: Math.max(0.05, e.t), t: 0, kd: e.kd }); if (e.kd === 'parcel') for (let k = 0; k < 2; k++) RND.mrk.push({ x: e.x + frnd(-0.15, 0.15), y: e.y + frnd(-0.15, 0.15), z: e.z + frnd(0, 0.2), e: [e.e[0] + frnd(-0.8, 0.8), e.e[1] + frnd(-0.8, 0.8), e.e[2]], T: Math.max(0.05, e.t * frnd(0.85, 1.15)), t: 0, kd: 'parcel', sm: 0.65, fake: 1 }); /* (round 35) a little spray of parcels, not one */ { const q = W.p[e.o]; if (q) { q._mrec = 1; } sfx(e.kd === 'cannon' ? 'sniper' : e.kd === 'parcel' || e.kd === 'bigparcel' ? 'swap' : 'launcher', e.x, e.y); RND.flashes.push({ x: e.x, y: e.y, z: e.z, t: 0, life: 0.06 }); } break; // (round 34d) rockets / shells / the fist cannon in flight
     case 'mhit': { const q = W.p[e.o]; if (!q) break; if (e.box) { debrisFx(e.x, e.y, e.z + 0.1, '#b8893a', e.box > 1 ? 16 : 8); debrisFx(e.x, e.y, e.z + 0.1, '#e8d9a8', e.box > 1 ? 6 : 3); sfx('smash', e.x, e.y); if (e.box > 1) shake(e.x, e.y, 0.15); } if (e.g) { debrisFx(e.x, e.y, e.z, '#8a7e6a', 8); for (let k = 0; k < 14; k++) { const a = k / 14 * Math.PI * 2, r = (e.r || 1) * 0.5; addP({ x: e.x + Math.cos(a) * r, y: e.y + Math.sin(a) * r, z: e.z + 0.05, vx: Math.cos(a) * 3.5 * (e.r || 1), vy: Math.sin(a) * 3.5 * (e.r || 1), vz: 0.3, g: -0.2, col: '#a89878', s: 0.1, life: 0.45, smoke: 1 }); } } if (e.h) { q._mhs = 0.07; sfx('smash', e.x, e.y); shake(e.x, e.y, 0.18); for (let k = 0; k < 12; k++) addP({ x: e.x, y: e.y, z: e.z, vx: frnd(-3, 3), vy: frnd(-3, 3), vz: frnd(0.5, 3), col: k % 3 ? '#ffd27a' : '#7a1010', s: 0.07, life: 0.35 }); RND.flashes.push({ x: e.x, y: e.y, z: e.z, t: 0, life: 0.06 }); } break; }
     case 'mskill': { const q = W.p[e.o]; if (q) { q._msT = 0; q._msK = e.t; }
       if (e.t === 'slam') { shake(e.x, e.y, 0.6); debrisFx(e.x, e.y, e.z + 0.2, '#9a8a70', 26); for (let k = 0; k < 36; k++) { const a = k / 36 * Math.PI * 2; addP({ x: e.x + Math.cos(a) * 0.8, y: e.y + Math.sin(a) * 0.8, z: e.z + 0.1, vx: Math.cos(a) * 7, vy: Math.sin(a) * 7, vz: 0.4, g: -0.3, col: '#a89878', s: 0.13, life: 0.55, smoke: 1 }); } sfx('collapse', e.x, e.y); }
@@ -705,6 +708,7 @@ function fxEvent(e) {
     case 'night': sfx(e.blood ? 'blood' : 'night'); banner((e.blood ? '第 ' + e.n + ' 夜 · 血月' : '第 ' + e.n + ' 夜') + (e.lv ? ' · Lv ' + e.lv : ''), (e.up ? '尸潮升到 Lv ' + e.lv + '：更多、更硬、更快 · ' : '') + (e.blood ? '尸潮从四面八方涌来，巨尸出没' : '尸潮从' + e.from + '边来了') + '，守住堡垒', e.blood ? '#ff5a4a' : e.up ? '#ff9a5a' : '#ffd27a'); break; // (round 31) level every two nights
     case 'dawn': document.getElementById('over').classList.add('hidden'); sfx('dawn'); banner('天亮了', '撑过了第 ' + e.n + ' 夜 · 新的任务已刷新（点上方「今日任务」展开）', '#ffe7b0'); break;
     case 'say': uiMsg(e.text, e.col); break;
+    case 'elx': eliteEvent(e); break; // (round 35) 能力者 skill moments
     case 'mbanner': banner(e.t, '', e.c); sfx('ready'); break;
     case 'dig': for (let k = 0; k < (e.big ? 14 : 4); k++) addP({ x: e.x + frnd(-0.4, 0.4), y: e.y + frnd(-0.4, 0.4), z: e.z + 0.05, vx: frnd(-1.2, 1.2), vy: frnd(-1.2, 1.2), vz: frnd(1, 3), col: k % 2 ? '#6a5236' : '#4a3a28', s: frnd(0.08, 0.16), life: 0.8, floor: e.z }); if (e.big) sfx('collapse', e.x, e.y); break;
     case 'craft': if (e.p === ME) { sfx('craft'); toast('制作完成：' + e.name); } break;

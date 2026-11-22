@@ -47,6 +47,13 @@ function sfx(n, x, y) {
     case 'flamer': noise(0.3, 0.32 * v, 'lowpass', 900 * r, 400, 0.7); noise(0.25, 0.12 * v, 'bandpass', 2400, 1800, 2); break;
     case 'launcher': noise(0.25, 0.6 * v, 'lowpass', 700 * r, 150, 0.7); tone('sine', 140 * r, 60, 0.2, 0.4 * v); break;
     case 'scream': tone('sawtooth', 900 * r, 1500, 0.7, 0.18 * v, 0, 2400); tone('square', 640 * r, 1200, 0.6, 0.08 * v, 0.05, 1800); noise(0.6, 0.15 * v, 'bandpass', 2600, 3200, 3); break;
+    case 'caw': tone('sawtooth', 620 * r, 420 * r, 0.18, 0.12 * v, 0, 1400); tone('sawtooth', 560 * r, 380 * r, 0.16, 0.1 * v, 0.2, 1300); break; // (round 35) crows
+    case 'screech': tone('square', 2200 * r, 3200 * r, 0.22, 0.06 * v, 0, 4000); noise(0.2, 0.08 * v, 'highpass', 3500, 3500, 2); break; // bats
+    case 'peck': noise(0.06, 0.25 * v, 'bandpass', 1800, 1200, 2); tone('triangle', 900, 400, 0.05, 0.1 * v); break;
+    case 'blink': tone('sine', 300 * r, 1400 * r, 0.25, 0.14 * v, 0, 3000); noise(0.25, 0.08 * v, 'bandpass', 1500, 4000, 3); break; // (round 35) elites
+    case 'summon': tone('sawtooth', 60 * r, 40, 0.8, 0.16 * v, 0, 300); noise(0.7, 0.2 * v, 'lowpass', 400, 200, 1); break;
+    case 'shield': tone('sine', 520 * r, 880 * r, 0.35, 0.12 * v); tone('sine', 780 * r, 1320 * r, 0.3, 0.06 * v, 0.05); break;
+    case 'ambush': noise(0.18, 0.4 * v, 'bandpass', 900, 400, 1); tone('sawtooth', 160 * r, 60, 0.2, 0.2 * v, 0, 900); break;
     case 'jump': noise(0.12, 0.14, 'bandpass', 900, 1600, 1.5); break;
     case 'heart': tone('sine', 70, 45, 0.11, 0.32); tone('sine', 62, 40, 0.12, 0.26, 0.17); break; // (round 34d) low-health heartbeat
     case 'vault': noise(0.2, 0.18, 'bandpass', 700, 1300, 1.2); tone('triangle', 200, 160, 0.08, 0.06, 0.1); break;

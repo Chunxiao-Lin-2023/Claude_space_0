@@ -12,6 +12,7 @@ function zAttackCell(z, i) {
 }
 function stepZombies(dt) {
   const F = W.ff, zs = W.zs;
+  W.wardens = zs.filter(o => o.k === 'warden' && o.hp > 0); // (round 35) whose bubbles hurtZombie has to check
   const grid = new Map();
   for (const z of zs) { if (z.hp <= 0) continue; const key = ci(Math.floor(z.x), Math.floor(z.y), z.L); let a = grid.get(key); if (!a) grid.set(key, a = []); a.push(z); }
   // herds: how far along the way each herd is on average (player field), so stragglers can hurry and the ones out in front hang back
@@ -32,6 +33,8 @@ function stepZombies(dt) {
       z.burn -= dt; hurtZombie(z, BAL.burnDps * dt, W.p[z.burnBy] || null, 0, 0, true); if (z.hp <= 0) continue;
       if (rand() < dt * BAL.burnSpread) { const fx = Math.floor(z.x), fy = Math.floor(z.y); for (let gy = fy - 2; gy <= fy + 2; gy++) for (let gx = fx - 2; gx <= fx + 2; gx++) { const a = inMap(gx, gy) && grid.get(ci(gx, gy, z.L)); if (a) for (const o of a) if (o !== z && o.hp > 0 && !(o.burn > 0) && Math.hypot(o.x - z.x, o.y - z.y) < BAL.burnSpreadR) { o.burn = 2.5; o.burnBy = z.burnBy; } } }
     }
+    if (Z.fly) { flyerStep(z, Z, dt); continue; } // (round 35) birds / bats: their own flight (36_beasts)
+    if (Z.elite && eliteStep(z, Z, dt)) continue; // (round 35) 能力者: a skill in progress
     if (z.sleep) { z.moving = false; z.st = 'walk'; continue; } // a sleeper in a building: still until something wakes it (41_siege)
     z.st = 'walk';
     // wall climbing in progress
@@ -108,7 +111,7 @@ function stepZombies(dt) {
           if (Math.hypot(z.x - ox, z.y - oy) < BAL.chgSpd * dt * 0.35) { // ran into something
             if (z.bump >= 0 && B[W.blk[z.bump]].brk) { W.bhp[z.bump] -= BAL.chgWall; W.dirty.add(z.bump); if (W.bhp[z.bump] <= 0) destroyBlk(z.bump); }
             z.stun = BAL.chgStun; z.chg = null; z.chgCD = BAL.chgCD; emit({ k: 'sfx', n: 'smash', x: z.x, y: z.y }); emit({ k: 'slam', x: r2(z.x + ca * 0.5), y: r2(z.y + sa * 0.5), z: r2(z.z), r: 1 });
-          } else if (Cg.t >= BAL.chgTime) { z.chg = null; z.chgCD = BAL.chgCD; }
+          } else if (Cg.t >= BAL.chgTime || (Cg.L != null && z.L !== Cg.L)) { z.chg = null; z.chgCD = BAL.chgCD; } // (round 35) went off an edge / down the stairs: the charge is over
         }
       } else if (z.slam) {
         hold = true; z.tl = 3; z.slam.t += dt;
@@ -117,9 +120,9 @@ function stepZombies(dt) {
           z.slam = null; z.slamCD = BAL.slamCD; emit({ k: 'sfx', n: 'smash', x: z.x, y: z.y }); emit({ k: 'slam', x: r2(z.x), y: r2(z.y), z: r2(z.z), r: BAL.slamR });
         }
       } else {
-        let tp = null, td = 1e9; for (const p of W.p) { if (!standingP(p) || Math.abs(p.z - z.z) > 0.9) continue; const d = d2(p.x, p.y, z.x, z.y); if (d < td) { td = d; tp = p; } }
+        let tp = null, td = 1e9; const onSt = B[W.blk[ci(Math.floor(z.x), Math.floor(z.y), z.L)]].stairs; for (const p of W.p) { if (!standingP(p) || onSt || p.L !== z.L || Math.abs(p.z - z.z) > 0.9) continue; const d = d2(p.x, p.y, z.x, z.y); if (d < td) { td = d; tp = p; } } // (round 35) only at someone on its own floor: on the stairs it used to see you upstairs and charge off along the floor below
         if (tp && td < BAL.slamR - 0.5 && z.slamCD <= 0) { z.slam = { t: 0 }; hold = true; z.tl = 3; z.face = Math.atan2(tp.y - z.y, tp.x - z.x); emit({ k: 'sfx', n: 'groan', x: z.x, y: z.y }); }
-        else if (tp && z.chgCD <= 0 && td > BAL.chgMin && td < BAL.chgMax && los(z.x, z.y, z.z + 1, tp.x, tp.y, tp.z + 0.8)) { z.chg = { ph: 0, t: 0, a: Math.atan2(tp.y - z.y, tp.x - z.x), hit: [] }; hold = true; z.tl = 1; z.face = z.chg.a; emit({ k: 'sfx', n: 'groan', x: z.x, y: z.y }); }
+        else if (tp && z.chgCD <= 0 && td > BAL.chgMin && td < BAL.chgMax && los(z.x, z.y, z.z + 1, tp.x, tp.y, tp.z + 0.8) && zLineClear(z, tp.x, tp.y)) { z.chg = { ph: 0, t: 0, a: Math.atan2(tp.y - z.y, tp.x - z.x), hit: [], L: z.L }; /* (round 35) only down a clear lane on its floor */ hold = true; z.tl = 1; z.face = z.chg.a; emit({ k: 'sfx', n: 'groan', x: z.x, y: z.y }); }
       }
     }
     // choose the next step
@@ -179,19 +182,19 @@ function stepZombies(dt) {
   }
   // separation within a cell neighbourhood
   for (const z of zs) {
-    if (z.hp <= 0 || z.climbing) continue;
+    if (z.hp <= 0 || z.climbing || ZT[z.k].fly) continue;
     const cx = Math.floor(z.x), cy = Math.floor(z.y);
     for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
       const a = grid.get(inMap(cx + dx, cy + dy) ? ci(cx + dx, cy + dy, z.L) : -1); if (!a) continue;
       for (const o of a) {
-        if (o === z || o.hp <= 0 || o.id < z.id || o.L !== z.L) continue;
+        if (o === z || o.hp <= 0 || o.id < z.id || o.L !== z.L || ZT[o.k].fly) continue;
         const ex = o.x - z.x, ey = o.y - z.y, d = Math.hypot(ex, ey), min = (o.r + z.r) * 0.85;
         if (d < min && d > 1e-4) { const push = (min - d) * 0.5, ux = ex / d * push, uy = ey / d * push; moveEnt(z, -ux, -uy, 'z', false); moveEnt(o, ux, uy, 'z', false); }
         else if (d <= 1e-4) { moveEnt(o, 0.05, 0.03, 'z', false); }
       }
     }
   }
-  for (const z of zs) if (z.hp > 0 && !z.climbing) z.z = surfZ(z.x, z.y, z.L);
+  for (const z of zs) if (z.hp > 0 && !z.climbing && !ZT[z.k].fly) z.z = surfZ(z.x, z.y, z.L);
   W.zs = zs.filter(z => z.hp > 0);
 }
 
@@ -231,9 +234,11 @@ function zSkill(z, Z, dt) {
 
 // (round 34d) can a zombie walk straight from where it is to (x, y) on its floor? (every cell on the way open to it, no corner cutting through walls)
 function zLineClear(z, x, y) {
+  const stairy = (cx, cy) => B[W.blk[ci(cx, cy, z.L)]].stairs || z.L > 0 && B[W.blk[ci(cx, cy, z.L - 1)]].stairs; // (round 35) never straight across a stairwell: stepping over the top of the stairs takes it back down (it went up and down for ever)
+  if (stairy(Math.floor(z.x), Math.floor(z.y))) return false;
   const dx = x - z.x, dy = y - z.y, d = Math.hypot(dx, dy), n = Math.ceil(d / 0.35); let pcx = Math.floor(z.x), pcy = Math.floor(z.y);
   for (let k = 1; k <= n; k++) { const cx = Math.floor(z.x + dx * k / n), cy = Math.floor(z.y + dy * k / n); if (cx === pcx && cy === pcy) continue; if (!inMap(cx, cy)) return false;
-    if (!navNode(cx, cy, z.L) || solidFor(W.blk[ci(cx, cy, z.L)], 'z')) return false;
-    if (cx !== pcx && cy !== pcy && (solidFor(W.blk[ci(cx, pcy, z.L)], 'z') || solidFor(W.blk[ci(pcx, cy, z.L)], 'z'))) return false; pcx = cx; pcy = cy; }
+    if (!navNode(cx, cy, z.L) || solidFor(W.blk[ci(cx, cy, z.L)], 'z') || stairy(cx, cy)) return false;
+    if (cx !== pcx && cy !== pcy && (solidFor(W.blk[ci(cx, pcy, z.L)], 'z') || solidFor(W.blk[ci(pcx, cy, z.L)], 'z') || !navNode(cx, pcy, z.L) || !navNode(pcx, cy, z.L) || stairy(cx, pcy) || stairy(pcx, cy))) return false; /* (round 35) nor past a hole / the stairwell on a diagonal */ pcx = cx; pcy = cy; }
   return true;
 }

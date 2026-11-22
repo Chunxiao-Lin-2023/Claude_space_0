@@ -444,7 +444,11 @@ function mkMech(k) {
   if (big && !cannon) for (const s of [-1, 1]) { mPart(ch, mTaper(0.07, 0.085, 0.5, 10), steel, -0.5, 1.05, s * 0.2); vCyl(ch, blk, 0.05, 0.05, 0.04, -0.5, 1.06, s * 0.2, 'y', 10); }
   if (edge) for (let a = 0; a < 4; a++) mRB(ch, acc, 0.22 - a * 0.03, 0.06, 0.03, 0.012, -0.62, 0.62 - a * 0.13, 0, 0.5);
   if (fly) {
-    for (const s of [-1, 1]) { const wg = new THREE.Group(); wg.position.set(-0.5, 0.5, s * 0.3); wg.rotation.set(s * 0.35, s * 0.5, 0.25); ch.add(wg); mRB(wg, main, 0.5, 0.05, 0.9, 0.02, -0.1, 0, s * 0.45); mRB(wg, acc, 0.4, 0.055, 0.12, 0.02, -0.08, 0.01, s * 0.86); J.wings = (J.wings || []).concat(wg); }
+    for (const s of [-1, 1]) { const wg = new THREE.Group(); wg.position.set(-0.5, 0.5, s * 0.3); wg.rotation.set(s * 0.35, s * 0.5, 0.25); ch.add(wg); wg.userData.s = s; // (round 35) a two-part wing that folds along the back and spreads to fly
+      mRB(wg, main, 0.5, 0.05, 0.9, 0.02, -0.1, 0, s * 0.45); mRB(wg, acc, 0.4, 0.055, 0.12, 0.02, -0.08, 0.01, s * 0.86); vBox(wg, glow, 0.36, 0.02, 0.03, -0.06, 0.03, s * 0.62);
+      const tip = new THREE.Group(); tip.position.set(-0.05, 0, s * 0.9); wg.add(tip); mRB(tip, main, 0.36, 0.04, 0.6, 0.02, -0.12, 0, s * 0.28, 0, s * -0.25); mRB(tip, dark, 0.2, 0.045, 0.3, 0.015, -0.24, 0.005, s * 0.5, 0, s * -0.5); vBox(tip, glow, 0.03, 0.03, 0.4, -0.02, 0.02, s * 0.3); wg.userData.tip = tip;
+      J.wings = (J.wings || []).concat(wg); }
+    for (const s of [-1, 1]) { const pod = new THREE.Group(); pod.position.set(-0.18, 0.74, s * 0.36 * cw); ch.add(pod); mRB(pod, dark, 0.42, 0.2, 0.26, 0.05, 0.08, 0.1, 0); for (let r2 = 0; r2 < 2; r2++) for (let c2 = 0; c2 < 2; c2++) { vCyl(pod, blk, 0.045, 0.045, 0.06, 0.3, 0.06 + r2 * 0.09, (c2 - 0.5) * 0.11, 'x', 8); vCyl(pod, glow, 0.025, 0.025, 0.065, 0.305, 0.06 + r2 * 0.09, (c2 - 0.5) * 0.11, 'x', 8); } mRB(pod, acc, 0.44, 0.03, 0.27, 0.01, 0.08, 0.21, 0); (J.pods = J.pods || []).push(pod); } // shoulder rocket pods: lie flat, swing up to fire
     for (const s of [-1, 1]) { mPart(ch, mTaper(0.1, 0.13, 0.26, 12), steel, -0.62, 0.23, s * 0.16); const f = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.6, 10).rotateX(Math.PI).translate(0, -0.3, 0), flameM); f.position.set(-0.62, -0.04, s * 0.16); ch.add(f); J.flames.push(f); }
   }
   // head / cockpit: a rounded helmet, a wrap-around visor, a chin, a crest that differs per mech
@@ -475,20 +479,23 @@ function mkMech(k) {
     for (let a = 0; a < 4; a++) mRB(el, steel, 0.07, 0.06, 0.055 * A, 0.02, 0.14 * A, -0.67 - (a % 2) * 0.012, (a - 1.5) * 0.06 * A);
     mRB(el, steel, 0.06, 0.1, 0.05, 0.02, 0.08, -0.62, -s * 0.12 * A, 0, 0, s * 0.4);                                       // thumb
     if (big && !cannon) mRB(el, acc, 0.08, 0.5, 0.42, 0.03, 0, -0.32, s * 0.18);
-    if (edge) { const bl = new THREE.Group(); bl.position.set(0.1, -0.5, 0); el.add(bl); const blade = new THREE.Mesh(new THREE.ConeGeometry(0.07, 1.15, 4).scale(0.5, 1, 1.6).translate(0, -0.5, 0).rotateX(Math.PI), lit('#e8eef2')); blade.rotation.x = Math.PI; bl.add(blade); vBox(bl, glow, 0.012, 0.9, 0.02, 0.02, -0.42, 0); J.blades.push(bl); }
+    if (edge) { const bl = new THREE.Group(); bl.position.set(0.1, -0.5, 0); el.add(bl); const blade = new THREE.Mesh(new THREE.ConeGeometry(0.09, 1.5, 4).scale(0.5, 1, 1.7).translate(0, -0.66, 0).rotateX(Math.PI), lit('#e8eef2')); blade.rotation.x = Math.PI; bl.add(blade); vBox(bl, glow, 0.014, 1.2, 0.024, 0.025, -0.56, 0); vBox(bl, dark, 0.07, 0.12, 0.2, 0, 0.02, 0); /* (round 35) longer blade with a guard */ J.blades.push(bl); }
     if (fly) mPart(el, mTaper(0.06, 0.08, 0.16, 10), blk, -0.15, -0.24, 0);
-    J.arms.push({ sh, el, s, fist: vMark(el, 0.12, -0.74, 0), tip: edge ? vMark(J.blades[J.blades.length - 1], 0, -0.95, 0) : null });
+    J.arms.push({ sh, el, s, fist: vMark(el, 0.12, -0.74, 0), tip: edge ? vMark(J.blades[J.blades.length - 1], 0, -1.3, 0) : null });
   }
   // what the vehicle turned into still shows: wheels, cargo box, rotor, tracks and guns ride on the mech
   const tyre = lit('#1a1a1c'), rim = lit('#9aa0a6');
   const wheelOn = (par, x, y, z, r, ry) => { const w = new THREE.Group(); w.position.set(x, y, z); w.rotation.y = ry || 0; par.add(w); vCyl(w, tyre, r, r, 0.08, 0, 0, 0, 'z', 16); vCyl(w, rim, r * 0.55, r * 0.55, 0.09, 0, 0, 0, 'z', 10); const tr = new THREE.Mesh(new THREE.TorusGeometry(r * 0.78, 0.01, 4, 16), rim); w.add(tr); return w; };
   if (scout) { J.kib = [wheelOn(ch, -0.58, 0.48, 0, 0.3, Math.PI / 2), wheelOn(ch, -0.58, 0.08, 0, 0.3, Math.PI / 2)]; vRod(ch, steel, [0.1, 0.95, 0.12], [0.0, 1.45, 0.25], 0.012); }
   if (edge) for (const A2 of J.arms) wheelOn(A2.sh, -0.05, 0.24, A2.s * 0.3, 0.2, 0);
-  if (worker) { const box = lit('#b8893a'), box2 = lit('#9a6f2e'), tape = lit('#e8d9a8'); mRB(ch, steel, 0.06, 0.7, 0.8, 0.02, -0.5, 0.36, 0); // a rack of parcels on the back
-    for (const [x, y, z, w, h, d, b] of [[-0.68, 0.16, -0.2, 0.34, 0.3, 0.36, box], [-0.68, 0.16, 0.2, 0.34, 0.28, 0.34, box2], [-0.7, 0.46, 0, 0.3, 0.3, 0.42, box], [-0.66, 0.72, -0.1, 0.26, 0.22, 0.28, box2]]) { mRB(ch, b, w, h, d, 0.02, x, y, z); mRB(ch, tape, w + 0.005, 0.04, d + 0.005, 0.005, x, y, z); mRB(ch, tape, w + 0.006, h + 0.006, 0.04, 0.005, x, y, z); }
+  if (worker) { const box = lit('#b8893a'), box2 = lit('#9a6f2e'), tape = lit('#e8d9a8'); mRB(ch, steel, 0.06, 0.7, 0.8, 0.02, -0.5, 0.36, 0); // a rack of parcels on the back (round 35: on a hinge — it kicks up as it launches them)
+    const rack = new THREE.Group(); rack.position.set(-0.5, 0.0, 0); ch.add(rack); J.rack = rack; J.rackBoxes = [];
+    for (const [x, y, z, w, h, d, b] of [[-0.18, 0.16, -0.2, 0.34, 0.3, 0.36, box], [-0.18, 0.16, 0.2, 0.34, 0.28, 0.34, box2], [-0.2, 0.46, 0, 0.3, 0.3, 0.42, box], [-0.16, 0.72, -0.1, 0.26, 0.22, 0.28, box2]]) { const q = new THREE.Group(); q.position.set(x, y, z); rack.add(q); mRB(q, b, w, h, d, 0.02, 0, 0, 0); mRB(q, tape, w + 0.005, 0.04, d + 0.005, 0.005, 0, 0, 0); mRB(q, tape, w + 0.006, h + 0.006, 0.04, 0.005, 0, 0, 0); J.rackBoxes.push(q); }
+    for (const s2 of [-1, 1]) mRB(rack, steel, 0.5, 0.04, 0.04, 0.01, -0.18, 0.9, s2 * 0.3); mRB(rack, lit('#ffcc33'), 0.04, 0.05, 0.64, 0.01, -0.42, 0.9, 0);
   }
   if (fly) { const rot = new THREE.Group(); rot.position.set(-0.45, 0.95, 0); ch.add(rot); vCyl(rot, steel, 0.05, 0.05, 0.12, 0, 0, 0, 'y', 8); for (let b2 = 0; b2 < 2; b2++) mRB(rot, dark, 1.4, 0.02, 0.1, 0.01, 0, 0.06, 0, 0, b2 * Math.PI / 2); J.rotor = rot; }
-  if (cannon) { for (const s2 of [-1, 1]) { const gun = new THREE.Group(); gun.position.set(-0.15, 0.84, s2 * 0.44); ch.add(gun); mRB(gun, dark, 0.38, 0.24, 0.26, 0.06, 0, 0, 0); mPart(gun, mTaper(0.07, 0.06, 0.95, 12), main, 0.12, 0.02, 0, Math.PI / 2); mRB(gun, blk, 0.09, 0.11, 0.11, 0.03, 1.08, 0.02, 0); (J.guns = J.guns || []).push(gun); }
+  if (cannon) { { const A1 = J.arms[1], ag = new THREE.Group(); A1.el.add(ag); J.armGun = ag; mPart(ag, mTaper(0.075, 0.065, 0.85, 12), steel, 0, 0, 0); mPart(ag, mTaper(0.09, 0.09, 0.08, 12), blk, 0, -0.78, 0); vCyl(ag, glow, 0.04, 0.04, 0.01, 0, -0.86, 0, 'y', 10); ag.position.y = -0.2; } // (round 35) slides out past the fist to fire
+    for (const s2 of [-1, 1]) { const gun = new THREE.Group(); gun.position.set(-0.15, 0.84, s2 * 0.44); ch.add(gun); mRB(gun, dark, 0.38, 0.24, 0.26, 0.06, 0, 0, 0); mPart(gun, mTaper(0.07, 0.06, 0.95, 12), main, 0.12, 0.02, 0, Math.PI / 2); mRB(gun, blk, 0.09, 0.11, 0.11, 0.03, 1.08, 0.02, 0); (J.guns = J.guns || []).push(gun); }
     for (const G of J.legs) { mRB(G.kn, tyre, 0.09, D.sh * 0.8, 0.3, 0.03, -0.21, -D.sh * 0.5, 0); for (let t2 = 0; t2 < 5; t2++) vBox(G.kn, steel, 0.09, 0.025, 0.31, -0.23, -0.12 - t2 * D.sh * 0.15, 0); } }
   g.traverse(o => { if (o.isMesh && !o.material.transparent && o.material.type !== 'MeshBasicMaterial') o.castShadow = true; });
   g.userData.J = J; return g;
@@ -498,7 +505,7 @@ function mkMech(k) {
 // Walking: stride matched to ground speed (no foot sliding), hips sway and drop on each step, shoulders counter-turn, fists up in a guard,
 // walks backwards instead of turning round when you back away. Attacks: a three-hit combo with wind-up, strike (torso twist, step in,
 // full extension), follow-through and recovery; 赤刃 slashes in wide arcs with a trail; a hit freezes the pose for a blink (hit-stop).
-const MSPR = { k: 260, z: 0.82 };
+const MSPR = { k: 260, z: 0.82 }, _vw2 = new THREE.Vector3();
 function mSpring(J, key, target, dt, k) {
   const S = J.sp || (J.sp = {}), q = S[key] || (S[key] = { x: target, v: 0 }), K = k || MSPR.k, C = 2 * Math.sqrt(K) * MSPR.z;
   const n = Math.max(1, Math.ceil(dt / 0.008)), h = dt / n; for (let i = 0; i < n; i++) { q.v += (K * (target - q.x) - C * q.v) * h; q.x += q.v * h; } return q.x;
@@ -518,38 +525,42 @@ function mechTick(p, mm, dt, xf = 1) { // xf < 1: mid-transform (0 = folded up, 
   if (p._mpT != null) p._mpT += dt; if (p._msT != null) p._msT += dt;
   const sT = p._msT != null ? p._msT : 99, sk = p._msK, t = p._mpT != null ? p._mpT : 99, side = p._mpS ? 1 : 0, combo = p._mcombo || 0;
   // ---- target pose: locomotion + guard ----
-  const T = { lean: 0.1 * a + (J.D ? J.D.hunch : 0), crouch: 0.04 * a, twist: 0, roll: 0, yawH: 0, sh: [0.3, 0.3], el: [1.95, 1.95], /* guard: elbows down, fists up by the chin */ ab: [0.12, 0.12], blade: -2.9, flame: 0 };
+  const T = { lean: 0.1 * a + (J.D ? J.D.hunch : 0), crouch: 0.04 * a, twist: 0, roll: 0, yawH: 0, sh: [0.3, 0.3], el: [1.95, 1.95], ab: [0.12, 0.12], blade: -2.9, flame: 0 };
   T.thL = 0.46 * a * sw; T.thR = -0.46 * a * sw;
+  // (round 35) out of a fight the arms hang and swing with the stride like a walker's (opposite to the legs); the guard (fists up) only for a moment after an attack
+  const cmb = t < 1.2 || sT < 1 ? 1 : t < 1.8 ? 1 - ease((t - 1.2) / 0.6) : 0; J.cmb = cmb;
+  for (let n = 0; n < 2; n++) { const leg = n ? T.thR : T.thL; T.sh[n] = lerp(0.06 - leg * 0.85, 0.45, cmb); T.el[n] = lerp(0.25 + 0.35 * a, 1.7, cmb); T.ab[n] = lerp(0.08, 0.15, cmb); }
   T.knL = 0.12 + a * (sw < 0 ? 0.25 : 0) + Math.max(0, -cw * back) * 0.85 * a; T.knR = 0.12 + a * (sw > 0 ? 0.25 : 0) + Math.max(0, cw * back) * 0.85 * a; // knee lifts on the swing leg
   T.bob = -Math.abs(cw) * 0.06 * a; T.roll = sw * 0.05 * a; T.yawH = sw * 0.1 * a; T.twist = -sw * 0.14 * a; // hips sway / drop, shoulders counter-turn
-  T.sh[0] += -sw * 0.14 * a; T.sh[1] += sw * 0.14 * a;                                                      // fists bob with the stride
+  T.sh[0] += -sw * 0.14 * a * cmb; T.sh[1] += sw * 0.14 * a * cmb;                                          // in the guard the fists bob with the stride
   if (!a) { const br = Math.sin(W.t * 1.6 + p.i) * 0.012; T.bob = br; T.sh[0] += br * 2; T.sh[1] += br * 2; } // idle: servo breathing
   // ---- attacks (round 34d): every melee mech hits DOWN at zombie height; the ranged ones aim and fire. wind-up 0.12 s, strike to 0.2, hold to 0.3, recover to 0.6 ----
   if (t < 0.6) {
     const f = t < 0.12 ? -ease(t / 0.12) * 0.6 : t < 0.2 ? -0.6 + ease((t - 0.12) / 0.08) * 1.6 : t < 0.3 ? 1 : 1 - ease((t - 0.3) / 0.3); // -0.6 cocked … 1 struck
     const o = 1 - side, sgn = side ? 1 : -1, on = Math.max(0, f), cock = Math.max(0, -f / 0.6), rest = 1 - cock - on, st = J.st;
-    if (st === 'slim') { // 赤刃: chops from high to the ground; the third is a two-handed cleave
-      const arms = combo === 2 ? [0, 1] : [side];
-      for (const s2 of arms) { T.sh[s2] = 2.7 * cock + 0.25 * on + 0.3 * rest; T.el[s2] = 0.25; T.ab[s2] = combo === 2 ? 0.05 : 0.3 * cock; }
-      T.blade = f > -0.3 ? 0 : -2.9; T.lean += 0.42 * on - 0.1 * cock; T.crouch += 0.26 * on; T.twist = combo === 2 ? 0 : sgn * (0.4 * cock - 0.5 * on);
+    if (st === 'slim') { // 赤刃 (round 35): a diagonal cut from high outside to low across, a wide sweep back the other way, then a two-handed overhead cleave
+      if (combo === 0) { T.sh[side] = 2.5 * cock + 0.45 * on + 0.3 * rest; T.ab[side] = 1.0 * cock - 0.55 * on; T.el[side] = 0.35 * cock + 0.12; T.twist = sgn * (0.55 * cock - 0.65 * on); T.lean += 0.35 * on; T.crouch += 0.18 * on; }
+      else if (combo === 1) { T.sh[side] = 1.35 + 0.2 * cock; T.ab[side] = 1.35 * cock - 0.75 * on + 0.2 * rest; T.el[side] = 0.2; T.twist = sgn * (0.75 * cock - 0.85 * on); T.crouch += 0.22 * on; T.lean += 0.15 * on; }
+      else { for (const s2 of [0, 1]) { T.sh[s2] = 2.8 * cock + 0.3 * on + 0.3 * rest; T.el[s2] = 0.25; T.ab[s2] = -0.1; } T.lean += 0.45 * on - 0.12 * cock; T.crouch += 0.3 * on; }
+      T.sh[o] = combo === 2 ? T.sh[o] : 0.6; T.el[o] = combo === 2 ? T.el[o] : 1.2; T.blade = 0;
     } else if (st === 'big') { // 铁卫: hammer fist into the ground, a stomp, then the fist cannon
       if (combo === 0) { T.sh[side] = 2.8 * cock + 0.35 * on + 0.3 * rest; T.el[side] = 0.2; T.lean += 0.45 * on; T.crouch += 0.28 * on; T.twist = sgn * -0.3 * on; T.sh[o] = 0.7; T.el[o] = 1.5; }
       else if (combo === 1) { const up = t < 0.15 ? ease(t / 0.15) : 0, dn = t >= 0.15 && t < 0.3 ? 1 : t >= 0.3 ? 1 - ease((t - 0.3) / 0.3) : 0; if (side) { T.thL = 1.1 * up + 0.25 * dn; T.knL = 1.5 * up + 0.2 * dn; } else { T.thR = 1.1 * up + 0.25 * dn; T.knR = 1.5 * up + 0.2 * dn; } T.crouch += 0.18 * dn; T.lean += 0.1 * dn; T.ab = [0.5 * up + 0.3, 0.5 * up + 0.3]; T.sh = [0.3, 0.3]; T.el = [0.9, 0.9]; }
       else { T.sh[side] = 0.55 + 1.0 * (on + cock * 0.6); T.el[side] = 1.3 * (1 - on) + 0.05; T.twist = sgn * (0.3 * cock - 0.5 * on); T.lean -= 0.12 * on; T.sh[o] = 0.65; T.el[o] = 1.55; }
-    } else if (st === 'worker') { // 工蜂: an overhand throw (a parcel from the rack)
-      T.sh[side] = 2.7 * cock + 1.25 * on + 0.3 * rest; T.el[side] = 0.9 * cock + 0.25; T.ab[side] = 0.25; T.twist = sgn * (0.45 * cock - 0.55 * on); T.lean += 0.25 * on - 0.12 * cock; T.sh[o] = 0.6; T.el[o] = 1.5;
+    } else if (st === 'worker') { // 工蜂 (round 35): points where it wants them and the back rack kicks up, flinging parcels out over the shoulder
+      T.sh[side] = 1.45 * (on + cock) + 0.3 * rest; T.el[side] = 0.15; T.ab[side] = 0.1; T.twist = sgn * -0.25 * on; T.lean -= 0.12 * on - 0.1 * cock; T.crouch += 0.12 * cock; T.sh[o] = 0.5; T.el[o] = 1.3; T.rack = 0.55 * on - 0.1 * cock;
     } else if (st === 'scout') { // 疾风: low snap kicks, arms swinging against them
       const thK = -0.45 * cock + 1.15 * on, knK = 1.3 * cock + 0.1 * on + 0.2 * rest; if (side) { T.thL = thK; T.knL = knK; } else { T.thR = thK; T.knR = knK; }
       T.sh[side] = 0.2; T.sh[o] = 1.0 * on + 0.3 * rest; T.el = [1.6, 1.6]; T.lean -= 0.15 * on; T.twist = sgn * 0.3 * on;
-    } else if (st === 'cannon') { // 重炮: the right arm comes up as a gun and kicks back on each shot; the shoulder guns lift too
-      T.sh[1] = 1.5; T.el[1] = 0.05 + 0.35 * on * (t < 0.25 ? 1 : 0); T.twist = -0.25; T.sh[0] = 0.75; T.el[0] = 1.5; T.lean -= 0.08 * on;
-    } else { // 苍隼: rockets from the shoulder pods, arms braced
-      T.sh = [0.8, 0.8]; T.el = [1.1, 1.1]; T.lean -= 0.1 * on;
+    } else if (st === 'cannon') { // 重炮: the right arm comes up, the barrel slides out of the forearm and kicks back on each shot; the shoulder guns swing up off the back
+      T.sh[1] = 1.55; T.el[1] = 0.05 + 0.35 * on * (t < 0.25 ? 1 : 0); T.twist = -0.25; T.sh[0] = 0.75; T.el[0] = 1.5; T.lean -= 0.08 * on;
+    } else { // 苍隼: the shoulder pods swing up and fire, arms braced
+      T.sh = [0.6, 0.6]; T.el = [1.3, 1.3]; T.lean -= 0.1 * on; T.podK = on;
     }
   }
   // ---- skills ----
   if (sk === 'slam' && sT < 0.95) { if (sT < 0.3) { const f = ease(sT / 0.3); T.sh = [2.8 * f, 2.8 * f]; T.el = [0.3, 0.3]; T.crouch = 0.1 * f; T.lean = -0.1 * f; } else if (sT < 0.45) { const f = ease((sT - 0.3) / 0.15); T.sh = [2.8 - f * 2.2, 2.8 - f * 2.2]; T.el = [0.1, 0.1]; T.crouch = 0.1 + f * 0.38; T.lean = f * 0.45; } else { const f = ease((sT - 0.45) / 0.5); T.sh = [0.6 + 0.0 * f, 0.6]; T.crouch = 0.48 * (1 - f); T.lean = 0.45 * (1 - f); } }
-  if (sk === 'parcels' && sT < 0.7) { const f = sT < 0.25 ? ease(sT / 0.25) : 1 - ease((sT - 0.25) / 0.45); T.sh = [2.6 * f + 0.3 * (1 - f), 2.6 * f + 0.3 * (1 - f)]; T.el = [0.4, 0.4]; T.lean -= 0.2 * f; T.crouch += 0.1 * f; }
+  if (sk === 'parcels' && sT < 0.9) { const f = sT < 0.25 ? ease(sT / 0.25) : 1 - ease((sT - 0.25) / 0.65); T.sh = [2.2 * f + 0.3 * (1 - f), 2.2 * f + 0.3 * (1 - f)]; T.ab = [0.8 * f, 0.8 * f]; T.el = [0.3, 0.3]; T.lean -= 0.25 * f; T.crouch += 0.15 * f; T.rack = 1.1 * f; } // (round 35) the rack tips right up and sprays the lot
   if (sk === 'dash' && sT < 0.55) { const f = sT < 0.4 ? 1 : 1 - (sT - 0.4) / 0.15; T.lean = 0.55 * f; T.sh = [-0.5 * f + 0.55 * (1 - f), 1.4 * f + 0.55 * (1 - f)]; T.el = [0.2, 0.3]; T.ab = [0.3, 1.0 * f]; T.crouch = 0.15 * f; T.thL = 0.6 * f; T.thR = -0.5 * f; T.knL = 0.5 * f + 0.15; T.knR = 0.9 * f + 0.15; T.blade = 0; T.flame = 1; T.twist = -0.6 * f; }
   if (sk === 'leap' && sT < 1.3) { if (sT < 0.15) T.crouch = ease(sT / 0.15) * 0.35; T.flame = air || sT < 1.05 ? 1 : 0; }
   if (air) { T.thL = 0.55; T.thR = 0.15; T.knL = 1.2; T.knR = 0.75; T.sh = [0.9, 0.9]; T.el = [0.9, 0.9]; T.ab = [0.5, 0.5]; T.flame = 1; T.lean = 0.15; }
@@ -568,13 +579,21 @@ function mechTick(p, mm, dt, xf = 1) { // xf < 1: mid-transform (0 = folded up, 
   J.tor.rotation.set(-roll * 0.6, yaw, -lean * 0.7);
   J.head.rotation.set(0, -twist * 0.4, lean * 0.4);
   J.arms.forEach((A, n) => { A.sh.rotation.z = S('sh' + n, T.sh[n], 380); A.el.rotation.z = S('el' + n, T.el[n], 380); A.sh.rotation.x = A.s * S('ab' + n, T.ab[n], 300); });
-  for (const b of J.blades) b.rotation.z = S('blade', T.blade, 600);
+  for (const b of J.blades) b.rotation.z = S('blade', J.cmb > 0.25 ? 0 : T.blade, 600); // (round 35) the arm blades flick out for a fight, fold back along the forearm after
+  // (round 35) weapons deploy: 重炮's arm barrel slides out and its shoulder guns swing up off the back; 苍隼's pods rise; 工蜂's rack kicks; 苍隼's wings spread to fly
+  const dep = S('dep', J.cmb > 0.05 ? 1 : 0, 120);
+  if (J.armGun) J.armGun.position.y = lerp(0.05, -0.55, dep) + (t < 0.18 ? 0.12 * (1 - t / 0.18) : 0);
+  if (J.guns) for (const G of J.guns) G.rotation.z = lerp(1.2, 0, dep);
+  if (J.pods) { const pk = S('pod', J.cmb > 0.05 ? 1 : 0, 160); for (const P of J.pods) { P.rotation.z = lerp(-1.3, 0.15, pk) + (T.podK ? -0.06 * T.podK : 0); P.scale.setScalar(lerp(0.75, 1, pk)); } }
+  if (J.rack) J.rack.rotation.z = S('rack', T.rack || 0, 300);
+  if (J.wings) { const wo = S('wing', p.mfly || air ? 1 : sp > maxS * 0.8 ? 0.25 : 0, 90); for (const Wg of J.wings) { const s2 = Wg.userData.s; Wg.rotation.set(s2 * lerp(0.2, 0.05, wo), s2 * lerp(1.25, 0.08, wo), lerp(0.75, 0.12, wo) + (wo > 0.6 ? Math.sin(W.t * 3 + s2) * 0.04 : 0)); if (Wg.userData.tip) Wg.userData.tip.rotation.y = s2 * lerp(2.2, 0, wo); } }
   if (J.buckets) { const bz = S('bucket', J.st === 'worker' && t < 0.45 && t > 0.1 ? -0.8 : 0.5, 400); for (const b of J.buckets) b.rotation.z = bz; } // the bucket curls as it scoops
   // ---- effects: reactor, thrusters, blade trail, footfalls ----
   const pulse = 0.85 + Math.sin(W.t * 4 + p.i) * 0.15; J.coreHalo.scale.set(1, pulse, pulse);
   for (const f of J.flames) { f.visible = T.flame > 0 || sp > maxS * 0.9; f.scale.y = (T.flame ? 1.4 : 0.6) * (0.85 + FXR() * 0.3); }
   const pz = (p.zv != null ? p.zv : p.z) + (p.rjz != null ? p.rjz : p.jz || 0), px = p.rx != null ? p.rx : p.x, py = p.ry != null ? p.ry : p.y;
   if (T.flame && FXR() < dt * 40) addP({ x: px - Math.cos(p._ly) * 0.7, y: py - Math.sin(p._ly) * 0.7, z: pz + 1.6, vx: frnd(-0.4, 0.4), vy: frnd(-0.4, 0.4), vz: -2, g: -0.3, col: '#ffb060', s: 0.09, life: 0.3 });
-  if (J.st === 'slim' && t > 0.1 && t < 0.32) for (const A of J.arms) if (A.tip && A.s === (side ? 1 : -1)) { A.tip.getWorldPosition(_vw); addP({ x: _vw.x, y: _vw.z, z: _vw.y, vx: 0, vy: 0, vz: 0, g: 0, col: '#ffc07a', s: 0.1, life: 0.18 }); } // slash trail
-  const st = Math.sign(Math.sin(ph)); if (a > 0.3 && st !== J.st && !air) { const s2 = st > 0 ? 1 : -1, aa = p._ly + Math.PI / 2 * s2; for (let q = 0; q < 5; q++) addP({ x: px + Math.cos(aa) * 0.38, y: py + Math.sin(aa) * 0.38, z: pz + 0.05, vx: frnd(-0.9, 0.9), vy: frnd(-0.9, 0.9), vz: 0.35, g: -0.2, col: '#8a7e6a', s: 0.12, life: 0.5, smoke: 1 }); if (p.i === ME) { shake(px, py, J.st === 'big' || J.st === 'cannon' ? 0.07 : J.st === 'scout' ? 0.02 : 0.04); if (thr('mstep', 0.25)) sfx('bash', px, py); } } J.st = st;
+  if (J.st === 'slim' && t > 0.1 && t < 0.34) for (const A of J.arms) if (A.tip && (combo === 2 || A.s === (side ? 1 : -1))) { A.tip.getWorldPosition(_vw); const q = A.mid || (A.mid = vMark(J.blades[J.arms.indexOf(A)], 0, -0.55, 0)); q.getWorldPosition(_vw2);
+    for (let k = 0; k < 3; k++) { const f2 = k / 2; addP({ x: lerp(_vw2.x, _vw.x, f2), y: lerp(_vw2.z, _vw.z, f2), z: lerp(_vw2.y, _vw.y, f2), vx: 0, vy: 0, vz: 0, g: 0, col: k === 2 ? '#fff0d0' : '#ffb060', s: 0.07 + f2 * 0.05, life: 0.16 + f2 * 0.08 }); } } // (round 35) a fuller slash trail along the blade
+  const st = Math.sign(Math.sin(ph)); if (a > 0.3 && st !== J.fs && !air) { const s2 = st > 0 ? 1 : -1, aa = p._ly + Math.PI / 2 * s2; for (let q = 0; q < 5; q++) addP({ x: px + Math.cos(aa) * 0.38, y: py + Math.sin(aa) * 0.38, z: pz + 0.05, vx: frnd(-0.9, 0.9), vy: frnd(-0.9, 0.9), vz: 0.35, g: -0.2, col: '#8a7e6a', s: 0.12, life: 0.5, smoke: 1 }); if (p.i === ME) { shake(px, py, J.st === 'big' || J.st === 'cannon' ? 0.07 : J.st === 'scout' ? 0.02 : 0.04); if (thr('mstep', 0.25)) sfx('bash', px, py); } } J.fs = st; /* (round 35) was J.st = st: overwrote the mech's style after the first footstep, so the style's attack poses stopped playing */
 }
