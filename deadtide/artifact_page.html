@@ -5086,7 +5086,7 @@ const ZT = {
   shade: { name: '隐身者', hp: 420, spd: 1.5, r: 0.3, h: 1.25, dmg: 12, bdmg: 10, cd: 0.9, sc: 1.2, look: 'walker', skin: '#50505e', elite: { k: 'cloak', cd: 6, col: '#c0c0e0', tip: '隐身摸到你身边偷袭，留意空气里的扭曲，附近炸一下就现形' } },
 };
 const ELITES = ['blinker', 'caller', 'warden', 'shade'];
-const BUILD_TAG = '第 36 轮之九'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
+const BUILD_TAG = '第 36 轮之十'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
 // aim assist (SET.assist): fire-button lock range (x weapon range), lock-on time before it fires, spread while auto-aimed, mouse/finger magnet
 const PORT = 1.25; // firing port: your own shots pass a wall / door you built if it is this close to you
 const ASSIST = [{ name: '关', range: 0, acq: 0, spread: 1, mag: 0 }, { name: '标准', range: 0.75, acq: 0.3, spread: 1.5, mag: 1 }, { name: '强', range: 1, acq: 0, spread: 1, mag: 1 }];
@@ -6332,10 +6332,13 @@ const mechRanged = M => M.atk === 'rocket' || M.atk === 'cannon' || M.atk === 'p
 function mechLock(p, M, far) {
   M = M || mechOf(p); if (!M) return null; const ranged = mechRanged(M) || far, range = far || (ranged ? M.range || 16 : M.reach + 2.4), cmin = ranged ? 0.64 : 0.17, a = p.aim;
   const ok = z => z && z.hp > 0 && !z.hidden && !z.sleep && !(z.ck || z.ckF) && Math.abs(z.z - p.z) < (ranged ? 6 : 2.6);
-  const pz = p.z + 1.6, zb = p.aimPt && p.aimPt.zb; if (ok(zb) && Math.hypot(zb.x - p.x, zb.y - p.y) <= range + zb.r && los(p.x, p.y, pz, zb.x, zb.y, zb.z + zb.h * 0.5)) return zb;
+  const pz = p.z + 1.6, lob = M.atk === 'parcel' && !far; let zb = p.aimPt && p.aimPt.zb; /* (round 36j) a lobbed parcel goes over walls: no line of sight needed */
+  if (ranged && !far && p.aimPt && !zb) { const A = p.aimPt; let nz = null, nd = 1e9; for (const z of W.zs) { if (!ok(z)) continue; const d = Math.hypot(z.x - A.x, z.y - A.y); if (d < z.r + 0.55 && d < nd) { nd = d; nz = z; } } // (round 36j) a lobbed / explosive mech shot goes where you point: on a zombie = that zombie (led), on the ground = that spot (no auto-lock)
+    if (!nz && Math.hypot(A.x - p.x, A.y - p.y) <= range + 1) return null; zb = nz; }
+  if (ok(zb) && Math.hypot(zb.x - p.x, zb.y - p.y) <= range + zb.r && (lob || los(p.x, p.y, pz, zb.x, zb.y, zb.z + zb.h * 0.5))) return zb;
   let best = null, bs = -1e9;
   for (const z of W.zs) { if (!ok(z)) continue; const dx = z.x - p.x, dy = z.y - p.y, d = Math.hypot(dx, dy); if (d > range + z.r || d < 0.3) continue; const c = Math.cos(angDiff(Math.atan2(dy, dx), a)); if (c < cmin && d > 1.2) continue;
-    const sc = c * 1.5 - d / range + (ZT[z.k].fly && !ranged ? -0.5 : 0); if (sc > bs && los(p.x, p.y, pz, z.x, z.y, z.z + z.h * 0.5)) { bs = sc; best = z; } }
+    const sc = c * 1.5 - d / range + (ZT[z.k].fly && !ranged ? -0.5 : 0); if (sc > bs && (lob || los(p.x, p.y, pz, z.x, z.y, z.z + z.h * 0.5))) { bs = sc; best = z; } }
   return best;
 }
 function mechPunch(p) {
@@ -6375,7 +6378,8 @@ function mechShoot(p, kind, LK, aa) {
   const s = (MECH_DIM[M.style] || {}).s || 1, sx = p.x + (ca * sh[0] - sa * sh[1]) * s, sy = p.y + (sa * sh[0] + ca * sh[1]) * s, z0 = pZ(p) + sh[2] * s;
   let T = p.aimPt ? { x: p.aimPt.x, y: p.aimPt.y, z: p.aimPt.z } : { x: p.x + ca * 10, y: p.y + sa * 10, z: pZ(p) + 0.6 };
   { const best = LK && LK.hp > 0 && Math.hypot(LK.x - p.x, LK.y - p.y) <= range + LK.r ? LK : LK === undefined ? mechLock(p, M) : null; // (round 35) the target mechPunch picked (mechLock: a wider cone, in sight)
-    if (best) T = { x: best.x, y: best.y, z: best.z + best.h * 0.45 }; }
+    if (best) { T = { x: best.x, y: best.y, z: best.z + best.h * 0.45 }; // (round 36j) lead it: aim where it will be when the shot arrives (its smoothed velocity × flight time)
+      const spd = kind === 'rocket' ? 20 : kind === 'cannon' ? 45 : 0; let tt = 0; for (let it = 0; it < 3; it++) { const d = Math.hypot(T.x - p.x, T.y - p.y); tt = spd ? d / spd : 0.25 + Math.min(range, d) / 14; T.x = best.x + (best.evx || 0) * tt; T.y = best.y + (best.evy || 0) * tt; } } }
   if (kind === 'parcel') { const d = Math.min(range, Math.hypot(T.x - p.x, T.y - p.y)), ex = p.x + Math.cos(Math.atan2(T.y - p.y, T.x - p.x)) * d, ey = p.y + Math.sin(Math.atan2(T.y - p.y, T.x - p.x)) * d, cx = Math.floor(ex), cy = Math.floor(ey), L = inMap(cx, cy) ? gAt(cx, cy) : p.L, gz = L * FH + 0.15, tt = 0.25 + d / 14; // a parcel lobbed in an arc
     emit({ k: 'mrkt', o: p.i, kd: 'parcel', x: r2(sx), y: r2(sy), z: r2(z0), e: [r2(ex), r2(ey), r2(gz)], t: r2(tt) }); (W.dly = W.dly || []).push({ t: tt, box: 1, x: ex, y: ey, zz: gz, R: M.blast, dmg: M.dmg, o: p.i }); noiseAt(p.x, p.y, 5, p.z); return; }
   let dx = T.x - sx, dy = T.y - sy, dz = (T.z != null ? T.z : z0 - 1) - z0; const hl = Math.hypot(dx, dy) || 1; dz = clamp(dz / hl, airborne(p) ? -6 : -1.2, 0.4) * hl; /* (round 36b) from the air it can shoot steeply down (was capped at -1.2: rockets at close targets flew over them) */ const n = Math.hypot(dx, dy, dz) || 1; dx /= n; dy /= n; dz /= n;
@@ -7394,7 +7398,7 @@ function stepZombies(dt) {
   const F = W.ff, zs = W.zs;
   W.wardens = zs.filter(o => o.k === 'warden' && o.hp > 0); // (round 35) whose bubbles hurtZombie has to check
   const grid = new Map();
-  for (const z of zs) { if (z.hp <= 0) continue; const key = ci(Math.floor(z.x), Math.floor(z.y), z.L); let a = grid.get(key); if (!a) grid.set(key, a = []); a.push(z); }
+  for (const z of zs) { if (z.hp <= 0) continue; if (z._ox != null && dt > 0) { const k = Math.min(1, dt * 8), vx = clamp((z.x - z._ox) / dt, -9, 9), vy = clamp((z.y - z._oy) / dt, -9, 9); z.evx = (z.evx || 0) + (vx - (z.evx || 0)) * k; z.evy = (z.evy || 0) + (vy - (z.evy || 0)) * k; } z._ox = z.x; z._oy = z.y; /* (round 36j) smoothed velocity, for leading mech shots */ const key = ci(Math.floor(z.x), Math.floor(z.y), z.L); let a = grid.get(key); if (!a) grid.set(key, a = []); a.push(z); }
   // herds: how far along the way each herd is on average (player field), so stragglers can hurry and the ones out in front hang back
   const herd = new Map();
   for (const z of zs) { if (z.hp <= 0 || !z.g) continue; const v = F.pw[ci(Math.floor(z.x), Math.floor(z.y), z.L)]; if (!(v < Infinity)) continue; const h = herd.get(z.g) || { s: 0, n: 0 }; h.s += v; h.n++; herd.set(z.g, h); }
@@ -11502,7 +11506,8 @@ function endPtr(e) {
       // tap another zombie = select that one instead; tap empty ground = stop and clear
       const m = INP.mark, onMark = tap && zAlive(m) && (() => { const q = w2s(m.x, m.y, m.z + m.h * 0.55); return Math.hypot(q[0] - e.clientX, q[1] - e.clientY) < 60; })();
       const z = onMark ? m : tap ? aimPick(e.clientX, e.clientY, 64).zb : me.aimPt && me.aimPt.zb;
-      if (zAlive(z)) { if (tap && z === m) INP.atk = true; else { INP.mark = z; INP.atk = false; } INP.markT = performance.now(); } else if (tap) { INP.mark = null; INP.atk = false; } }
+      if (zAlive(z)) { if (tap && z === m) INP.atk = true; else { INP.mark = z; INP.atk = false; } INP.markT = performance.now(); } else if (tap) { INP.mark = null; INP.atk = false;
+        if (inMech(me) && mechRanged(mechOf(me))) { const pt = aimPick(e.clientX, e.clientY, 0); if (pt) INP.gtap = { pt: { x: pt.x, y: pt.y, z: pt.z }, t: performance.now() }; } } } // (round 36j) 工蜂 / 苍隼 / 重炮: tap the ground = throw / fire right there
   }
   if (INP.aim.id === e.pointerId && !INP.aim.btn) { INP.aim.id = null; INP.aim.x = INP.aim.y = 0; INP.aim.t = performance.now(); stickDraw(stickR, INP.aim); }
 }
@@ -11873,13 +11878,14 @@ function readInput(dt) {
       trackAim(me); INP.aimT -= dt; if (INP.aimT <= 0 || !me.aimPt) { INP.aimT = 0.12; const f = Math.hypot(I.mx, I.my) > 0.2 ? [I.mx, I.my] : [Math.cos(me.aim), Math.sin(me.aim)]; me.aimPt = touchAutoAim(me, f[0], f[1], true, me.aimPt && me.aimPt.zb); }
       me.aim = Math.atan2(me.aimPt.y - me.y, me.aimPt.x - me.x);
     } else if (performance.now() - A.t > 600 && Math.hypot(I.mx, I.my) > 0.2) { me.aim = Math.atan2(I.my, I.mx); me.aimPt = null; }
+    const gt = INP.gtap && performance.now() - INP.gtap.t < 250 ? INP.gtap.pt : null; if (gt) { me.aimPt = gt; me.aim = Math.atan2(gt.y - me.y, gt.x - me.x); }
     drawReticle(me, me.aimPt, fing && !blocked && !me.build && !me.dead, INP.tAim.x, fpy);
     // auto-aim (fire button without a finger on the map): a new target takes a moment to lock on, and the shots are looser
     const auto = !fing && !mk && (active || (held && A.btn) || tap), AS = assistLv(), lz = auto && me.aimPt && me.aimPt.zb;
     if (lz !== INP.lockZ) { INP.lockZ = lz || null; INP.lockT = 0; } else INP.lockT = (INP.lockT || 0) + dt;
     INP.lockAcq = lz && AS.acq ? Math.min(1, INP.lockT / AS.acq) : 1;
     I.auto = auto && lz ? AS.spread : 0;
-    I.fire = !blocked && ((fing && held && A.btn) || (mk && (burst || tap || INP.atk)) || (auto && (tap || (burst && INP.lockAcq >= 1)))) && !me.build ? 1 : 0;
+    I.fire = !blocked && ((fing && held && A.btn) || (mk && (burst || tap || INP.atk)) || (auto && (tap || (burst && INP.lockAcq >= 1))) || gt) && !me.build ? 1 : 0; if (gt && I.fire) INP.gtap = null;
     INP.markShow = mk; INP.atkShow = mk && INP.atk;
     CAM.lookX = lerp(CAM.lookX || 0, Math.cos(me.aim) * 1.5, Math.min(1, dt * 2)); CAM.lookY = lerp(CAM.lookY || 0, Math.sin(me.aim) * 1.5, Math.min(1, dt * 2));
     if (!me.build || !BUILD_HOVER || !BUILD_HOVER.t) BUILD_HOVER = me.build ? BUILD_HOVER : null;

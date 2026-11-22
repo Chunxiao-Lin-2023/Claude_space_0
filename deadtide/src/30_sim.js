@@ -118,10 +118,13 @@ const mechRanged = M => M.atk === 'rocket' || M.atk === 'cannon' || M.atk === 'p
 function mechLock(p, M, far) {
   M = M || mechOf(p); if (!M) return null; const ranged = mechRanged(M) || far, range = far || (ranged ? M.range || 16 : M.reach + 2.4), cmin = ranged ? 0.64 : 0.17, a = p.aim;
   const ok = z => z && z.hp > 0 && !z.hidden && !z.sleep && !(z.ck || z.ckF) && Math.abs(z.z - p.z) < (ranged ? 6 : 2.6);
-  const pz = p.z + 1.6, zb = p.aimPt && p.aimPt.zb; if (ok(zb) && Math.hypot(zb.x - p.x, zb.y - p.y) <= range + zb.r && los(p.x, p.y, pz, zb.x, zb.y, zb.z + zb.h * 0.5)) return zb;
+  const pz = p.z + 1.6, lob = M.atk === 'parcel' && !far; let zb = p.aimPt && p.aimPt.zb; /* (round 36j) a lobbed parcel goes over walls: no line of sight needed */
+  if (ranged && !far && p.aimPt && !zb) { const A = p.aimPt; let nz = null, nd = 1e9; for (const z of W.zs) { if (!ok(z)) continue; const d = Math.hypot(z.x - A.x, z.y - A.y); if (d < z.r + 0.55 && d < nd) { nd = d; nz = z; } } // (round 36j) a lobbed / explosive mech shot goes where you point: on a zombie = that zombie (led), on the ground = that spot (no auto-lock)
+    if (!nz && Math.hypot(A.x - p.x, A.y - p.y) <= range + 1) return null; zb = nz; }
+  if (ok(zb) && Math.hypot(zb.x - p.x, zb.y - p.y) <= range + zb.r && (lob || los(p.x, p.y, pz, zb.x, zb.y, zb.z + zb.h * 0.5))) return zb;
   let best = null, bs = -1e9;
   for (const z of W.zs) { if (!ok(z)) continue; const dx = z.x - p.x, dy = z.y - p.y, d = Math.hypot(dx, dy); if (d > range + z.r || d < 0.3) continue; const c = Math.cos(angDiff(Math.atan2(dy, dx), a)); if (c < cmin && d > 1.2) continue;
-    const sc = c * 1.5 - d / range + (ZT[z.k].fly && !ranged ? -0.5 : 0); if (sc > bs && los(p.x, p.y, pz, z.x, z.y, z.z + z.h * 0.5)) { bs = sc; best = z; } }
+    const sc = c * 1.5 - d / range + (ZT[z.k].fly && !ranged ? -0.5 : 0); if (sc > bs && (lob || los(p.x, p.y, pz, z.x, z.y, z.z + z.h * 0.5))) { bs = sc; best = z; } }
   return best;
 }
 function mechPunch(p) {
@@ -161,7 +164,8 @@ function mechShoot(p, kind, LK, aa) {
   const s = (MECH_DIM[M.style] || {}).s || 1, sx = p.x + (ca * sh[0] - sa * sh[1]) * s, sy = p.y + (sa * sh[0] + ca * sh[1]) * s, z0 = pZ(p) + sh[2] * s;
   let T = p.aimPt ? { x: p.aimPt.x, y: p.aimPt.y, z: p.aimPt.z } : { x: p.x + ca * 10, y: p.y + sa * 10, z: pZ(p) + 0.6 };
   { const best = LK && LK.hp > 0 && Math.hypot(LK.x - p.x, LK.y - p.y) <= range + LK.r ? LK : LK === undefined ? mechLock(p, M) : null; // (round 35) the target mechPunch picked (mechLock: a wider cone, in sight)
-    if (best) T = { x: best.x, y: best.y, z: best.z + best.h * 0.45 }; }
+    if (best) { T = { x: best.x, y: best.y, z: best.z + best.h * 0.45 }; // (round 36j) lead it: aim where it will be when the shot arrives (its smoothed velocity × flight time)
+      const spd = kind === 'rocket' ? 20 : kind === 'cannon' ? 45 : 0; let tt = 0; for (let it = 0; it < 3; it++) { const d = Math.hypot(T.x - p.x, T.y - p.y); tt = spd ? d / spd : 0.25 + Math.min(range, d) / 14; T.x = best.x + (best.evx || 0) * tt; T.y = best.y + (best.evy || 0) * tt; } } }
   if (kind === 'parcel') { const d = Math.min(range, Math.hypot(T.x - p.x, T.y - p.y)), ex = p.x + Math.cos(Math.atan2(T.y - p.y, T.x - p.x)) * d, ey = p.y + Math.sin(Math.atan2(T.y - p.y, T.x - p.x)) * d, cx = Math.floor(ex), cy = Math.floor(ey), L = inMap(cx, cy) ? gAt(cx, cy) : p.L, gz = L * FH + 0.15, tt = 0.25 + d / 14; // a parcel lobbed in an arc
     emit({ k: 'mrkt', o: p.i, kd: 'parcel', x: r2(sx), y: r2(sy), z: r2(z0), e: [r2(ex), r2(ey), r2(gz)], t: r2(tt) }); (W.dly = W.dly || []).push({ t: tt, box: 1, x: ex, y: ey, zz: gz, R: M.blast, dmg: M.dmg, o: p.i }); noiseAt(p.x, p.y, 5, p.z); return; }
   let dx = T.x - sx, dy = T.y - sy, dz = (T.z != null ? T.z : z0 - 1) - z0; const hl = Math.hypot(dx, dy) || 1; dz = clamp(dz / hl, airborne(p) ? -6 : -1.2, 0.4) * hl; /* (round 36b) from the air it can shoot steeply down (was capped at -1.2: rockets at close targets flew over them) */ const n = Math.hypot(dx, dy, dz) || 1; dx /= n; dy /= n; dz /= n;

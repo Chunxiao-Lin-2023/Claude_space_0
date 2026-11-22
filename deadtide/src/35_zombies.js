@@ -14,7 +14,7 @@ function stepZombies(dt) {
   const F = W.ff, zs = W.zs;
   W.wardens = zs.filter(o => o.k === 'warden' && o.hp > 0); // (round 35) whose bubbles hurtZombie has to check
   const grid = new Map();
-  for (const z of zs) { if (z.hp <= 0) continue; const key = ci(Math.floor(z.x), Math.floor(z.y), z.L); let a = grid.get(key); if (!a) grid.set(key, a = []); a.push(z); }
+  for (const z of zs) { if (z.hp <= 0) continue; if (z._ox != null && dt > 0) { const k = Math.min(1, dt * 8), vx = clamp((z.x - z._ox) / dt, -9, 9), vy = clamp((z.y - z._oy) / dt, -9, 9); z.evx = (z.evx || 0) + (vx - (z.evx || 0)) * k; z.evy = (z.evy || 0) + (vy - (z.evy || 0)) * k; } z._ox = z.x; z._oy = z.y; /* (round 36j) smoothed velocity, for leading mech shots */ const key = ci(Math.floor(z.x), Math.floor(z.y), z.L); let a = grid.get(key); if (!a) grid.set(key, a = []); a.push(z); }
   // herds: how far along the way each herd is on average (player field), so stragglers can hurry and the ones out in front hang back
   const herd = new Map();
   for (const z of zs) { if (z.hp <= 0 || !z.g) continue; const v = F.pw[ci(Math.floor(z.x), Math.floor(z.y), z.L)]; if (!(v < Infinity)) continue; const h = herd.get(z.g) || { s: 0, n: 0 }; h.s += v; h.n++; herd.set(z.g, h); }

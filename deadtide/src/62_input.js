@@ -237,7 +237,8 @@ function endPtr(e) {
       // tap another zombie = select that one instead; tap empty ground = stop and clear
       const m = INP.mark, onMark = tap && zAlive(m) && (() => { const q = w2s(m.x, m.y, m.z + m.h * 0.55); return Math.hypot(q[0] - e.clientX, q[1] - e.clientY) < 60; })();
       const z = onMark ? m : tap ? aimPick(e.clientX, e.clientY, 64).zb : me.aimPt && me.aimPt.zb;
-      if (zAlive(z)) { if (tap && z === m) INP.atk = true; else { INP.mark = z; INP.atk = false; } INP.markT = performance.now(); } else if (tap) { INP.mark = null; INP.atk = false; } }
+      if (zAlive(z)) { if (tap && z === m) INP.atk = true; else { INP.mark = z; INP.atk = false; } INP.markT = performance.now(); } else if (tap) { INP.mark = null; INP.atk = false;
+        if (inMech(me) && mechRanged(mechOf(me))) { const pt = aimPick(e.clientX, e.clientY, 0); if (pt) INP.gtap = { pt: { x: pt.x, y: pt.y, z: pt.z }, t: performance.now() }; } } } // (round 36j) 工蜂 / 苍隼 / 重炮: tap the ground = throw / fire right there
   }
   if (INP.aim.id === e.pointerId && !INP.aim.btn) { INP.aim.id = null; INP.aim.x = INP.aim.y = 0; INP.aim.t = performance.now(); stickDraw(stickR, INP.aim); }
 }
@@ -608,13 +609,14 @@ function readInput(dt) {
       trackAim(me); INP.aimT -= dt; if (INP.aimT <= 0 || !me.aimPt) { INP.aimT = 0.12; const f = Math.hypot(I.mx, I.my) > 0.2 ? [I.mx, I.my] : [Math.cos(me.aim), Math.sin(me.aim)]; me.aimPt = touchAutoAim(me, f[0], f[1], true, me.aimPt && me.aimPt.zb); }
       me.aim = Math.atan2(me.aimPt.y - me.y, me.aimPt.x - me.x);
     } else if (performance.now() - A.t > 600 && Math.hypot(I.mx, I.my) > 0.2) { me.aim = Math.atan2(I.my, I.mx); me.aimPt = null; }
+    const gt = INP.gtap && performance.now() - INP.gtap.t < 250 ? INP.gtap.pt : null; if (gt) { me.aimPt = gt; me.aim = Math.atan2(gt.y - me.y, gt.x - me.x); }
     drawReticle(me, me.aimPt, fing && !blocked && !me.build && !me.dead, INP.tAim.x, fpy);
     // auto-aim (fire button without a finger on the map): a new target takes a moment to lock on, and the shots are looser
     const auto = !fing && !mk && (active || (held && A.btn) || tap), AS = assistLv(), lz = auto && me.aimPt && me.aimPt.zb;
     if (lz !== INP.lockZ) { INP.lockZ = lz || null; INP.lockT = 0; } else INP.lockT = (INP.lockT || 0) + dt;
     INP.lockAcq = lz && AS.acq ? Math.min(1, INP.lockT / AS.acq) : 1;
     I.auto = auto && lz ? AS.spread : 0;
-    I.fire = !blocked && ((fing && held && A.btn) || (mk && (burst || tap || INP.atk)) || (auto && (tap || (burst && INP.lockAcq >= 1)))) && !me.build ? 1 : 0;
+    I.fire = !blocked && ((fing && held && A.btn) || (mk && (burst || tap || INP.atk)) || (auto && (tap || (burst && INP.lockAcq >= 1))) || gt) && !me.build ? 1 : 0; if (gt && I.fire) INP.gtap = null;
     INP.markShow = mk; INP.atkShow = mk && INP.atk;
     CAM.lookX = lerp(CAM.lookX || 0, Math.cos(me.aim) * 1.5, Math.min(1, dt * 2)); CAM.lookY = lerp(CAM.lookY || 0, Math.sin(me.aim) * 1.5, Math.min(1, dt * 2));
     if (!me.build || !BUILD_HOVER || !BUILD_HOVER.t) BUILD_HOVER = me.build ? BUILD_HOVER : null;
