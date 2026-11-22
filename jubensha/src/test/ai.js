@@ -11,6 +11,9 @@ const mock = async route => {
     const orig = (user.match(/原句：([\s\S]*)$/) || [])[1] || '';
     if (MODE === 'slow') { await new Promise(r => setTimeout(r, 13000)); }
     input = { line: MODE === 'leak' ? '我知道，那两个字是赌徒。' : MODE === 'time' ? '我九点五十才回的家。' : MODE === 'confess' ? '是我毒死他的。' : '（换个说法）' + orig.slice(0, 60) };
+  } else if (tool === 'route' && MODE === 'err') { await new Promise(r => setTimeout(r, 1200)); return route.fulfill({ status: 500, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: '{"error":{"message":"overloaded"}}' });
+  } else if (tool === 'route' && MODE === 'names') { input = { act: 'ask', to: '王村长', topic: 'village', item: 'none' };
+  } else if (tool === 'route' && MODE === 'noto') { input = { act: 'ask', to: 'none', topic: 'where', item: 'none' };
   } else if (tool === 'route') {
     const said = (user.match(/【玩家打的话】(.*)/) || [])[1] || '';
     input = /在哪|干什么/.test(said) ? { act: 'ask', to: /王/.test(said) ? 'wang' : /张/.test(said) ? 'zhang' : /胡/.test(said) ? 'hu' : 'li', topic: 'where', item: 'none' } : /给.*看|出示/.test(said) ? { act: 'show', to: 'li', topic: 'none', item: 'c_bullets' } : { act: 'say', to: 'none', topic: 'none', item: 'none' };
@@ -42,6 +45,16 @@ const mock = async route => {
   R.freeAsk = await P.evaluate(() => { const L = __dbg.G.log; const a = L.filter(e => e.k === 'ask' && e.own).pop(); return a ? a.who + '→' + a.to + ' 话题=' + a.topic + ' 原话=' + a.text : 'none'; });
   await P.fill('#freeq', '把墙上的弹孔给李警察看看'); await P.click('.freebar button'); await idle(P);
   R.freeShow = await P.evaluate(() => { const e = __dbg.G.log.filter(x => x.k === 'show').pop(); return e ? e.who + '→' + e.to + ' ' + e.ref : 'none'; });
+  const lastAsk = () => P.evaluate(() => { const L = __dbg.G.log, i = L.map(e => !!(e.k === 'ask' && e.own)).lastIndexOf(true), a = L[i], ans = L.slice(i + 1).find(e => e.k === 'ans' && e.who === (a && a.to)); return a ? a.who + '→' + a.to + ' ' + a.topic + ' | 回答：' + (ans ? ans.text.slice(0, 16) : '无') : 'none'; });
+  await P.evaluate(() => { __dbg.U.target = null; render(); });
+  MODE = 'err'; await P.fill('#freeq', '胡调研，你那晚看到什么可疑的人了吗？'); await P.click('.freebar button'); await P.waitForTimeout(500);
+  R.pendingBubble = await P.evaluate(() => document.querySelectorAll('.pendfree').length); await idle(P);
+  R.routeFailsLocalFallback = await lastAsk();
+  MODE = 'names'; await P.fill('#freeq', '村长，村里平时都怎么过日子？'); await P.click('.freebar button'); await idle(P);
+  R.routeNameNormalized = await lastAsk();
+  MODE = 'noto'; const n0 = await P.evaluate(() => __dbg.G.log.length); await P.fill('#freeq', '你那晚在哪？'); await P.click('.freebar button'); await idle(P); await P.waitForTimeout(300);
+  R.noTargetHandsBack = await P.evaluate(n0 => 'log+' + (__dbg.G.log.length - n0) + ' input=' + document.querySelector('#freeq').value + ' toast=' + [...document.querySelectorAll('.toast')].map(t => t.textContent.slice(0, 12)).join('/'), n0);
+  await P.fill('#freeq', ''); MODE = 'ok';
   R.costTracked = await P.evaluate(() => JSON.stringify(AIKit.usage().session));
   await P.evaluate(() => UI.modal('ai')); await P.screenshot({ path: '/tmp/jbs/51_ai_settings.png' }); await P.evaluate(() => UI.close());
   /* 入局：不是凶手的玩家（李警察）打谎话被拒，实话通过 */

@@ -35,7 +35,7 @@ async function pump() {
   AIJ.busy = 1;
   try {
     for (let guard = 0; guard < 40 && G; guard++) {
-      if (G.freeQ && G.freeQ.length) { await handleFree(G.freeQ.shift()); continue; }
+      if (G.freeQ && G.freeQ.length) { const g = G; g.freeCur = g.freeQ.shift(); netSend(); render(); try { await handleFree(g.freeCur); } finally { if (g.freeCur) { g.freeCur = null; if (G === g) { netSend(); render(); } } } continue; }
       const e = G.log.find(x => x.v === 'p'); if (!e) break;
       await voiceOne(G, e);
     }
@@ -93,9 +93,23 @@ async function voiceOne(g, e) {
 }
 
 /* 玩家自由打字：先归类成已有的动作，再交给引擎 */
+/* 不靠 Claude 的归类：话里提到的人、话题关键词、线索标题 */
+function localRoute(g, f, R, tops, items) {
+  const sc = SCRIPTS[g.sid], t = f.text;
+  const named = R.filter(r => t.includes(sc.roles[r].name) || t.includes(sc.roles[r].seal) || (sc.roles[r].alias || []).some(w => t.includes(w)));
+  let to = named.length === 1 ? named[0] : named.length > 1 ? (named.find(r => new RegExp(sc.roles[r].seal + '[^，,。？?]{0,3}[，,：:]').test(t)) || named.sort((a, b) => t.indexOf(sc.roles[a].name[0]) - t.indexOf(sc.roles[b].name[0]))[0]) : null;
+  if (!to && f.to && R.includes(f.to)) to = f.to;
+  const other = named.find(r => r !== to);
+  let topic = null;
+  if (other && /怎么看|觉得|怎么样|为人|关系|认识|了解/.test(t) && tops.includes('about_' + other)) topic = 'about_' + other;
+  if (!topic) for (const [k, re] of Object.entries(sc.topicWords || {})) if (tops.includes(k) && re.test(t)) { topic = k; break; }
+  const item = /给.{0,6}看|出示|拿出|你看这|看看这/.test(t) ? items.find(id => sc.clues[id] && t.includes(sc.clues[id].title.replace(/[（(].*$/, '').replace(/^(一张|一把|一根|桌上的|墙上的|卧室的)/, ''))) : null;
+  return { to, topic, item: item || null, act: item ? 'show' : to ? 'ask' : 'say' };
+}
 async function handleFree(f) {
   const g = G, sc = SCRIPTS[g.sid], seat = g.seats.indexOf(f.role); if (seat < 0) return;
-  const msg = t => { g.freeMsg = g.freeMsg || {}; g.freeMsg[f.role] = { n: g.nid++, text: t }; save(); netSend(); render(); };
+  const msg = (t, back) => { g.freeCur = null; g.freeMsg = g.freeMsg || {}; g.freeMsg[f.role] = { n: g.nid++, text: t, back: back ? f.text : '' }; save(); netSend(); render(); };
+  const callC = async o => { try { return await AIKit.call(o); } catch (err) { AIJ.err = err.message; throw err; } finally { g.freeCur = null; } };
   const pr = f.pid != null ? g.prompts.find(p => p.id === f.pid && p.to === f.role) : null;
   try {
     if (pr || f.say) {
@@ -103,7 +117,7 @@ async function handleFree(f) {
       const topic = pr ? pr.topic : null;
       const opts = pr ? deckFor(g, f.role, topic) : Object.keys(sc.deck[f.role] || {}).flatMap(tp => deckFor(g, f.role, tp).map((e, i) => Object.assign({ tp, i }, e))).filter(e => e.vol && !g.saidV[saidKey(f.role, e)]);
       const R = sc.roles[f.role], killer = f.role === sc.killer;
-      const v = await AIKit.call({
+      const v = await callC({
         want: 'quick', maxTokens: 300,
         system: '你是剧本杀的裁判助手。玩家扮演「' + R.name + '」，打了一句话。你要判断：这句话和下面哪条“可选说法”意思最接近；它是实话、回避还是谎话（以这个人物自己的剧本为准）。只做判断，不评论。',
         user: '【这个人物的剧本】\n' + (R.bookText || TEXT[R.book]).slice(0, 3000) + '\n\n【可选说法】\n' + opts.map((o, k) => k + '. [' + o.kind + '] ' + o.say).join('\n') + (pr ? '\n\n【被问的问题】' + (pr.q || topicQ(sc, pr.topic)) : '') + '\n\n【玩家打的话】' + f.text,
@@ -124,20 +138,30 @@ async function handleFree(f) {
       /* 讨论里的提问：归到 问谁 + 哪个话题 / 出示哪条 / 闲聊 */
       const R = sc.suspects.filter(r => r !== f.role), tops = sc.topics.filter(x => !x.when || x.when(mkP(g))).map(x => x.id).concat(sc.suspects.map(x => 'about_' + x));
       const items = (g.own[f.role] || []).concat(g.pub);
-      const v = await AIKit.call({
-        want: 'quick', maxTokens: 300,
-        system: '你是剧本杀的裁判助手，把玩家打的一句话归类成一个游戏动作。只能从给定的选项里选。',
+      let v = null;
+      try { v = await callC({
+        want: 'quick', maxTokens: 300, timeout: 9000,
+        system: '你是剧本杀的裁判助手，把玩家打的一句话归类成一个游戏动作。只能从给定的选项里选。to/topic/item 只能填给定的英文 id。',
         user: '【可以问的人】' + R.map(r => r + '=' + sc.roles[r].name).join('，') + (f.to ? '（玩家当前选中了 ' + f.to + '）' : '') +
           '\n【话题】\n' + tops.map(t => t + '：' + topicQ(sc, t)).join('\n') +
           '\n【可以出示的线索/证词】\n' + items.map(id => id + '：' + (sc.clues[id] ? sc.clues[id].title : sc.facts[id].text.slice(0, 30))).join('\n') +
           '\n\n【玩家打的话】' + f.text + '\n\n规则：问某人某件事 → act=ask；拿出某条线索/证词给某人看 → act=show；都不是（闲聊、自言自语、对所有人说的推理）→ act=say。',
         tool: { name: 'route', schema: { type: 'object', properties: { act: { type: 'string', enum: ['ask', 'show', 'say'] }, to: { type: 'string', enum: R.concat(['none']) }, topic: { type: 'string', enum: tops.concat(['none']) }, item: { type: 'string', enum: items.length ? items.concat(['none']) : ['none'] } }, required: ['act', 'to', 'topic', 'item'] } }
-      });
-      const to = R.includes(v.to) ? v.to : f.to && R.includes(f.to) ? f.to : null;
-      if (v.act === 'ask' && to && tops.includes(v.topic)) apply(g, { t: 'ask', to, topic: v.topic, q: f.text }, seat);
-      else if (v.act === 'show' && to && items.includes(v.item)) apply(g, { t: 'show', to, id: v.item, q: f.text }, seat);
-      else if (v.act === 'ask' && to) apply(g, { t: 'free', to, q: f.text }, seat);
-      else apply(g, { t: 'free', q: f.text, kind: 'truth' }, seat);
+      }); } catch (err) { v = null; }
+      /* Claude 的结果先规范化（名字→id），再用本地规则兜底：Claude 失败或没给出对象时问题也不会石沉大海 */
+      const L = localRoute(g, f, R, tops, items);
+      const nTo = x => { if (!x) return null; if (R.includes(x)) return x; return R.find(r => x === sc.roles[r].name || x === sc.roles[r].seal || String(x).includes(sc.roles[r].name)) || null; };
+      const to = (v && nTo(v.to)) || L.to || (f.to && R.includes(f.to) ? f.to : null);
+      const act = v && v.act ? v.act : L.act, topic = v && tops.includes(v.topic) ? v.topic : L.topic, item = v && items.includes(v.item) ? v.item : L.item;
+      if (act === 'show' && to && item) apply(g, { t: 'show', to, id: item, q: f.text }, seat);
+      else if ((act === 'ask' || act === 'show') && !to) return msg('没听出你在问谁：先点一下座位上的人，或者在话里带上名字（比如“张村民，你那晚在哪？”）。', 1);
+      else if (act !== 'say' && to && topic) apply(g, { t: 'ask', to, topic, q: f.text }, seat);
+      else if (act !== 'say' && to) apply(g, { t: 'free', to, q: f.text }, seat);
+      else if (to && /[？?吗呢]\s*$/.test(f.text)) apply(g, topic ? { t: 'ask', to, topic, q: f.text } : { t: 'free', to, q: f.text }, seat);
+      else {
+        apply(g, { t: 'free', q: f.text, kind: 'truth' }, seat);
+        if (!g.freeSayHint) { g.freeSayHint = 1; msg('这句话大家都听到了。想让某个人回答，就先点他的座位，或者在话里带上他的名字。'); }
+      }
     }
   } catch (err) { msg('Claude 没能理解这句话（' + err.message + '），请用按钮操作。'); return; }
   if (G === g) { save(); netSend(); aiAfter(); render(); }

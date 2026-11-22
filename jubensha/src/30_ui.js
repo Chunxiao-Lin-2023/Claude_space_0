@@ -146,7 +146,7 @@ function renderGame() {
   const voicedNow = G.log.filter(e => e.v === 'a' && !AIJ.voiced[e.i]); voicedNow.forEach(e => AIJ.voiced[e.i] = 1);
   if (voicedNow.length && U.seenI) typeNew(voicedNow);
   U.seenI = G.log.length ? G.log[G.log.length - 1].i : 0;
-  const fm = (G.freeMsg || {})[r]; if (fm && fm.n !== U.freeSeen) { U.freeSeen = fm.n; toast(fm.text, 4200); }
+  const fm = (G.freeMsg || {})[r]; if (fm && fm.n !== U.freeSeen) { U.freeSeen = fm.n; toast(fm.text, 4200); const fi = $('#freeq'); if (fm.back && fi && !fi.value) fi.value = fm.back; }
   $$('#app canvas.cimg').forEach(c => drawImg(c));
   if (ph === 'r1') drawPlan($('#plan'), 1);
   if (ph === 'r2') drawPlan($('#plan'), 2);
@@ -205,6 +205,8 @@ function msgHTML(e) {
   const body = e.v === 'p' ? '<span class="dots"><i></i><i></i><i></i></span>' : tx;
   return `<div class="msg k-${e.k} ${mine ? 'mine' : ''} ${e.broke ? 'brk' : ''} ${e.k === 'contra' ? 'contra' : ''} ${e.i > U.seenI ? 'new' : ''}" data-i="${e.i}">${sealH(who)}<div class="bd"><div class="hd2">${hd}${tag}</div><div class="tx">${body}</div></div></div>`;
 }
+/* 自己刚打的话：Claude 还在理解时先显示出来，不会像没发出去 */
+const pendFree = r => [G.freeCur].concat(G.freeQ || []).filter(f => f && f.role === r && f.pid == null && !f.say).map(f => `<div class="msg mine pendfree"><div class="bd"><div class="hd2">${esc(roleName(r))}${f.to ? ' → ' + esc(roleName(f.to)) : ''}</div><div class="tx">${esc(f.text)}</div><div class="small mut">Claude 在理解你的话 <span class="dots"><i></i><i></i><i></i></span></div></div></div>`).join('');
 const logHTML = filter => '<div class="log" onclick="finishTyping()">' + G.log.filter(filter || (() => true)).map(msgHTML).join('') + '</div>';
 function gIntro() {
   const sc = S(), r = myRole(), mine = G.introStyle[r], opts = (sc.intros || {})[r] || [];
@@ -271,7 +273,7 @@ function gDisc() {
   const rd = G.ready[r];
   const free = G.ai ? `<div class="freebar"><input id="freeq" maxlength="120" autocomplete="off" placeholder="${t && t !== r ? '直接打字问' + esc(sc.roles[t].name) + '，或者说“把柴刀给他看”…' : '直接打字：问谁、问什么，或者出示什么…'}" onkeydown="if(event.key==='Enter')UI.free()"><button onclick="UI.free()">发送</button></div>` : '';
   return `<div class="seats">${seats}<button class="sm ghost logtg" onclick="UI.logAll()">${U.logAll ? '只看本轮' : '全部记录'}</button></div>
-  <div class="main">${logHTML(filt)}</div>${free}
+  <div class="main">${logHTML(filt)}${pendFree(r)}</div>${free}
   <div class="bar">${btns}
     <button onclick="UI.listen()" class="${more ? '' : 'ghost'}">${more ? '👂 听大家说' : '👂 大家在等你'}</button>
     <span class="sp"></span>${humanRoles(G).length > 1 ? `<span class="mut small">${humanRoles(G).filter(x => x !== r).map(x => (G.ready[x] ? '✓ ' : '… ') + esc(sc.roles[x].name)).join(' ')}</span>` : ''}
@@ -340,7 +342,7 @@ function modalHTML(k) {
   if (k === 'menu') return dlg('菜单', `<div class="optl"><button onclick="UI.close();UI.modal('rules')">玩法说明</button><button onclick="UI.close();UI.modal('opts')">设置</button><button onclick="UI.close();UI.modal('ai')">AI 玩家（Claude）${typeof AIKit !== 'undefined' && AIKit.available() ? ' · 已开启' : ''}</button>
     <button onclick="UI.toTitle(this)">回到标题（${NET.role ? '离开房间' : '进度已自动保存'}）</button>${HUB ? '<button onclick="UI.hub(this)">返回游戏厅</button>' : ''}</div>`);
   if (k === 'resumeNet') { const sv = loadSave('renchiren'); return dlg('继续上次联机', `<p>上次是联机局（房间 <b class="code">${esc(sv.room || '----')}</b>），你是房主。</p><div class="optl"><button onclick="UI.resumeNet(1)">重开同一个房间，等朋友回来<br><span class="mut small">朋友在“和朋友联机”里输入同一个房间码就能接回他的角色</span></button><button onclick="UI.resumeNet(0)">单机继续<br><span class="mut small">朋友的角色交给 AI，他手上没公开的线索会公开</span></button></div>`); }
-  if (k === 'ai') return dlg('AI 玩家（Claude）', AIKit.panelHTML(G && NET.role === 'guest' ? '你是朋友那一方：AI 由房主那边的 Claude 扮演，你不用设置。' : 'Claude 只负责把 AI 玩家的台词说得自然、听懂你打的字；谁说实话、透露什么、谁破防，仍由游戏规则决定，所以不会剧透。'));
+  if (k === 'ai') return dlg('AI 玩家（Claude）', AIKit.panelHTML(G && NET.role === 'guest' ? '你是朋友那一方：AI 由房主那边的 Claude 扮演，你不用设置。' : 'Claude 只负责把 AI 玩家的台词说得自然、听懂你打的字；谁说实话、透露什么、谁破防，仍由游戏规则决定，所以不会剧透。' + (AIJ.err ? '<br>最近一次调用失败：' + esc(AIJ.err) : '')));
   if (!G) return '';
   if (k === 'book') { const t = U.btab || 'mine'; return dlg('剧本', `<div class="tabs">${[['bg', '背景'], ['mine', '我的剧本'], ['rules', '规则']].map(([x, n]) => `<button class="sm ${t === x ? 'on' : ''}" onclick="U.btab='${x}';UI.modal('book',1)">${n}</button>`).join('')}</div><div class="book">${bookHTML(t)}</div>${bookTip}`); }
   if (k === 'notes') { const n = notes(); return dlg('笔记', `<p class="mut small">只存在这台设备上。读剧本时点一段文字就能摘进来。</p>${n.quotes.length ? '<h3>摘录</h3>' + n.quotes.map((q, i) => `<div class="cl" style="margin:6px 0;display:flex;gap:8px;align-items:flex-start"><div class="tx" style="flex:1">${esc(q)}</div><button class="sm ghost" onclick="UI.delQuote(${i})">删</button></div>`).join('') : ''}<h3>自己记</h3><textarea id="notetx" rows="8" style="width:100%;font:16px/1.7 var(--serif);padding:10px;border-radius:10px;border:1px solid var(--line);background:rgba(0,0,0,.2);color:var(--fg)" placeholder="比如：九点二十五以后谁没有不在场证明？" oninput="UI.saveNote(this.value)">${esc(n.text)}</textarea>`); }
