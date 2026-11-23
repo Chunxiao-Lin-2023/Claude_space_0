@@ -248,20 +248,22 @@ function snakeTick(p, g, dt, ev = 9) {
   const U = g.userData, T = U.tube, P = T.spine, sp = p._spd || 0, mv = clamp(sp / 4, 0, 1); U.ph += dt * (1.3 + sp * 2.6);
   const t = p._mpT != null ? p._mpT : 9, sT = p._msK === 'venom' && p._msT != null ? p._msT : 9, wt = W.t + p.i * 1.7;
   // attack: cock back, strike, hold, recover
-  const cb = p._mcombo || 0, bt = cb === 2 ? 1 : 0; /* (round 38b) blows 1–2 whip the tail round, the third bites */
+  const cb = p._mcombo || 0, bt = 0; /* (round 38b) blows 1–2 whip the tail round; (round 38c) the third slams the tail down over its head — no more biting */
   const cock = bt * (t < 0.1 ? ease(t / 0.1) : t < 0.18 ? 1 - ease((t - 0.1) / 0.08) : 0), strike = bt * (t < 0.1 ? 0 : t < 0.18 ? ease((t - 0.1) / 0.08) : t < 0.28 ? 1 : t < 0.55 ? 1 - ease((t - 0.28) / 0.27) : 0);
-  const wh = !bt && t < 0.5 ? (t < 0.09 ? ease(t / 0.09) * 0.45 : t < 0.27 ? 0.45 - ease((t - 0.09) / 0.18) * 1.45 : -1 * (1 - ease((t - 0.27) / 0.23))) : 0, wTh = wh * (p._mpS ? 1 : -1) * 2.9;
+  const wh = cb < 2 && t < 0.85 ? (t < 0.2 ? ease(t / 0.2) * 0.5 : t < 0.48 ? 0.5 - ease((t - 0.2) / 0.28) * 1.55 : -1.05 * (1 - ease((t - 0.48) / 0.37))) : 0, wTh = wh * (p._mpS ? 1 : -1) * 2.9; /* (round 38c) slower: wind 0.2 s, sweep 0.28 s, recover */
+  const ts = cb === 2 && t < 0.95 ? (t < 0.32 ? ease(t / 0.32) * 2.1 : t < 0.43 ? 2.1 + ease((t - 0.32) / 0.11) * 0.95 : t < 0.6 ? 3.05 : 3.05 * (1 - ease((t - 0.6) / 0.35))) : 0; /* tail slam: up over the head, then down in front */
   // venom: rear up, draw back, spit
   const rear = sT < 0.25 ? ease(sT / 0.25) : sT < 0.85 ? 1 : sT < 1.2 ? 1 - ease((sT - 0.85) / 0.35) : 0, spit = sT > 0.35 && sT < 0.8 ? Math.sin((sT - 0.35) / 0.45 * Math.PI) : 0;
   const intro = ev < 1.4 ? ease(clamp((ev - 0.1) / 0.85, 0, 1)) : 1;
   const sway = Math.sin(wt * 0.9) * 0.05 * (1 - mv);
-  let Hx = 0.16 - cock * 0.22 + strike * 0.85 - rear * 0.12 - spit * 0.05, Hy = 1.02 + Math.sin(wt * 1.3) * 0.03 + cock * 0.12 - strike * 0.42 + rear * 0.45, Hz = sway * 2;
+  let Hx = 0.16 - cock * 0.22 + strike * 0.85 - rear * 0.12 - spit * 0.05 - Math.min(1, ts) * 0.12, Hy = 1.02 + Math.sin(wt * 1.3) * 0.03 + cock * 0.12 - strike * 0.42 + rear * 0.45 + Math.min(1, ts) * 0.12, Hz = sway * 2 - Math.min(1, ts) * 0.25;
   const Cx = -0.06 + strike * 0.35 - rear * 0.05, Cy = 0.2 + strike * 0.05, Gx = -0.58 + strike * 0.2, Gy = snR(SN_NK / (SN_N - 1)) * 0.86;
   const amp = 0.1 + 0.2 * mv, seg = 0.125;
   for (let i = 0; i < SN_N; i++) { let x, y, z;
     if (i <= SN_NK) { const s = i / SN_NK, a = (1 - s) * (1 - s), b = 2 * (1 - s) * s, c = s * s; x = a * Hx + b * Cx + c * Gx; y = a * Hy + b * Cy + c * Gy; z = a * Hz + Math.sin(wt * 0.7 - i * 0.3) * 0.04 * s; }
     else { const k = i - SN_NK, w = Math.min(1, k / 5); x = Gx - k * seg * (1 - 0.12 * mv); y = snR(i / (SN_N - 1)) * 0.86; z = Math.sin(U.ph - k * 0.5) * amp * w;
-      if (wTh) { const ww = Math.min(1, k / 9), an = wTh * ww * (0.75 + 0.25 * ww), dx = x - Gx, c2 = Math.cos(an), s2 = Math.sin(an); x = Gx + dx * c2 - z * s2; z = dx * s2 + z * c2; y += Math.abs(wh) * 0.22 * ww; } }
+      if (wTh) { const ww = Math.min(1, k / 9), an = wTh * ww * (0.75 + 0.25 * ww), dx = x - Gx, c2 = Math.cos(an), s2 = Math.sin(an); x = Gx + dx * c2 - z * s2; z = dx * s2 + z * c2; y += Math.abs(wh) * 0.22 * ww; }
+      if (ts) { const ww = Math.min(1, k / 7), an = ts * ww, dx = x - Gx, dy = y - Gy, c2 = Math.cos(an), s2 = Math.sin(an); x = Gx + dx * c2 + dy * s2; y = Gy - dx * s2 + dy * c2; y = Math.max(y, snR(i / (SN_N - 1)) * 0.5); z += Math.sin(Math.min(an, Math.PI)) * 0.55 * ww; } }
     if (intro < 1) { // coiled up at first, the coil unwinding as it rears
       const a = 1.2 + i * 0.52, rr = 0.16 + i * 0.019, cx = -0.45 + Math.cos(a) * rr, cz = Math.sin(a) * rr, cy = snR(i / (SN_N - 1)) * 0.86 + (i < 6 ? (6 - i) * 0.07 * intro : 0);
       x = cx + (x - cx) * intro; y = cy + (y - cy) * intro; z = cz + (z - cz) * intro; }
@@ -281,7 +283,8 @@ function snakeTick(p, g, dt, ev = 9) {
   U.hood.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(X, Y, Z)); U.hood.position.set(P[6] + X.x * 0.04, P[7] + X.y * 0.04, P[8] + X.z * 0.04);
   U.hoodM.scale.set(1, 0.55 + 0.45 * U.hs, 0.35 + 0.65 * U.hs); U.hoodM.material.userData.glowU && (U.hoodM.material.userData.glowU.value = 0.8 + 0.6 * Math.max(strike, rear) + Math.sin(W.t * 3) * 0.15);
   if (spit > 0.3 && FXR() < dt * 40) { U.head.getWorldPosition(EVW); addP({ x: EVW.x, y: EVW.z, z: EVW.y, vx: Math.cos(p._ly) * 4 + frnd(-1, 1), vy: Math.sin(p._ly) * 4 + frnd(-1, 1), vz: 0.6, g: 0.2, col: '#8dff5a', s: 0.12, life: 0.6, smoke: 1 }); }
-  if (!bt && t > 0.09 && t < 0.3) { const j = (SN_N - 1) * 3; EVW.set(P[j], P[j + 1], P[j + 2]); g.localToWorld(EVW); for (let k = 0; k < 2; k++) addP({ x: EVW.x, y: EVW.z, z: EVW.y, vx: frnd(-0.8, 0.8), vy: frnd(-0.8, 0.8), vz: 0.3, g: 0.6, col: k ? '#9dff6a' : '#d8f0c0', s: 0.09, life: 0.35 }); } /* the whip's swish */
+  if (ts && t > 0.43 && t < 0.48 && FXR() < 0.7) { const j = (SN_N - 1) * 3; EVW.set(P[j], P[j + 1], P[j + 2]); g.localToWorld(EVW); for (let k = 0; k < 10; k++) { const a = k / 10 * 6.28; addP({ x: EVW.x, y: EVW.z, z: EVW.y, vx: Math.cos(a) * 3, vy: Math.sin(a) * 3, vz: 1, g: 4, col: '#8a8a70', s: 0.12, life: 0.5, smoke: 1 }); } }
+  if (cb < 2 && t > 0.2 && t < 0.48) { const j = (SN_N - 1) * 3; EVW.set(P[j], P[j + 1], P[j + 2]); g.localToWorld(EVW); for (let k = 0; k < 2; k++) addP({ x: EVW.x, y: EVW.z, z: EVW.y, vx: frnd(-0.8, 0.8), vy: frnd(-0.8, 0.8), vz: 0.3, g: 0.6, col: k ? '#9dff6a' : '#d8f0c0', s: 0.09, life: 0.35 }); } /* the whip's swish */
   if (strike > 0.9 && FXR() < dt * 20) { U.head.getWorldPosition(EVW); addP({ x: EVW.x, y: EVW.z, z: EVW.y - 0.1, vx: frnd(-1, 1), vy: frnd(-1, 1), vz: 0.4, g: 0.5, col: '#b8ff7a', s: 0.06, life: 0.4 }); }
 }
 // tube update with a reference "up" for the first ring (the cobra's neck hangs straight down from its head)
@@ -511,7 +514,7 @@ function mkTurtle(E) {
   U.ph = 0; U.rt = 0; return g;
 }
 function turtleTick(p, g, dt, ev = 9) {
-  const U = g.userData, B = U.B, sp = p._spd || 0, wt = W.t + p.i * 0.9, spin = p.spinT > 0 || (p._msK === 'spin' && p._msT != null && p._msT < 4);
+  const U = g.userData, B = U.B, sp = p._spd || 0, wt = W.t + p.i * 0.9, spin = p.spinT > 0 || (p._msK === 'spin' && p._msT != null && p._msT < 6);
   U.ph += dt * (sp > 0.3 ? 2 + sp * 1.5 : 0); const walk = sp > 0.3 ? 1 : 0;
   // entrance: falls in shut, slams down, then legs / head / tail come out and the runes light up
   const fall = ev < 0.35 ? Math.pow(1 - ev / 0.35, 2) : 0, out = ev < 0.4 ? 0 : ev < 1.1 ? ease((ev - 0.4) / 0.7) : 1;
@@ -611,7 +614,8 @@ function phoenixTick(p, g, dt, ev = 9) {
   const s0 = born < 0.45 ? 0.3 + 0.7 * ease(born / 0.45) : 1; U.rig.scale.setScalar(s0 * (1 + burst * 0.12));
   bxR(B.neck, 0, Math.sin(wt * 0.7) * 0.1, shoot * 0.2 + cry * 0.35 + burst * 0.2); bxR(B.head, 0, 0, Math.sin(wt * 1.3) * 0.06 + cry * 0.25 - shoot * 0.1);
   U.lowBeak.rotation.z = -Math.PI / 2 + 0.1 - (cry * 0.5 + shoot * 0.25 + burst * 0.3);
-  U.aura.material.opacity = 0.03 + burst * 0.07 + (born < 0.8 ? (0.8 - born) * 0.2 : 0); U.aura.visible = burst > 0.02 || born < 0.8; U.aura.scale.set(1.1 * (1 + burst), 0.6 * (1 + burst), 0.7 * (1 + burst));
+  const reb = p.rebT > 0 ? 1 : 0; /* (round 38c) 涅槃之火 lingers around it */ U.aura.material.opacity = 0.03 + burst * 0.07 + reb * (0.06 + Math.sin(W.t * 9) * 0.02) + (born < 0.8 ? (0.8 - born) * 0.2 : 0); U.aura.visible = burst > 0.02 || born < 0.8 || reb;
+  if (reb && FXR() < dt * 45) { g.getWorldPosition(EVW); const a = FXR() * 6.28, rr = 1 + FXR() * 3; addP({ x: EVW.x + Math.cos(a) * rr, y: EVW.z + Math.sin(a) * rr, z: EVW.y - 0.2 + FXR() * 1.5, vx: -Math.sin(a) * 1.5, vy: Math.cos(a) * 1.5, vz: 1.2, g: -0.3, col: FXR() < 0.5 ? '#ffb030' : '#ff5a1a', s: 0.16, life: 0.6 }); } U.aura.scale.set(1.1 * (1 + burst), 0.6 * (1 + burst), 0.7 * (1 + burst));
   // plumes: flowing behind, fanned
   for (const Pl of U.plumes) { const pos = Pl.geo.attributes.position.array, k = Pl.k, sp2 = (k - 2) * 0.22, L = 1.6 + (k === 2 ? 0.35 : 0);
     let x = -0.42, y = 0.92, z = (k - 2) * 0.05;
@@ -743,3 +747,13 @@ function evoFeathers(e) { const q = W.p[e.o]; if (q) { q._mpT = 0; q._mA = e.a; 
 function evoMoonFx(e) { shake(e.x, e.y, 0.9); sfx('collapse', e.x, e.y); fxAdd({ kind: 'ring', x: e.x, y: e.y, z: e.z + 0.08, s0: 0.8, s1: e.r, life: 0.6, col: '#bff8ff', op: 0.9 }); fxAdd({ kind: 'ball', x: e.x, y: e.y, z: e.z + 0.5, s0: 0.5, s1: 3.5, life: 0.4, col: '#eaffff', op: 0.6 });
   for (let k = 0; k < 50; k++) { const a = FXR() * 6.28, r = FXR() * e.r; addP({ x: e.x + Math.cos(a) * r * 0.3, y: e.y + Math.sin(a) * r * 0.3, z: e.z + 0.1, vx: Math.cos(a) * frnd(3, 8), vy: Math.sin(a) * frnd(3, 8), vz: frnd(1, 5), g: -9, col: FXR() < 0.5 ? '#9a8a70' : '#bff8ff', s: 0.15, life: 0.8 }); }
   if (typeof addDecal === 'function') addDecal(e.x, e.y, e.z + 0.02, e.r * 0.5, '#2a2a30'); }
+
+/* (round 38c) lingering skill zones: 赤龙's burning trail, 玉兔's moonlit crater */
+const EVZ = [];
+function evoZone(e) { const end = W.t + e.t; EVZ.push({ k: e.zk, x: e.x, y: e.y, x2: e.x2, y2: e.y2, z: e.z, r: e.r, end });
+  if (e.zk === 'moon') { fxAdd({ kind: 'disc', x: e.x, y: e.y, z: e.z + 0.05, s0: e.r, s1: e.r, life: e.t, col: '#bff0ff', op: 0.16 }); fxAdd({ kind: 'ring', x: e.x, y: e.y, z: e.z + 0.06, s0: e.r, s1: e.r, life: e.t, col: '#dffaff', op: 0.5 }); } }
+function evoZoneTick(dt) {
+  for (let i = EVZ.length - 1; i >= 0; i--) { const Z = EVZ[i], left = Z.end - W.t; if (left <= 0) { EVZ.splice(i, 1); continue; } const f = Math.min(1, left / 0.8);
+    if (Z.k === 'fire') { const n = Math.ceil(dt * 70 * f); for (let k = 0; k < n; k++) { const u = FXR(), x = Z.x + (Z.x2 - Z.x) * u + frnd(-0.6, 0.6), y = Z.y + (Z.y2 - Z.y) * u + frnd(-0.6, 0.6); addP({ x, y, z: Z.z + 0.05, vx: frnd(-0.3, 0.3), vy: frnd(-0.3, 0.3), vz: frnd(1, 2.2), g: -0.5, col: FXR() < 0.4 ? '#ffd040' : FXR() < 0.7 ? '#ff7a20' : '#d03010', s: 0.16 + FXR() * 0.1, life: 0.55 }); } if (thr('ezf', 0.5)) sfx('flamer', (Z.x + Z.x2) / 2, (Z.y + Z.y2) / 2); }
+    else if (Z.k === 'moon') { if (FXR() < dt * 30 * f) { const a = FXR() * 6.28, rr = Math.sqrt(FXR()) * Z.r; addP({ x: Z.x + Math.cos(a) * rr, y: Z.y + Math.sin(a) * rr, z: Z.z + 0.1, vx: 0, vy: 0, vz: 0.9, g: -0.1, col: FXR() < 0.5 ? '#eaffff' : '#9fe8ff', s: 0.08, life: 1.0 }); } } }
+}
