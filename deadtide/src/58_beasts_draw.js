@@ -129,6 +129,8 @@ function mprjMake(kd) {
   else if (kd === 'rocket') { const body = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.42, 8).rotateZ(Math.PI / 2), L('#d8dde2')); g.add(body); const nose = new THREE.Mesh(new THREE.ConeGeometry(0.055, 0.14, 8).rotateZ(-Math.PI / 2).translate(0.28, 0, 0), L('#d04030')); g.add(nose);
     for (let k = 0; k < 4; k++) { const f = new THREE.Mesh(boxG(0.12, 0.01, 0.09, -0.18, 0, 0.06), L('#5a6a7a')); f.rotation.x = k * Math.PI / 2; g.add(f); }
     const fl = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.32, 8).rotateZ(Math.PI / 2).translate(-0.36, 0, 0), new THREE.MeshBasicMaterial({ color: '#ffb84a', transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false })); g.add(fl); g.userData.fl = fl; }
+  else if (kd === 'feather') { const ad = c => new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false }); /* (round 37) 火凤's burning feather */
+    const a = new THREE.Mesh(new THREE.SphereGeometry(0.1, 10, 6), ad('#ff6a1e')); a.scale.set(3.2, 0.25, 0.9); g.add(a); const b = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), ad('#ffd060')); b.scale.set(2.4, 0.3, 0.6); b.position.x = 0.12; g.add(b); }
   else if (kd === 'cannon') { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.22, 8).rotateZ(Math.PI / 2), L('#c8a040')); g.add(m); const n = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6).translate(0.11, 0, 0), L('#c8a040')); g.add(n); const gl = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 6).translate(-0.08, 0, 0), new THREE.MeshBasicMaterial({ color: '#ffd27a', transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false })); g.add(gl); }
   else { const m = new THREE.Mesh(new THREE.SphereGeometry(0.2, 10, 8), new THREE.MeshBasicMaterial({ color: '#9fe8ff', transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false })); g.add(m); const c = new THREE.Mesh(boxG(0.26, 0.22, 0.24), L('#3a4048')); g.add(c); }
   g.traverse(o => { if (o.isMesh && o.material.type !== 'MeshBasicMaterial') o.castShadow = true; }); SCN.add(g); return g;
@@ -162,7 +164,7 @@ function fxTick(dt) {
 // a blow lands (mhit): slash arcs for blades / kicks, shock ring + crack for the ground smashes, sparks on what it hit
 function mechHitFx(e, q) {
   if (!q || !inMech(q)) return; const M = mechOf(q), a = q._mA != null && q._mAT > 0 ? q._mA : q.aim, c = q._mcombo || 0, s = (MECH_DIM[M.style] || {}).s || 1;
-  if (M.atk === 'chop' || M.atk === 'kick') { // a bright crescent along the swing, tilted by the move
+  if (M.atk === 'chop' || M.atk === 'kick' || (M.atk === 'claw' && !e.g)) { // a bright crescent along the swing, tilted by the move; (round 37) 铁熊's paw swipes too
     const ax = (q.rx != null ? q.rx : q.x), ay = (q.ry != null ? q.ry : q.y), az = (q.zv != null ? q.zv : q.z) + (M.atk === 'kick' ? 0.5 : 1.3) * s, R = M.reach * 0.95;
     const roll = M.atk === 'kick' ? 0.15 : c === 0 ? 0.75 : c === 1 ? 0.12 : 1.45, col = M.atk === 'kick' ? '#ffe680' : '#ffb060';
     fxAdd({ kind: 'arc', x: ax, y: ay, z: az, yaw: a, roll: (q._mpS ? 1 : -1) * roll, s0: R * 0.7, s1: R * 0.95, life: 0.22, col, op: 0.65 });

@@ -393,7 +393,7 @@ function drawPlayers(vl, dt) {
   while (OBJ.pl.length < W.p.length) OBJ.pl.push(mkPlayerModel(OBJ.pl.length));
   OBJ.pl.forEach((m, i) => { const p = W.p[i]; m.g.visible = !!p && !p.gone && p.L <= vl; });
   W.p.forEach((p, i) => {
-    const m = OBJ.pl[i]; if (!m.g.visible) return;
+    const m = OBJ.pl[i]; if (!m.g.visible) return; if (m.evo) m.evo.visible = false; /* (round 37) the beast shows only while evoDraw says so */
     if (!m.veh) { m.veh = mkVehicles(); m.g.add(m.veh); }
     let zv = (p.zv != null ? p.zv : p.z) + (p.rjz != null ? p.rjz : p.jz || 0), gx = p.rx != null ? p.rx : p.x, gy = p.ry != null ? p.ry : p.y; // (round 34) rx / ry: drawn between sim steps
     // (round 26) the back-seat rider is drawn glued to the driver as drawn on this screen (their own reported position lags behind over the network)
@@ -413,7 +413,7 @@ function drawPlayers(vl, dt) {
       if (p._px == null || p._ly == null) { p._px = gx; p._py = gy; p._ly = p.aim; p._spd = 0; }
       const mvx = gx - p._px, mvy = gy - p._py; p._spd = lerp(p._spd || 0, dt > 0 ? Math.min(8, Math.hypot(mvx, mvy) / dt) : 0, Math.min(1, dt * 10)); p._px = gx; p._py = gy;
       if (p._spd > 0.4 && Math.hypot(mvx, mvy) > 1e-4) { const md = Math.atan2(mvy, mvx); p._mback = Math.cos(angDiff(md, p.aim)) < (p._mback ? -0.2 : -0.45); p._ly = angLerp(p._ly, p._mback ? md + Math.PI : md, Math.min(1, dt * 4)); } else if (p._spd < 0.25) { p._mback = false; p._ly = angLerp(p._ly, p.aim, Math.min(1, dt * 1.6)); } // (round 34b) backing away: walk backwards, still facing the fight
-      if (p._mAT > 0) { p._mAT -= dt; p._ly = angLerp(p._ly, p._mA, Math.min(1, dt * 14)); } p._uy = p._mAT > 0 ? p._mA : p.aim; m.mech.rotation.y = -p._ly; /* (round 35) swing / shoot toward the locked target */ if (m.mech.visible) { mechTick(p, m.mech, dt, xfing ? clamp((f - 0.2) / 0.8, 0, 1) : 1); if (!xfing) mechDamageFx(p, m.mech, dt); } return; /* (round 36) battle damage */
+      if (p._mAT > 0) { p._mAT -= dt; p._ly = angLerp(p._ly, p._mA, Math.min(1, dt * 14)); } p._uy = p._mAT > 0 ? p._mA : p.aim; m.mech.rotation.y = -p._ly; /* (round 35) swing / shoot toward the locked target */ const evS = xfing ? 1 : evoDraw(p, m, dt); /* (round 37) beast form */ if (evS <= 0.02) m.mech.visible = false; if (m.mech.visible) { mechTick(p, m.mech, dt, xfing ? clamp((f - 0.2) / 0.8, 0, 1) : 1); if (evS < 1) m.mech.scale.multiplyScalar(evS); if (!xfing && evS > 0.5) mechDamageFx(p, m.mech, dt); } return; /* (round 36) battle damage */
     }
     if (m.mech) m.mech.visible = false; m.lower.visible = m.upper.visible = true;
     if (m.veh && m.veh.userData.all) for (const q of m.veh.userData.all) if (q && (q.rotation.z || q.position.y || q.scale.x !== 1)) { q.rotation.z = 0; q.position.y = 0; q.scale.set(1, 1, 1); } // undo the fold

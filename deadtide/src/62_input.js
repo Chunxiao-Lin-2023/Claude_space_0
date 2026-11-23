@@ -70,7 +70,12 @@ function doBash() {
 }
 // knife: find the zombie, turn to it, lunge into reach and slash; the host settles the damage
 // (round 34b) vehicle ⇄ mech (1 s); the host says why not if it can't
-function doXform() { const me = W.p[ME]; if (!me || !me.ride || me.down) return; if (me.mtr > 0) return; act('xform'); sfx('swap'); }
+function doXform(v) { const me = W.p[ME]; if (!me || !me.ride || me.down) return; if (me.mtr > 0) return; act('xform', v); sfx('swap'); }
+// (round 37) X / the transform key: tap = one step on (vehicle → mech → beast when the 进化 meter is full; a beast turns back into the mech); hold in mech / beast = straight back to the vehicle
+let XH = null;
+function xPress() { const me = W.p[ME]; if (!me || !me.ride) return; if (me.mform !== 1) { doXform(); return; } if (XH) return;
+  XH = { done: false }; XH.tm = setTimeout(() => { if (XH && !XH.done) { XH.done = true; doXform('veh'); } }, 450); }
+function xRelease() { if (!XH) return; clearTimeout(XH.tm); if (!XH.done) doXform(); XH = null; }
 function doKnife() {
   const me = W.p[ME]; if (!me || me.dead || me.down || me.build || me.ride || me.pass >= 0 || me.medT > 0 || me.jmp || (me.knCD || 0) > performance.now()) return;
   if (me.melee === 1 && me.shield) return doBash();
@@ -110,7 +115,7 @@ addEventListener('keydown', e => {
   INP.keys[k] = true;
   if ([' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Tab', 'PageUp', 'PageDown', 'Home'].includes(k)) e.preventDefault();
 });
-addEventListener('keyup', e => { const k = e.key.length === 1 ? e.key.toLowerCase() : e.key; INP.keys[k] = false; if (k === 'g' && INP.nadeAim && INP.nadeAim.pc) nadeRelease(); });
+addEventListener('keyup', e => { const k = e.key.length === 1 ? e.key.toLowerCase() : e.key; INP.keys[k] = false; if (k === 'g' && INP.nadeAim && INP.nadeAim.pc) nadeRelease(); if (k === 'x') xRelease(); });
 addEventListener('blur', () => { INP.keys = {}; INP.mL = INP.mR = false; });
 function onKeyPress(k) {
   if (STATE.mode !== 'play' || !W) { if (k === 'Enter' && STATE.mode === 'title') $('soloBtn').click(); return; }
@@ -134,7 +139,7 @@ function onKeyPress(k) {
     if ((k === 'Enter' || k === ' ') && PLAN) return confirmPlan();
   } else { const n = '1234'.indexOf(k); if (n >= 0) return quickWpn(n); const gk = '5678'.indexOf(k); if (gk >= 0) return setGren(gk); if (k === 'r') return act('reload'); if (k === 'z') return swapLast(); }
   if (k === 'i') return openKit();
-  if (k === 'x' && me.ride) return doXform(); // (round 34b) driving: X = transform
+  if (k === 'x' && me.ride) { xPress(); return; } // (round 34b) driving: X = transform; (round 37) tap / hold
   if (k === 'x' && !me.build) return switchMelee();
   if (k === 'v') return doKnife();
   if (k === 'g') { if (KD('Shift') && !inMech(me)) return cycleGren(1); if ((gCount(me, me.gt || 0) > 0 || inMech(me)) && !me.down) INP.nadeAim = { pc: 1 }; else toast('没有' + GREN[me.gt || 0].name + '了：按 5–8 换别的手雷'); return; } // hold G: the landing ring follows the cursor; let go to throw
@@ -455,7 +460,7 @@ document.addEventListener('pointerdown', e => { const el = $('wpick'), nk = docu
 })();
 bindBtn('tLUp', () => viewStep(1)); bindBtn('tLDn', () => viewStep(-1));
 bindBtn('vToggle', () => { document.body.classList.toggle('vopen'); $('vToggle').classList.toggle('on', document.body.classList.contains('vopen')); sfx('click'); });
-bindBtn('tShove', () => { if (!inGame()) return; if (W.p[ME].ride) return doXform(); INP.knHeld = true; doKnife(); }, () => { INP.knHeld = false; }); // (round 34b) driving: this key is 变形
+bindBtn('tShove', () => { if (!inGame()) return; if (W.p[ME].ride) return xPress(); INP.knHeld = true; doKnife(); }, () => { INP.knHeld = false; xRelease(); }); // (round 34b) driving: this key is 变形
 // (round 23b) swipe off the melee key (any direction) = swap knife <-> shield
 (() => {
   const el = document.getElementById('tShove'); let st = null;

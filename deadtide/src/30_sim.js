@@ -107,7 +107,7 @@ function xformDeny(p, to) {
   return '';
 }
 function startXform(p, to, why) {
-  p.mto = to ? 1 : 0; p.mtr = BAL.xformT; if (!to) { p.mform = 0; p.mfly = false; } // (turning back, it is a vehicle again as soon as it starts folding: the mech's guard drops)
+  p.mto = to ? 1 : 0; p.mtr = BAL.xformT; if (!to) { p.mform = 0; p.mfly = false; p.evoOn = false; p.spinT = 0; p.rageT = 0; } // (turning back, it is a vehicle again as soon as it starts folding: the mech's guard drops)
   if (to) for (const q of W.p) if (q.pass === p.i) q.pass = -1; // the back seat folds away
   if (why) emit({ k: 'deny', p: p.i, why });
   emit({ k: 'xform', o: p.i, to: p.mto, v: p.veh });
@@ -188,7 +188,7 @@ function mechLock(p, M, far) {
   return best;
 }
 function mechPunch(p) {
-  if (p.gcd > 0) return; const M = mechOf(p); p.gcd = M.rate; p.mside = 1 - (p.mside || 0); if (M.atk === 'mgun') return mechGun(p, M); /* (round 36n) 疾风's machine gun */
+  if (p.gcd > 0) return; const M = mechOf(p); p.gcd = M.rate; p.mside = 1 - (p.mside || 0); if (M.atk === 'mgun') return mechGun(p, M); /* (round 36n) 疾风's machine gun */ if (M.evo) return evoAttack(p, M); /* (round 37) beast form */
   p.mcmb = W.t - (p.mlastT || -9) < M.rate + 0.5 ? ((p.mcmb || 0) + 1) % 3 : 0; p.mlastT = W.t; // (round 34d) a quick follow-up continues the combo (the host decides, every screen shows the same move)
   // (round 35) turn to the target (and step in if it is just out of reach) so the blow / shot goes where the zombie is
   const fistN = false, /* (round 36n) 铁卫's third blow is a pound now, not the fist cannon */ T = mechLock(p, M, fistN ? 7 : 0), ranged = mechRanged(M) || fistN; let a = p.aim; // the fist cannon reaches 7
@@ -249,6 +249,7 @@ function mechSkill(p, v) {
   const M = mechOf(p); if ((p.mcd || 0) > 0) { emit({ k: 'deny', p: p.i, why: M.sn + '冷却中（' + Math.ceil(p.mcd) + ' 秒）' }); return; }
   let tx = v && v.x != null ? v.x : p.x + Math.cos(p.aim) * 8, ty = v && v.y != null ? v.y : p.y + Math.sin(p.aim) * 8;
   const ang = Math.atan2(ty - p.y, tx - p.x), dist = Math.hypot(tx - p.x, ty - p.y);
+  if (M.evo) return evoSkill(p, M, ang, dist, tx, ty); /* (round 37) beast skills */
   if (M.skill === 'fly') { // (round 34d) 苍隼: take off / come down
     if (!p.mfly) { if ((p.bat || 0) < 15) { emit({ k: 'deny', p: p.i, why: '电量不够起飞' }); return; } if (skyTop(p.x, p.y) > p.L) { emit({ k: 'deny', p: p.i, why: '头顶有屋顶，飞不起来' }); return; } p.mfly = true; p.alt = 0; p.land = false; p._cz = null; }
     else p.land = true;
@@ -313,6 +314,7 @@ function stepDelayed(dt) {
     if (q.thr != null) { const z = W.zs.find(z => z.id === q.thr); if (z && z.hp > 0) { const f = clamp(1 - q.t / q.T, 0, 1), gz = surfZ(q.x, q.y, q.L); z.x = lerp(q.x0, q.x, f); z.y = lerp(q.y0, q.y, f); z.z = lerp(q.z0, gz, f) + Math.sin(f * Math.PI) * 3; z.stun = Math.max(z.stun || 0, 0.3);
       if (q.t <= 0) { z.L = q.L; z.z = gz; const o = W.p[q.o]; hurtZombie(z, 200 * mechMul(), o, 0, 0); for (const y of W.zs) { if (y === z || y.hp <= 0 || y.hidden) continue; const d = Math.hypot(y.x - q.x, y.y - q.y); if (d < 2) { hurtZombie(y, 100, o, (y.x - q.x) / (d || 1) * 5, (y.y - q.y) / (d || 1) * 5); y.stun = Math.max(y.stun || 0, 0.8); } } emit({ k: 'slam', x: r2(q.x), y: r2(q.y), z: r2(gz), r: 2 }); emit({ k: 'sfx', n: 'smash', x: q.x, y: q.y }); } } else q.t = 0; continue; } // (round 34b) a thrown zombie flies, then smashes down
     if (q.t > 0) continue; if (q.punch != null) { if (W.p[q.punch]) mechPunchHit(W.p[q.punch], q.c, q.a); continue; } const o = W.p[q.o];
+    if (q.stomp) { if (o) { evoRound(o, q.x, q.y, q.R, q.dmg, q.kb || 8, q.st || 1); if (q.moon) emit({ k: 'moonfx', x: r2(q.x), y: r2(q.y), z: r2(surfZ(q.x, q.y, q.L)), r: q.R }); } continue; } if (q.claw) { if (o && inMech(o)) evoClaw(o, q.a, q.dmg); continue; } /* (round 37) beast blows */
     if (q.launch) { if (o && inMech(o)) { const ft = q.ft * frnd(0.85, 1.1), sd = rand() < 0.5 ? -1 : 1, ca2 = Math.cos(o.aim), sa2 = Math.sin(o.aim); emit({ k: 'mrkt', o: q.o, kd: 'bigparcel', x: r2(o.x - ca2 * 0.5 * q.s2 - sa2 * sd * 0.3), y: r2(o.y - sa2 * 0.5 * q.s2 + ca2 * sd * 0.3), z: r2(pZ(o) + 2.4 * q.s2), e: [r2(q.x), r2(q.y), r2(q.zz)], t: r2(ft) }); W.dly.push({ t: ft, box: 1, big: 1, x: q.x, y: q.y, zz: q.zz, R: 1.5, dmg: BAL.rainDmg * mechMul(), o: q.o }); } continue; } /* (round 36n) one parcel of the 快递雨 torrent leaves the rack */
     if (q.fistZ != null) { const z = W.zs.find(z => z.id === q.fistZ); if (z && z.hp > 0) { const big = ZT[z.k].boss || ZT[z.k].kaiju; hurtZombie(z, 140 * mechMul(), o, q.dx * (big ? 2 : 9), q.dy * (big ? 2 : 9)); z.stun = Math.max(z.stun || 0, big ? 0.2 : 1); emit({ k: 'mhit', o: q.o, h: 1, x: r2(z.x), y: r2(z.y), z: r2(z.z + 0.8), r: 1 }); } continue; }
     if (q.shell) { explode(q.x, q.y, q.zz != null ? q.zz : surfZ(q.x, q.y, q.L) + 0.3, o, q.R, q.dmg); continue; }
@@ -398,7 +400,7 @@ function stepMove(p, dt) {
   }
   if (p.dash) { const D = p.dash, f = Math.min(dt, D.T - D.t) / D.T; moveEnt(p, D.dx * f, D.dy * f, 'p', true); D.t += dt; if (D.t >= D.T) p.dash = null; p.z = pZ(p); p.anim += dt * 8; return; }
   if (p.L > 0 && p.L > skyTop(p.x, p.y)) { p.L = skyTop(p.x, p.y); p.z = pZ(p); } // (round 31) knocked down mid-air, or a save made in flight: fall to what is below
-  const spd = BAL.pSpeed * (p.down ? 0.22 : 1) * (p.medT > 0 && !p.ride ? 0.45 : 1) * (p.build ? 0.9 : 1) * (inMud(p.x, p.y, p.L) && !(p.ride && VEH[p.veh] && VEH[p.veh].mud) ? MUD_SLOW : 1) * (p.ride && VEH[p.veh] ? (inMech(p) ? mechOf(p).spd : VEH[p.veh].spd) : 1) * (p.mtr > 0 ? 0 : 1); // (round 34b) standing still while it transforms
+  const spd = BAL.pSpeed * (p.down ? 0.22 : 1) * (p.medT > 0 && !p.ride ? 0.45 : 1) * (p.build ? 0.9 : 1) * (inMud(p.x, p.y, p.L) && !(p.ride && VEH[p.veh] && VEH[p.veh].mud) ? MUD_SLOW : 1) * (p.ride && VEH[p.veh] ? (inMech(p) ? mechOf(p).spd * (p.spinT > 0 ? 1.7 : 1) : VEH[p.veh].spd) : 1) * (p.mtr > 0 ? 0 : 1); // (round 34b) standing still while it transforms
   const tx = I.mx * k * spd, ty = I.my * k * spd, a = Math.min(1, dt * 14);
   p.vx = lerp(p.vx, tx, a); p.vy = lerp(p.vy, ty, a);
   p.kbx *= Math.max(0, 1 - dt * 6); p.kby *= Math.max(0, 1 - dt * 6);
@@ -491,7 +493,7 @@ function stepActions(p, dt) {
   p.fireCD -= dt; p.shoveCD -= dt; p.emptyT -= dt; if (p.bloom) p.bloom = Math.max(0, p.bloom - dt * 2.2);
   for (let wi = 1; wi < NW; wi++) if (!WPN[wi].inf && p.ammo[wi] > ammoCap(wi)) p.ammo[wi] = ammoCap(wi); // (round 32) backpack: ammo you carry is capped (grows with the upgrade)
   // (round 29) gyrocopter: burns fuel while you're in it; empty → it comes down by itself; touching down gets you out
-  if (airborne(p) && p.mform === 1) { // (round 34d) 苍隼 in flight: twice the energy (the other half is the usual mech drain below); low → it comes down; touching down it stands again
+  if (airborne(p) && p.mform === 1 && !p.evoOn) { // (round 34d) 苍隼 in flight: twice the energy (the other half is the usual mech drain below); low → it comes down; touching down it stands again
     p.bat = Math.max(0, (p.bat || 0) - dt);
     if (p.bat < 10 && !p.land) { p.land = true; emit({ k: 'deny', p: p.i, why: '苍隼电量低，正在降落' }); }
     const g = skyTop(p.x, p.y); if (p.land && p.z - surfZ(p.x, p.y, g) < 0.08 && landOK(p.x, p.y)) { p.mfly = false; p.land = false; p.L = g; p.z = surfZ(p.x, p.y, g); p.alt = 0; emit({ k: 'sfx', n: 'land', x: p.x, y: p.y, o: p.i }); }
@@ -505,8 +507,9 @@ function stepActions(p, dt) {
   if (!p.ride && (p.mform || p.mtr || p.mfly)) { p.mform = 0; p.mtr = 0; p.mfly = false; } // off the vehicle (got out, knocked down): it is a vehicle again
   if (p.mtr > 0) { p.mtr -= dt; if (p.mtr <= 0) { p.mtr = 0; p.mform = p.mto || 0; if (p.mform && VEH[p.veh] && VEH[p.veh].fly) { const g = skyTop(p.x, p.y); p.L = g; p.z = surfZ(p.x, p.y, g); p.alt = 0; p.land = false; } } } // (round 34b) a gyrocopter that stood up drops to the ground
   if (p.bat == null) p.bat = BAL.mechBat;
+  evoStep(p, dt); /* (round 37) */
   if (inMech(p)) { // the energy runs down while you're a mech; out of it you fold back into the vehicle
-    p.bat = Math.max(0, p.bat - dt);
+    if (!p.evoOn) p.bat = Math.max(0, p.bat - dt); /* (round 37) a beast runs on its 进化 meter instead */
     if (p.bat < BAL.mechLow && !p._lowB) { p._lowB = 1; emit({ k: 'deny', p: p.i, why: '机甲电量低（还剩 ' + Math.ceil(p.bat) + ' 秒），没电会变回载具' }); }
     if (p.bat <= 0) mechEject(p, '机甲没电了，变回载具：电会慢慢充回来，商店里能马上充满');
   } else { if (p.bat >= BAL.mechLow) p._lowB = 0; p.bat = Math.min(BAL.mechBat, p.bat + BAL.batRegen * dt); if (p.mh) for (let v = 1; v < p.mh.length; v++) if (p.mh[v] != null && MECHS[v] && p.mh[v] < MECHS[v].hp) p.mh[v] = Math.min(MECHS[v].hp, p.mh[v] + MECHS[v].hp * BAL.mechRegen * dt); }
@@ -784,7 +787,7 @@ function hurtZombie(z, dmg, p, kx, ky, quiet) {
 }
 let KSRC = '';
 function killZombie(z, p) {
-  z.hp = 0; W.kills++; if (p) p.kills++; if (z.mins && z.mins.length) for (const o of W.zs) if (o.hp > 0 && z.mins.includes(o.id)) { o.mins = null; killZombie(o, null); } /* (round 36l) the ones a 唤尸者 raised drop with it */ if (p && inMech(p)) p.bat = Math.min(BAL.mechBat, (p.bat || 0) + 1.5); // (round 36) a mech recharges a little on every kill
+  z.hp = 0; W.kills++; if (p) p.kills++; if (z.mins && z.mins.length) for (const o of W.zs) if (o.hp > 0 && z.mins.includes(o.id)) { o.mins = null; killZombie(o, null); } /* (round 36l) the ones a 唤尸者 raised drop with it */ if (p && inMech(p)) { p.bat = Math.min(BAL.mechBat, (p.bat || 0) + 1.5); evoGainKill(p, z); } // (round 36) a mech recharges a little on every kill
   taskAdd('kill'); if (ZT[z.k].boss || ZT[z.k].elite || z.k === 'brute' || z.k === 'armored') taskAdd('elite'); if (KSRC === 'nade') taskAdd('nade'); // (round 32) permanent task counters
   if (ZT[z.k].blast) zBlast(z.x, z.y, z.z + 0.5);
   emit({ k: 'zdie', x: r2(z.x), y: r2(z.y), z: r2(z.z), t: z.k, f: r2(z.face), id: z.id, gz: ZT[z.k].fly ? r2(skyTop(z.x, z.y) * FH) : undefined }); // (round 35) gz: where a shot bird lands
@@ -797,6 +800,8 @@ function hurtPlayer(p, dmg, src) {
   if (src && src.k && ZT[src.k] && (ZT[src.k].kaiju || ZT[src.k].elite) && !inMech(p)) dmg *= BAL.bigFoot; // (round 36) kaiju / 能力者 hit people on foot softer (they're tuned against mechs)
   if (W.phase === 'day' && src && src.k && ZT[src.k]) dmg *= BAL.day.dmg; // (round 36b) softer bites by day
   if (DBG && DBG.god) return;
+  if (p.evoOn && inMech(p)) { if (p.spinT > 0) return; if (p.veh === 1 && rand() < 0.35) { emit({ k: 'dodge', p: p.i, x: r2(p.x), y: r2(p.y), z: r2(p.z) }); return; } } /* (round 37) 玄龟 spinning: untouchable; 青蛇: slips away */
+  for (const q of W.p) if (q !== p && q.evoOn && q.veh === 4 && inMech(q) && !q.gone && !q.dead && Math.hypot(q.x - p.x, q.y - p.y) < BAL.evoAura) { dmg *= BAL.evoAuraMul; break; } /* (round 37) 玄甲 aura */
   if (inMech(p)) { // (round 34b) the hull takes the hit (by how armoured that mech is); a little still gets through to you; at zero it falls back into a vehicle
     const M = mechOf(p); p.mh = p.mh || []; p.mh[p.veh] = Math.max(0, mhpOf(p) - dmg * M.armor); emit({ k: 'phurt', p: p.i, d: 0 });
     if (p.mh[p.veh] <= 0) mechEject(p, M.name + '的装甲被打穿了，变回载具：装甲会慢慢恢复，商店里能马上修好');
@@ -887,7 +892,9 @@ function doAct(p, a, v) {
     case 'build': doBuild(p, v.x, v.y, v.l, v.b, v.d); break;
     case 'demo': doDemolish(p, v.x, v.y, v.l); break;
     case 'crush': if (inMech(p) && typeof v === 'number' && v >= 0 && v < NC && MECH_CRUSH.has(W.blk[v]) && !(W.mine && W.mine.has(v)) && Math.hypot(cx_(v) + 0.5 - p.x, cy_(v) + 0.5 - p.y) < 2.6) { const r = B[W.blk[v]].res, g = GATHER[W.blk[v]]; if (p.veh === 3 && g) { mechScar(v, null, null, BAL.workerRegrow); const n = Math.max(1, Math.round(rand(g.n[0], g.n[1]) * BAL.workerGather)); W.res[g.res] += n; taskAdd('gather'); emit({ k: 'loot', p: p.i, x: cx_(v) + 0.5, y: cy_(v) + 0.5, z: cl_(v) * FH + 1, text: '+' + n + ' ' + RES.find(q => q.k === g.res).name }); setCell(v, 0, W.slab[v], null, 'mine'); } /* (round 36) 工蜂's passive: what it flattens is gathered (and so doesn't grow back) */ else { mechScar(v); setCell(v, 0, W.slab[v], null, 'brk'); if (r && rand() < 0.5) W.res[r] = (W.res[r] || 0) + 1; } emit({ k: 'sfx', n: 'bash', x: cx_(v) + 0.5, y: cy_(v) + 0.5 }); } break; // (round 34d) a mech flattens what is in its way
-    case 'xform': { const to = p.mform === 1 ? 0 : 1, why = xformDeny(p, to); if (why) emit({ k: 'deny', p: p.i, why }); else startXform(p, to); } break; // (round 34b)
+    case 'xform': { if (p.mtr > 0) break; if (v === 'veh') { if (p.mform === 1) { devolve(p); startXform(p, 0); } break; } /* (round 37) hold X: straight back to the vehicle */
+      if (p.evoOn) { devolve(p); break; } if (p.mform === 1 && (p.evo || 0) >= 100 && EVO[p.veh]) { evolve(p); break; } /* tap X: a full meter evolves the mech; in beast form it turns back */
+      const to = p.mform === 1 ? 0 : 1, why = xformDeny(p, to); if (why) emit({ k: 'deny', p: p.i, why }); else startXform(p, to); } break; // (round 34b)
     case 'vdef': if (v >= 1 && ownsVeh(p, v) && p.ride && v !== p.veh && (p.mform === 1 || p.mtr > 0)) { emit({ k: 'deny', p: p.i, why: '先变回载具再换车' }); break; } if (v >= 1 && ownsVeh(p, v) && p.ride && VEH[v].outdoor && v !== p.veh && skyTop(p.x, p.y) > p.L) { emit({ k: 'deny', p: p.i, why: VEH[v].name + '太大，只能在室外开' }); break; } if (v >= 1 && ownsVeh(p, v) && p.ride && (airborne(p) || VEH[v].fly) && v !== p.veh) { emit({ k: 'deny', p: p.i, why: airborne(p) ? '先落地再换车' : '先下车，再坐旋翼机起飞' }); break; } if (v >= 1 && ownsVeh(p, v)) { p.veh = v; if (p.ride && !vehSeats(p)) for (const q of W.p) if (q.pass === p.i) q.pass = -1; } break; // pick the default vehicle (switches the one you're on too)
     case 'pad': if (v && inMap(v.x, v.y) && v.l >= 0 && v.l < ML) { const i = ci(v.x, v.y, v.l); if (W.blk[i] === 56) { setCell(i, 0, W.slab[i], null, 'demo'); emit({ k: 'sfx', n: 'jump', x: v.x + 0.5, y: v.y + 0.5 }); } } break;
     case 'mode': p.build = !!v; break;
@@ -1201,7 +1208,7 @@ function gSpecial(t, x, y, z, p) {
   emit({ k: 'sfx', n: t === 1 ? 'acid' : 'throw', x, y });
 }
 // which clouds a point is in: bit 1 = slow field, bit 2 = smoke
-function cloudAt(x, y, z) { let m = 0; for (const c of W.cz || []) if (Math.abs(z - c.z) < 1.6 && Math.hypot(x - c.x, y - c.y) < c.r) m |= c.k === 1 ? 1 : 2; return m; }
+function cloudAt(x, y, z) { let m = 0; for (const c of W.cz || []) if (Math.abs(z - c.z) < 1.6 && Math.hypot(x - c.x, y - c.y) < c.r) m |= c.k === 1 || c.k === 4 ? 1 : 2; return m; } /* (round 37) k 4 = 毒雾: slows like the slow field (its damage is in stepEvoWorld) */
 function explode(x, y, z, p, R = BAL.nadeR, dmg = BAL.nadeDmg) {
   KSRC = 'nade'; eliteCounter(x, y, R, false);
   for (const zb of W.zs) {
@@ -1232,7 +1239,7 @@ function simStep(dt) {
   if (!W.over) {
     stepPhase(dt);
     updateFields(dt);
-    stepZombies(dt); stepDrones(dt); /* (round 36n) 浮游炮 */
+    stepZombies(dt); stepDrones(dt); stepEvoWorld(dt); /* (round 36n) 浮游炮; (round 37) poison */
     stepProj(dt);
     if (W.cz && W.cz.length) { for (const c of W.cz) c.t -= dt; W.cz = W.cz.filter(c => c.t > 0); }
     modeTick(dt); turretTick(dt); stepDelayed(dt); if ((W.shareT = (W.shareT || 0) - dt) <= 0) { W.shareT = 1; teamShare(); }

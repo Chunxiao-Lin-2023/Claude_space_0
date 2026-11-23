@@ -163,6 +163,9 @@ body.touch.building #tctl .fight,body.touch:not(.building) #tctl .bld{display:no
 #tMed{right:calc(var(--fs) / 2 - cos(198deg) * var(--d) + var(--tb) / 2 + 12px);bottom:calc(var(--fs) / 2 + sin(198deg) * var(--d) - var(--tb) / 2);border-color:#7fd38b;color:#c8f5cf;flex-direction:column;line-height:1.05}
 #tMed small{font-family:var(--num);font-size:10px}#tMed.dim{opacity:.4}#tMed.hot{background:rgba(40,90,50,.85);box-shadow:0 0 10px rgba(125,211,138,.5)}
 #tShove{border-color:rgba(255,200,150,.6)}
+#tShove.xf{background:linear-gradient(to top,rgba(255,170,60,.38) var(--ev,0%),rgba(0,0,0,0) var(--ev,0%)),var(--tbg,rgba(20,20,26,.55))}
+#tShove.evo{border-color:#ffd24a;box-shadow:0 0 12px 3px rgba(255,200,60,.75);animation:evoP 1s ease-in-out infinite}@keyframes evoP{50%{box-shadow:0 0 20px 6px rgba(255,140,40,.9)}}
+.evoban{position:fixed;left:50%;top:22%;transform:translateX(-50%);font:700 26px/1.2 system-ui;color:#ffe08a;text-shadow:0 0 12px #ff7a20,0 2px 0 #000;pointer-events:none;z-index:40;animation:evoB 1.8s ease-out forwards}@keyframes evoB{0%{opacity:0;transform:translateX(-50%) scale(.6)}15%{opacity:1;transform:translateX(-50%) scale(1.1)}80%{opacity:1}100%{opacity:0;transform:translateX(-50%) scale(1)}}
 #bconf{position:fixed;z-index:8;display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:12px;background:rgba(14,16,20,.88);border:1px solid rgba(125,255,138,.55);box-shadow:0 6px 20px rgba(0,0,0,.45);font-size:13px;color:#e9e2d0;white-space:nowrap}
 #bconf.demo{border-color:rgba(255,110,90,.7)}#bconf button{min-height:40px;padding:6px 12px;font-size:14px}#bcOk{background:#2f7a3a;border-color:#7dff8a}#bconf.demo #bcOk{background:#8a2a22;border-color:#ff8a7a}
 #bconf #bcTxt{max-width:220px;overflow:hidden;text-overflow:ellipsis}
@@ -718,6 +721,7 @@ body:not(.touch) #hTL .items{flex-wrap:wrap;gap:1px 10px}body:not(.touch):not([d
       <details><summary>载具</summary><b>自行车</b>快 70%，没有发动机（攻楼时不会吵醒楼里的丧尸，别的车会），泥地不减速；骑着开枪射速不降、伤害 +15%，骑起来时 40% 的攻击能闪开；<b>摩托车</b>快 90%，后座带一个队友；<b>货运三轮</b>坐在车上就能搜东西（够得更远、时间减半、材料 +50%）；<b>装甲车</b>车里的人（含后座）受到的伤害只剩 30%，3 秒没挨打每秒回 4 血，撞丧尸 70 伤害并撞倒，后座带一个队友、从射击孔开枪射速不降；<b>旋翼机</b>会飞，越过屋顶和尸群（丧尸咬不到，喷吐者还能打到），只能在地面或楼顶起飞（头顶不能有屋顶），一箱油飞 60 秒，没满随时能加（商店「载具」栏一键加满，或在有屋顶的房间里按 <kbd>F</kbd>），飞着用机头下的机枪打（机上自己的子弹，商店「武器 · 弹药」里买，最多存 500 发），手里的枪不能用，手雷能扔；后座能带一个队友（上去后旋翼空转约 1 秒，队友这时按 <kbd>T</kbd> 上来），后座的人能开枪；再按 <kbd>T</kbd> 降落，没油会自己降落；<b>坦克</b>自带炮塔，开火打炮弹（打到哪炸到哪，120 伤害、半径 2.3，1.6 秒一发；炮弹在商店「武器 · 弹药」栏买，车里最多 200 发），受到的伤害只剩 20%，撞开丧尸，但慢、太大进不了楼（有屋顶的地方开不进去）。<b>变形成机甲</b>：骑车时按 <kbd>X</kbd>（触屏：骑车时「刀」键变成「变形」），1 秒后载具站起来变成机甲，再按变回。每种载具一台：自行车→疾风（最快，机枪不用换弹、浮游炮放 10 台悬浮机枪）、摩托→赤刃（臂刃下劈、冲斩）、三轮→工蜂（一次扔 3 个快递、快递雨倾泻 36 个，能搜刮）、装甲车→铁卫（左拳 / 右拳 / 双拳捶地，掀地把周围 7 格的丧尸掀飞，最耐打）、旋翼机→苍隼（火箭弹，技能键起飞 / 降落一直飞，飞着一次齐射 3 发）、坦克→重炮（手臂炮、齐射用炮弹）。机甲会把路上的石头、灌木、栅栏踩平。开火 = 出拳，手雷键 = 技能；装甲打光或电用完会变回载具，装甲和电下车后慢慢恢复，商店「载具」栏能马上修好 / 充满；屋顶下站不起来。在商店「载具」栏或「装备」里选一辆当默认：<kbd>T</kbd> / 点「载具」就上这辆，再按下车；<kbd>Shift</kbd>+<kbd>T</kbd> / 长按「载具」换车。车上也能开枪，只是射速慢（司机 40%、后座 70%；自行车 80%），准度不变。<br><b>怪兽</b>：第 5 夜起隔夜出现（第 11 夜起两只），血很厚，每种有自己的大招，放之前地上会有红色范围提示、身上发光——<b>裂颚兽</b>喷酸（扇形）、<b>钢尾兽</b>甩尾（一圈）或低头冲锋（一条线）、<b>掘地兽</b>钻地从你脚下冒出来还带爬行尸。蓄力时用震地、爆破手雷等把它震晕能打断。</details>
       <details><summary>白天和永久任务</summary>出门砍树（木材）、采石（砖石），搜汽车、补给箱和废墟瓦砾（钢材、零件、弹药），离家越远收获越多；回来盖楼；在任何建筑里（或营地工作台）都能造枪、买弹药（按 C / 点「商店」）。河上只有两座桥，丧尸也只能从桥上过河。每 5 夜一次血月。<br>右上角「任务」小条点开是永久任务（击杀、搜索、建造、砍树采石、手雷击杀、整夜无人倒下……），每完成一档拿一个永久提升：生命上限、背包（弹药上限）、医疗包上限、手雷上限、复活次数。</details>
       <details><summary>飞行丧尸和能力者</summary>第 2 夜起有<b>尸鸦</b>群：飞过墙和屋顶在头顶盘旋，尖叫一声后朝地上红圈俯冲（走开就扑空），有时会沿一条红线低空扫过来（往旁边躲）；第 3 夜起混着大个的<b>尸鹫</b>，在高处往你要走到的地方丢酸液（红圈，别停在里面）；第 4 夜起有<b>尸蝠</b>，咬到可能扒在你身上吸血，用刀把它打下来。躲进有屋顶的楼里它们就够不着。第 3 夜起每晚有<b>能力者</b>（头顶有名字），每个都有破解办法，破解后它会露出<b>破绽</b>（黄色标签，几秒内受到双倍伤害）：<b>闪影者</b>瞬移到你身后（紫光），出现后有一拍才砍——这时打它就能反击，或者马上走开让它砍空；<b>唤尸者</b>会躲着你、从地下叫丧尸，追上去打，叫的时候打够伤害就打断，它死了叫出来的也跟着倒；<b>护盾者</b>给周围丧尸套护盾，站进护盾里打才打得动，但它会把里面的人震出去（红圈），震之前狠打它能连护盾一起打碎，爆破弹也能；<b>隐身者</b>摸过来时地上有淡淡的红点，偷袭前会闪一下——转身面对它（或打它）就能反击，背对就挨刀。打死能力者掉零件、钢材和特殊手雷。</details>
+      <details><summary>第二形态</summary>机甲形态杀丧尸会攒<b>进化槽</b>（一只 4%，大块头 / 能力者 15%，怪兽 40%），满了按 <b>X</b>（触屏「进化」键会发光）进化成神兽，持续 22 秒（期间再杀敌能多撑一会），装甲回 30%，进化瞬间把身边的丧尸震开。再按 X 变回机甲；<b>长按 X</b> 直接变回载具。<br><b>青蛇</b>（自行车）最快、35% 闪避，毒牙扑咬 + 中毒，技能毒雾；<b>赤龙</b>（摩托）按住喷火，技能龙腾冲 10 格；<b>玉兔</b>（三轮）蹦到丧尸头上踩，蹦起来越过墙，技能月落砸出大坑；<b>玄龟</b>（装甲车）最硬、身边队友减伤 40%，龟壳撞，技能旋甲刀枪不入；<b>火凤</b>（旋翼机）一直飞，扇形火羽，技能涅槃回装甲还给队友回血；<b>铁熊</b>（坦克）左右掌 + 双掌砸地，杀敌回装甲，技能熊吼震住一片并狂暴。</details>
       <details><summary>怪兽</summary>第 5 夜起隔夜来一只（第 11 夜起两只，每只血少一些）。每个大招都有红色预警，放完会露出<b>破绽</b>（双倍伤害）：喷完酸会喘气、甩尾后站不稳、冲锋撞到结实的墙会晕 3 秒、钻地冒出来会卡住、扑击落地会僵住；预警时打出足够伤害（或用机甲重击 / 爆炸晕住）能直接<b>打断</b>。裂颚兽会远距离<b>扑过来</b>（落点有红圈），钢尾兽会<b>扔巨石</b>（能砸墙），掘地兽会放一排<b>地刺</b>（红线）。怪兽能撞烂木墙木门，砖墙以上的楼里它进不来，但会用远程招数打你。血少于一半会<b>暴怒</b>：吼一声把人震开，技能更快。第 7 夜起还可能来会飞的<b>翼龙兽</b>：在高空盘旋（枪、火箭、旋翼机打得到），沿红线<b>俯冲</b>后会落地僵住（这时近身打），往你要去的地方<b>洒酸</b>（落在屋顶上会腐蚀屋顶），人聚在它下面时会<b>扇风</b>把人吹开；预警时打出足够伤害能把它<b>打下来</b>，在地上躺 3 秒。</details>
       <details><summary>视野和复活</summary>只看得到你和队友视野里的丧尸（画面和地图都是）：步行 18 格，越高看得越远，夜里看得近；装甲车只有 13 格，旋翼机在天上 26 格。丧尸在你们的视野外不会扑、冲、吐、叫或放技能。血少于 30% 屏幕四周会泛红、有心跳声。队友死了，你在任何建筑里或营地按交互键就能让他在你身边复活。</details>
       <details><summary>爬梯和翻越</summary>朝梯子走就爬上去，往下要继续推一下；丧尸爬梯子很慢（攀爬者除外）。没有跳键：走路碰到沙袋、拒马、掩体、栅栏、瓦砾和一人高的墙会自己翻过去，朝一格宽的空隙走会自己跳过去；丧尸不会翻，只能砸。</details>
@@ -5018,7 +5022,22 @@ const MECHS = [null,
 const MECH_CRUSH = new Set([21, 22, 27, 29, 32, 39, 40, 41]); // (round 34d) what a mech just walks over and flattens: rocks, trees, fences, rubble, bins, scrap, logs, bushes
 const inMech = p => !!(p && p.ride && p.mform === 1 && MECHS[p.veh]);
 const mechMul = () => 1 + BAL.mechUpg * Math.max(0, (W.upg || 0) - BAL.upgStart); /* (round 36n) */
-const mechOf = p => MECHS[p && p.veh] || MECHS[4];
+/* (round 37) 第二形态: a full 进化 meter turns a mech into its beast for a while (same hull, own attack / skill / speed / armour) */
+const EVO = [null,
+  { k: 'snake', evo: 1, name: '青蛇', from: '疾风', hp: 1000, armor: 0.75, spd: 1.95, dmg: 75, rate: 0.42, reach: 3.8, atk: 'bite', skill: 'venom', sn: '毒雾', cd: 9, col: ['#2f9a6a', '#173d2c', '#e8d24a'], glow: '#9dff6a', noise: 0,
+    tag: '贴地游走，最快；有人打它 35% 闪开。普攻「毒牙」：扑咬 3.8 格内的丧尸（75 + 中毒 4 秒每秒 12）。技能「毒雾」：吐出一团毒雾（半径 4.5，6 秒，每秒 30 + 减速一半），冷却 9 秒' },
+  { k: 'dragon', evo: 1, name: '赤龙', from: '赤刃', hp: 1200, armor: 0.7, spd: 1.75, dmg: 24, rate: 0.12, reach: 6.5, atk: 'breath', skill: 'dragdash', sn: '龙腾', cd: 8, col: ['#c8282a', '#5a1012', '#f2c040'], glow: '#ffb040', noise: 7,
+    tag: '浮在半空的长龙。普攻「龙息」：按住朝前喷火（6.5 格扇形，每 0.12 秒 24，点着丧尸）。技能「龙腾」：卷着火朝前冲 10 格，路上的丧尸受 260 并着火，冷却 8 秒' },
+  { k: 'rabbit', evo: 1, name: '玉兔', from: '工蜂', hp: 1600, armor: 0.8, spd: 1.6, dmg: 110, rate: 0.75, reach: 6, atk: 'hop', skill: 'moon', sn: '月落', cd: 10, col: ['#eef4f2', '#7fd8c4', '#ff9ab0'], glow: '#bff8ff', noise: 4,
+    tag: '一蹦一跳，蹦起来能越过墙和丧尸。普攻「蹦踩」：蹦到目标身上踩下去（6 格内，半径 2.4，110）。技能「月落」：高高跳起砸向 14 格内的落点（半径 6，320，砸晕 1.5 秒），冷却 10 秒；照样能踩平收资源' },
+  { k: 'turtle', evo: 1, name: '玄龟', from: '铁卫', hp: 2400, armor: 0.35, spd: 0.95, dmg: 150, rate: 0.85, reach: 3, atk: 'shell', skill: 'spin', sn: '旋甲', cd: 10, col: ['#3d5a48', '#1d2a22', '#c9a446'], glow: '#7fffd0', noise: 6,
+    tag: '最硬（挨打 ×0.35），身边 5 格的队友挨打少 40%（玄甲）。普攻「甲撞」：用龟壳往前撞（半径 2.8，150，撞开）。技能「旋甲」：缩进壳里高速旋转 4 秒，刀枪不入、跑得快，碰到的丧尸每 0.4 秒 70 并弹飞，冷却 10 秒' },
+  { k: 'phoenix', evo: 1, name: '火凤', from: '苍隼', hp: 1000, armor: 0.85, spd: 1.6, dmg: 34, rate: 0.45, range: 14, atk: 'feather', skill: 'rebirth', sn: '涅槃', cd: 16, col: ['#ff6a1e', '#9a1a10', '#ffd24a'], glow: '#ffcf60', noise: 8,
+    tag: '一直在天上飞。普攻「火羽」：扇形射出 5 根火羽（每根 34，14 格，点着丧尸）。技能「涅槃」：一圈烈火（半径 6，240 并着火），自己装甲回 40%，8 格内的队友回 60 血，冷却 16 秒' },
+  { k: 'bear', evo: 1, name: '铁熊', from: '重炮', hp: 2000, armor: 0.55, spd: 1.3, dmg: 135, rate: 0.6, reach: 3.4, arc: 1.5, atk: 'claw', skill: 'roar', sn: '熊吼', cd: 11, col: ['#7a5232', '#3a2616', '#d8d0c0'], glow: '#ff8a3a', noise: 9,
+    tag: '每杀一只回 1.5% 装甲。普攻「熊掌」：左右掌拍（3.4 格扇形 135），第三下双掌砸地（半径 2.6，×1.5）。技能「熊吼」：一吼震住 9 格内的丧尸 2.5 秒（4 格内再受 120），之后 8 秒狂暴：伤害 +40%、出手更快，冷却 11 秒' },
+];
+const mechOf = p => (p && p.evoOn && EVO[p.veh]) || MECHS[p && p.veh] || MECHS[4]; /* (round 37) in beast form its EVO entry stands in for the mech */
 const mhpOf = (p, v) => { v = v || p.veh; const M = MECHS[v]; if (!M) return 0; const h = p.mh && p.mh[v]; return h == null ? M.hp : h; };
 const PILLION = 0.38;                                   // how far behind the driver the back-seat rider sits
 // (round 24) grenade types: 0 frag (p.nades), 1–3 in p.gn[t - 1]
@@ -5092,7 +5111,7 @@ const ZT = {
   shade: { name: '隐身者', hp: 420, spd: 1.5, r: 0.3, h: 1.25, dmg: 12, bdmg: 10, cd: 0.9, sc: 1.2, look: 'walker', skin: '#50505e', elite: { k: 'cloak', cd: 6, col: '#c0c0e0', tip: '隐身摸到你身边偷袭，留意空气里的扭曲，附近炸一下就现形' } },
 };
 const ELITES = ['blinker', 'caller', 'warden', 'shade'];
-const BUILD_TAG = '第 36 轮之十四'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
+const BUILD_TAG = '第 37 轮'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
 // aim assist (SET.assist): fire-button lock range (x weapon range), lock-on time before it fires, spread while auto-aimed, mouse/finger magnet
 const PORT = 1.25; // firing port: your own shots pass a wall / door you built if it is this close to you
 const ASSIST = [{ name: '关', range: 0, acq: 0, spread: 1, mag: 0 }, { name: '标准', range: 0.75, acq: 0.3, spread: 1.5, mag: 1 }, { name: '强', range: 1, acq: 0, spread: 1, mag: 1 }];
@@ -5207,6 +5226,7 @@ const CRAFT = [
 /* ---------- balance ---------- */
 const BAL = {
   nights: 15,
+  evoT: 22, evoKill: 4, evoBig: 15, evoBurst: 3.5, evoAura: 5, evoAuraMul: 0.6, /* (round 37) 进化 meter: 100 = full; 22 s in beast form; kills fill it */
   flyRk: 3, flyRkMul: 1.3, /* (round 36n) 苍隼 in the air: three rockets a shot, ×1.3 each */ rainN: 36, rainT: 2.0, rainR: 4.5, rainDmg: 55, /* (round 36n) 工蜂 快递雨 */
   mgSpread: 0.03, droneN: 10, droneT: 10, droneDmg: 7, droneRate: 0.3, droneRange: 12, quakeR: 7, quakeDmg: 260, /* (round 36n) 疾风 machine gun + 浮游炮; 铁卫 掀地 */
   upgStart: 3, upgMax: 6, mechUpg: 0.12, /* (round 36n) mechs gain +12% for each 弹头 level earned above the start (they used to gain nothing) */         // (round 36f) 强化弹头 (+12% team damage a level) starts at 3 (was 0, bought up to 5 in the shop); the 击杀精英 task's three tiers push it to 6
@@ -6330,7 +6350,7 @@ function xformDeny(p, to) {
   return '';
 }
 function startXform(p, to, why) {
-  p.mto = to ? 1 : 0; p.mtr = BAL.xformT; if (!to) { p.mform = 0; p.mfly = false; } // (turning back, it is a vehicle again as soon as it starts folding: the mech's guard drops)
+  p.mto = to ? 1 : 0; p.mtr = BAL.xformT; if (!to) { p.mform = 0; p.mfly = false; p.evoOn = false; p.spinT = 0; p.rageT = 0; } // (turning back, it is a vehicle again as soon as it starts folding: the mech's guard drops)
   if (to) for (const q of W.p) if (q.pass === p.i) q.pass = -1; // the back seat folds away
   if (why) emit({ k: 'deny', p: p.i, why });
   emit({ k: 'xform', o: p.i, to: p.mto, v: p.veh });
@@ -6411,7 +6431,7 @@ function mechLock(p, M, far) {
   return best;
 }
 function mechPunch(p) {
-  if (p.gcd > 0) return; const M = mechOf(p); p.gcd = M.rate; p.mside = 1 - (p.mside || 0); if (M.atk === 'mgun') return mechGun(p, M); /* (round 36n) 疾风's machine gun */
+  if (p.gcd > 0) return; const M = mechOf(p); p.gcd = M.rate; p.mside = 1 - (p.mside || 0); if (M.atk === 'mgun') return mechGun(p, M); /* (round 36n) 疾风's machine gun */ if (M.evo) return evoAttack(p, M); /* (round 37) beast form */
   p.mcmb = W.t - (p.mlastT || -9) < M.rate + 0.5 ? ((p.mcmb || 0) + 1) % 3 : 0; p.mlastT = W.t; // (round 34d) a quick follow-up continues the combo (the host decides, every screen shows the same move)
   // (round 35) turn to the target (and step in if it is just out of reach) so the blow / shot goes where the zombie is
   const fistN = false, /* (round 36n) 铁卫's third blow is a pound now, not the fist cannon */ T = mechLock(p, M, fistN ? 7 : 0), ranged = mechRanged(M) || fistN; let a = p.aim; // the fist cannon reaches 7
@@ -6472,6 +6492,7 @@ function mechSkill(p, v) {
   const M = mechOf(p); if ((p.mcd || 0) > 0) { emit({ k: 'deny', p: p.i, why: M.sn + '冷却中（' + Math.ceil(p.mcd) + ' 秒）' }); return; }
   let tx = v && v.x != null ? v.x : p.x + Math.cos(p.aim) * 8, ty = v && v.y != null ? v.y : p.y + Math.sin(p.aim) * 8;
   const ang = Math.atan2(ty - p.y, tx - p.x), dist = Math.hypot(tx - p.x, ty - p.y);
+  if (M.evo) return evoSkill(p, M, ang, dist, tx, ty); /* (round 37) beast skills */
   if (M.skill === 'fly') { // (round 34d) 苍隼: take off / come down
     if (!p.mfly) { if ((p.bat || 0) < 15) { emit({ k: 'deny', p: p.i, why: '电量不够起飞' }); return; } if (skyTop(p.x, p.y) > p.L) { emit({ k: 'deny', p: p.i, why: '头顶有屋顶，飞不起来' }); return; } p.mfly = true; p.alt = 0; p.land = false; p._cz = null; }
     else p.land = true;
@@ -6536,6 +6557,7 @@ function stepDelayed(dt) {
     if (q.thr != null) { const z = W.zs.find(z => z.id === q.thr); if (z && z.hp > 0) { const f = clamp(1 - q.t / q.T, 0, 1), gz = surfZ(q.x, q.y, q.L); z.x = lerp(q.x0, q.x, f); z.y = lerp(q.y0, q.y, f); z.z = lerp(q.z0, gz, f) + Math.sin(f * Math.PI) * 3; z.stun = Math.max(z.stun || 0, 0.3);
       if (q.t <= 0) { z.L = q.L; z.z = gz; const o = W.p[q.o]; hurtZombie(z, 200 * mechMul(), o, 0, 0); for (const y of W.zs) { if (y === z || y.hp <= 0 || y.hidden) continue; const d = Math.hypot(y.x - q.x, y.y - q.y); if (d < 2) { hurtZombie(y, 100, o, (y.x - q.x) / (d || 1) * 5, (y.y - q.y) / (d || 1) * 5); y.stun = Math.max(y.stun || 0, 0.8); } } emit({ k: 'slam', x: r2(q.x), y: r2(q.y), z: r2(gz), r: 2 }); emit({ k: 'sfx', n: 'smash', x: q.x, y: q.y }); } } else q.t = 0; continue; } // (round 34b) a thrown zombie flies, then smashes down
     if (q.t > 0) continue; if (q.punch != null) { if (W.p[q.punch]) mechPunchHit(W.p[q.punch], q.c, q.a); continue; } const o = W.p[q.o];
+    if (q.stomp) { if (o) { evoRound(o, q.x, q.y, q.R, q.dmg, q.kb || 8, q.st || 1); if (q.moon) emit({ k: 'moonfx', x: r2(q.x), y: r2(q.y), z: r2(surfZ(q.x, q.y, q.L)), r: q.R }); } continue; } if (q.claw) { if (o && inMech(o)) evoClaw(o, q.a, q.dmg); continue; } /* (round 37) beast blows */
     if (q.launch) { if (o && inMech(o)) { const ft = q.ft * frnd(0.85, 1.1), sd = rand() < 0.5 ? -1 : 1, ca2 = Math.cos(o.aim), sa2 = Math.sin(o.aim); emit({ k: 'mrkt', o: q.o, kd: 'bigparcel', x: r2(o.x - ca2 * 0.5 * q.s2 - sa2 * sd * 0.3), y: r2(o.y - sa2 * 0.5 * q.s2 + ca2 * sd * 0.3), z: r2(pZ(o) + 2.4 * q.s2), e: [r2(q.x), r2(q.y), r2(q.zz)], t: r2(ft) }); W.dly.push({ t: ft, box: 1, big: 1, x: q.x, y: q.y, zz: q.zz, R: 1.5, dmg: BAL.rainDmg * mechMul(), o: q.o }); } continue; } /* (round 36n) one parcel of the 快递雨 torrent leaves the rack */
     if (q.fistZ != null) { const z = W.zs.find(z => z.id === q.fistZ); if (z && z.hp > 0) { const big = ZT[z.k].boss || ZT[z.k].kaiju; hurtZombie(z, 140 * mechMul(), o, q.dx * (big ? 2 : 9), q.dy * (big ? 2 : 9)); z.stun = Math.max(z.stun || 0, big ? 0.2 : 1); emit({ k: 'mhit', o: q.o, h: 1, x: r2(z.x), y: r2(z.y), z: r2(z.z + 0.8), r: 1 }); } continue; }
     if (q.shell) { explode(q.x, q.y, q.zz != null ? q.zz : surfZ(q.x, q.y, q.L) + 0.3, o, q.R, q.dmg); continue; }
@@ -6621,7 +6643,7 @@ function stepMove(p, dt) {
   }
   if (p.dash) { const D = p.dash, f = Math.min(dt, D.T - D.t) / D.T; moveEnt(p, D.dx * f, D.dy * f, 'p', true); D.t += dt; if (D.t >= D.T) p.dash = null; p.z = pZ(p); p.anim += dt * 8; return; }
   if (p.L > 0 && p.L > skyTop(p.x, p.y)) { p.L = skyTop(p.x, p.y); p.z = pZ(p); } // (round 31) knocked down mid-air, or a save made in flight: fall to what is below
-  const spd = BAL.pSpeed * (p.down ? 0.22 : 1) * (p.medT > 0 && !p.ride ? 0.45 : 1) * (p.build ? 0.9 : 1) * (inMud(p.x, p.y, p.L) && !(p.ride && VEH[p.veh] && VEH[p.veh].mud) ? MUD_SLOW : 1) * (p.ride && VEH[p.veh] ? (inMech(p) ? mechOf(p).spd : VEH[p.veh].spd) : 1) * (p.mtr > 0 ? 0 : 1); // (round 34b) standing still while it transforms
+  const spd = BAL.pSpeed * (p.down ? 0.22 : 1) * (p.medT > 0 && !p.ride ? 0.45 : 1) * (p.build ? 0.9 : 1) * (inMud(p.x, p.y, p.L) && !(p.ride && VEH[p.veh] && VEH[p.veh].mud) ? MUD_SLOW : 1) * (p.ride && VEH[p.veh] ? (inMech(p) ? mechOf(p).spd * (p.spinT > 0 ? 1.7 : 1) : VEH[p.veh].spd) : 1) * (p.mtr > 0 ? 0 : 1); // (round 34b) standing still while it transforms
   const tx = I.mx * k * spd, ty = I.my * k * spd, a = Math.min(1, dt * 14);
   p.vx = lerp(p.vx, tx, a); p.vy = lerp(p.vy, ty, a);
   p.kbx *= Math.max(0, 1 - dt * 6); p.kby *= Math.max(0, 1 - dt * 6);
@@ -6714,7 +6736,7 @@ function stepActions(p, dt) {
   p.fireCD -= dt; p.shoveCD -= dt; p.emptyT -= dt; if (p.bloom) p.bloom = Math.max(0, p.bloom - dt * 2.2);
   for (let wi = 1; wi < NW; wi++) if (!WPN[wi].inf && p.ammo[wi] > ammoCap(wi)) p.ammo[wi] = ammoCap(wi); // (round 32) backpack: ammo you carry is capped (grows with the upgrade)
   // (round 29) gyrocopter: burns fuel while you're in it; empty → it comes down by itself; touching down gets you out
-  if (airborne(p) && p.mform === 1) { // (round 34d) 苍隼 in flight: twice the energy (the other half is the usual mech drain below); low → it comes down; touching down it stands again
+  if (airborne(p) && p.mform === 1 && !p.evoOn) { // (round 34d) 苍隼 in flight: twice the energy (the other half is the usual mech drain below); low → it comes down; touching down it stands again
     p.bat = Math.max(0, (p.bat || 0) - dt);
     if (p.bat < 10 && !p.land) { p.land = true; emit({ k: 'deny', p: p.i, why: '苍隼电量低，正在降落' }); }
     const g = skyTop(p.x, p.y); if (p.land && p.z - surfZ(p.x, p.y, g) < 0.08 && landOK(p.x, p.y)) { p.mfly = false; p.land = false; p.L = g; p.z = surfZ(p.x, p.y, g); p.alt = 0; emit({ k: 'sfx', n: 'land', x: p.x, y: p.y, o: p.i }); }
@@ -6728,8 +6750,9 @@ function stepActions(p, dt) {
   if (!p.ride && (p.mform || p.mtr || p.mfly)) { p.mform = 0; p.mtr = 0; p.mfly = false; } // off the vehicle (got out, knocked down): it is a vehicle again
   if (p.mtr > 0) { p.mtr -= dt; if (p.mtr <= 0) { p.mtr = 0; p.mform = p.mto || 0; if (p.mform && VEH[p.veh] && VEH[p.veh].fly) { const g = skyTop(p.x, p.y); p.L = g; p.z = surfZ(p.x, p.y, g); p.alt = 0; p.land = false; } } } // (round 34b) a gyrocopter that stood up drops to the ground
   if (p.bat == null) p.bat = BAL.mechBat;
+  evoStep(p, dt); /* (round 37) */
   if (inMech(p)) { // the energy runs down while you're a mech; out of it you fold back into the vehicle
-    p.bat = Math.max(0, p.bat - dt);
+    if (!p.evoOn) p.bat = Math.max(0, p.bat - dt); /* (round 37) a beast runs on its 进化 meter instead */
     if (p.bat < BAL.mechLow && !p._lowB) { p._lowB = 1; emit({ k: 'deny', p: p.i, why: '机甲电量低（还剩 ' + Math.ceil(p.bat) + ' 秒），没电会变回载具' }); }
     if (p.bat <= 0) mechEject(p, '机甲没电了，变回载具：电会慢慢充回来，商店里能马上充满');
   } else { if (p.bat >= BAL.mechLow) p._lowB = 0; p.bat = Math.min(BAL.mechBat, p.bat + BAL.batRegen * dt); if (p.mh) for (let v = 1; v < p.mh.length; v++) if (p.mh[v] != null && MECHS[v] && p.mh[v] < MECHS[v].hp) p.mh[v] = Math.min(MECHS[v].hp, p.mh[v] + MECHS[v].hp * BAL.mechRegen * dt); }
@@ -7007,7 +7030,7 @@ function hurtZombie(z, dmg, p, kx, ky, quiet) {
 }
 let KSRC = '';
 function killZombie(z, p) {
-  z.hp = 0; W.kills++; if (p) p.kills++; if (z.mins && z.mins.length) for (const o of W.zs) if (o.hp > 0 && z.mins.includes(o.id)) { o.mins = null; killZombie(o, null); } /* (round 36l) the ones a 唤尸者 raised drop with it */ if (p && inMech(p)) p.bat = Math.min(BAL.mechBat, (p.bat || 0) + 1.5); // (round 36) a mech recharges a little on every kill
+  z.hp = 0; W.kills++; if (p) p.kills++; if (z.mins && z.mins.length) for (const o of W.zs) if (o.hp > 0 && z.mins.includes(o.id)) { o.mins = null; killZombie(o, null); } /* (round 36l) the ones a 唤尸者 raised drop with it */ if (p && inMech(p)) { p.bat = Math.min(BAL.mechBat, (p.bat || 0) + 1.5); evoGainKill(p, z); } // (round 36) a mech recharges a little on every kill
   taskAdd('kill'); if (ZT[z.k].boss || ZT[z.k].elite || z.k === 'brute' || z.k === 'armored') taskAdd('elite'); if (KSRC === 'nade') taskAdd('nade'); // (round 32) permanent task counters
   if (ZT[z.k].blast) zBlast(z.x, z.y, z.z + 0.5);
   emit({ k: 'zdie', x: r2(z.x), y: r2(z.y), z: r2(z.z), t: z.k, f: r2(z.face), id: z.id, gz: ZT[z.k].fly ? r2(skyTop(z.x, z.y) * FH) : undefined }); // (round 35) gz: where a shot bird lands
@@ -7020,6 +7043,8 @@ function hurtPlayer(p, dmg, src) {
   if (src && src.k && ZT[src.k] && (ZT[src.k].kaiju || ZT[src.k].elite) && !inMech(p)) dmg *= BAL.bigFoot; // (round 36) kaiju / 能力者 hit people on foot softer (they're tuned against mechs)
   if (W.phase === 'day' && src && src.k && ZT[src.k]) dmg *= BAL.day.dmg; // (round 36b) softer bites by day
   if (DBG && DBG.god) return;
+  if (p.evoOn && inMech(p)) { if (p.spinT > 0) return; if (p.veh === 1 && rand() < 0.35) { emit({ k: 'dodge', p: p.i, x: r2(p.x), y: r2(p.y), z: r2(p.z) }); return; } } /* (round 37) 玄龟 spinning: untouchable; 青蛇: slips away */
+  for (const q of W.p) if (q !== p && q.evoOn && q.veh === 4 && inMech(q) && !q.gone && !q.dead && Math.hypot(q.x - p.x, q.y - p.y) < BAL.evoAura) { dmg *= BAL.evoAuraMul; break; } /* (round 37) 玄甲 aura */
   if (inMech(p)) { // (round 34b) the hull takes the hit (by how armoured that mech is); a little still gets through to you; at zero it falls back into a vehicle
     const M = mechOf(p); p.mh = p.mh || []; p.mh[p.veh] = Math.max(0, mhpOf(p) - dmg * M.armor); emit({ k: 'phurt', p: p.i, d: 0 });
     if (p.mh[p.veh] <= 0) mechEject(p, M.name + '的装甲被打穿了，变回载具：装甲会慢慢恢复，商店里能马上修好');
@@ -7110,7 +7135,9 @@ function doAct(p, a, v) {
     case 'build': doBuild(p, v.x, v.y, v.l, v.b, v.d); break;
     case 'demo': doDemolish(p, v.x, v.y, v.l); break;
     case 'crush': if (inMech(p) && typeof v === 'number' && v >= 0 && v < NC && MECH_CRUSH.has(W.blk[v]) && !(W.mine && W.mine.has(v)) && Math.hypot(cx_(v) + 0.5 - p.x, cy_(v) + 0.5 - p.y) < 2.6) { const r = B[W.blk[v]].res, g = GATHER[W.blk[v]]; if (p.veh === 3 && g) { mechScar(v, null, null, BAL.workerRegrow); const n = Math.max(1, Math.round(rand(g.n[0], g.n[1]) * BAL.workerGather)); W.res[g.res] += n; taskAdd('gather'); emit({ k: 'loot', p: p.i, x: cx_(v) + 0.5, y: cy_(v) + 0.5, z: cl_(v) * FH + 1, text: '+' + n + ' ' + RES.find(q => q.k === g.res).name }); setCell(v, 0, W.slab[v], null, 'mine'); } /* (round 36) 工蜂's passive: what it flattens is gathered (and so doesn't grow back) */ else { mechScar(v); setCell(v, 0, W.slab[v], null, 'brk'); if (r && rand() < 0.5) W.res[r] = (W.res[r] || 0) + 1; } emit({ k: 'sfx', n: 'bash', x: cx_(v) + 0.5, y: cy_(v) + 0.5 }); } break; // (round 34d) a mech flattens what is in its way
-    case 'xform': { const to = p.mform === 1 ? 0 : 1, why = xformDeny(p, to); if (why) emit({ k: 'deny', p: p.i, why }); else startXform(p, to); } break; // (round 34b)
+    case 'xform': { if (p.mtr > 0) break; if (v === 'veh') { if (p.mform === 1) { devolve(p); startXform(p, 0); } break; } /* (round 37) hold X: straight back to the vehicle */
+      if (p.evoOn) { devolve(p); break; } if (p.mform === 1 && (p.evo || 0) >= 100 && EVO[p.veh]) { evolve(p); break; } /* tap X: a full meter evolves the mech; in beast form it turns back */
+      const to = p.mform === 1 ? 0 : 1, why = xformDeny(p, to); if (why) emit({ k: 'deny', p: p.i, why }); else startXform(p, to); } break; // (round 34b)
     case 'vdef': if (v >= 1 && ownsVeh(p, v) && p.ride && v !== p.veh && (p.mform === 1 || p.mtr > 0)) { emit({ k: 'deny', p: p.i, why: '先变回载具再换车' }); break; } if (v >= 1 && ownsVeh(p, v) && p.ride && VEH[v].outdoor && v !== p.veh && skyTop(p.x, p.y) > p.L) { emit({ k: 'deny', p: p.i, why: VEH[v].name + '太大，只能在室外开' }); break; } if (v >= 1 && ownsVeh(p, v) && p.ride && (airborne(p) || VEH[v].fly) && v !== p.veh) { emit({ k: 'deny', p: p.i, why: airborne(p) ? '先落地再换车' : '先下车，再坐旋翼机起飞' }); break; } if (v >= 1 && ownsVeh(p, v)) { p.veh = v; if (p.ride && !vehSeats(p)) for (const q of W.p) if (q.pass === p.i) q.pass = -1; } break; // pick the default vehicle (switches the one you're on too)
     case 'pad': if (v && inMap(v.x, v.y) && v.l >= 0 && v.l < ML) { const i = ci(v.x, v.y, v.l); if (W.blk[i] === 56) { setCell(i, 0, W.slab[i], null, 'demo'); emit({ k: 'sfx', n: 'jump', x: v.x + 0.5, y: v.y + 0.5 }); } } break;
     case 'mode': p.build = !!v; break;
@@ -7424,7 +7451,7 @@ function gSpecial(t, x, y, z, p) {
   emit({ k: 'sfx', n: t === 1 ? 'acid' : 'throw', x, y });
 }
 // which clouds a point is in: bit 1 = slow field, bit 2 = smoke
-function cloudAt(x, y, z) { let m = 0; for (const c of W.cz || []) if (Math.abs(z - c.z) < 1.6 && Math.hypot(x - c.x, y - c.y) < c.r) m |= c.k === 1 ? 1 : 2; return m; }
+function cloudAt(x, y, z) { let m = 0; for (const c of W.cz || []) if (Math.abs(z - c.z) < 1.6 && Math.hypot(x - c.x, y - c.y) < c.r) m |= c.k === 1 || c.k === 4 ? 1 : 2; return m; } /* (round 37) k 4 = 毒雾: slows like the slow field (its damage is in stepEvoWorld) */
 function explode(x, y, z, p, R = BAL.nadeR, dmg = BAL.nadeDmg) {
   KSRC = 'nade'; eliteCounter(x, y, R, false);
   for (const zb of W.zs) {
@@ -7455,7 +7482,7 @@ function simStep(dt) {
   if (!W.over) {
     stepPhase(dt);
     updateFields(dt);
-    stepZombies(dt); stepDrones(dt); /* (round 36n) 浮游炮 */
+    stepZombies(dt); stepDrones(dt); stepEvoWorld(dt); /* (round 36n) 浮游炮; (round 37) poison */
     stepProj(dt);
     if (W.cz && W.cz.length) { for (const c of W.cz) c.t -= dt; W.cz = W.cz.filter(c => c.t > 0); }
     modeTick(dt); turretTick(dt); stepDelayed(dt); if ((W.shareT = (W.shareT || 0) - dt) <= 0) { W.shareT = 1; teamShare(); }
@@ -7890,6 +7917,122 @@ function eliteStep(z, Z, dt) {
     return false;
   }
   return false;
+}
+
+/* ---- 38_evo.js ---- */
+/* ---------- (round 37) 第二形态: beasts ----------
+   A mech fills its 进化 meter by killing (in mech form). Full → X (tap) turns it into its beast for BAL.evoT seconds:
+   疾风 → 青蛇, 赤刃 → 赤龙, 工蜂 → 玉兔, 铁卫 → 玄龟, 苍隼 → 火凤, 重炮 → 铁熊. Same hull; mechOf(p) returns the EVO entry while p.evoOn,
+   so speed / armour / fire / skill keys all route here. X again (or the meter running out) → back to the mech; hold X → straight to the vehicle. */
+const evoMul = p => mechMul() * (p && p.rageT > 0 ? 1.4 : 1);
+function evoGainKill(p, z) {
+  if (!p || !inMech(p) || !EVO[p.veh]) return; const T = ZT[z.k], big = T.boss || T.kaiju || T.elite || z.k === 'brute' || z.k === 'armored';
+  if (p.evoOn) { p.evo = Math.min(100, (p.evo || 0) + (big ? 6 : 1.5)); if (p.veh === 6) { p.mh = p.mh || []; p.mh[6] = Math.min(MECHS[6].hp, mhpOf(p) + MECHS[6].hp * 0.015); } return; } // in beast form a kill stretches it a little; 铁熊 heals on kills
+  const was = p.evo || 0; p.evo = Math.min(100, was + (T.kaiju ? 40 : big ? BAL.evoBig : BAL.evoKill));
+  if (was < 100 && p.evo >= 100) emit({ k: 'evoready', p: p.i, n: EVO[p.veh].name });
+}
+function evolve(p) {
+  const E = EVO[p.veh]; if (!E || !inMech(p) || p.evoOn || (p.evo || 0) < 100 || p.mtr > 0) return;
+  p.evoOn = true; p.evo = 100; p.gcd = 0.4; p.mcd = Math.min(p.mcd || 0, 1); p.spinT = 0; p.rageT = 0; if (E.k === 'phoenix') { p.mfly = true; p.land = false; }
+  p.mh = p.mh || []; p.mh[p.veh] = Math.min(MECHS[p.veh].hp, mhpOf(p) + MECHS[p.veh].hp * 0.3); // it comes out fresh: +30% hull
+  for (const z of W.zs) { if (z.hp <= 0 || z.hidden || Math.abs(z.z - p.z) > 2.6) continue; const dx = z.x - p.x, dy = z.y - p.y, d = Math.hypot(dx, dy); if (d > BAL.evoBurst + z.r) continue; const big = ZT[z.k].boss || ZT[z.k].kaiju; hurtZombie(z, 100 * mechMul(), p, dx / (d || 1) * (big ? 1 : 8), dy / (d || 1) * (big ? 1 : 8)); z.stun = Math.max(z.stun || 0, big ? 0.3 : 1); }
+  emit({ k: 'evo', o: p.i, on: 1, v: p.veh, x: r2(p.x), y: r2(p.y), z: r2(p.z) }); noiseAt(p.x, p.y, 10, p.z);
+}
+function devolve(p, why) {
+  if (!p.evoOn) return; p.evoOn = false; p.spinT = 0; p.rageT = 0; p.gcd = 0.3; if (p.evo > 0 && why !== 'out') p.evo = Math.min(p.evo, 99);
+  if (p.veh === 5 && p.mfly && (p.bat || 0) < 15) p.land = true; // 火凤 back to 苍隼: low on charge, it comes down
+  emit({ k: 'evo', o: p.i, on: 0, v: p.veh, x: r2(p.x), y: r2(p.y), z: r2(p.z) }); if (why === 'out') emit({ k: 'deny', p: p.i, why: EVO[p.veh].name + '的力量用完了，变回' + MECHS[p.veh].name });
+}
+// host, every step for every player
+function evoStep(p, dt) {
+  if (p.evoOn && (!inMech(p) || !EVO[p.veh])) { p.evoOn = false; p.spinT = 0; p.rageT = 0; }
+  if (!p.evoOn) return;
+  p.evo -= 100 / BAL.evoT * dt; if (p.evo <= 0) { p.evo = 0; devolve(p, 'out'); return; }
+  if (p.rageT > 0) p.rageT -= dt;
+  if (p.spinT > 0) { p.spinT -= dt; p.spinHit = (p.spinHit || 0) - dt; // 玄龟 旋甲: everything it touches gets knocked away
+    if (p.spinHit <= 0) { p.spinHit = 0.4; let n = 0; for (const z of W.zs) { if (z.hp <= 0 || z.hidden || Math.abs(z.z - p.z) > 2) continue; const dx = z.x - p.x, dy = z.y - p.y, d = Math.hypot(dx, dy); if (d > 2.6 + z.r) continue; const big = ZT[z.k].boss || ZT[z.k].kaiju; hurtZombie(z, 70 * evoMul(p), p, dx / (d || 1) * (big ? 1.5 : 9), dy / (d || 1) * (big ? 1.5 : 9)); z.stun = Math.max(z.stun || 0, big ? 0.1 : 0.6); n++; }
+      if (n) emit({ k: 'mhit', o: p.i, h: 1, x: r2(p.x), y: r2(p.y), z: r2(p.z + 0.2), g: 1, r: 2.6 }); } }
+}
+// world: poison on zombies (z.psn) and the 毒雾 clouds (W.cz k 4: slow + damage)
+function stepEvoWorld(dt) {
+  W.evoTk = (W.evoTk || 0) - dt; const tick = W.evoTk <= 0; if (tick) W.evoTk = 0.25;
+  for (const z of W.zs) { if (z.hp <= 0 || !(z.psn > 0)) continue; z.psn -= dt; hurtZombie(z, 12 * dt * (z.psnM || 1), W.p[z.psnBy] || null, 0, 0, true); }
+  if (tick && W.cz) for (const c of W.cz) { if (c.k !== 4) continue; const o = W.p[c.o];
+    for (const z of W.zs) { if (z.hp <= 0 || z.hidden || Math.abs(z.z - c.z) > 1.8 || Math.hypot(z.x - c.x, z.y - c.y) > c.r + z.r) continue; hurtZombie(z, 30 * 0.25 * (c.m || 1), o || null, 0, 0, true); z.psn = Math.max(z.psn || 0, 1); z.psnBy = c.o; z.psnM = c.m || 1; } }
+}
+// a round blow on the ground (shell bash, paw slam, landing): everything inside takes it
+function evoRound(p, cx, cy, R, dmg, kb, stun) { let n = 0;
+  for (const z of W.zs) { if (z.hp <= 0 || z.hidden || Math.abs(z.z - p.z) > 2.6) continue; const dx = z.x - cx, dy = z.y - cy, d = Math.hypot(dx, dy); if (d > R + z.r) continue; const big = ZT[z.k].boss || ZT[z.k].kaiju; hurtZombie(z, dmg, p, dx / (d || 1) * (big ? kb * 0.15 : kb), dy / (d || 1) * (big ? kb * 0.15 : kb)); z.stun = Math.max(z.stun || 0, big ? 0.1 : stun); n++; }
+  emit({ k: 'mhit', o: p.i, h: n ? 1 : 0, x: r2(cx), y: r2(cy), z: r2(p.z + 0.15), g: 1, r: R }); return n; }
+// open ground near a point (for hops and the 月落 landing): standable, nothing overhead, not water
+function evoLand(p, ang, D, rMax) {
+  for (let r = 0; r <= rMax; r++) for (let k = 0; k < (r ? 12 : 1); k++) { const a2 = k / 12 * Math.PI * 2, x = p.x + Math.cos(ang) * D + Math.cos(a2) * r, y = p.y + Math.sin(ang) * D + Math.sin(a2) * r, cx = Math.floor(x), cy = Math.floor(y);
+    if (!inMap(cx, cy)) continue; const g = gAt(cx, cy); if (skyTop(cx, cy) > g || !standable(cx, cy, g, 'p') || ttAt(cx, cy) === TT.water) continue; return { x: cx + 0.5, y: cy + 0.5, L: g }; }
+  return null;
+}
+// the target a beast attack goes for (mechLock with the beast's reach), and the angle to it
+function evoTarget(p, M, range) { const T = mechLock(p, Object.assign({}, M, { atk: 'kick', reach: range - 2.4 })); return T; }
+function evoAttack(p, M) {
+  const mul = evoMul(p); if (p.rageT > 0) p.gcd *= 0.75;
+  p.mcmb = W.t - (p.mlastT || -9) < M.rate + 0.5 ? ((p.mcmb || 0) + 1) % 3 : 0; p.mlastT = W.t;
+  let T = null, a = p.aim;
+  if (M.atk === 'feather') { // 火凤: a fan of five burning feathers
+    const A = p.aimPt && !p.aimPt.auto ? p.aimPt : null; if (!A) { T = mgunPick(p, M.range, p.x, p.y, (inAirZ(p) != null ? inAirZ(p) : p.z) + 0.6); if (T) a = Math.atan2(T.y - p.y, T.x - p.x); } else a = Math.atan2(A.y - p.y, A.x - p.x);
+    const sz = (inAirZ(p) != null ? inAirZ(p) : p.z) + 0.6, tz = T ? T.z + T.h * 0.5 : A && A.z != null ? A.z + 0.4 : p.z + 0.4, ends = [];
+    for (let k = -2; k <= 2; k++) { const aa = a + k * 0.16, hd = T ? Math.hypot(T.x - p.x, T.y - p.y) : 8, dz = (tz - sz) / Math.max(1, hd); let dx = Math.cos(aa), dy = Math.sin(aa), d3 = dz; const n = Math.hypot(dx, dy, d3); dx /= n; dy /= n; d3 /= n;
+      const r = mgunRay(p.x, p.y, sz, dx, dy, d3, M.range); if (r.z) { hurtZombie(r.z, M.dmg * mul, p, dx * 0.6, dy * 0.6); r.z.burn = Math.max(r.z.burn || 0, 2.5); r.z.burnBy = p.i; } ends.push(r2(p.x + dx * r.d), r2(p.y + dy * r.d), r2(sz + d3 * r.d)); }
+    p.mAim = a; emit({ k: 'efe', o: p.i, x: r2(p.x), y: r2(p.y), z: r2(sz), e: ends, a: r2(a) }); noiseAt(p.x, p.y, 8, p.z); return;
+  }
+  T = evoTarget(p, M, M.reach + 1); if (T) a = Math.atan2(T.y - p.y, T.x - p.x); p.mAim = a; const ca = Math.cos(a), sa = Math.sin(a);
+  emit({ k: 'mpunch', o: p.i, s: p.mside, c: p.mcmb, a: r2(a) });
+  if (M.atk === 'breath') { // 赤龙: a cone of fire
+    let n = 0; for (const z of W.zs) { if (z.hp <= 0 || z.hidden || Math.abs(z.z - p.z) > 3) continue; const dx = z.x - p.x, dy = z.y - p.y, d = Math.hypot(dx, dy); if (d > M.reach + z.r || Math.cos(angDiff(Math.atan2(dy, dx), a)) < Math.cos(0.45) && d > 0.8) continue; if (!los(p.x, p.y, p.z + 1.2, z.x, z.y, z.z + z.h * 0.5)) continue;
+      hurtZombie(z, M.dmg * mul, p, ca * 0.3, sa * 0.3, true); z.burn = Math.max(z.burn || 0, 3); z.burnBy = p.i; n++; }
+    if (!(p._brT > W.t)) { p._brT = W.t + 0.1; emit({ k: 'ebr', o: p.i, a: r2(a) }); } noiseAt(p.x, p.y, 6, p.z); return;
+  }
+  if (M.atk === 'bite') { // 青蛇: strikes at the target, a short lunge, venom
+    const d = T ? Math.hypot(T.x - p.x, T.y - p.y) : 0; if (T && d > 1.4) { const st = Math.min(d - 1.1, M.reach - 1); mechMove(p, { dash: { dx: ca * st, dy: sa * st, t: 0, T: 0.14 } }); }
+    let n = 0; const hx = p.x + ca * Math.min(d || 1.4, M.reach), hy = p.y + sa * Math.min(d || 1.4, M.reach);
+    for (const z of W.zs) { if (z.hp <= 0 || z.hidden || Math.abs(z.z - p.z) > 2.4) continue; if (Math.hypot(z.x - hx, z.y - hy) > 1.25 + z.r) continue; hurtZombie(z, M.dmg * mul, p, ca * 2, sa * 2); z.psn = Math.max(z.psn || 0, 4); z.psnBy = p.i; z.psnM = mul; z.stun = Math.max(z.stun || 0, 0.25); n++; }
+    emit({ k: 'mhit', o: p.i, h: n ? 1 : 0, x: r2(hx), y: r2(hy), z: r2(p.z + 0.6), r: 1.2, bite: 1 }); return;
+  }
+  if (M.atk === 'hop') { // 玉兔: hop onto the target and stamp
+    const d = T ? Math.min(M.reach, Math.hypot(T.x - p.x, T.y - p.y)) : 3, L = evoLand(p, a, d, 2) || { x: p.x, y: p.y, L: p.L };
+    mechMove(p, { jmp: { t: 0, T: 0.45, x0: p.x, y0: p.y, x1: L.x, y1: L.y, L: L.L, h: 1.8, mech: 1 } });
+    (W.dly = W.dly || []).push({ t: 0.45, stomp: 1, x: L.x, y: L.y, L: L.L, R: 2.4, dmg: M.dmg * mul, o: p.i, st: 0.9 }); return;
+  }
+  if (M.atk === 'shell') { // 玄龟: rams forward with the shell
+    mechMove(p, { dash: { dx: ca * 0.8, dy: sa * 0.8, t: 0, T: 0.12 } }); (W.dly = W.dly || []).push({ t: 0.12, stomp: 1, x: p.x + ca * 1.6, y: p.y + sa * 1.6, L: p.L, R: 2.8, dmg: M.dmg * mul, o: p.i, st: 0.7, kb: 9 }); return;
+  }
+  if (M.atk === 'claw') { // 铁熊: left paw, right paw, then both paws slam down
+    if (T) { const d = Math.hypot(T.x - p.x, T.y - p.y); if (d > M.reach * 0.75 + 0.2) { const st = Math.min(d - M.reach * 0.75, 2); mechMove(p, { dash: { dx: ca * st, dy: sa * st, t: 0, T: 0.12 } }); } }
+    if (p.mcmb === 2) { (W.dly = W.dly || []).push({ t: 0.22, stomp: 1, x: p.x + ca * 1.9, y: p.y + sa * 1.9, L: p.L, R: 2.6, dmg: M.dmg * 1.5 * mul, o: p.i, st: 1.0, kb: 7 }); return; }
+    (W.dly = W.dly || []).push({ t: 0.14, claw: 1, a, o: p.i, dmg: M.dmg * mul }); return;
+  }
+}
+function evoClaw(p, a, dmg) { const M = mechOf(p); let n = 0;
+  for (const z of W.zs) { if (z.hp <= 0 || z.hidden || Math.abs(z.z - p.z) > 2.6) continue; const dx = z.x - p.x, dy = z.y - p.y, d = Math.hypot(dx, dy); if (d > M.reach + z.r || Math.cos(angDiff(Math.atan2(dy, dx), a)) < Math.cos(M.arc || 1.5) && d > 0.6) continue; const big = ZT[z.k].boss || ZT[z.k].kaiju; hurtZombie(z, dmg, p, dx / (d || 1) * (big ? 1 : 5), dy / (d || 1) * (big ? 1 : 5)); z.stun = Math.max(z.stun || 0, big ? 0.05 : 0.4); n++; }
+  emit({ k: 'mhit', o: p.i, h: n ? 1 : 0, x: r2(p.x + Math.cos(a) * 2), y: r2(p.y + Math.sin(a) * 2), z: r2(p.z + 0.4), r: 1, claw: 1 }); }
+function evoSkill(p, M, ang, dist, tx, ty) {
+  const mul = evoMul(p), ca = Math.cos(ang), sa = Math.sin(ang);
+  if (M.skill === 'venom') { const D = clamp(dist, 0, 7), x = p.x + ca * D, y = p.y + sa * D; (W.cz = W.cz || []).push({ k: 4, x: r2(x), y: r2(y), z: r2(p.z), r: 4.5, t: 6, o: p.i, m: mul }); emit({ k: 'mskill', o: p.i, t: 'venom', x: r2(x), y: r2(y), z: r2(p.z) }); }
+  else if (M.skill === 'dragdash') { const D = 10; let ex = p.x, ey = p.y; let L1 = p.L; for (let s = 0; s < D * 4; s++) { const nx = ex + ca * 0.25, ny = ey + sa * 0.25; if (Math.floor(nx) !== Math.floor(ex) || Math.floor(ny) !== Math.floor(ey)) { const L2_ = transition(Math.floor(ex), Math.floor(ey), Math.floor(nx), Math.floor(ny), L1, 'p', true); if (L2_ < 0) break; L1 = L2_; } ex = nx; ey = ny; }
+    const L2 = Math.hypot(ex - p.x, ey - p.y);
+    for (const z of W.zs) { if (z.hp <= 0 || z.hidden || Math.abs(z.z - p.z) > 2.6) continue; const rx = z.x - p.x, ry = z.y - p.y, t = clamp(rx * ca + ry * sa, 0, L2), off = Math.hypot(rx - ca * t, ry - sa * t); if (off > 1.6 + z.r) continue; const big = ZT[z.k].boss || ZT[z.k].kaiju, sd = Math.sign(ca * ry - sa * rx) || 1, kb = big ? 1 : 6; hurtZombie(z, 260 * mul, p, -sa * sd * kb, ca * sd * kb); z.burn = Math.max(z.burn || 0, 4); z.burnBy = p.i; z.stun = Math.max(z.stun || 0, big ? 0.2 : 0.8); }
+    mechMove(p, { dash: { t: 0, T: 0.42, dx: ex - p.x, dy: ey - p.y } }); emit({ k: 'mskill', o: p.i, t: 'dragdash', x: r2(p.x), y: r2(p.y), z: r2(p.z), a: r2(ang), d: r2(L2) }); }
+  else if (M.skill === 'moon') { const L = evoLand(p, ang, clamp(dist, 3, 14), 3); if (!L) { emit({ k: 'deny', p: p.i, why: '那里落不了地：要空旷的地面' }); return; }
+    mechMove(p, { jmp: { t: 0, T: 0.95, x0: p.x, y0: p.y, x1: L.x, y1: L.y, L: L.L, h: 5.5, mech: 1 } }); (W.dly = W.dly || []).push({ t: 0.95, stomp: 1, moon: 1, x: L.x, y: L.y, L: L.L, R: 6, dmg: 320 * mul, o: p.i, st: 1.5, kb: 9 });
+    emit({ k: 'mskill', o: p.i, t: 'moon', x: r2(p.x), y: r2(p.y), z: r2(p.z), e: [r2(L.x), r2(L.y)] }); }
+  else if (M.skill === 'spin') { p.spinT = 4; p.spinHit = 0; emit({ k: 'mskill', o: p.i, t: 'spin', x: r2(p.x), y: r2(p.y), z: r2(p.z) }); }
+  else if (M.skill === 'rebirth') { const cz = inAirZ(p) != null ? inAirZ(p) : p.z;
+    for (const z of W.zs) { if (z.hp <= 0 || z.hidden) continue; const dx = z.x - p.x, dy = z.y - p.y, d = Math.hypot(dx, dy); if (d > 6 + z.r || Math.abs(z.z - cz) > 6) continue; const big = ZT[z.k].boss || ZT[z.k].kaiju; hurtZombie(z, 240 * mul, p, dx / (d || 1) * (big ? 1 : 6), dy / (d || 1) * (big ? 1 : 6)); z.burn = Math.max(z.burn || 0, 4); z.burnBy = p.i; }
+    p.mh = p.mh || []; p.mh[p.veh] = Math.min(MECHS[p.veh].hp, mhpOf(p) + MECHS[p.veh].hp * 0.4);
+    for (const q of W.p) { if (q.gone || q.dead || q === p || Math.hypot(q.x - p.x, q.y - p.y) > 8) continue; if (q.down) continue; q.hp = Math.min(q.maxHp, q.hp + 60); emit({ k: 'sfx', n: 'heal', x: q.x, y: q.y }); }
+    emit({ k: 'mskill', o: p.i, t: 'rebirth', x: r2(p.x), y: r2(p.y), z: r2(cz) }); }
+  else if (M.skill === 'roar') { for (const z of W.zs) { if (z.hp <= 0 || z.hidden) continue; const dx = z.x - p.x, dy = z.y - p.y, d = Math.hypot(dx, dy); if (d > 9 + z.r || Math.abs(z.z - p.z) > 3) continue; const big = ZT[z.k].boss || ZT[z.k].kaiju;
+      if (d < 4) hurtZombie(z, 120 * mul, p, dx / (d || 1) * (big ? 1 : 5), dy / (d || 1) * (big ? 1 : 5)); z.stun = Math.max(z.stun || 0, big ? 0.6 : 2.5); }
+    p.rageT = 8; emit({ k: 'mskill', o: p.i, t: 'roar', x: r2(p.x), y: r2(p.y), z: r2(p.z) }); }
+  p.mcd = M.cd; noiseAt(p.x, p.y, 10, p.z);
 }
 
 /* ---- 40_modes.js ---- */
@@ -9039,7 +9182,7 @@ function drawClouds() {
     if (n >= C.length) break; const o = C[n++], fade = clamp(c.t / 1.5, 0, 1); o.g.visible = true; o.g.position.set(c.x, c.z + 0.04, c.y);
     const slow = c.k === 1; o.d.visible = o.r.visible = slow; o.d.scale.set(c.r, 1, c.r); o.r.scale.set(c.r, 1, c.r); o.sm.opacity = 0.35 * fade;
     o.puffs.forEach((m, j) => { m.visible = !slow; if (slow) return; const a = j / 9 * Math.PI * 2 + W.t * 0.15, rr = j === 8 ? 0 : c.r * 0.55; m.position.set(Math.cos(a) * rr, 0.9 + (j % 3) * 0.35 + Math.sin(W.t + j) * 0.08, Math.sin(a) * rr); const sc = c.r * (j === 8 ? 0.62 : 0.48); m.scale.set(sc, sc * 0.8, sc); });
-    o.pm.opacity = 0.62 * fade;
+    o.pm.opacity = (c.k === 4 ? 0.26 : 0.62) * fade; o.pm.color.set(c.k === 4 ? '#62c844' : '#b8bcc4'); if (c.k === 4 && FXR() < 0.15) addP({ x: c.x + frnd(-c.r, c.r) * 0.7, y: c.y + frnd(-c.r, c.r) * 0.7, z: c.z + 0.2, vx: 0, vy: 0, vz: 0.6, g: 0.1, col: '#9dff6a', s: 0.08, life: 0.9 }); /* (round 37) 毒雾 is green and bubbles */
   }
   for (let k = n; k < C.length; k++) C[k].g.visible = false;
 }
@@ -9250,11 +9393,14 @@ function fxEvent(e) {
     case 'mpunch': { const q = W.p[e.o]; if (!q) break; q._mcombo = e.c != null ? e.c : q._mpT != null && q._mpT < 0.95 ? ((q._mcombo || 0) + 1) % 3 : 0; q._mpT = 0; q._mpS = e.s; if (e.a != null) { q._mA = e.a; q._mAT = 0.5; } { const M = MECHS[q.veh]; sfx(M && M.style === 'slim' ? 'mslash' : 'mswing', q.x, q.y); } break; } /* (round 36f) a sword cut sounds like one */ /* (round 35) e.a: the mech turns to the zombie it locked onto */ // (round 34b) a quick follow-up continues the combo
     case 'mrkt': (RND.mrk = RND.mrk || []).push({ x: e.x, y: e.y, z: e.z, e: e.e, T: Math.max(0.05, e.t), t: 0, kd: e.kd }); mechShotFx(e); if (0) for (let k = 0; k < 2; k++) RND.mrk.push({ x: e.x + frnd(-0.15, 0.15), y: e.y + frnd(-0.15, 0.15), z: e.z + frnd(0, 0.2), e: [e.e[0] + frnd(-0.8, 0.8), e.e[1] + frnd(-0.8, 0.8), e.e[2]], T: Math.max(0.05, e.t * frnd(0.85, 1.15)), t: 0, kd: 'parcel', sm: 0.65, fake: 1 }); /* (round 35) a little spray of parcels, not one */ { const q = W.p[e.o]; if (q) { q._mrec = 1; } sfx(e.kd === 'cannon' ? 'cannon' : e.kd === 'parcel' || e.kd === 'bigparcel' ? 'parcel' : 'launcher', e.x, e.y); RND.flashes.push({ x: e.x, y: e.y, z: e.z, t: 0, life: 0.06 }); } break; // (round 34d) rockets / shells / the fist cannon in flight
     case 'mhit': { const q = W.p[e.o]; if (!q) break; mechHitFx(e, q); /* (round 36) */ if (thr('mclang', 0.07)) sfx('mclang', e.x, e.y); if (e.box) { debrisFx(e.x, e.y, e.z + 0.1, '#b8893a', e.box > 1 ? 16 : 8); debrisFx(e.x, e.y, e.z + 0.1, '#e8d9a8', e.box > 1 ? 6 : 3); sfx('smash', e.x, e.y); if (e.box > 1) shake(e.x, e.y, 0.15); } if (e.g) { debrisFx(e.x, e.y, e.z, '#8a7e6a', 8); for (let k = 0; k < 14; k++) { const a = k / 14 * Math.PI * 2, r = (e.r || 1) * 0.5; addP({ x: e.x + Math.cos(a) * r, y: e.y + Math.sin(a) * r, z: e.z + 0.05, vx: Math.cos(a) * 3.5 * (e.r || 1), vy: Math.sin(a) * 3.5 * (e.r || 1), vz: 0.3, g: -0.2, col: '#a89878', s: 0.1, life: 0.45, smoke: 1 }); } } if (e.h) { q._mhs = 0.07; sfx('smash', e.x, e.y); shake(e.x, e.y, 0.18); for (let k = 0; k < 12; k++) addP({ x: e.x, y: e.y, z: e.z, vx: frnd(-3, 3), vy: frnd(-3, 3), vz: frnd(0.5, 3), col: k % 3 ? '#ffd27a' : '#7a1010', s: 0.07, life: 0.35 }); RND.flashes.push({ x: e.x, y: e.y, z: e.z, t: 0, life: 0.06 }); } break; }
+    case 'evo': evoEvent(e); break; case 'evoready': if (e.p === ME) { toast('进化槽满了：按 X（触屏「进化」）变成' + e.n + '，长按 X 变回载具', '#ffd24a'); sfx('ready'); } break; case 'efe': evoFeathers(e); break; case 'moonfx': evoMoonFx(e); break;
+    case 'ebr': { const q = W.p[e.o]; if (q) { q._brT = W.t; q._mA = e.a; q._mAT = 0.3; } if (thr('ebr', 0.25)) sfx('flamer', q ? q.x : 0, q ? q.y : 0); break; } /* (round 37) beast events */
     case 'drones': droneEvent(e); break; case 'dsh': droneShots(e); break; /* (round 36n) 浮游炮 */
     case 'dodge': RND.floats.push({ x: e.x, y: e.y, z: e.z + 1.6, text: '闪避', col: '#9ff0ff', t: 0 }); if (thr('dodge', 0.2)) sfx('mdash', e.x, e.y); break; /* (round 36n) */
     case 'zland': for (let k = 0; k < 6; k++) addP({ x: e.x, y: e.y, z: e.z + 0.05, vx: frnd(-1.5, 1.5), vy: frnd(-1.5, 1.5), vz: 0.3, g: -0.2, col: '#9a8a70', s: 0.1, life: 0.45, smoke: 1 }); break;
     case 'mskill': { const q = W.p[e.o]; if (q) { q._msT = 0; q._msK = e.t; }
-      if (e.t === 'quake') { shake(e.x, e.y, 1.0); quakeFx(e); sfx('collapse', e.x, e.y); sfx('cannon', e.x, e.y); }
+      if (['venom', 'dragdash', 'moon', 'spin', 'rebirth', 'roar'].includes(e.t)) evoSkillFx(e); /* (round 37) */
+      else if (e.t === 'quake') { shake(e.x, e.y, 1.0); quakeFx(e); sfx('collapse', e.x, e.y); sfx('cannon', e.x, e.y); }
       else if (e.t === 'drones') { sfx('xform', e.x, e.y); }
       else if (e.t === 'slam') { shake(e.x, e.y, 0.6); debrisFx(e.x, e.y, e.z + 0.2, '#9a8a70', 26); for (let k = 0; k < 36; k++) { const a = k / 36 * Math.PI * 2; addP({ x: e.x + Math.cos(a) * 0.8, y: e.y + Math.sin(a) * 0.8, z: e.z + 0.1, vx: Math.cos(a) * 7, vy: Math.sin(a) * 7, vz: 0.4, g: -0.3, col: '#a89878', s: 0.13, life: 0.55, smoke: 1 }); } sfx('collapse', e.x, e.y); }
       else if (e.t === 'dash') { sfx('mdash', e.x, e.y); for (let k = 0; k < 16; k++) addP({ x: e.x + Math.cos(e.a) * k * 0.5, y: e.y + Math.sin(e.a) * k * 0.5, z: e.z + 1.3, vx: frnd(-0.3, 0.3), vy: frnd(-0.3, 0.3), vz: 0.2, g: -0.1, col: '#ffb060', s: 0.08, life: 0.35 }); }
@@ -10015,7 +10161,7 @@ function drawPlayers(vl, dt) {
   while (OBJ.pl.length < W.p.length) OBJ.pl.push(mkPlayerModel(OBJ.pl.length));
   OBJ.pl.forEach((m, i) => { const p = W.p[i]; m.g.visible = !!p && !p.gone && p.L <= vl; });
   W.p.forEach((p, i) => {
-    const m = OBJ.pl[i]; if (!m.g.visible) return;
+    const m = OBJ.pl[i]; if (!m.g.visible) return; if (m.evo) m.evo.visible = false; /* (round 37) the beast shows only while evoDraw says so */
     if (!m.veh) { m.veh = mkVehicles(); m.g.add(m.veh); }
     let zv = (p.zv != null ? p.zv : p.z) + (p.rjz != null ? p.rjz : p.jz || 0), gx = p.rx != null ? p.rx : p.x, gy = p.ry != null ? p.ry : p.y; // (round 34) rx / ry: drawn between sim steps
     // (round 26) the back-seat rider is drawn glued to the driver as drawn on this screen (their own reported position lags behind over the network)
@@ -10035,7 +10181,7 @@ function drawPlayers(vl, dt) {
       if (p._px == null || p._ly == null) { p._px = gx; p._py = gy; p._ly = p.aim; p._spd = 0; }
       const mvx = gx - p._px, mvy = gy - p._py; p._spd = lerp(p._spd || 0, dt > 0 ? Math.min(8, Math.hypot(mvx, mvy) / dt) : 0, Math.min(1, dt * 10)); p._px = gx; p._py = gy;
       if (p._spd > 0.4 && Math.hypot(mvx, mvy) > 1e-4) { const md = Math.atan2(mvy, mvx); p._mback = Math.cos(angDiff(md, p.aim)) < (p._mback ? -0.2 : -0.45); p._ly = angLerp(p._ly, p._mback ? md + Math.PI : md, Math.min(1, dt * 4)); } else if (p._spd < 0.25) { p._mback = false; p._ly = angLerp(p._ly, p.aim, Math.min(1, dt * 1.6)); } // (round 34b) backing away: walk backwards, still facing the fight
-      if (p._mAT > 0) { p._mAT -= dt; p._ly = angLerp(p._ly, p._mA, Math.min(1, dt * 14)); } p._uy = p._mAT > 0 ? p._mA : p.aim; m.mech.rotation.y = -p._ly; /* (round 35) swing / shoot toward the locked target */ if (m.mech.visible) { mechTick(p, m.mech, dt, xfing ? clamp((f - 0.2) / 0.8, 0, 1) : 1); if (!xfing) mechDamageFx(p, m.mech, dt); } return; /* (round 36) battle damage */
+      if (p._mAT > 0) { p._mAT -= dt; p._ly = angLerp(p._ly, p._mA, Math.min(1, dt * 14)); } p._uy = p._mAT > 0 ? p._mA : p.aim; m.mech.rotation.y = -p._ly; /* (round 35) swing / shoot toward the locked target */ const evS = xfing ? 1 : evoDraw(p, m, dt); /* (round 37) beast form */ if (evS <= 0.02) m.mech.visible = false; if (m.mech.visible) { mechTick(p, m.mech, dt, xfing ? clamp((f - 0.2) / 0.8, 0, 1) : 1); if (evS < 1) m.mech.scale.multiplyScalar(evS); if (!xfing && evS > 0.5) mechDamageFx(p, m.mech, dt); } return; /* (round 36) battle damage */
     }
     if (m.mech) m.mech.visible = false; m.lower.visible = m.upper.visible = true;
     if (m.veh && m.veh.userData.all) for (const q of m.veh.userData.all) if (q && (q.rotation.z || q.position.y || q.scale.x !== 1)) { q.rotation.z = 0; q.position.y = 0; q.scale.set(1, 1, 1); } // undo the fold
@@ -11314,6 +11460,8 @@ function mprjMake(kd) {
   else if (kd === 'rocket') { const body = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.42, 8).rotateZ(Math.PI / 2), L('#d8dde2')); g.add(body); const nose = new THREE.Mesh(new THREE.ConeGeometry(0.055, 0.14, 8).rotateZ(-Math.PI / 2).translate(0.28, 0, 0), L('#d04030')); g.add(nose);
     for (let k = 0; k < 4; k++) { const f = new THREE.Mesh(boxG(0.12, 0.01, 0.09, -0.18, 0, 0.06), L('#5a6a7a')); f.rotation.x = k * Math.PI / 2; g.add(f); }
     const fl = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.32, 8).rotateZ(Math.PI / 2).translate(-0.36, 0, 0), new THREE.MeshBasicMaterial({ color: '#ffb84a', transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false })); g.add(fl); g.userData.fl = fl; }
+  else if (kd === 'feather') { const ad = c => new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false }); /* (round 37) 火凤's burning feather */
+    const a = new THREE.Mesh(new THREE.SphereGeometry(0.1, 10, 6), ad('#ff6a1e')); a.scale.set(3.2, 0.25, 0.9); g.add(a); const b = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), ad('#ffd060')); b.scale.set(2.4, 0.3, 0.6); b.position.x = 0.12; g.add(b); }
   else if (kd === 'cannon') { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.22, 8).rotateZ(Math.PI / 2), L('#c8a040')); g.add(m); const n = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6).translate(0.11, 0, 0), L('#c8a040')); g.add(n); const gl = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 6).translate(-0.08, 0, 0), new THREE.MeshBasicMaterial({ color: '#ffd27a', transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false })); g.add(gl); }
   else { const m = new THREE.Mesh(new THREE.SphereGeometry(0.2, 10, 8), new THREE.MeshBasicMaterial({ color: '#9fe8ff', transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false })); g.add(m); const c = new THREE.Mesh(boxG(0.26, 0.22, 0.24), L('#3a4048')); g.add(c); }
   g.traverse(o => { if (o.isMesh && o.material.type !== 'MeshBasicMaterial') o.castShadow = true; }); SCN.add(g); return g;
@@ -11347,7 +11495,7 @@ function fxTick(dt) {
 // a blow lands (mhit): slash arcs for blades / kicks, shock ring + crack for the ground smashes, sparks on what it hit
 function mechHitFx(e, q) {
   if (!q || !inMech(q)) return; const M = mechOf(q), a = q._mA != null && q._mAT > 0 ? q._mA : q.aim, c = q._mcombo || 0, s = (MECH_DIM[M.style] || {}).s || 1;
-  if (M.atk === 'chop' || M.atk === 'kick') { // a bright crescent along the swing, tilted by the move
+  if (M.atk === 'chop' || M.atk === 'kick' || (M.atk === 'claw' && !e.g)) { // a bright crescent along the swing, tilted by the move; (round 37) 铁熊's paw swipes too
     const ax = (q.rx != null ? q.rx : q.x), ay = (q.ry != null ? q.ry : q.y), az = (q.zv != null ? q.zv : q.z) + (M.atk === 'kick' ? 0.5 : 1.3) * s, R = M.reach * 0.95;
     const roll = M.atk === 'kick' ? 0.15 : c === 0 ? 0.75 : c === 1 ? 0.12 : 1.45, col = M.atk === 'kick' ? '#ffe680' : '#ffb060';
     fxAdd({ kind: 'arc', x: ax, y: ay, z: az, yaw: a, roll: (q._mpS ? 1 : -1) * roll, s0: R * 0.7, s1: R * 0.95, life: 0.22, col, op: 0.65 });
@@ -11446,6 +11594,290 @@ function quakeFx(e) { const R = e.r || 7;
   for (let k = 0; k < 60; k++) { const a = rand() * Math.PI * 2, r = 1 + rand() * (R - 1); addP({ x: e.x + Math.cos(a) * r, y: e.y + Math.sin(a) * r, z: e.z + 0.1, vx: Math.cos(a) * 1.5, vy: Math.sin(a) * 1.5, vz: 3 + rand() * 4, g: -9, col: rand() < 0.5 ? '#7a6a52' : '#a08c6c', s: 0.12 + rand() * 0.12, life: 0.9 }); }
   for (let k = 0; k < 40; k++) { const a = k / 40 * Math.PI * 2; addP({ x: e.x + Math.cos(a) * R * 0.9, y: e.y + Math.sin(a) * R * 0.9, z: e.z + 0.1, vx: Math.cos(a) * 2, vy: Math.sin(a) * 2, vz: 0.6, g: -0.3, col: '#a89878', s: 0.18, life: 0.8, smoke: 1 }); }
   if (typeof addDecal === 'function') addDecal(e.x, e.y, e.z + 0.02, R * 0.7, '#2a2016', 0.35); }
+
+/* ---- 59_evo_draw.js ---- */
+/* ---------- (round 37) 第二形态: the six beasts (models, animation, effects) ----------
+   Model space as for the mechs: +x forward, +y up. mkBeast(v) builds one; beastTick animates it every frame; evoDraw swaps mech ↔ beast. */
+const EVW = new THREE.Vector3();
+const eL = c => new THREE.MeshLambertMaterial({ color: c });
+const eG = (c, o) => o != null ? new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: o, blending: THREE.AdditiveBlending, depthWrite: false }) : new THREE.MeshBasicMaterial({ color: c });
+const eS = (r, w, h) => new THREE.SphereGeometry(r, w || 16, h || 12);
+function eP(par, geo, mat, x, y, z, rx, ry, rz, sx, sy, sz) { const m = new THREE.Mesh(geo, mat); m.position.set(x || 0, y || 0, z || 0); m.rotation.set(rx || 0, ry || 0, rz || 0); if (sx != null) m.scale.set(sx, sy != null ? sy : sx, sz != null ? sz : sx); par.add(m); return m; }
+const eGrp = (par, x, y, z) => { const g = new THREE.Group(); g.position.set(x || 0, y || 0, z || 0); par.add(g); return g; };
+const eTube = (pts, r, seg) => new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts.map(p => new THREE.Vector3(p[0], p[1], p[2]))), seg || 16, r, 6, false);
+// a tile laid on an ellipsoid surface (rx, ry, rz) at polar angle th from the top and azimuth az, facing outward
+function eOnDome(par, geo, mat, cy, rx, ry, rz, th, az, out) {
+  const n = new THREE.Vector3(Math.sin(th) * Math.cos(az) / rx, Math.cos(th) / ry, Math.sin(th) * Math.sin(az) / rz).normalize(), m = new THREE.Mesh(geo, mat);
+  m.position.set(Math.sin(th) * Math.cos(az) * rx + n.x * out, cy + Math.cos(th) * ry + n.y * out, Math.sin(th) * Math.sin(az) * rz + n.z * out); m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), n); par.add(m); return m;
+}
+const BEAST_S = [0, 1.35, 1.25, 1.25, 1.3, 1.25, 1.25]; // overall size per beast
+
+/* ---------- 青蛇: a cobra, hood spread, sliding on its belly ---------- */
+function mkSnake(E) {
+  const g = new THREE.Group(), U = { k: 1, segs: [] }; g.userData = U;
+  const main = eL(E.col[0]), dark = eL(E.col[1]), belly = eL('#e2d68a'), spot = eL('#1b4632'), eye = eG('#d8ff4a'), blk = eL('#0d0d0d'), fang = eL('#f6f2e8'), tng = eL('#d0304a'), hoodIn = eL('#e9cf6a');
+  const N = 28;
+  for (let i = 0; i < N; i++) { const t = i / (N - 1), r = i < 3 ? 0.25 + i * 0.02 : 0.05 + 0.27 * (1 - Math.pow(Math.max(0, (t - 0.12) / 0.88), 1.2)); const s = eGrp(g);
+    eP(s, eS(r, 14, 10), main, 0, 0, 0, 0, 0, 0, 1.3, 0.82, 1); eP(s, eS(r * 0.93, 12, 8), belly, 0, -r * 0.3, 0, 0, 0, 0, 1.25, 0.48, 0.96);
+    if (i > 2 && i % 3 === 0) eP(s, eS(r * 0.55, 10, 8), spot, 0, r * 0.55, 0, 0, Math.PI / 4, 0, 1.3, 0.35, 1.3);
+    if (i > 3 && i % 3 === 1) for (const z of [-1, 1]) eP(s, eS(r * 0.3, 8, 6), spot, 0, r * 0.2, z * r * 0.78, 0, 0, 0, 1.5, 0.5, 0.5);
+    U.segs.push({ s, r }); }
+  const head = eGrp(g); U.head = head; head.scale.setScalar(1.35);
+  eP(head, eS(0.3, 20, 14), main, 0.1, 0, 0, 0, 0, 0, 1.55, 0.6, 1.05); eP(head, eS(0.2, 16, 10), main, 0.4, -0.02, 0, 0, 0, 0, 1.35, 0.55, 0.9);
+  eP(head, eS(0.22, 14, 8), dark, 0.18, 0.11, 0, 0, 0, 0, 1.5, 0.25, 0.8); // the dark crown scale
+  for (const z of [-1, 1]) { eP(head, eS(0.1, 10, 8), main, 0.3, 0.1, z * 0.15, 0, 0, 0, 1.3, 0.45, 0.8); // brow ridge
+    eP(head, eS(0.07, 12, 10), eye, 0.31, 0.06, z * 0.165); eP(head, new THREE.BoxGeometry(0.025, 0.1, 0.02), blk, 0.345, 0.06, z * 0.215, 0, z * 0.5, 0);
+    eP(head, eS(0.018, 6, 4), blk, 0.66, 0.02, z * 0.05); // nostril
+    eP(head, new THREE.ConeGeometry(0.024, 0.15, 6), fang, 0.52, -0.12, z * 0.075, Math.PI, 0, 0); }
+  const jaw = eGrp(head, 0.06, -0.07, 0); U.jaw = jaw; eP(jaw, eS(0.24, 14, 8), belly, 0.25, -0.03, 0, 0, 0, 0, 1.6, 0.33, 0.88);
+  const tg = eGrp(head, 0.55, -0.07, 0); U.tongue = tg; eP(tg, new THREE.BoxGeometry(0.22, 0.012, 0.02), tng, 0.11, 0, 0); for (const z of [-1, 1]) eP(tg, new THREE.BoxGeometry(0.08, 0.01, 0.015), tng, 0.25, 0, z * 0.02, 0, z * 0.5, 0);
+  const hood = eGrp(head, -0.2, -0.2, 0); hood.scale.setScalar(0.72); U.hood = hood; U.hoodS = 0.72;
+  eP(hood, eS(0.5, 20, 14), main, 0, 0, 0, 0, 0, 0.15, 0.12, 1.0, 1.25); eP(hood, eS(0.43, 18, 12), hoodIn, 0.05, -0.02, 0, 0, 0, 0.15, 0.06, 0.85, 1.05);
+  for (const z of [-1, 1]) { eP(hood, new THREE.TorusGeometry(0.11, 0.028, 6, 18), dark, -0.065, 0.12, z * 0.22, 0, Math.PI / 2, 0); eP(hood, eS(0.05, 8, 6), eG('#ffe060'), -0.07, 0.12, z * 0.22); }
+  return g;
+}
+function snakeTick(p, g, dt) {
+  const U = g.userData, sp = p._spd || 0, mv = clamp(sp / 4, 0, 1); U.ph = (U.ph || 0) + dt * (1.4 + sp * 2.4);
+  const strike = p._mpT != null && p._mpT < 0.4 ? Math.sin(Math.min(1, p._mpT / 0.4) * Math.PI) : 0, ph = U.ph, sk = p._msK === 'venom' && p._msT < 0.6 ? Math.sin(p._msT / 0.6 * Math.PI) : 0;
+  const neck = [[0.05, 0.98, 0], [-0.17, 0.72, 0], [-0.36, 0.44, 0]];
+  U.segs.forEach((S, i) => { if (i < 3) { const n = neck[i]; S.s.position.set(n[0] + strike * 0.35 * (3 - i) / 3, n[1] - strike * 0.18 * (3 - i) / 3, Math.sin(ph * 0.5 - i) * 0.04); return; }
+    const k = i - 2, w = Math.min(1, k / 6); S.s.position.set(-0.36 - k * 0.18, S.r * 0.85, Math.sin(ph - i * 0.38) * (0.22 + 0.16 * mv) * w); });
+  U.head.position.set(0.26 + strike * 0.75, 1.12 + Math.sin(ph * 0.5) * 0.03 - strike * 0.25 + sk * 0.1, 0); U.head.rotation.z = -strike * 0.35 + sk * 0.5;
+  U.jaw.rotation.z = -(strike * 0.7 + sk * 0.6); U.hood.scale.set(U.hoodS, U.hoodS * (1 + strike * 0.15 + sk * 0.2), U.hoodS * (1 + strike * 0.25 + sk * 0.3));
+  const fl = (W.t * 1.3 + p.i) % 2.2; U.tongue.scale.x = fl < 0.25 ? Math.sin(fl / 0.25 * Math.PI) : 0.001; U.tongue.rotation.y = Math.sin(W.t * 40) * 0.15;
+  if (sk && FXR() < dt * 30) { U.head.getWorldPosition(EVW); addP({ x: EVW.x, y: EVW.z, z: EVW.y, vx: Math.cos(p._ly) * 3 + frnd(-1, 1), vy: Math.sin(p._ly) * 3 + frnd(-1, 1), vz: 0.5, g: 0.2, col: '#8dff5a', s: 0.1, life: 0.6, smoke: 1 }); }
+}
+
+/* ---------- 赤龙: a long Chinese dragon swimming through the air ---------- */
+function mkDragon(E) {
+  const g = new THREE.Group(), U = { k: 2, segs: [], legs: [] }; g.userData = U;
+  const main = eL(E.col[0]), dark = eL(E.col[1]), gold = eL(E.col[2]), belly = eL('#f0c66a'), white = eL('#f6efe0'), eye = eG('#ffd040'), blk = eL('#120808'), mane = eL('#7a1414'), flame = eG('#ff9a30', 0.75), pearl = eG('#fff2b0');
+  const N = 22;
+  for (let i = 0; i < N; i++) { const t = i / (N - 1), r = 0.1 + 0.27 * Math.sin(Math.min(1, 0.22 + t * 0.95) * Math.PI) * (1 - t * 0.35); const s = eGrp(g);
+    eP(s, eS(r, 14, 10), main, 0, 0, 0, 0, 0, 0, 1.25, 0.95, 1); eP(s, eS(r * 0.9, 12, 8), belly, 0, -r * 0.35, 0, 0, 0, 0, 1.2, 0.45, 0.92);
+    eP(s, new THREE.ConeGeometry(r * 0.32, r * 1.1, 5), gold, -r * 0.2, r * 1.05, 0, 0, 0, 0.55); // dorsal spine, leaning back
+    if (i % 2) for (const z of [-1, 1]) eP(s, eS(r * 0.35, 8, 6), dark, 0, r * 0.15, z * r * 0.85, 0, 0, 0, 1.3, 0.6, 0.4);
+    U.segs.push({ s, r }); }
+  // four legs with golden claws
+  for (const [si, side] of [[3, -1], [3, 1], [12, -1], [12, 1]]) { const S = U.segs[si], hip = eGrp(S.s, 0, -S.r * 0.3, side * S.r * 0.85); eP(hip, eS(0.11, 10, 8), main, 0, 0, 0, 0, 0, 0, 1, 1.3, 1);
+    const kn = eGrp(hip, 0.05, -0.22, side * 0.08); eP(hip, new THREE.CylinderGeometry(0.06, 0.07, 0.25, 8), main, 0.02, -0.11, side * 0.04, side * 0.3, 0, 0.2);
+    eP(kn, new THREE.CylinderGeometry(0.045, 0.06, 0.22, 8), main, 0.04, -0.09, 0, 0, 0, -0.4); for (let c = -1; c <= 1; c++) eP(kn, new THREE.ConeGeometry(0.022, 0.12, 5), gold, 0.12, -0.2, c * 0.04, 0, 0, -1.9);
+    U.legs.push({ hip, kn, side, si }); }
+  const tail = eGrp(U.segs[N - 1].s); for (let k = 0; k < 4; k++) eP(tail, new THREE.ConeGeometry(0.08, 0.45, 6), flame, -0.2, 0, 0, 0, k * Math.PI / 2, Math.PI / 2 + 0.4 * Math.sin(k * 1.7)); U.tail = tail;
+  // the head
+  const head = eGrp(g); U.head = head;
+  eP(head, eS(0.3, 20, 14), main, 0, 0.02, 0, 0, 0, 0, 1.25, 0.85, 0.95); eP(head, eS(0.2, 16, 12), main, 0.33, -0.04, 0, 0, 0, 0, 1.6, 0.62, 0.8); // skull, long snout
+  eP(head, eS(0.1, 12, 8), gold, 0.62, 0.0, 0, 0, 0, 0, 0.8, 0.7, 1.2); // nose pad
+  for (const z of [-1, 1]) { eP(head, eS(0.04, 8, 6), blk, 0.67, 0.02, z * 0.06);
+    eP(head, eS(0.11, 10, 8), dark, 0.15, 0.17, z * 0.14, 0, 0, 0.3, 1.5, 0.5, 0.8); // brow
+    eP(head, eS(0.065, 12, 10), eye, 0.2, 0.09, z * 0.19); eP(head, eS(0.028, 8, 6), blk, 0.24, 0.09, z * 0.215);
+    // antlers
+    const an = eGrp(head, -0.08, 0.22, z * 0.12); an.rotation.set(z * -0.35, 0, 0.75); eP(an, new THREE.CylinderGeometry(0.02, 0.04, 0.55, 6), gold, 0, 0.27, 0);
+    eP(an, new THREE.CylinderGeometry(0.014, 0.025, 0.24, 5), gold, 0.08, 0.3, 0, 0, 0, -0.9); eP(an, new THREE.CylinderGeometry(0.012, 0.022, 0.2, 5), gold, -0.06, 0.42, 0, 0, 0, 0.9);
+    // whiskers flowing back
+    eP(head, eTube([[0.58, -0.05, z * 0.08], [0.6, -0.1, z * 0.3], [0.3, -0.18, z * 0.5], [-0.1, -0.1, z * 0.6], [-0.45, -0.25, z * 0.55]], 0.012, 20), gold);
+    // mane
+    for (let k = 0; k < 3; k++) eP(head, new THREE.ConeGeometry(0.07, 0.42, 5), mane, -0.25 - k * 0.04, 0.05 - k * 0.1, z * (0.16 + k * 0.03), z * 0.4, 0, Math.PI / 2 + 0.25 - k * 0.15); }
+  const jaw = eGrp(head, 0.12, -0.12, 0); U.jaw = jaw; eP(jaw, eS(0.17, 14, 8), belly, 0.2, -0.04, 0, 0, 0, 0, 1.7, 0.4, 0.75);
+  for (let k = 0; k < 4; k++) for (const z of [-1, 1]) { eP(jaw, new THREE.ConeGeometry(0.018, 0.07, 5), white, 0.15 + k * 0.08, 0.02, z * (0.09 - k * 0.012)); eP(head, new THREE.ConeGeometry(0.018, 0.07, 5), white, 0.3 + k * 0.08, -0.13, z * (0.09 - k * 0.012), Math.PI, 0, 0); }
+  U.mouth = new THREE.Object3D(); U.mouth.position.set(0.68, -0.1, 0); head.add(U.mouth);
+  U.pearl = eGrp(g); eP(U.pearl, eS(0.08, 16, 12), pearl); eP(U.pearl, eS(0.13, 12, 8), eG('#ffd070', 0.22)); head.scale.setScalar(1.3);
+  return g;
+}
+function dragonTick(p, g, dt) {
+  const U = g.userData, sp = p._spd || 0; U.ph = (U.ph || 0) + dt * (1.6 + sp * 1.4); const ph = U.ph, br = W.t - (p._brT || -9) < 0.25 ? 1 : 0;
+  const dash = p._msK === 'dragdash' && p._msT < 0.5 ? 1 : 0, cy = 1.55;
+  U.segs.forEach((S, i) => { const k = Math.min(1, i / 3); S.s.position.set(0.1 - i * 0.29 * (1 - dash * 0.25), cy + Math.sin(ph - i * 0.42) * 0.3 * k + i * 0.012, Math.sin(ph * 0.8 - i * 0.33) * (0.42 + dash * 0.3) * k); S.s.rotation.x = dash ? (W.t * 14 + i * 0.5) : 0; });
+  for (const L of U.legs) { const w = Math.sin(ph * 1.5 + L.si + (L.side > 0 ? Math.PI : 0)); L.hip.rotation.z = w * 0.6; L.kn.rotation.z = -0.4 + Math.max(0, -w) * 0.6; }
+  U.head.position.set(0.42, cy + 0.12 + Math.sin(ph + 0.6) * 0.08, Math.sin(ph * 0.8 + 0.3) * 0.12); U.head.rotation.z = Math.sin(ph + 0.6) * -0.12 - br * 0.12;
+  U.jaw.rotation.z = -(br * (0.55 + Math.sin(W.t * 30) * 0.08) + (p._msK === 'dragdash' && p._msT < 0.6 ? 0.4 : 0));
+  U.pearl.position.set(0.95 + Math.sin(W.t * 1.3) * 0.1, cy + 0.35 + Math.sin(W.t * 2.1) * 0.12, Math.cos(W.t * 1.3) * 0.25); U.pearl.rotation.y += dt * 2;
+  U.tail.scale.setScalar(0.9 + Math.sin(W.t * 18) * 0.15);
+  if (br) { U.mouth.getWorldPosition(EVW); const a = p._ly; for (let k = 0; k < 4; k++) { const s2 = frnd(5, 9), aa = a + frnd(-0.35, 0.35); addP({ x: EVW.x, y: EVW.z, z: EVW.y, vx: Math.cos(aa) * s2, vy: Math.sin(aa) * s2, vz: frnd(-1.2, 0.3), g: 0.4, col: FXR() < 0.5 ? '#ffb030' : '#ff5a1a', s: 0.16 + FXR() * 0.1, life: 0.55, smoke: 0 }); } }
+  if (dash && FXR() < dt * 60) { const S = U.segs[(FXR() * N22) | 0]; S.s.getWorldPosition(EVW); addP({ x: EVW.x, y: EVW.z, z: EVW.y, vx: frnd(-1, 1), vy: frnd(-1, 1), vz: 0.8, g: 0.3, col: '#ff8a2a', s: 0.18, life: 0.5 }); }
+}
+const N22 = 22;
+
+/* ---------- 玉兔: a jade rabbit, big hind legs, long ears ---------- */
+function mkRabbit(E) {
+  const g = new THREE.Group(), U = { k: 3 }; g.userData = U;
+  const white = eL(E.col[0]), jade = eL(E.col[1]), pink = eL(E.col[2]), gold = eL('#f2cf6a'), eye = eG('#ff4a72'), blk = eL('#141414'), shine = eG('#ffffff');
+  const body = eGrp(g); U.body = body;
+  eP(body, eS(0.5, 22, 16), white, 0, 0.95, 0, 0, 0, 0, 0.95, 1.1, 0.86); eP(body, eS(0.4, 18, 12), jade, 0.2, 0.88, 0, 0, 0, 0, 0.5, 0.95, 0.74);
+  eP(body, new THREE.TorusGeometry(0.42, 0.04, 8, 28), jade, 0, 1.38, 0, Math.PI / 2, 0, 0, 1, 1, 1); // collar
+  for (let k = 0; k < 3; k++) eP(body, eS(0.07, 10, 8), eG('#bff8ff'), 0.4, 1.0 - k * 0.16, 0, 0, 0, 0, 0.4, 1, 1); // jade buttons
+  const head = eGrp(body, 0.05, 1.78, 0); U.head = head;
+  eP(head, eS(0.42, 22, 16), white, 0, 0, 0, 0, 0, 0, 1, 0.92, 1.02);
+  for (const z of [-1, 1]) { eP(head, eS(0.19, 14, 10), white, 0.2, -0.13, z * 0.19); eP(head, eS(0.1, 14, 10), eye, 0.3, 0.06, z * 0.2); eP(head, eS(0.035, 8, 6), shine, 0.37, 0.1, z * 0.22);
+    eP(head, eS(0.07, 10, 8), pink, 0.3, -0.12, z * 0.27, 0, 0, 0, 0.6, 0.6, 1); // blush
+    for (let w = -1; w <= 1; w++) eP(head, new THREE.CylinderGeometry(0.006, 0.006, 0.3, 4), blk, 0.44, -0.08 + w * 0.03, z * 0.2, Math.PI / 2 + z * 0.25, 0, w * 0.15); // whiskers
+    const ear = eGrp(head, -0.06, 0.3, z * 0.15); ear.rotation.x = z * -0.18; U['ear' + (z > 0 ? 'R' : 'L')] = ear;
+    eP(ear, eS(0.14, 14, 12), white, 0, 0.42, 0, 0, 0, 0, 0.6, 3.4, 1.05); eP(ear, eS(0.1, 12, 10), pink, 0.06, 0.42, 0, 0, 0, 0, 0.25, 2.9, 0.7); eP(ear, eS(0.08, 10, 8), jade, 0, 0.86, 0, 0, 0, 0, 0.7, 0.9, 1); }
+  eP(head, eS(0.14, 14, 10), white, 0.36, -0.1, 0); const nose = eP(head, eS(0.05, 10, 8), pink, 0.49, -0.04, 0); U.nose = nose;
+  eP(head, new THREE.BoxGeometry(0.04, 0.07, 0.07), white, 0.45, -0.21, 0);
+  eP(head, new THREE.TorusGeometry(0.1, 0.022, 6, 18, Math.PI * 1.2), gold, 0.38, 0.27, 0, 0, Math.PI / 2, Math.PI * 0.9); // crescent moon on the brow
+  for (const z of [-1, 1]) { const arm = eGrp(body, 0.14, 1.28, z * 0.4); U['arm' + (z > 0 ? 'R' : 'L')] = arm; eP(arm, eS(0.13, 12, 10), white); eP(arm, eS(0.1, 12, 8), white, 0.12, -0.2, 0, 0, 0, 0.5, 1, 1.6, 1); eP(arm, eS(0.09, 10, 8), jade, 0.2, -0.36, 0);
+    const leg = eGrp(body, -0.08, 0.5, z * 0.3); U['leg' + (z > 0 ? 'R' : 'L')] = leg; eP(leg, eS(0.32, 16, 12), white, 0, 0, 0, 0, 0, 0, 1.2, 1, 0.9);
+    const ft = eGrp(leg, 0.05, -0.38, z * 0.02); U['ft' + (z > 0 ? 'R' : 'L')] = ft; eP(ft, eS(0.14, 14, 10), white, 0.15, 0, 0, 0, 0, 0, 2.6, 0.7, 1); eP(ft, eS(0.11, 12, 8), jade, 0.18, -0.06, 0, 0, 0, 0, 2.3, 0.3, 0.8); }
+  const tail = eGrp(body, -0.48, 0.62, 0); eP(tail, eS(0.18, 14, 10), white); for (let k = 0; k < 6; k++) eP(tail, eS(0.09, 8, 6), white, Math.cos(k) * 0.12, Math.sin(k * 1.3) * 0.12, Math.sin(k) * 0.12);
+  return g;
+}
+function rabbitTick(p, g, dt) {
+  const U = g.userData, sp = p._spd || 0, air = (p.rjz != null ? p.rjz : p.jz || 0) > 0.05; U.ph = (U.ph || 0) + dt * (sp > 0.4 ? 3 + sp * 1.2 : 0);
+  const hop = sp > 0.4 && !air ? Math.abs(Math.sin(U.ph)) : 0, push = sp > 0.4 ? Math.max(0, -Math.cos(U.ph * 2)) : 0;
+  U.body.position.y = hop * 0.42; U.body.rotation.z = sp > 0.4 ? -0.15 + Math.cos(U.ph * 2) * 0.12 : air ? -0.3 : 0;
+  const tuck = air ? 1 : push; for (const s of ['L', 'R']) { U['leg' + s].rotation.z = -0.3 * tuck + 0.5 * hop; U['ft' + s].rotation.z = -0.6 * tuck + 0.4 * hop; U['arm' + s].rotation.z = 0.6 * tuck - 0.3 * hop + (p._msK === 'moon' && p._msT < 1 ? -1.6 : 0); }
+  const back = air ? 1.0 : 0.25 * hop + Math.sin(W.t * 2 + p.i) * 0.05; U.earL.rotation.z = U.earR.rotation.z = -back; U.earL.rotation.x = -0.18 - 0.1 * hop; U.earR.rotation.x = 0.18 + 0.1 * hop;
+  U.nose.scale.setScalar(1 + Math.max(0, Math.sin(W.t * 9)) * 0.25); U.head.rotation.z = air ? 0.15 : Math.sin(W.t * 1.2) * 0.04;
+  if (p._msK === 'moon' && p._msT < 1 && FXR() < dt * 40) { U.head.getWorldPosition(EVW); addP({ x: EVW.x + frnd(-0.4, 0.4), y: EVW.z + frnd(-0.4, 0.4), z: EVW.y - 1, vx: 0, vy: 0, vz: -1, g: 0, col: '#bff8ff', s: 0.12, life: 0.6 }); }
+}
+
+/* ---------- 玄龟: the black tortoise — a domed shell of glowing scutes, a little snake for a tail ---------- */
+function mkTurtle(E) {
+  const g = new THREE.Group(), U = { k: 4, legs: [] }; g.userData = U;
+  const main = eL(E.col[0]), dark = eL(E.col[1]), gold = eL(E.col[2]), skin = eL('#5b7a5a'), belly = eL('#b9a26a'), eye = eG('#7fffd0'), blk = eL('#0e1210'), rune = eG(E.glow), snake = eL('#2a3f30');
+  const shell = eGrp(g, 0, 0, 0); U.shell = shell; const SY = 0.55, RX = 1.25, RY = 0.78, RZ = 1.05;
+  eP(shell, new THREE.SphereGeometry(1, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2), main, 0, SY, 0, 0, 0, 0, RX, RY, RZ);
+  eP(shell, new THREE.SphereGeometry(1, 24, 8, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), belly, 0, SY, 0, 0, 0, 0, RX * 0.94, 0.22, RZ * 0.92);
+  eP(shell, new THREE.TorusGeometry(1, 0.075, 8, 48), gold, 0, SY, 0, Math.PI / 2, 0, 0, RX, RZ, 1);
+  const tile = eL('#557a5c'), hex = (r) => new THREE.CylinderGeometry(r, r * 1.04, 0.07, 6), hexRim = r => new THREE.TorusGeometry(r, 0.018, 4, 6);
+  eOnDome(shell, hex(0.3), tile, SY, RX, RY, RZ, 0, 0, 0.0); eOnDome(shell, hexRim(0.3), gold, SY, RX, RY, RZ, 0, 0, 0.04).rotateX(Math.PI / 2); eOnDome(shell, new THREE.TorusGeometry(0.12, 0.022, 6, 6), rune, SY, RX, RY, RZ, 0, 0, 0.05).rotateX(Math.PI / 2);
+  for (let k = 0; k < 6; k++) { const az = k / 6 * Math.PI * 2 + Math.PI / 6; eOnDome(shell, hex(0.27), tile, SY, RX, RY, RZ, 0.72, az, 0); eOnDome(shell, hexRim(0.27), gold, SY, RX, RY, RZ, 0.72, az, 0.04).rotateX(Math.PI / 2); const rr = eOnDome(shell, eS(0.05, 8, 6), rune, SY, RX, RY, RZ, 0.72, az, 0.05); }
+  for (let k = 0; k < 11; k++) { const az = k / 11 * Math.PI * 2; eOnDome(shell, hex(0.19), tile, SY, RX, RY, RZ, 1.22, az, -0.005); }
+  for (let k = 0; k < 16; k++) { const a = k / 16 * Math.PI * 2; eP(shell, new THREE.ConeGeometry(0.06, 0.16, 4), gold, Math.cos(a) * RX * 1.03, SY - 0.02, Math.sin(a) * RZ * 1.03, 0, -a, -Math.PI / 2); } // rim studs
+  U.glowRing = eP(g, new THREE.TorusGeometry(1.5, 0.06, 6, 40), eG(E.glow, 0.7), 0, 0.5, 0, Math.PI / 2, 0, 0); U.glowRing.visible = false;
+  // head and neck
+  const neck = eGrp(g, 1.05, 0.6, 0); U.neck = neck; eP(neck, new THREE.CylinderGeometry(0.16, 0.2, 0.5, 12), skin, 0.22, 0.05, 0, 0, 0, -1.25);
+  const head = eGrp(neck, 0.5, 0.15, 0); U.head = head; eP(head, eS(0.27, 18, 14), skin, 0, 0, 0, 0, 0, 0, 1.4, 0.82, 1); eP(head, eS(0.14, 12, 8), dark, 0.25, -0.08, 0, 0, 0, 0, 1.3, 0.5, 1.1);
+  for (const z of [-1, 1]) { eP(head, eS(0.065, 10, 8), eye, 0.18, 0.08, z * 0.18); eP(head, eS(0.1, 10, 8), dark, 0.14, 0.15, z * 0.15, 0, 0, 0.3, 1.4, 0.4, 0.8); eP(head, new THREE.ConeGeometry(0.035, 0.12, 5), gold, -0.12, 0.2, z * 0.12, z * 0.4, 0, -0.5); }
+  const jaw = eGrp(head, 0.05, -0.1, 0); U.jaw = jaw; eP(jaw, eS(0.2, 12, 8), belly, 0.12, -0.02, 0, 0, 0, 0, 1.4, 0.3, 0.9);
+  // legs
+  for (const [lx, lz] of [[0.72, 0.78], [0.72, -0.78], [-0.72, 0.78], [-0.72, -0.78]]) { const hip = eGrp(g, lx, 0.48, lz); eP(hip, eS(0.26, 14, 10), skin); eP(hip, new THREE.CylinderGeometry(0.19, 0.22, 0.4, 12), skin, 0, -0.22, Math.sign(lz) * 0.06);
+    const ft = eGrp(hip, 0.02, -0.42, Math.sign(lz) * 0.08); eP(ft, eS(0.24, 14, 10), skin, 0.04, 0, 0, 0, 0, 0, 1.35, 0.55, 1.2); for (let c = -1; c <= 1; c++) eP(ft, new THREE.ConeGeometry(0.04, 0.14, 5), gold, 0.32, -0.04, c * 0.1, 0, 0, -Math.PI / 2);
+    for (let k = 0; k < 3; k++) eP(hip, eS(0.07, 6, 5), dark, 0.12, -0.1 - k * 0.1, Math.sign(lz) * 0.18); U.legs.push({ hip, lx, lz }); }
+  // tail: a small coiled snake (玄武)
+  const tl = eGrp(g, -1.25, 0.45, 0); U.tail = tl; const pts = []; for (let k = 0; k <= 8; k++) { const a = k * 0.8; pts.push([-k * 0.08, 0.05 + Math.sin(a) * 0.12 + k * 0.03, Math.cos(a) * 0.15]); }
+  eP(tl, eTube(pts, 0.05, 24), snake); const sh = eGrp(tl, -0.7, 0.35, 0.1); eP(sh, eS(0.09, 10, 8), snake, 0, 0, 0, 0, 0, 0, 1.6, 0.8, 1); for (const z of [-1, 1]) eP(sh, eS(0.022, 6, 4), eG('#ff4030'), 0.04, 0.03, z * 0.06); U.tailHead = sh;
+  return g;
+}
+function turtleTick(p, g, dt) {
+  const U = g.userData, sp = p._spd || 0, spin = p.spinT > 0 || (p._msK === 'spin' && p._msT < 4); U.ph = (U.ph || 0) + dt * (sp > 0.3 ? 2 + sp * 1.5 : 0);
+  U.rt = lerp(U.rt || 0, spin ? 1 : 0, Math.min(1, dt * 8)); const r = U.rt, keep = 1 - r * 0.9;
+  if (spin) U.shell.rotation.y += dt * 16; else U.shell.rotation.y = lerp(U.shell.rotation.y % (Math.PI * 2), 0, Math.min(1, dt * 6));
+  U.glowRing.visible = r > 0.3; U.glowRing.scale.setScalar(0.9 + Math.sin(W.t * 20) * 0.08);
+  const bash = p._mpT != null && p._mpT < 0.35 ? Math.sin(p._mpT / 0.35 * Math.PI) : 0; U.shell.position.x = bash * 0.4; U.shell.position.y = Math.abs(Math.sin(U.ph)) * 0.04 - r * 0.25;
+  U.neck.scale.setScalar(Math.max(0.05, keep)); U.neck.position.x = 1.05 - r * 0.5 + bash * 0.4; U.neck.rotation.z = Math.sin(U.ph * 0.5) * 0.06 + bash * -0.2;
+  U.jaw.rotation.z = -(bash * 0.4 + (p._msK === 'spin' && p._msT < 0.3 ? 0.5 : 0));
+  U.legs.forEach((L, i) => { L.hip.scale.setScalar(Math.max(0.05, keep)); const w = Math.sin(U.ph + (i === 0 || i === 3 ? 0 : Math.PI)); L.hip.rotation.z = w * 0.5 * (1 - r); L.hip.position.x = L.lx * (1 - r * 0.4); L.hip.position.z = L.lz * (1 - r * 0.4); });
+  U.tail.scale.setScalar(Math.max(0.05, keep)); U.tailHead.rotation.y = Math.sin(W.t * 2 + p.i) * 0.5;
+  if (spin && FXR() < dt * 30) { const a = FXR() * 6.28; g.getWorldPosition(EVW); addP({ x: EVW.x + Math.cos(a) * 1.6, y: EVW.z + Math.sin(a) * 1.6, z: EVW.y + 0.3, vx: -Math.sin(a) * 5, vy: Math.cos(a) * 5, vz: 0.6, g: 0.4, col: '#9fffe0', s: 0.1, life: 0.35 }); }
+}
+
+/* ---------- 火凤: the phoenix — burning wings, a crest, long tail plumes ---------- */
+function mkPhoenix(E) {
+  const g = new THREE.Group(), U = { k: 5, wings: [], plumes: [] }; g.userData = U;
+  const main = eL(E.col[0]), dark = eL(E.col[1]), gold = eL(E.col[2]), chest = eL('#ffb04a'), eye = eG('#fff6c0'), blk = eL('#2a0a04');
+  const hot = [eG('#ff4a1a'), eG('#ff7a24'), eG('#ffb43a'), eG('#ffe07a')], aura = eG('#ff8a30', 0.1);
+  const body = eGrp(g, 0, 0.9, 0); U.body = body;
+  eP(body, eS(0.34, 20, 14), main, 0, 0, 0, 0, 0, 0, 1.6, 0.75, 0.7); eP(body, eS(0.26, 16, 12), chest, 0.25, -0.06, 0, 0, 0, 0, 1.0, 0.8, 0.62);
+  eP(body, eS(0.6, 16, 12), aura, 0, 0, 0, 0, 0, 0, 1.6, 0.8, 0.9);
+  for (let k = 0; k < 3; k++) eP(body, eS(0.12 - k * 0.012, 12, 10), main, 0.45 + k * 0.1, 0.1 + k * 0.12, 0); // neck
+  const head = eGrp(body, 0.78, 0.45, 0); U.head = head; eP(head, eS(0.15, 16, 12), main, 0, 0, 0, 0, 0, 0, 1.3, 1, 0.9);
+  eP(head, new THREE.ConeGeometry(0.06, 0.24, 8), gold, 0.24, -0.03, 0, 0, 0, -Math.PI / 2 - 0.15); for (const z of [-1, 1]) { eP(head, eS(0.04, 10, 8), eye, 0.08, 0.04, z * 0.11); eP(head, eS(0.018, 6, 4), blk, 0.1, 0.04, z * 0.125); }
+  for (let k = 0; k < 3; k++) { const c = eTube([[0, 0.1, 0], [-0.1, 0.35 + k * 0.05, (k - 1) * 0.05], [-0.35, 0.55 + k * 0.06, (k - 1) * 0.1], [-0.6, 0.5 + k * 0.08, (k - 1) * 0.14]], 0.02, 14); eP(head, c, gold); eP(head, eS(0.05, 8, 6), hot[3], -0.6, 0.5 + k * 0.08, (k - 1) * 0.14); }
+  // wings: an arm with coverts, a hand with long primaries fanning out
+  for (const z of [-1, 1]) { const sh = eGrp(body, 0.05, 0.12, z * 0.18); const arm = eGrp(sh); U.wings.push({ sh, z, arm });
+    eP(arm, eS(0.1, 10, 8), main, 0, 0, z * 0.35, 0, 0, 0, 1.2, 0.5, 3.6);
+    for (let k = 0; k < 6; k++) { eP(arm, eS(0.1, 10, 6), hot[0], -0.3 - k * 0.02, -0.02, z * (0.1 + k * 0.11), 0, 0, 0, 4.2 - k * 0.2, 0.12, 1.1); eP(arm, eS(0.1, 8, 6), hot[1], -0.05, 0.01, z * (0.1 + k * 0.11), 0, 0, 0, 2.2, 0.14, 1.0); }
+    const hand = eGrp(arm, 0, 0, z * 0.72); arm.userData.hand = hand; eP(hand, eS(0.08, 10, 8), main, 0, 0, z * 0.18, 0, 0, 0, 1.2, 0.5, 2.6);
+    for (let k = 0; k < 8; k++) { const f = eGrp(hand, 0, 0, z * (0.05 + k * 0.05)); f.rotation.y = z * (-0.25 + k * 0.17); const L2 = 0.75 + k * 0.05 - (k > 5 ? (k - 5) * 0.12 : 0);
+      eP(f, eS(0.1, 10, 6), hot[0], -L2 * 0.55, 0, z * 0.13, 0, 0, 0, L2 * 5.6, 0.14, 1.25); eP(f, eS(0.1, 10, 6), hot[2], -L2 * 0.95, 0.008, z * 0.14, 0, 0, 0, L2 * 3.2, 0.12, 1.05); eP(f, eS(0.1, 8, 6), hot[3], -L2 * 1.2, 0.014, z * 0.145, 0, 0, 0, L2 * 1.5, 0.1, 0.7); } }
+  // tail plumes
+  for (let k = 0; k < 5; k++) { const pl = eGrp(body, -0.45, 0.02, (k - 2) * 0.07); pl.rotation.y = (k - 2) * 0.22; const segs = [];
+    let par = pl; for (let s = 0; s < 4; s++) { const sg = eGrp(par, s ? -0.38 : 0, 0, 0); eP(sg, eS(0.08, 8, 6), hot[Math.min(3, s)], -0.2, 0, 0, 0, 0, 0, 2.6, 0.18, 0.7 + s * 0.15); segs.push(sg); par = sg; }
+    eP(par, new THREE.CircleGeometry(0.11, 16), gold, -0.45, 0.02, 0, -Math.PI / 2, 0, 0); eP(par, new THREE.CircleGeometry(0.05, 12), hot[0], -0.45, 0.025, 0, -Math.PI / 2, 0, 0); U.plumes.push(segs); }
+  return g;
+}
+function phoenixTick(p, g, dt) {
+  const U = g.userData, sp = p._spd || 0, fl = Math.sin(W.t * (6 + sp * 0.6) + p.i), shoot = p._mpT != null && p._mpT < 0.3 ? 1 : 0, nova = p._msK === 'rebirth' && p._msT < 0.8 ? 1 : 0;
+  U.wings.forEach(Wg => { Wg.sh.rotation.x = Wg.z * (fl * 0.65 + 0.15 - nova * 0.9); Wg.arm.userData.hand.rotation.x = Wg.z * fl * 0.35; Wg.sh.rotation.y = -Wg.z * (shoot * 0.4 + sp * 0.03); });
+  U.body.position.y = 0.9 + fl * 0.06; U.body.rotation.z = -clamp(sp * 0.04, 0, 0.25) + shoot * 0.1; U.head.rotation.z = shoot * 0.25;
+  U.plumes.forEach((segs, k) => segs.forEach((s, i) => { s.rotation.z = Math.sin(W.t * 3 - i * 0.7 + k) * 0.12 + (i === 0 ? 0.15 : 0); s.rotation.y = Math.sin(W.t * 2.3 - i * 0.6 + k * 0.7) * 0.1; }));
+  if (FXR() < dt * 26) { const Wg = U.wings[(FXR() * 2) | 0]; Wg.arm.userData.hand.getWorldPosition(EVW); addP({ x: EVW.x, y: EVW.z, z: EVW.y, vx: frnd(-0.6, 0.6), vy: frnd(-0.6, 0.6), vz: frnd(-0.8, 0.2), g: 0.5, col: FXR() < 0.5 ? '#ffb43a' : '#ff5a1a', s: 0.1, life: 0.55 }); }
+  if (nova && FXR() < dt * 50) { g.getWorldPosition(EVW); const a = FXR() * 6.28; addP({ x: EVW.x, y: EVW.z, z: EVW.y + 1, vx: Math.cos(a) * 7, vy: Math.sin(a) * 7, vz: frnd(-1, 1), g: 0.2, col: '#ffd060', s: 0.18, life: 0.6 }); }
+}
+
+/* ---------- 铁熊: an armoured bear — steel shoulder plates and claws, exhaust pipes from the old tank ---------- */
+function mkBear(E) {
+  const g = new THREE.Group(), U = { k: 6, legs: [] }; g.userData = U;
+  const fur = eL(E.col[0]), dark = eL(E.col[1]), steel = eL('#8a9097'), steelD = eL('#4a5058'), light = eL('#b08860'), blk = eL('#141010'), eye = eG(E.glow), claw = eL(E.col[2]);
+  const fore = eGrp(g, 0, 1.0, 0); U.fore = fore; // the front half rears up from the hips
+  eP(fore, eS(0.7, 22, 16), fur, -0.15, 0.08, 0, 0, 0, 0, 1.45, 0.92, 0.98); eP(fore, eS(0.5, 18, 12), fur, 0.3, 0.38, 0, 0, 0, 0, 1.1, 0.8, 0.9); eP(fore, eS(0.5, 16, 12), light, 0.3, -0.25, 0, 0, 0, 0, 1.2, 0.5, 0.75);
+  for (const z of [-1, 1]) { eP(fore, new THREE.SphereGeometry(0.36, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2), steel, 0.42, 0.32, z * 0.5, z * 0.5, 0, -0.2, 1.1, 0.7, 1); eP(fore, new THREE.TorusGeometry(0.34, 0.03, 6, 20), steelD, 0.42, 0.3, z * 0.52, Math.PI / 2 - z * 0.5, 0, 0, 1.05, 1, 1); }
+  eP(fore, new THREE.BoxGeometry(0.9, 0.12, 0.7), steel, -0.25, 0.68, 0, 0, 0, 0.08); for (let k = 0; k < 3; k++) eP(fore, new THREE.BoxGeometry(0.2, 0.06, 0.74), steelD, -0.55 + k * 0.3, 0.75, 0, 0, 0, 0.08);
+  for (const z of [-1, 1]) { const pp = eP(fore, new THREE.CylinderGeometry(0.06, 0.07, 0.4, 10), steelD, -0.6, 0.85, z * 0.2, 0, 0, 0.3); U['pipe' + (z > 0 ? 'R' : 'L')] = pp; }
+  const head = eGrp(fore, 0.95, 0.42, 0); U.head = head;
+  eP(head, eS(0.42, 20, 16), fur, 0, 0, 0, 0, 0, 0, 1.05, 0.95, 1); eP(head, eS(0.22, 16, 12), light, 0.34, -0.1, 0, 0, 0, 0, 1.35, 0.8, 1); eP(head, eS(0.085, 10, 8), blk, 0.6, -0.04, 0, 0, 0, 0, 1, 0.8, 1.2);
+  eP(head, new THREE.BoxGeometry(0.3, 0.06, 0.34), steel, 0.32, 0.06, 0, 0, 0, -0.25); // steel muzzle band
+  for (const z of [-1, 1]) { eP(head, eS(0.15, 12, 10), fur, -0.08, 0.34, z * 0.26, 0, 0, 0, 0.6, 1, 1); eP(head, eS(0.09, 10, 8), light, -0.04, 0.34, z * 0.26, 0, 0, 0, 0.4, 0.8, 0.8);
+    U['eye' + (z > 0 ? 'R' : 'L')] = eP(head, eS(0.05, 10, 8), eye, 0.3, 0.12, z * 0.17); eP(head, eS(0.08, 10, 6), dark, 0.27, 0.19, z * 0.17, 0, 0, 0.2, 1.4, 0.4, 0.9); }
+  const jaw = eGrp(head, 0.18, -0.2, 0); U.jaw = jaw; eP(jaw, eS(0.18, 14, 10), light, 0.15, -0.04, 0, 0, 0, 0, 1.4, 0.45, 0.9); for (const z of [-1, 1]) eP(jaw, new THREE.ConeGeometry(0.025, 0.08, 5), eL('#f4eee0'), 0.32, 0.04, z * 0.08);
+  const leg = (par, x, y, z, front) => { const hip = eGrp(par, x, y, z); eP(hip, eS(0.3, 14, 12), fur, 0, 0, 0, 0, 0, 0, 1, 1.35, 1); const kn = eGrp(hip, 0, -0.42, 0); eP(kn, new THREE.CylinderGeometry(0.2, 0.17, 0.5, 12), fur, 0, -0.18, 0);
+    const paw = eGrp(kn, 0.04, -0.46, 0); eP(paw, eS(0.24, 14, 10), dark, 0.05, 0, 0, 0, 0, 0, 1.3, 0.6, 1.1); for (let c = -1; c <= 1; c++) eP(paw, new THREE.ConeGeometry(0.04, 0.2, 5), claw, 0.33, -0.03, c * 0.1, 0, 0, -Math.PI / 2 - 0.25);
+    if (front) eP(kn, new THREE.CylinderGeometry(0.21, 0.21, 0.18, 12), steel, 0, -0.32, 0); // steel gauntlet
+    return { hip, kn, paw }; };
+  for (const z of [-1, 1]) { U['fl' + (z > 0 ? 'R' : 'L')] = leg(fore, 0.55, -0.05, z * 0.46, 1); U['bl' + (z > 0 ? 'R' : 'L')] = leg(g, -0.75, 0.95, z * 0.46, 0); }
+  eP(g, eS(0.14, 10, 8), fur, -1.25, 1.1, 0);
+  return g;
+}
+function bearTick(p, g, dt) {
+  const U = g.userData, sp = p._spd || 0; U.ph = (U.ph || 0) + dt * (sp > 0.3 ? 2.2 + sp * 1.3 : 0); const ph = U.ph, w = sp > 0.3 ? 1 : 0;
+  const t = p._mpT != null ? p._mpT : 9, c = p._mcombo || 0, side = p._mpS ? 1 : -1, atk = t < 0.5 ? Math.sin(Math.min(1, t / 0.5) * Math.PI) : 0, roar = p._msK === 'roar' && p._msT < 1.2 ? Math.sin(Math.min(1, p._msT / 1.2) * Math.PI) : 0;
+  const rear = c === 2 ? (t < 0.2 ? ease(t / 0.2) * 0.75 : t < 0.32 ? 0.75 - ease((t - 0.2) / 0.12) * 0.9 : t < 0.6 ? -0.15 * (1 - (t - 0.32) / 0.28) : 0) : atk * 0.25;
+  U.fore.rotation.z = rear + roar * 0.35; U.fore.position.y = 1.0 + Math.abs(Math.sin(ph)) * 0.05 * w;
+  const sw = (L, k) => { L.hip.rotation.z = Math.sin(ph + k) * 0.5 * w; L.kn.rotation.z = Math.max(0, -Math.sin(ph + k)) * 0.5 * w; };
+  sw(U.flL, 0); sw(U.blR, 0.2); sw(U.flR, Math.PI); sw(U.blL, Math.PI + 0.2);
+  if (atk && c < 2) { const L = side > 0 ? U.flR : U.flL; L.hip.rotation.z = 1.6 * atk - 0.4 * (t > 0.25 ? 1 : 0); L.hip.rotation.x = side * -0.6 * atk; L.kn.rotation.z = 0.2; }
+  if (c === 2 && t < 0.6) for (const L of [U.flL, U.flR]) { L.hip.rotation.z = rear * 2.2; L.kn.rotation.z = 0.3; }
+  U.head.rotation.z = roar * 0.45 + atk * 0.1; U.jaw.rotation.z = -(roar * 0.7 + atk * 0.3); U.head.rotation.x = roar ? Math.sin(W.t * 40) * 0.06 : 0;
+  const rg = p.rageT > 0; for (const e of [U.eyeL, U.eyeR]) { e.material.color.set(rg ? '#ff3020' : '#ff8a3a'); e.scale.setScalar(rg ? 1.3 + Math.sin(W.t * 12) * 0.2 : 1); }
+  if ((rg || sp > 2) && FXR() < dt * (rg ? 20 : 6)) { const pp = FXR() < 0.5 ? U.pipeL : U.pipeR; pp.getWorldPosition(EVW); addP({ x: EVW.x, y: EVW.z, z: EVW.y + 0.2, vx: frnd(-0.3, 0.3), vy: frnd(-0.3, 0.3), vz: 1.4, g: -0.4, col: rg ? '#ff7a40' : '#888888', s: 0.14, life: 0.8, smoke: 1 }); }
+}
+
+const BEAST_MK = [null, mkSnake, mkDragon, mkRabbit, mkTurtle, mkPhoenix, mkBear], BEAST_TICK = [null, snakeTick, dragonTick, rabbitTick, turtleTick, phoenixTick, bearTick];
+function mkBeast(v) { const E = EVO[v], g = BEAST_MK[v](E), root = new THREE.Group(); root.add(g); root.userData = { k: v, g, S: BEAST_S[v] }; g.scale.setScalar(BEAST_S[v]); root.traverse(o => { if (o.isMesh) { o.castShadow = true; } }); return root; }
+// mech ↔ beast: returns how much of the mech to show (1 = all, 0 = hidden)
+function evoDraw(p, m, dt) {
+  const E = EVO[p.veh], on = !!(p.evoOn && E && inMech(p)); if (p._evT != null) p._evT += dt; const ev = p._evT != null ? p._evT : 9;
+  const show = on || (E && p._evOn === 0 && ev < 0.45 && inMech(p));
+  if (!show) { if (m.evo) m.evo.visible = false; return 1; }
+  if (!m.evo || m.evo.userData.k !== p.veh) { if (m.evo) m.g.remove(m.evo); m.evo = mkBeast(p.veh); m.g.add(m.evo); }
+  const sB = on ? ease(clamp((ev - 0.2) / 0.4, 0.02, 1)) : clamp(1 - ev / 0.4, 0, 1); m.evo.visible = sB > 0.02; m.evo.scale.setScalar(sB); m.evo.rotation.y = -p._ly;
+  if (m.evo.visible) BEAST_TICK[p.veh](p, m.evo.userData.g, dt);
+  return on ? clamp(1 - ev / 0.3, 0, 1) : clamp((ev - 0.3) / 0.3, 0, 1);
+}
+// events
+function evoEvent(e) { const q = W.p[e.o]; if (!q) return; q._evT = 0; q._evOn = e.on ? 1 : 0; const E = EVO[e.v];
+  sfx(e.on ? 'xform' : 'clank', e.x, e.y); shake(e.x, e.y, e.on ? 0.5 : 0.15);
+  const col = E ? E.glow : '#ffffff'; fxAdd({ kind: 'ring', x: e.x, y: e.y, z: e.z + 0.1, s0: 0.5, s1: e.on ? BAL.evoBurst + 0.5 : 2, life: 0.5, col, op: 0.9 }); fxAdd({ kind: 'ball', x: e.x, y: e.y, z: e.z + 1.2, s0: 0.4, s1: 2.6, life: 0.45, col, op: 0.7 });
+  for (let k = 0; k < (e.on ? 40 : 14); k++) { const a = FXR() * 6.28, s2 = frnd(2, 6); addP({ x: e.x, y: e.y, z: e.z + 0.5 + FXR() * 1.5, vx: Math.cos(a) * s2, vy: Math.sin(a) * s2, vz: frnd(0, 3), g: 0.3, col, s: 0.12, life: 0.7 }); }
+  if (e.on && e.o === ME && E) { const b = document.createElement('div'); b.className = 'evoban'; b.textContent = '进化 · ' + E.name; document.body.appendChild(b); setTimeout(() => b.remove(), 1900); }
+}
+function evoSkillFx(e) { const q = W.p[e.o], E = q && EVO[q.veh];
+  if (e.t === 'venom') { sfx('smoke', e.x, e.y); for (let k = 0; k < 20; k++) { const a = FXR() * 6.28, r = FXR() * 4; addP({ x: e.x + Math.cos(a) * r, y: e.y + Math.sin(a) * r, z: e.z + 0.3, vx: 0, vy: 0, vz: 0.8, g: 0.1, col: '#7ae04a', s: 0.25, life: 1.2, smoke: 1 }); } }
+  else if (e.t === 'dragdash') { sfx('mdash', e.x, e.y); sfx('flame', e.x, e.y); for (let k = 0; k < 30; k++) { const d = FXR() * (e.d || 10), aa = e.a + frnd(-0.2, 0.2); addP({ x: e.x + Math.cos(e.a) * d, y: e.y + Math.sin(e.a) * d, z: e.z + 1, vx: Math.cos(aa) * 2, vy: Math.sin(aa) * 2, vz: frnd(0, 2), g: 0.4, col: FXR() < 0.5 ? '#ff8a2a' : '#ffd040', s: 0.2, life: 0.7 }); } }
+  else if (e.t === 'moon') { sfx('jump', e.x, e.y); fxAdd({ kind: 'disc', x: e.e[0], y: e.e[1], z: e.z + 0.06, s0: 6, s1: 6, life: 0.95, col: '#bff8ff', op: 0.25 }); }
+  else if (e.t === 'spin') { sfx('mdash', e.x, e.y); fxAdd({ kind: 'ring', x: e.x, y: e.y, z: e.z + 0.3, s0: 1, s1: 2.8, life: 0.4, col: '#7fffd0', op: 0.8 }); }
+  else if (e.t === 'rebirth') { sfx('blood', e.x, e.y); shake(e.x, e.y, 0.5); fxAdd({ kind: 'ring', x: e.x, y: e.y, z: e.z, s0: 0.5, s1: 6.5, life: 0.6, col: '#ffb030', op: 0.9 }); fxAdd({ kind: 'ball', x: e.x, y: e.y, z: e.z + 0.8, s0: 0.6, s1: 6, life: 0.55, col: '#ff6a1e', op: 0.5 });
+    for (let k = 0; k < 60; k++) { const a = FXR() * 6.28, s2 = frnd(3, 9); addP({ x: e.x, y: e.y, z: e.z + 0.8, vx: Math.cos(a) * s2, vy: Math.sin(a) * s2, vz: frnd(-2, 3), g: 0.2, col: FXR() < 0.5 ? '#ffd060' : '#ff4a1a', s: 0.2, life: 0.8 }); } }
+  else if (e.t === 'roar') { sfx('bigdie', e.x, e.y); shake(e.x, e.y, 0.7); for (let k = 0; k < 3; k++) fxAdd({ kind: 'ring', x: e.x, y: e.y, z: e.z + 0.4 + k * 0.5, s0: 1, s1: 9, life: 0.5 + k * 0.15, col: '#ffcc88', op: 0.6 }); }
+  void E;
+}
+function evoFeathers(e) { const q = W.p[e.o]; if (q) { q._mpT = 0; q._mA = e.a; q._mAT = 0.3; } sfx('mswing', e.x, e.y);
+  for (let i = 0; i + 2 < e.e.length; i += 3) { RND.tracers.push({ x: e.x, y: e.y, z: e.z, x2: e.e[i], y2: e.e[i + 1], z2: e.e[i + 2], t: 0, life: 0.12, w: 0.06, col: [1, 0.55, 0.15] }); (RND.mrk = RND.mrk || []).push({ x: e.x, y: e.y, z: e.z, e: [e.e[i], e.e[i + 1], e.e[i + 2]], T: Math.max(0.05, Math.hypot(e.e[i] - e.x, e.e[i + 1] - e.y) / 40), t: 0, kd: 'feather' }); } }
+function evoMoonFx(e) { shake(e.x, e.y, 0.9); sfx('collapse', e.x, e.y); fxAdd({ kind: 'ring', x: e.x, y: e.y, z: e.z + 0.08, s0: 0.8, s1: e.r, life: 0.6, col: '#bff8ff', op: 0.9 }); fxAdd({ kind: 'ball', x: e.x, y: e.y, z: e.z + 0.5, s0: 0.5, s1: 3.5, life: 0.4, col: '#eaffff', op: 0.6 });
+  for (let k = 0; k < 50; k++) { const a = FXR() * 6.28, r = FXR() * e.r; addP({ x: e.x + Math.cos(a) * r * 0.3, y: e.y + Math.sin(a) * r * 0.3, z: e.z + 0.1, vx: Math.cos(a) * frnd(3, 8), vy: Math.sin(a) * frnd(3, 8), vz: frnd(1, 5), g: -9, col: FXR() < 0.5 ? '#9a8a70' : '#bff8ff', s: 0.15, life: 0.8 }); }
+  if (typeof addDecal === 'function') addDecal(e.x, e.y, e.z + 0.02, e.r * 0.5, '#2a2a30'); }
 
 /* ---- 60_audio.js ---- */
 /* ================= synthesized audio (Web Audio, no files) ================= */
@@ -11642,7 +12074,12 @@ function doBash() {
 }
 // knife: find the zombie, turn to it, lunge into reach and slash; the host settles the damage
 // (round 34b) vehicle ⇄ mech (1 s); the host says why not if it can't
-function doXform() { const me = W.p[ME]; if (!me || !me.ride || me.down) return; if (me.mtr > 0) return; act('xform'); sfx('swap'); }
+function doXform(v) { const me = W.p[ME]; if (!me || !me.ride || me.down) return; if (me.mtr > 0) return; act('xform', v); sfx('swap'); }
+// (round 37) X / the transform key: tap = one step on (vehicle → mech → beast when the 进化 meter is full; a beast turns back into the mech); hold in mech / beast = straight back to the vehicle
+let XH = null;
+function xPress() { const me = W.p[ME]; if (!me || !me.ride) return; if (me.mform !== 1) { doXform(); return; } if (XH) return;
+  XH = { done: false }; XH.tm = setTimeout(() => { if (XH && !XH.done) { XH.done = true; doXform('veh'); } }, 450); }
+function xRelease() { if (!XH) return; clearTimeout(XH.tm); if (!XH.done) doXform(); XH = null; }
 function doKnife() {
   const me = W.p[ME]; if (!me || me.dead || me.down || me.build || me.ride || me.pass >= 0 || me.medT > 0 || me.jmp || (me.knCD || 0) > performance.now()) return;
   if (me.melee === 1 && me.shield) return doBash();
@@ -11682,7 +12119,7 @@ addEventListener('keydown', e => {
   INP.keys[k] = true;
   if ([' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Tab', 'PageUp', 'PageDown', 'Home'].includes(k)) e.preventDefault();
 });
-addEventListener('keyup', e => { const k = e.key.length === 1 ? e.key.toLowerCase() : e.key; INP.keys[k] = false; if (k === 'g' && INP.nadeAim && INP.nadeAim.pc) nadeRelease(); });
+addEventListener('keyup', e => { const k = e.key.length === 1 ? e.key.toLowerCase() : e.key; INP.keys[k] = false; if (k === 'g' && INP.nadeAim && INP.nadeAim.pc) nadeRelease(); if (k === 'x') xRelease(); });
 addEventListener('blur', () => { INP.keys = {}; INP.mL = INP.mR = false; });
 function onKeyPress(k) {
   if (STATE.mode !== 'play' || !W) { if (k === 'Enter' && STATE.mode === 'title') $('soloBtn').click(); return; }
@@ -11706,7 +12143,7 @@ function onKeyPress(k) {
     if ((k === 'Enter' || k === ' ') && PLAN) return confirmPlan();
   } else { const n = '1234'.indexOf(k); if (n >= 0) return quickWpn(n); const gk = '5678'.indexOf(k); if (gk >= 0) return setGren(gk); if (k === 'r') return act('reload'); if (k === 'z') return swapLast(); }
   if (k === 'i') return openKit();
-  if (k === 'x' && me.ride) return doXform(); // (round 34b) driving: X = transform
+  if (k === 'x' && me.ride) { xPress(); return; } // (round 34b) driving: X = transform; (round 37) tap / hold
   if (k === 'x' && !me.build) return switchMelee();
   if (k === 'v') return doKnife();
   if (k === 'g') { if (KD('Shift') && !inMech(me)) return cycleGren(1); if ((gCount(me, me.gt || 0) > 0 || inMech(me)) && !me.down) INP.nadeAim = { pc: 1 }; else toast('没有' + GREN[me.gt || 0].name + '了：按 5–8 换别的手雷'); return; } // hold G: the landing ring follows the cursor; let go to throw
@@ -12027,7 +12464,7 @@ document.addEventListener('pointerdown', e => { const el = $('wpick'), nk = docu
 })();
 bindBtn('tLUp', () => viewStep(1)); bindBtn('tLDn', () => viewStep(-1));
 bindBtn('vToggle', () => { document.body.classList.toggle('vopen'); $('vToggle').classList.toggle('on', document.body.classList.contains('vopen')); sfx('click'); });
-bindBtn('tShove', () => { if (!inGame()) return; if (W.p[ME].ride) return doXform(); INP.knHeld = true; doKnife(); }, () => { INP.knHeld = false; }); // (round 34b) driving: this key is 变形
+bindBtn('tShove', () => { if (!inGame()) return; if (W.p[ME].ride) return xPress(); INP.knHeld = true; doKnife(); }, () => { INP.knHeld = false; xRelease(); }); // (round 34b) driving: this key is 变形
 // (round 23b) swipe off the melee key (any direction) = swap knife <-> shield
 (() => {
   const el = document.getElementById('tShove'); let st = null;
@@ -12289,7 +12726,7 @@ function hostFromSave(S, n) {
 const ZI = ZKEYS;
 function pFlags(p) { return (p.down ? 1 : 0) | (p.dead ? 2 : 0) | (p.gone ? 4 : 0) | (p.build ? 32 : 0) | (p.ready ? 64 : 0) | (p.selfRev ? 128 : 0) | (p.ride ? 256 : 0) | ((p.veh || 0) << 9) | ((p.pass != null && p.pass >= 0 ? p.pass + 1 : 0) << 12) | (p.land ? 1 << 15 : 0); } // (round 29) bit 15: the gyrocopter is coming down // veh: 3 bits (round 22: four vehicles)
 function makeSnap() {
-  const P = p => [r2(p.x), r2(p.y), p.L, r2(p.vx), r2(p.vy), r2(p.aim), Math.ceil(p.hp), pFlags(p), Math.round(p.downT * 10) / 10, p.wpn, p.mag.join(','), p.ammo.join(','), p.owned.join(''), p.nades, p.meds, Math.round(p.useT * 100), Math.round(p.medT * 10) / 10, Math.round(p.reloadT * 10) / 10, p.kills, Math.round(p.anim * 10) / 10, p.sel, p.aimPt ? [r2(p.aimPt.x), r2(p.aimPt.y), r2(p.aimPt.z)] : 0, p.vehs || 0, p.shield ? 1 : 0, p.melee || 0, p.gn || [0, 0, 0], p.lives || 0, Math.round((p.fuel || 0) * 10) / 10, airborne(p) ? r2(p.z) : 0, p.gam || 0, p.shl || 0, p.vehs & 126 ? [p.mform || 0, Math.round((p.mtr || 0) * 10) / 10, [1, 2, 3, 4, 5, 6].map(v => p.mh && p.mh[v] != null ? Math.round(p.mh[v]) : -1), Math.round((p.bat || 0) * 10) / 10, Math.round((p.mcd || 0) * 10) / 10] : 0];
+  const P = p => [r2(p.x), r2(p.y), p.L, r2(p.vx), r2(p.vy), r2(p.aim), Math.ceil(p.hp), pFlags(p), Math.round(p.downT * 10) / 10, p.wpn, p.mag.join(','), p.ammo.join(','), p.owned.join(''), p.nades, p.meds, Math.round(p.useT * 100), Math.round(p.medT * 10) / 10, Math.round(p.reloadT * 10) / 10, p.kills, Math.round(p.anim * 10) / 10, p.sel, p.aimPt ? [r2(p.aimPt.x), r2(p.aimPt.y), r2(p.aimPt.z)] : 0, p.vehs || 0, p.shield ? 1 : 0, p.melee || 0, p.gn || [0, 0, 0], p.lives || 0, Math.round((p.fuel || 0) * 10) / 10, airborne(p) ? r2(p.z) : 0, p.gam || 0, p.shl || 0, p.vehs & 126 ? [p.mform || 0, Math.round((p.mtr || 0) * 10) / 10, [1, 2, 3, 4, 5, 6].map(v => p.mh && p.mh[v] != null ? Math.round(p.mh[v]) : -1), Math.round((p.bat || 0) * 10) / 10, Math.round((p.mcd || 0) * 10) / 10, Math.round(p.evo || 0), (p.evoOn ? 1 : 0) | (p.spinT > 0 ? 2 : 0) | (p.rageT > 0 ? 4 : 0)] : 0]; /* (round 37) 进化 meter + beast flags */
   const z = []; for (const q of W.zs) z.push(q.id, ZI.indexOf(q.k), Math.round(q.x * 100), Math.round(q.y * 100), q.L, Math.round(q.z * 100), Math.round(q.face * 100), Math.ceil(q.hp / q.max * 100), (q.climbing ? 1 : 0) | (q.atk > 0 ? 2 : 0) | (q.hitT > 0 ? 4 : 0) | (q.moving ? 8 : 0) | (q.burn > 0 ? 16 : 0) | (q.scr > 0 ? 32 : 0) | (q.rage > 0 ? 64 : 0) | (q.hidden ? 128 : 0) | (q.sleep ? 256 : 0) | ((q.aw || 0) > 0.15 ? 512 : 0) | ((q.tl || 0) << 10) | ((q.kt || 0) << 12) | (q.kc ? 16384 : 0) | (q.sh > 0 ? 32768 : 0) | (q.ck ? 65536 : 0)); // (round 35) bit 15: a 护盾者's bubble is up, bit 16: cloaked; kt also carries a flyer's dive / an elite's skill // tl (round 23): brute tells, 2 bits; kt / kc (round 34): kaiju skill state
   const pr = []; for (const b of W.proj) pr.push(b.k === 'nade' ? (b.gt ? 2 + b.gt : 0) : b.k === 'gl' ? 2 : 1, r2(b.x), r2(b.y), r2(b.z), r2(b.vx), r2(b.vy), r2(b.vz));
   const d = []; for (const i of W.dirty) d.push(i, Math.round(W.bhp[i]), Math.round(W.shp[i])); W.dirty.clear();
@@ -12347,7 +12784,7 @@ function applySnap(s) {
     const p = W.p[i]; if (!p) return;
     const [x, y, L, vx, vy, aim, hp, fl, downT, wpn, mag, ammo, owned, nades, meds, useT, medT, reloadT, kills, anim, sel, ap, vehs, shield, melee, gn, lives, fuel, fz, gam, shl, mc] = a;
     const mine = i === ME;
-    p.hp = hp; p.down = !!(fl & 1); p.dead = !!(fl & 2); p.gone = !!(fl & 4); p.downT = downT; p.selfRev = !!(fl & 128); p.ride = !!(fl & 256); p.veh = (fl >> 9) & 7; p.pass = ((fl >> 12) & 7) - 1; p.land = !!(fl & 32768); p.fuel = fuel || 0; p.fz = fz || 0; p.gam = gam || 0; p.shl = shl || 0; if (mc) { p.mform = mc[0]; p.mtr = mc[1]; p.mh = [null].concat(mc[2].map(h => h < 0 ? null : h)); p.bat = mc[3]; p.mcd = mc[4]; } // (round 34b) mech form, transform timer, hulls, energy, skill cooldown
+    p.hp = hp; p.down = !!(fl & 1); p.dead = !!(fl & 2); p.gone = !!(fl & 4); p.downT = downT; p.selfRev = !!(fl & 128); p.ride = !!(fl & 256); p.veh = (fl >> 9) & 7; p.pass = ((fl >> 12) & 7) - 1; p.land = !!(fl & 32768); p.fuel = fuel || 0; p.fz = fz || 0; p.gam = gam || 0; p.shl = shl || 0; if (mc) { p.mform = mc[0]; p.mtr = mc[1]; p.mh = [null].concat(mc[2].map(h => h < 0 ? null : h)); p.bat = mc[3]; p.mcd = mc[4]; p.evo = mc[5] || 0; p.evoOn = !!(mc[6] & 1); p.spinT = mc[6] & 2 ? 1 : 0; p.rageT = mc[6] & 4 ? 1 : 0; } // (round 34b) mech form, transform timer, hulls, energy, skill cooldown
     p.mag = mag.split(',').map(Number); p.ammo = ammo.split(',').map(Number); p.owned = owned.split('').map(Number);
     p.nades = nades; p.meds = meds; p.vehs = vehs || 0; p.shield = shield ? 1 : 0; p.gn = gn || [0, 0, 0]; p.lives = lives || 0; if (p.i !== ME || !(UI.meleeT > performance.now())) p.melee = melee || 0; p.useT = useT / 100; p.medT = medT; p.reloadT = reloadT; p.kills = kills; p.ready = !!(fl & 64);
     if (!mine) { p.tx = x; p.ty = y; p.L = L; p.vx = vx; p.vy = vy; p.aim = aim; p.build = !!(fl & 32); p.wpn = wpn; p.anim = anim; p.sel = sel; p.aimPt = ap ? { x: ap[0], y: ap[1], z: ap[2] } : null; if (p.x == null || d2(p.x, p.y, x, y) > 4) { p.x = x; p.y = y; } }
@@ -12474,6 +12911,7 @@ function uiKeys(me) {
     const pil = !me.ride && !(me.pass >= 0) && pillionFor(me);
     if (me.vehs || me.pass >= 0 || pil) rows.push(['T', me.ride || me.pass >= 0 ? '下车' : pil ? '坐后座' : '上' + (VEH[me.veh] ? VEH[me.veh].name : '车'), me.ride || me.pass >= 0 || pil ? 1 : 0]);
     if (me.vehs & (me.vehs - 1)) rows.push(['⇧T', '换一辆车']);
+    if (me.ride && MECHS[me.veh]) { const E = EVO[me.veh], rdy = E && (me.evo || 0) >= 100 && !me.evoOn; rows.unshift(['X', me.mform !== 1 ? '变成' + MECHS[me.veh].name : me.evoOn ? '变回' + MECHS[me.veh].name + '（长按回载具）' : rdy ? '进化 · ' + E.name + '（长按回载具）' : '变回载具', rdy ? 2 : 0]); } /* (round 37) */
     if (W.phase === 'day') rows.push(['N', me.ready ? '取消准备' : '准备入夜', me.ready ? 1 : 0]);
   }
   rows.push(['M', '大地图（也可按 Tab）'], ['Q E', '转镜头'], ['Esc', '菜单']);
@@ -12570,7 +13008,7 @@ function hudTick(dt) {
   const rl = me.reloadT > 0 ? 1 - me.reloadT / WPN[me.reloadW != null ? me.reloadW : wi].reload : me.reloadVis > 0 ? 1 - me.reloadVis / w.reload : me.medT > 0 ? 1 - me.medT / (me.selfRev ? 3 : BAL.healTime) : 0;
   $('wRl').style.width = (rl * 100) + '%';
   if (inMech(me)) { $('iNadeL').textContent = mechOf(me).sn; $('iNade').textContent = (me.mcd || 0) > 0 ? Math.ceil(me.mcd) + 's' : '✓'; } else { $('iNadeL').textContent = GREN[me.gt || 0].sn; $('iNade').textContent = gCount(me, me.gt || 0); } // (round 34) in a mech the grenade key is its skill $('iMed').textContent = me.meds; $('iKill').textContent = me.kills; $('iLife').textContent = me.lives != null ? me.lives : '-';
-  { const mw = $('iMechW'), sh = me.ride && MECHS[me.veh]; mw.classList.toggle('hidden', !sh); if (sh) { const M = MECHS[me.veh], im = inMech(me), h = mhpOf(me); $('iMech').textContent = INP.touch ? '装甲 ' + Math.round(h) + ' · 电 ' + Math.floor(me.bat != null ? me.bat : BAL.mechBat) + (me.mtr > 0 ? ' · 变形中' : '') : M.name + (me.mtr > 0 ? ' · 变形中' : im ? '' : '（X / 变形）') + ' · 装甲 ' + Math.round(h) + '/' + M.hp + ' · 电 ' + Math.floor(me.bat != null ? me.bat : BAL.mechBat) + 's' + (im ? ' · ' + M.sn + ((me.mcd || 0) > 0 ? ' ' + Math.ceil(me.mcd) + 's' : ' 好了') : ''); /* (round 36b) on touch the skill cooldown lives on the skill key; the line is just hull and energy */ mw.classList.toggle('low', (me.bat || 0) < BAL.mechLow || h < M.hp * 0.25); } } // (round 34b) mech line whenever you drive
+  { const mw = $('iMechW'), sh = me.ride && MECHS[me.veh]; mw.classList.toggle('hidden', !sh); if (sh) { const M = MECHS[me.veh], im = inMech(me), h = mhpOf(me); const E = EVO[me.veh], ev = Math.floor(me.evo || 0), evs = !E ? '' : me.evoOn ? ' · ' + E.name + ' ' + Math.ceil(ev / 100 * BAL.evoT) + 's' : ' · 进化 ' + (ev >= 100 ? '满（X）' : ev + '%'); /* (round 37) */ $('iMech').textContent = (INP.touch ? '装甲 ' + Math.round(h) + ' · 电 ' + Math.floor(me.bat != null ? me.bat : BAL.mechBat) + (me.mtr > 0 ? ' · 变形中' : '') : M.name + (me.mtr > 0 ? ' · 变形中' : im ? '' : '（X / 变形）') + ' · 装甲 ' + Math.round(h) + '/' + M.hp + ' · 电 ' + Math.floor(me.bat != null ? me.bat : BAL.mechBat) + 's' + (im ? ' · ' + M.sn + ((me.mcd || 0) > 0 ? ' ' + Math.ceil(me.mcd) + 's' : ' 好了') : '')) + evs; /* (round 36b) on touch the skill cooldown lives on the skill key; the line is just hull and energy */ mw.classList.toggle('low', (me.bat || 0) < BAL.mechLow || h < M.hp * 0.25); } } // (round 34b) mech line whenever you drive
   { const dv = String(me.ride ? me.veh : 0); if (document.body.dataset.veh !== dv) document.body.dataset.veh = dv; const im = inMech(me) || me.mtr > 0; if (document.body.classList.contains('inmech') !== im) document.body.classList.toggle('inmech', im); } // (round 36b) phones show only the info for what you're riding
   { const sw = $('iShlW'), ht = ownsVeh(me, 6); sw.classList.toggle('hidden', !ht); if (ht) $('iShl').textContent = me.shl || 0; } // (round 31) tank shells
   { const fw = $('iFuelW'), has = ownsVeh(me, 5); fw.classList.toggle('hidden', !has); if (has) { const f = Math.ceil(me.fuel || 0); $('iFuel').textContent = f + ' 秒 · 弹 ' + (me.gam || 0); fw.style.color = f < BAL.fuelLow ? '#ff7a6a' : airborne(me) ? '#9fe0ff' : ''; } } // (round 29) gyrocopter fuel
@@ -12647,7 +13085,7 @@ function hudTick(dt) {
     $('tWpn').firstElementChild.textContent = w.sn || w.name; $('tWpn').lastElementChild.textContent = w.inf ? '∞' : me.mag[wi] + '/' + me.ammo[wi];
     $('tWpn').classList.toggle('dim', me.down || me.owned.filter(Boolean).length < 2);
     const gt = me.gt || 0, im = inMech(me), gc = im ? ((me.mcd || 0) > 0 ? Math.ceil(me.mcd) : '✓') : gCount(me, gt), tn = $('tNade'), lb = im ? mechOf(me).sn : GREN[gt].sn; $('tNadeN').textContent = gc; tn.classList.toggle('empty', im ? (me.mcd || 0) > 0 : !gc); if (tn.firstChild.nodeValue !== lb) tn.firstChild.nodeValue = lb; // (round 24) shows the picked grenade type
-    const sv = $('tShove'), svm = me.ride && MECHS[me.veh] ? (me.mform === 1 ? 'b' : 'x') : String(me.melee === 1 && me.shield ? 1 : 0); if (sv.dataset.m !== svm) { sv.dataset.m = svm; sv.textContent = svm === 'x' ? '变形' : svm === 'b' ? '变回' : svm === '1' ? '盾' : '刀'; } sv.classList.toggle('sw', !!me.shield && !me.ride); sv.classList.toggle('xf', !!me.ride); // (round 34b) driving: the melee key transforms
+    const sv = $('tShove'), svm = me.ride && MECHS[me.veh] ? (me.mform === 1 ? (me.evoOn ? 'r' : (me.evo || 0) >= 100 && EVO[me.veh] ? 'e' : 'b') : 'x') : String(me.melee === 1 && me.shield ? 1 : 0); if (sv.dataset.m !== svm) { sv.dataset.m = svm; sv.textContent = svm === 'x' ? '变形' : svm === 'b' ? '变回' : svm === 'e' ? '进化' : svm === 'r' ? '复原' : svm === '1' ? '盾' : '刀'; } sv.classList.toggle('evo', svm === 'e'); sv.style.setProperty('--ev', me.ride && me.mform === 1 && !me.evoOn ? Math.min(100, me.evo || 0) + '%' : '0%'); /* (round 37) tap = 进化 / 复原, hold = back to the vehicle; the button fills up with the meter */ sv.classList.toggle('sw', !!me.shield && !me.ride); sv.classList.toggle('xf', !!me.ride); // (round 34b) driving: the melee key transforms
     $('tFire').style.setProperty('--rl', rl);
     $('tLLbl').textContent = ((me.build && BUILD_HOVER ? BUILD_HOVER.L : buildL()) + 1) + 'F';
   }
@@ -12737,7 +13175,7 @@ function renderCraft() {
     if (top) h += `<div class="stop">${top}</div>`;
     h += CRAFT.filter(c => c.cat === 'veh').map(c => { const v = c.veh, own = (me.vehs || 0) >> v & 1, def = own && me.veh === v, M = MECHS[v];
       return card('v' + v, own, c.name, def ? '默认 ✓' : own ? '已有' : '×' + VEH[v].spd, own ? (def ? '<span class="sfree">T 上车</span>' : '<span class="sfree">长按设默认</span>') : shopBtn(c, '造'),
-        { t: c.name + (M ? ' / ' + M.name : ''), d: c.desc + '<br>速度 ×' + VEH[v].spd + (M ? `<br><b>二阶段 · ${M.name}</b>（骑着按 X / 「变形」，1 秒）：${M.tag}` : '') + (own ? '<br>默认载具：T（触屏点「载具」）就上这辆；Shift+T / 长按「载具」换车' : ''), v: own && !def ? v : null }); }).join('');
+        { t: c.name + (M ? ' / ' + M.name : ''), d: c.desc + '<br>速度 ×' + VEH[v].spd + (M ? `<br><b>二阶段 · ${M.name}</b>（骑着按 X / 「变形」，1 秒）：${M.tag}` + (EVO[v] ? `<br><b>第二形态 · ${EVO[v].name}</b>（机甲杀敌攒满进化槽后按 X，持续 ${BAL.evoT} 秒）：${EVO[v].tag}` : '') : '') + (own ? '<br>默认载具：T（触屏点「载具」）就上这辆；Shift+T / 长按「载具」换车' : ''), v: own && !def ? v : null }); }).join('');
   }
   $('clist').innerHTML = h;
   $('clist').querySelectorAll('button[data-c]').forEach(b => b.addEventListener('click', () => shopBuy(CRAFT.find(c => c.id === b.dataset.c))));
@@ -13119,7 +13557,7 @@ function saveGame(quiet) {
   const S = {
     v: SAVE_V, mw: MW, at: Date.now(), name: W.saveName || '', mode: W.mode, map: W.map, obj: W.obj, seed: W.seed, diff: W.diff, night: W.night, phase: W.phase, clock: W.clock, dayLen: W.dayLen, nightT: W.nightT,
     res: W.res, upg: W.upg, kills: W.kills, stats: W.stats, endless: W.endless, clean: W.clean, tasks: W.tasks, srch: [...W.srch], spotN: W.spotN, t: W.t,
-    p: W.p.map(p => ({ name: p.name, x: p.x, y: p.y, L: inAirZ(p) != null ? skyTop(p.x, p.y) : p.L, /* (round 31) saved in flight: put them on what is below */ hp: p.hp, dead: p.dead, wpn: p.wpn, owned: p.owned, mag: p.mag, ammo: p.ammo, meds: p.meds, nades: p.nades, kills: p.kills, veh: p.veh || 0, vehs: p.vehs || 0, shield: p.shield ? 1 : 0, melee: p.melee || 0, gn: p.gn || [0, 0, 0], lives: p.lives || 0, fuel: p.fuel != null ? +p.fuel.toFixed(1) : 60, gam: p.gam || 0, shl: p.shl || 0, mh: (p.mh || []).map(h => h == null ? null : Math.round(h)), bat: +(p.bat != null ? p.bat : BAL.mechBat).toFixed(1) })).concat(W.p.length < 2 && W.p2keep ? [W.p2keep] : []), /* (round 34) a two-player save played on alone still keeps the teammate's kit */
+    p: W.p.map(p => ({ name: p.name, x: p.x, y: p.y, L: inAirZ(p) != null ? skyTop(p.x, p.y) : p.L, /* (round 31) saved in flight: put them on what is below */ hp: p.hp, dead: p.dead, wpn: p.wpn, owned: p.owned, mag: p.mag, ammo: p.ammo, meds: p.meds, nades: p.nades, kills: p.kills, veh: p.veh || 0, vehs: p.vehs || 0, shield: p.shield ? 1 : 0, melee: p.melee || 0, gn: p.gn || [0, 0, 0], lives: p.lives || 0, fuel: p.fuel != null ? +p.fuel.toFixed(1) : 60, gam: p.gam || 0, shl: p.shl || 0, mh: (p.mh || []).map(h => h == null ? null : Math.round(h)), bat: +(p.bat != null ? p.bat : BAL.mechBat).toFixed(1), evo: Math.round(p.evo || 0) })).concat(W.p.length < 2 && W.p2keep ? [W.p2keep] : []), /* (round 34) a two-player save played on alone still keeps the teammate's kit */
     zs: W.zs.filter(z => z.hp > 0).slice(0, 300).map(z => [z.k, +z.x.toFixed(2), +z.y.toFixed(2), z.L, Math.round(z.hp), Math.round(z.max), z.mz ? 1 : 0, z.g || 0, z.sleep ? 1 : 0, z.occ == null ? -1 : z.occ]),
     q: W.spawnQ.slice(0, 500).map(s => [+s.t.toFixed(1), s.k, s.side, s.at == null ? -1 : s.at, s.f ? +s.f.toFixed(2) : 0, s.g || 0]), gid: W.gid || 0,
     g: [rleEnc(W.blk), rleEnc(W.slab), rleEnc(W.bdir), rleEnc(hpPack(W.bhp)), rleEnc(hpPack(W.shp))].map(b64e),
@@ -13182,7 +13620,7 @@ function applySave(S) {
   Object.assign(W, { night: S.night, phase: S.phase, clock: S.clock, dayLen: S.dayLen, nightT: S.nightT || 0, res: S.res, upg: Math.max(S.upg || 0, BAL.upgStart), kills: S.kills, stats: S.stats, endless: !!S.endless, clean: S.clean !== false, tasks: S.tasks || [], t: S.t || 0 });
   W.srch = new Set(S.srch || []); W.spotN = S.spotN || null; if (!W.spotN) { W.spotN = spotCount(); for (const k in W.spotN) W.spotN[k] = Math.round(W.spotN[k] * 2); } W.tkv++; W.rng = mulberry((S.seed ^ (S.night * 7919) ^ (S.at & 0xffff)) >>> 0);
   const p = W.p[0], P = S.p[0];
-  if (P) { Object.assign(p, { x: P.x, y: P.y, L: P.L, hp: P.dead ? BAL.pMaxHp * 0.5 : P.hp, wpn: P.wpn, owned: P.owned, mag: P.mag, ammo: P.ammo, meds: P.meds, nades: P.nades, kills: P.kills, veh: P.veh || 0, vehs: P.vehs != null ? P.vehs : (P.veh ? 1 << P.veh : 0), shield: 0, melee: 0, /* (round 36f) no more riot shield */ gn: P.gn || [0, 0, 0], lives: P.lives != null ? P.lives : livesFor(W.diff, W.mode), fuel: P.fuel != null ? P.fuel : 60, gam: P.gam || 0, shl: P.shl || 0, mh: P.mh || [], bat: P.bat != null ? P.bat : BAL.mechBat }); p.vehs &= 127; if (p.veh === 7) p.veh = [4, 2, 3, 1, 5, 6].find(k => p.vehs >> k & 1) || 0; p.dead = false; /* (round 34b) the stand-alone mech of 34a became the vehicles' second stage */ p.down = false; } // (round 22) vehs = owned bitmask; older saves only knew the best one
+  if (P) { Object.assign(p, { x: P.x, y: P.y, L: P.L, hp: P.dead ? BAL.pMaxHp * 0.5 : P.hp, wpn: P.wpn, owned: P.owned, mag: P.mag, ammo: P.ammo, meds: P.meds, nades: P.nades, kills: P.kills, veh: P.veh || 0, vehs: P.vehs != null ? P.vehs : (P.veh ? 1 << P.veh : 0), shield: 0, melee: 0, /* (round 36f) no more riot shield */ gn: P.gn || [0, 0, 0], lives: P.lives != null ? P.lives : livesFor(W.diff, W.mode), fuel: P.fuel != null ? P.fuel : 60, gam: P.gam || 0, shl: P.shl || 0, mh: P.mh || [], bat: P.bat != null ? P.bat : BAL.mechBat, evo: Math.min(100, P.evo || 0) }); p.vehs &= 127; if (p.veh === 7) p.veh = [4, 2, 3, 1, 5, 6].find(k => p.vehs >> k & 1) || 0; p.dead = false; /* (round 34b) the stand-alone mech of 34a became the vehicles' second stage */ p.down = false; } // (round 22) vehs = owned bitmask; older saves only knew the best one
   // older saves may have fewer weapons
   for (const k of ['owned', 'mag', 'ammo']) while (p[k].length < NW) p[k].push(0);
   p.z = pZ(p); p.zv = p.z; CAM.tx = p.x; CAM.ty = p.y;

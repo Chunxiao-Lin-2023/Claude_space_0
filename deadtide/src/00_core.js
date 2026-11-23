@@ -143,7 +143,22 @@ const MECHS = [null,
 const MECH_CRUSH = new Set([21, 22, 27, 29, 32, 39, 40, 41]); // (round 34d) what a mech just walks over and flattens: rocks, trees, fences, rubble, bins, scrap, logs, bushes
 const inMech = p => !!(p && p.ride && p.mform === 1 && MECHS[p.veh]);
 const mechMul = () => 1 + BAL.mechUpg * Math.max(0, (W.upg || 0) - BAL.upgStart); /* (round 36n) */
-const mechOf = p => MECHS[p && p.veh] || MECHS[4];
+/* (round 37) 第二形态: a full 进化 meter turns a mech into its beast for a while (same hull, own attack / skill / speed / armour) */
+const EVO = [null,
+  { k: 'snake', evo: 1, name: '青蛇', from: '疾风', hp: 1000, armor: 0.75, spd: 1.95, dmg: 75, rate: 0.42, reach: 3.8, atk: 'bite', skill: 'venom', sn: '毒雾', cd: 9, col: ['#2f9a6a', '#173d2c', '#e8d24a'], glow: '#9dff6a', noise: 0,
+    tag: '贴地游走，最快；有人打它 35% 闪开。普攻「毒牙」：扑咬 3.8 格内的丧尸（75 + 中毒 4 秒每秒 12）。技能「毒雾」：吐出一团毒雾（半径 4.5，6 秒，每秒 30 + 减速一半），冷却 9 秒' },
+  { k: 'dragon', evo: 1, name: '赤龙', from: '赤刃', hp: 1200, armor: 0.7, spd: 1.75, dmg: 24, rate: 0.12, reach: 6.5, atk: 'breath', skill: 'dragdash', sn: '龙腾', cd: 8, col: ['#c8282a', '#5a1012', '#f2c040'], glow: '#ffb040', noise: 7,
+    tag: '浮在半空的长龙。普攻「龙息」：按住朝前喷火（6.5 格扇形，每 0.12 秒 24，点着丧尸）。技能「龙腾」：卷着火朝前冲 10 格，路上的丧尸受 260 并着火，冷却 8 秒' },
+  { k: 'rabbit', evo: 1, name: '玉兔', from: '工蜂', hp: 1600, armor: 0.8, spd: 1.6, dmg: 110, rate: 0.75, reach: 6, atk: 'hop', skill: 'moon', sn: '月落', cd: 10, col: ['#eef4f2', '#7fd8c4', '#ff9ab0'], glow: '#bff8ff', noise: 4,
+    tag: '一蹦一跳，蹦起来能越过墙和丧尸。普攻「蹦踩」：蹦到目标身上踩下去（6 格内，半径 2.4，110）。技能「月落」：高高跳起砸向 14 格内的落点（半径 6，320，砸晕 1.5 秒），冷却 10 秒；照样能踩平收资源' },
+  { k: 'turtle', evo: 1, name: '玄龟', from: '铁卫', hp: 2400, armor: 0.35, spd: 0.95, dmg: 150, rate: 0.85, reach: 3, atk: 'shell', skill: 'spin', sn: '旋甲', cd: 10, col: ['#3d5a48', '#1d2a22', '#c9a446'], glow: '#7fffd0', noise: 6,
+    tag: '最硬（挨打 ×0.35），身边 5 格的队友挨打少 40%（玄甲）。普攻「甲撞」：用龟壳往前撞（半径 2.8，150，撞开）。技能「旋甲」：缩进壳里高速旋转 4 秒，刀枪不入、跑得快，碰到的丧尸每 0.4 秒 70 并弹飞，冷却 10 秒' },
+  { k: 'phoenix', evo: 1, name: '火凤', from: '苍隼', hp: 1000, armor: 0.85, spd: 1.6, dmg: 34, rate: 0.45, range: 14, atk: 'feather', skill: 'rebirth', sn: '涅槃', cd: 16, col: ['#ff6a1e', '#9a1a10', '#ffd24a'], glow: '#ffcf60', noise: 8,
+    tag: '一直在天上飞。普攻「火羽」：扇形射出 5 根火羽（每根 34，14 格，点着丧尸）。技能「涅槃」：一圈烈火（半径 6，240 并着火），自己装甲回 40%，8 格内的队友回 60 血，冷却 16 秒' },
+  { k: 'bear', evo: 1, name: '铁熊', from: '重炮', hp: 2000, armor: 0.55, spd: 1.3, dmg: 135, rate: 0.6, reach: 3.4, arc: 1.5, atk: 'claw', skill: 'roar', sn: '熊吼', cd: 11, col: ['#7a5232', '#3a2616', '#d8d0c0'], glow: '#ff8a3a', noise: 9,
+    tag: '每杀一只回 1.5% 装甲。普攻「熊掌」：左右掌拍（3.4 格扇形 135），第三下双掌砸地（半径 2.6，×1.5）。技能「熊吼」：一吼震住 9 格内的丧尸 2.5 秒（4 格内再受 120），之后 8 秒狂暴：伤害 +40%、出手更快，冷却 11 秒' },
+];
+const mechOf = p => (p && p.evoOn && EVO[p.veh]) || MECHS[p && p.veh] || MECHS[4]; /* (round 37) in beast form its EVO entry stands in for the mech */
 const mhpOf = (p, v) => { v = v || p.veh; const M = MECHS[v]; if (!M) return 0; const h = p.mh && p.mh[v]; return h == null ? M.hp : h; };
 const PILLION = 0.38;                                   // how far behind the driver the back-seat rider sits
 // (round 24) grenade types: 0 frag (p.nades), 1–3 in p.gn[t - 1]
@@ -217,7 +232,7 @@ const ZT = {
   shade: { name: '隐身者', hp: 420, spd: 1.5, r: 0.3, h: 1.25, dmg: 12, bdmg: 10, cd: 0.9, sc: 1.2, look: 'walker', skin: '#50505e', elite: { k: 'cloak', cd: 6, col: '#c0c0e0', tip: '隐身摸到你身边偷袭，留意空气里的扭曲，附近炸一下就现形' } },
 };
 const ELITES = ['blinker', 'caller', 'warden', 'shade'];
-const BUILD_TAG = '第 36 轮之十四'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
+const BUILD_TAG = '第 37 轮'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
 // aim assist (SET.assist): fire-button lock range (x weapon range), lock-on time before it fires, spread while auto-aimed, mouse/finger magnet
 const PORT = 1.25; // firing port: your own shots pass a wall / door you built if it is this close to you
 const ASSIST = [{ name: '关', range: 0, acq: 0, spread: 1, mag: 0 }, { name: '标准', range: 0.75, acq: 0.3, spread: 1.5, mag: 1 }, { name: '强', range: 1, acq: 0, spread: 1, mag: 1 }];
@@ -332,6 +347,7 @@ const CRAFT = [
 /* ---------- balance ---------- */
 const BAL = {
   nights: 15,
+  evoT: 22, evoKill: 4, evoBig: 15, evoBurst: 3.5, evoAura: 5, evoAuraMul: 0.6, /* (round 37) 进化 meter: 100 = full; 22 s in beast form; kills fill it */
   flyRk: 3, flyRkMul: 1.3, /* (round 36n) 苍隼 in the air: three rockets a shot, ×1.3 each */ rainN: 36, rainT: 2.0, rainR: 4.5, rainDmg: 55, /* (round 36n) 工蜂 快递雨 */
   mgSpread: 0.03, droneN: 10, droneT: 10, droneDmg: 7, droneRate: 0.3, droneRange: 12, quakeR: 7, quakeDmg: 260, /* (round 36n) 疾风 machine gun + 浮游炮; 铁卫 掀地 */
   upgStart: 3, upgMax: 6, mechUpg: 0.12, /* (round 36n) mechs gain +12% for each 弹头 level earned above the start (they used to gain nothing) */         // (round 36f) 强化弹头 (+12% team damage a level) starts at 3 (was 0, bought up to 5 in the shop); the 击杀精英 task's three tiers push it to 6
