@@ -43,7 +43,7 @@ const UA = 'Mozilla/5.0 (iPad; CPU OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (
     // shield / armour
     s = await p.evaluate(() => { const me = W.p[0]; me.shield = 1; me.melee = 1; /* (round 36f) legacy shield, handed over directly */ me.hp = 100; me.aim = 0; hurtPlayer(me, 20, { x: me.x + 1, y: me.y }); const front = 100 - me.hp, sh = me.shield; me.hp = 100; hurtPlayer(me, 20, { x: me.x - 1, y: me.y }); const back = 100 - me.hp;
       me.hp = 100; me.veh = 4; me.ride = true; hurtPlayer(me, 20); const arm = 100 - me.hp; me.ride = false; me.hp = 100; me.shield = 0; me.melee = 0; return { front, sh, back, arm }; });
-    check('shield out: a hit from the front loses half, from behind full; armoured car takes 35%', Math.abs(s.front - 10) < 0.01 && s.sh === 1 && s.back === 20 && Math.abs(s.arm - 7) < 0.01, JSON.stringify(s));
+    check('shield out: a hit from the front loses half, from behind full; armoured car takes 30% (round 36n)', Math.abs(s.front - 10) < 0.01 && s.sh === 1 && s.back === 20 && Math.abs(s.arm - 6) < 0.01, JSON.stringify(s));
     // armoured car rams
     s = await p.evaluate(async () => { const me = W.p[0]; W.zs.length = 0; W.spawnQ = []; const z = spawnZombie('walker', 0); z.x = me.x + 0.55; z.y = me.y; z.L = me.L; z.z = me.z; z.stun = 99; const h0 = z.hp;
       me.ride = true; me.veh = 4; me.vx = 4; me.vy = 0; stepActions(me, 0.016); me.ride = false; me.vx = 0; return { h0, h: z.hp }; });

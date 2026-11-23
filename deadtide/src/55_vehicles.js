@@ -551,6 +551,11 @@ function mkMech(k) {
       const el = new THREE.Group(); el.position.y = -0.44; sh.add(el); mPart(el, sm(0.12), steel, 0, 0, 0);
       mPart(el, mTaper(0.11, 0.115, 0.3, 16), steel, 0, -0.02, 0); mPart(el, new THREE.CylinderGeometry(0.135, 0.135, 0.12, 18), acc, 0, -0.3, 0);
       for (const zz of [-1, 1]) { const f = new THREE.Group(); f.position.set(0.02, -0.37, zz * 0.06); f.rotation.x = zz * 0.35; el.add(f); mRB(f, steel, 0.06, 0.2, 0.04, 0.02, 0, -0.1, 0); mRB(f, steel, 0.05, 0.08, 0.04, 0.02, 0, -0.2, -zz * 0.03, 0, 0, -zz * 0.6); }
+      if (s === -1) { const G = new THREE.Group(); G.position.set(0.04, -0.36, 0); G.scale.setScalar(1.35); el.add(G); J.mg = G; /* (round 36n) 疾风's machine gun, held along the forearm: body, drum, carry handle, a spinning barrel cluster */
+        mSB(G, dark, 0.16, 0.42, 0.13, 0.03, 0.02, -0.12, 0); mSB(G, main, 0.1, 0.2, 0.15, 0.025, 0.1, -0.08, 0); mPart(G, new THREE.CylinderGeometry(0.11, 0.11, 0.09, 18), acc, 0.0, -0.1, -0.12, Math.PI / 2, 0, 0);
+        mPart(G, new THREE.TorusGeometry(0.06, 0.012, 6, 14), steel, 0.13, -0.16, 0, 0, Math.PI / 2, 0); const bar = new THREE.Group(); bar.position.set(0.02, -0.33, 0); G.add(bar); J.mgBar = bar;
+        for (let q = 0; q < 6; q++) { const aq = q / 6 * Math.PI * 2; mPart(bar, new THREE.CylinderGeometry(0.018, 0.018, 0.42, 8), steel, Math.cos(aq) * 0.045, -0.2, Math.sin(aq) * 0.045); }
+        mPart(bar, new THREE.CylinderGeometry(0.075, 0.075, 0.04, 14), dark, 0, -0.06, 0); mPart(bar, new THREE.CylinderGeometry(0.075, 0.075, 0.04, 14), acc, 0, -0.38, 0); J.mgMuz = vMark(bar, 0, -0.44, 0); }
       J.arms.push({ sh, el, s, fist: vMark(el, 0.06, -0.52, 0), tip: null }); continue; }
     mPart(sh, mBall(0.14 * A), steel, 0, 0, 0);
     const pd = new THREE.Mesh(new THREE.SphereGeometry(0.27 * A, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.5), main); pd.scale.set(1.15, 0.75, 1); pd.rotation.x = s * 0.35; pd.position.set(0, 0.06, s * 0.05); sh.add(pd);
@@ -652,10 +657,9 @@ function mechTick(p, mm, dt, xf = 1) { // xf < 1: mid-transform (0 = folded up, 
       else if (combo === 1) { T.sh[0] = bl(1.35, 1.4, G.sh); T.ab[0] = bl(1.3, -1.0, G.ab); T.el[0] = bl(0.35, 0.1, G.el); T.kz = bl(0.15, 0.05, G.kz); T.kx = bl(1.45, 1.45, 0); T.twist = 0.8 * cock - 0.95 * on; T.crouch += 0.26 * on; T.lean += 0.12 * on; T.sh[1] = 0.5; T.el[1] = 1.0; T.ab[1] = 0.4 * on; }
       else { for (const s2 of [0, 1]) { T.sh[s2] = bl(2.95, 0.5, G.sh); T.el[s2] = bl(0.55, 0.08, 1.2); T.ab[s2] = s2 ? -0.18 : 0.18; } T.kz = bl(1.95, -0.3, G.kz); T.kx = 0; T.twist = 0; T.lean += 0.5 * on - 0.15 * cock; T.crouch += 0.34 * on; }
       void mix; void sgn; void o;
-    } else if (st === 'big') { // 铁卫: hammer fist into the ground, a stomp, then the fist cannon
-      if (combo === 0) { T.sh[side] = 2.8 * cock + 0.35 * on + 0.3 * rest; T.el[side] = 0.2; T.lean += 0.45 * on; T.crouch += 0.28 * on; T.twist = sgn * -0.3 * on; T.sh[o] = 0.7; T.el[o] = 1.5; }
-      else if (combo === 1) { const up = t < 0.15 ? ease(t / 0.15) : 0, dn = t >= 0.15 && t < 0.3 ? 1 : t >= 0.3 ? 1 - ease((t - 0.3) / 0.3) : 0; if (side) { T.thL = 1.1 * up + 0.25 * dn; T.knL = 1.5 * up + 0.2 * dn; } else { T.thR = 1.1 * up + 0.25 * dn; T.knR = 1.5 * up + 0.2 * dn; } T.crouch += 0.18 * dn; T.lean += 0.1 * dn; T.ab = [0.5 * up + 0.3, 0.5 * up + 0.3]; T.sh = [0.3, 0.3]; T.el = [0.9, 0.9]; }
-      else { T.sh[side] = 0.55 + 1.0 * (on + cock * 0.6); T.el[side] = 1.3 * (1 - on) + 0.05; T.twist = sgn * (0.3 * cock - 0.5 * on); T.lean -= 0.12 * on; T.sh[o] = 0.65; T.el[o] = 1.55; }
+    } else if (st === 'big') { // 铁卫 (round 36n): every blow pounds the ground — one fist, the other fist, then both together
+      if (combo < 2) { T.sh[side] = 2.8 * cock + 0.35 * on + 0.3 * rest; T.el[side] = 0.2; T.lean += 0.45 * on; T.crouch += 0.28 * on; T.twist = sgn * -0.3 * on; T.sh[o] = 0.7; T.el[o] = 1.5; }
+      else { for (const s2 of [0, 1]) { T.sh[s2] = 3.0 * cock + 0.3 * on + 0.3 * rest; T.el[s2] = 0.25 + 0.2 * cock; T.ab[s2] = 0.15; } T.lean += 0.6 * on - 0.1 * cock; T.crouch += 0.38 * on; T.twist = 0; }
     } else if (st === 'worker') { // 工蜂 (round 35): points where it wants them and the back rack kicks up, flinging parcels out over the shoulder
       T.sh[side] = 1.45 * (on + cock) + 0.3 * rest; T.el[side] = 0.15; T.ab[side] = 0.1; T.twist = sgn * -0.25 * on; T.lean -= 0.12 * on - 0.1 * cock; T.crouch += 0.12 * cock; T.sh[o] = 0.5; T.el[o] = 1.3; T.rack = 0.55 * on - 0.1 * cock;
     } else if (st === 'scout') { // 疾风: low snap kicks, arms swinging against them
@@ -667,9 +671,12 @@ function mechTick(p, mm, dt, xf = 1) { // xf < 1: mid-transform (0 = folded up, 
       T.sh = [0.6, 0.6]; T.el = [1.3, 1.3]; T.lean -= 0.1 * on; T.podK = on;
     }
   }
+  if (J.mg) { const fire = W.t - (p._mgT || -9) < 0.3; J._mgA = clamp((J._mgA || 0) + (fire ? dt * 10 : -dt * 3), 0, 1); const g = J._mgA; /* (round 36n) 疾风 brings the gun up and holds it level while firing; the barrels spin */
+    if (g > 0) { const jit = fire ? Math.sin(W.t * 90) * 0.03 : 0; T.sh[0] = lerp(T.sh[0], 1.5 + jit, g); T.el[0] = lerp(T.el[0], 0.08, g); T.ab[0] = lerp(T.ab[0], 0.05, g); T.sh[1] = lerp(T.sh[1], 1.25, g); T.el[1] = lerp(T.el[1], 0.75, g); T.ab[1] = lerp(T.ab[1], -0.45, g); T.lean -= 0.06 * g; T.twist += -0.15 * g; }
+    J._mgS = lerp(J._mgS || 0, fire ? 40 : 0, Math.min(1, dt * (fire ? 8 : 2))); if (J.mgBar) J.mgBar.rotation.y += J._mgS * dt; }
   // ---- skills ----
-  if (sk === 'slam' && sT < 0.95) { if (sT < 0.3) { const f = ease(sT / 0.3); T.sh = [2.8 * f, 2.8 * f]; T.el = [0.3, 0.3]; T.crouch = 0.1 * f; T.lean = -0.1 * f; } else if (sT < 0.45) { const f = ease((sT - 0.3) / 0.15); T.sh = [2.8 - f * 2.2, 2.8 - f * 2.2]; T.el = [0.1, 0.1]; T.crouch = 0.1 + f * 0.38; T.lean = f * 0.45; } else { const f = ease((sT - 0.45) / 0.5); T.sh = [0.6 + 0.0 * f, 0.6]; T.crouch = 0.48 * (1 - f); T.lean = 0.45 * (1 - f); } }
-  if (sk === 'parcels' && sT < 0.9) { const f = sT < 0.25 ? ease(sT / 0.25) : 1 - ease((sT - 0.25) / 0.65); T.sh = [2.2 * f + 0.3 * (1 - f), 2.2 * f + 0.3 * (1 - f)]; T.ab = [0.8 * f, 0.8 * f]; T.el = [0.3, 0.3]; T.lean -= 0.25 * f; T.crouch += 0.15 * f; T.rack = 1.1 * f; } // (round 35) the rack tips right up and sprays the lot
+  if ((sk === 'slam' || sk === 'quake') && sT < 0.95) { if (sT < 0.3) { const f = ease(sT / 0.3); T.sh = [2.8 * f, 2.8 * f]; T.el = [0.3, 0.3]; T.crouch = 0.1 * f; T.lean = -0.1 * f; } else if (sT < 0.45) { const f = ease((sT - 0.3) / 0.15); T.sh = [2.8 - f * 2.2, 2.8 - f * 2.2]; T.el = [0.1, 0.1]; T.crouch = 0.1 + f * 0.38; T.lean = f * 0.45; } else { const f = ease((sT - 0.45) / 0.5); T.sh = [0.6 + 0.0 * f, 0.6]; T.crouch = 0.48 * (1 - f); T.lean = 0.45 * (1 - f); } }
+  if (sk === 'parcels' && sT < 2.6) { const f = sT < 0.25 ? ease(sT / 0.25) : sT < 2.2 ? 0.85 + 0.15 * Math.sin(sT * 28) : 1 - ease((sT - 2.2) / 0.4); /* (round 36n) holds the rack up and keeps it bucking while the torrent pours out */ T.sh = [2.2 * f + 0.3 * (1 - f), 2.2 * f + 0.3 * (1 - f)]; T.ab = [0.8 * f, 0.8 * f]; T.el = [0.3, 0.3]; T.lean -= 0.25 * f; T.crouch += 0.15 * f; T.rack = 1.1 * f; } // (round 35) the rack tips right up and sprays the lot
   if (sk === 'dash' && sT < 0.55) { const f = sT < 0.4 ? 1 : 1 - (sT - 0.4) / 0.15; T.lean = 0.55 * f; T.sh = [-0.5 * f + 0.55 * (1 - f), 1.4 * f + 0.55 * (1 - f)]; T.el = [0.2, 0.3]; T.ab = [0.3, 1.0 * f]; T.crouch = 0.15 * f; T.thL = 0.6 * f; T.thR = -0.5 * f; T.knL = 0.5 * f + 0.15; T.knR = 0.9 * f + 0.15; T.blade = 0; T.flame = 1; T.twist = -0.6 * f; }
   if (sk === 'leap' && sT < 1.3) { if (sT < 0.15) T.crouch = ease(sT / 0.15) * 0.35; T.flame = air || sT < 1.05 ? 1 : 0; }
   if (J.kat && J.cmb > 0.05 && t >= 0.6 && t < 1.2 && !(sT < 1)) { T.kz = 0.75; T.kx = 0; T.sh[0] = lerp(T.sh[0], 0.9, J.cmb); T.el[0] = lerp(T.el[0], 1.2, J.cmb); T.sh[1] = lerp(T.sh[1], 0.85, J.cmb); T.el[1] = lerp(T.el[1], 1.35, J.cmb); T.ab[1] = lerp(T.ab[1], -0.35, J.cmb); } // (round 36f) 赤刃's 中段 guard between cuts: both hands toward the hilt, the blade up and forward

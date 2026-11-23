@@ -229,3 +229,35 @@ function kxpLabels() {
     h += `<div class="kxp" style="left:${sx | 0}px;top:${sy | 0}px">破绽 伤害×2 <b>${(until - now).toFixed(1)}</b></div>`; }
   return h;
 }
+
+/* ---------- (round 36n) 疾风's 浮游炮: ten little gun pods orbit their owner and spray tracers ---------- */
+const DRN = new Map(); // owner → { end, ms: [mesh…], aim: [angle…], fl: [flash time…] }
+function droneMesh() {
+  const g = new THREE.Group(), M = (c, e) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.5, metalness: 0.4, emissive: e || '#000', emissiveIntensity: e ? 1 : 0 });
+  const body = new THREE.Mesh(new THREE.SphereGeometry(0.16, 14, 10), M('#3fb8b0')); body.scale.set(1.2, 0.7, 1.2); g.add(body);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.025, 6, 20), M('#5a6068')); ring.rotation.x = Math.PI / 2; g.add(ring);
+  const eye = new THREE.Mesh(new THREE.SphereGeometry(0.05, 10, 8), M('#7fe8ff', '#7fe8ff')); eye.position.set(0.13, 0.03, 0); g.add(eye);
+  const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.03, 0.3, 8), M('#2a2e34')); bar.rotation.z = -Math.PI / 2; bar.position.set(0.24, -0.04, 0); g.add(bar);
+  const rot = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.01, 0.04), M('#f2c230')); rot.position.y = 0.13; g.add(rot); g.userData.rot = rot;
+  const fl = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), new THREE.MeshBasicMaterial({ color: '#ffd070', transparent: true, opacity: 0.9 })); fl.position.set(0.42, -0.04, 0); fl.visible = false; g.add(fl); g.userData.fl = fl;
+  SCN.add(g); return g;
+}
+function droneEvent(e) { let D = DRN.get(e.o); if (!e.t) { if (D) D.end = W.t; return; } if (!D) { D = { ms: [], aim: [], fl: [] }; DRN.set(e.o, D); } D.end = W.t + e.t; D.t0 = W.t;
+  const q = W.p[e.o]; if (q) for (let k = 0; k < BAL.droneN; k++) { const P = dronePos(q, k, W.t); for (let j = 0; j < 5; j++) addP({ x: P.x, y: P.y, z: P.z, vx: frnd(-1, 1), vy: frnd(-1, 1), vz: frnd(0, 1), col: '#7fe8ff', s: 0.06, life: 0.4 }); } }
+function droneShots(e) { const D = DRN.get(e.o), q = W.p[e.o]; if (!D || !q) return; const s = e.s;
+  for (let i = 0; i + 3 < s.length; i += 4) { const k = s[i], P = dronePos(q, k, W.t); RND.tracers.push({ x: P.x, y: P.y, z: P.z, x2: s[i + 1], y2: s[i + 2], z2: s[i + 3], t: 0, life: 0.06, w: 0.018, col: [0.55, 0.95, 1] }); D.aim[k] = Math.atan2(s[i + 2] - P.y, s[i + 1] - P.x); D.fl[k] = W.t; }
+  if (thr('drn', 0.12)) sfx('gyro', q.x, q.y); }
+function drawDrones(dt) {
+  for (const [o, D] of DRN) { const q = W.p[o], on = q && W.t < D.end + 0.4;
+    if (!on) { for (const m of D.ms) { SCN.remove(m); m.traverse(c => { if (c.geometry) c.geometry.dispose(); }); } DRN.delete(o); continue; }
+    const fade = clamp(Math.min((W.t - D.t0) / 0.4, (D.end + 0.4 - W.t) / 0.4), 0, 1);
+    for (let k = 0; k < BAL.droneN; k++) { const m = D.ms[k] || (D.ms[k] = droneMesh()); const P = dronePos(q, k, W.t); m.position.set(P.x, P.z - (1 - fade) * 1.2, P.y); m.scale.setScalar(0.3 + 0.7 * fade);
+      const a = D.aim[k] != null && W.t - D.fl[k] < 0.6 ? D.aim[k] : (q._ly != null ? q._ly : q.aim); m.rotation.y = -a; m.userData.rot.rotation.y += dt * 40; m.userData.fl.visible = W.t - (D.fl[k] || -9) < 0.05; }
+  }
+}
+// (round 36n) 铁卫 掀地: a ring of heaved-up earth racing out to the edge, slabs and dust thrown up
+function quakeFx(e) { const R = e.r || 7;
+  fxAdd({ kind: 'ring', x: e.x, y: e.y, z: e.z + 0.08, s0: 0.8, s1: R, life: 0.55, col: '#c8a878', op: 0.85 }); fxAdd({ kind: 'disc', x: e.x, y: e.y, z: e.z + 0.05, s0: 1, s1: R * 0.9, life: 0.7, col: '#a08060', op: 0.35 });
+  for (let k = 0; k < 60; k++) { const a = rand() * Math.PI * 2, r = 1 + rand() * (R - 1); addP({ x: e.x + Math.cos(a) * r, y: e.y + Math.sin(a) * r, z: e.z + 0.1, vx: Math.cos(a) * 1.5, vy: Math.sin(a) * 1.5, vz: 3 + rand() * 4, g: -9, col: rand() < 0.5 ? '#7a6a52' : '#a08c6c', s: 0.12 + rand() * 0.12, life: 0.9 }); }
+  for (let k = 0; k < 40; k++) { const a = k / 40 * Math.PI * 2; addP({ x: e.x + Math.cos(a) * R * 0.9, y: e.y + Math.sin(a) * R * 0.9, z: e.z + 0.1, vx: Math.cos(a) * 2, vy: Math.sin(a) * 2, vz: 0.6, g: -0.3, col: '#a89878', s: 0.18, life: 0.8, smoke: 1 }); }
+  if (typeof addDecal === 'function') addDecal(e.x, e.y, e.z + 0.02, R * 0.7, '#2a2016', 0.35); }

@@ -100,7 +100,7 @@ const { chromium } = require('playwright');
   check('苍隼 flying: rockets hit zombies 3 and 6 tiles out below it', s[0] > 0 && s[1] > 0, JSON.stringify(s));
   // drawing: flyers, auras, the bubble, the cloak shimmer, names over heads
   s = await p.evaluate(() => { window.__dbg.skipDraw = false; const o = spot(true); put(o); const me = W.p[ME]; W.edges = { 0: [[Math.floor(o.x) + 3, Math.floor(o.y), o.L]] };
-    const a = spawnZombie('crow', 0), bt = spawnZombie('bat', 0), w = spawnZombie('warden', 0), sh = spawnZombie('shade', 0); sh.x = me.x + 2.5; sh.y = me.y; sh.stun = 99; w.x = me.x - 2; for (const k of ['blinker', 'caller']) spawnZombie(k, 0);
+    const a = spawnZombie('crow', 0), bt = spawnZombie('bat', 0), w = spawnZombie('warden', 0), sh = spawnZombie('shade', 0); sh.x = me.x + 2.5; sh.y = me.y; sh.stun = 99; w.x = me.x - 2; w.y = me.y; w.L = me.L; w.z = surfZ(w.x, w.y, w.L); w.stun = 99; /* (round 36n) pin it next to you so the lock-ring check doesn't depend on where it wandered */ for (const k of ['blinker', 'caller']) spawnZombie(k, 0);
     let t = performance.now(); for (let k = 0; k < 30; k++) { t += 16.7; frame(t); } a.dv = { ph: 1, t: 0 }; frame(t + 16.7); killZombie(a, me); for (let k = 0; k < 20; k++) { t += 16.7; frame(t); }
     const X = ELX.get(w.id), G = ELX.get(sh.id); me.vehs |= 4; me.veh = 2; me.ride = true; me.mform = 1; me.aim = Math.atan2(w.y - me.y, w.x - me.x); frame(t + 40); const mk = !!(MLOCK && MLOCK.visible); me.ride = false; me.mform = 0;
     return { mk, fly: FLY.size, elx: ELX.size, bub: !!(X && X.bub && X.bub.visible), ghost: !!(G && G.ghost.visible), labels: document.querySelectorAll('#ov .elt').length }; });

@@ -23,6 +23,7 @@ function stepZombies(dt) {
     const Z = ZT[z.k], climbT = !!Z.climb;
     z.cd -= dt; z.hitT -= dt; z.atk -= dt; z.anim += dt;
     if (z.stun > 0) z.stun -= dt;
+    if (z.air) { const A = z.air; A.t += dt; moveEnt(z, A.vx * dt, A.vy * dt, 'z', true); const g = surfZ(z.x, z.y, z.L), f = Math.min(1, A.t / A.T); z.z = g + A.h * 4 * f * (1 - f); z.moving = false; if (f >= 1) { z.air = null; z.z = g; emit({ k: 'zland', x: r2(z.x), y: r2(z.y), z: r2(g) }); } continue; } /* (round 36n) thrown up by 铁卫's 掀地 */
     if (ZT[z.k].boss && bossStep(z, dt)) continue;
     if (ZT[z.k].kaiju && !ZT[z.k].fly && kaijuStep(z, dt)) continue; // (round 34)
     if ((Z.lunge || Z.sprint || Z.lob || Z.sonic) && zSkill(z, Z, dt)) continue; // (round 34d) pounce / sprint / ranged
@@ -184,7 +185,7 @@ function stepZombies(dt) {
   }
   // separation within a cell neighbourhood
   for (const z of zs) {
-    if (z.hp <= 0 || z.climbing || ZT[z.k].fly) continue;
+    if (z.hp <= 0 || z.climbing || ZT[z.k].fly || z.air) continue;
     const cx = Math.floor(z.x), cy = Math.floor(z.y);
     for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
       const a = grid.get(inMap(cx + dx, cy + dy) ? ci(cx + dx, cy + dy, z.L) : -1); if (!a) continue;
@@ -196,7 +197,7 @@ function stepZombies(dt) {
       }
     }
   }
-  for (const z of zs) if (z.hp > 0 && !z.climbing && !ZT[z.k].fly) z.z = surfZ(z.x, z.y, z.L);
+  for (const z of zs) if (z.hp > 0 && !z.climbing && !ZT[z.k].fly && !z.air) z.z = surfZ(z.x, z.y, z.L);
   W.zs = zs.filter(z => z.hp > 0);
 }
 

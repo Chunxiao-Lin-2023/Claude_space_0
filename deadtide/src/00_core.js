@@ -119,10 +119,10 @@ for (const g of ITEMS) if (!['build', 'ladder'].includes(g.k)) for (const id of 
 const itemOf = id => ITEMS.find(g => g.ids.includes(id)) || ITEMS[0];
 // vehicles (round 22: their own category; you pick a default and T gets on it). spd = walking speed multiplier, seats 2 = a pillion seat
 const VEH = [null,
-  { k: 'bike', name: '自行车', vis: 18,  spd: 1.7, quiet: 1, mud: 1, tag: '便宜、安静、灵活：走得快 70%；没有发动机，攻楼时骑着不会把楼里的丧尸吵醒；泥地不减速；单手骑车，开枪的射速几乎不降（别的车上射速减半还多）' },
+  { k: 'bike', name: '自行车', vis: 18,  spd: 1.7, quiet: 1, mud: 1, dodge: 0.4, rideDmg: 1.15, /* (round 36n) 骑射 + 闪避 */ tag: '便宜、安静、灵活：走得快 70%，泥地不减速，没有发动机（攻楼时不吵醒楼里的丧尸）。骑射：骑着开枪射速不降、伤害 +15%（别的车上射速减半还多）。闪避：骑起来时 40% 的攻击躲开' },
   { k: 'moto', name: '摩托车', vis: 18,  spd: 1.9, seats: 2, noise: 6, tag: '最快：走得快 90%，后座能带一个队友；发动机响，攻楼时会吵醒附近楼里的丧尸' },
   { k: 'cargo', name: '货运三轮', vis: 17,  spd: 1.45, search: 1, noise: 5, tag: '搜刮用：坐在车上就能搜（够得更远、时间减半），搜到的材料 +50%' },
-  { k: 'armor', name: '装甲车', vis: 13,  spd: 1.3, seats: 2, armor: 0.35, ram: 1, noise: 8, tag: '保护用：受到的伤害只剩 35%，撞开挡路的丧尸，后座能带一个队友' },
+  { k: 'armor', name: '装甲车', vis: 13,  spd: 1.3, seats: 2, armor: 0.3, ram: 1, heal: 4, port: 1, noise: 8, /* (round 36n) armour 0.35 → 0.3, heals, protects the back seat too, rams hard */ tag: '保护用：车里的人（含后座）受到的伤害只剩 30%；3 秒没挨打就每秒回 4 血（移动医疗站）；撞击 70 伤害并撞倒丧尸；后座能带一个队友，从射击孔开枪射速不降' },
   { k: 'gyro', name: '旋翼机', vis: 26,  spd: 1.9, fly: 1, fuel: 60, seats: 2, gun: 'chin', noise: 9, tag: '会飞：越过屋顶和尸群。只能从地面或楼顶起飞（头顶不能有屋顶）；一箱油飞 60 秒，没满就能加：商店「载具」栏一键加满，或在有屋顶的房间里按 F；飞着用机头下的机枪打（机上自己的子弹，商店里买），手里的枪不能用；后座能带一个队友，队友能开枪' }, // (round 29)
   { k: 'tank', name: '坦克', vis: 16,  spd: 1.0, armor: 0.2, ram: 1, gun: 'cannon', outdoor: 1, noise: 10, tag: '自带炮塔：开火打炮弹（落点爆炸 120，半径 2.3），炮弹商店里买；受到的伤害只剩 20%，撞开丧尸；慢，太大进不了楼' }, // (round 31)
 ];
@@ -133,15 +133,16 @@ const KAIJU_ON = MECH_ON; // (round 34) kaiju come with the mechs
 // (round 34b) every vehicle has a second stage: press 变形 while driving and in 1 s it stands up as a mech (no blueprint).
 // hp = hull, armor = share of damage the hull takes, dmg / rate / reach / arc / kb = the punch, spd = walking speed, skill + cooldown, noise (攻楼)
 const MECHS = [null,
-  { k: 'gale', name: '疾风', hp: 800, armor: 1.15, dmg: 42, rate: 0.32, reach: 3.2, arc: 1.4, /* (round 35) reach 2.2 → 3.2, arc 1.0 → 1.4 */ kb: 3, spd: 1.65, skill: 'slide', sn: '滑铲', cd: 6, noise: 0, style: 'scout', atk: 'kick', col: ['#3fb8b0', '#5a6068', '#f2c230'], glow: '#7fe8ff' /* (round 36i) the teal toy robot (was yellow #e8c02a) */, tag: '最快最安静，普攻是快速低踢；装甲薄（800，挨打 ×1.15）。技能「滑铲」：贴地冲 6 格，铲倒路上的丧尸（90 伤害、倒地 1.2 秒），冷却 6 秒' },
+  { k: 'gale', name: '疾风', hp: 1000, armor: 1.0, /* (round 36n) 800 / 1.15 → 1000 / 1.0 */ dmg: 15, rate: 0.09, range: 16, /* (round 36n) a machine gun: endless fire, no reload (was low kicks 42) */ reach: 3.2, arc: 1.4, kb: 3, spd: 1.65, skill: 'drones', sn: '浮游炮', cd: 22, /* (round 36n) was 滑铲 (slide 90, cd 6) */ noise: 0, style: 'scout', atk: 'mgun', col: ['#3fb8b0', '#5a6068', '#f2c230'], glow: '#7fe8ff' /* (round 36i) the teal toy robot (was yellow #e8c02a) */, tag: '最快最安静，拿机枪：一直按着一直打，不用换弹（每发 15，跟着弹头升级变强，能打飞的）；装甲 1000。技能「浮游炮」：放出 10 台悬浮机枪绕着你飞，10 秒里自己找丧尸扫射，冷却 22 秒' },
   { k: 'edge', name: '赤刃', hp: 1200, armor: 1.0, dmg: 65, rate: 0.42, reach: 3.6, arc: 1.5, /* (round 35) 2.7 → 3.6, 1.05 → 1.5 */ kb: 4, spd: 1.45, skill: 'dash', sn: '冲斩', cd: 10, noise: 6, style: 'slim', atk: 'chop', col: ['#a8262a', '#2a1d20', '#e8e2d6'], glow: '#ffa040', tag: '臂刃往下劈，快、够得远；装甲 1200。技能「冲斩」：朝目标冲 8 格，路上的丧尸受 180，冷却 10 秒' },
-  { k: 'worker', name: '工蜂', hp: 1600, armor: 0.9, dmg: 45, rate: 0.55, reach: 2.4, arc: 1.2, kb: 4, spd: 1.0, skill: 'parcels', sn: '快递雨', cd: 9, noise: 5, style: 'worker', atk: 'parcel', range: 12, blast: 1.6, /* (round 35) 1.1 → 1.6 */ col: ['#f1d9a0', '#5b4a3a', '#8fd6c4'], glow: '#9ff0e0' /* (round 36i) cream + mint chibi (36h teal toy robot moved to 疾风; originally orange #e07a1f) */, tag: '被动：走过踩平的树、石头、废铁、原木、灌木直接收进资源（普通采集的 60%）。快递机甲：普攻扔小快递箱砸丧尸（45、半径 1.6、射程 12）；技能「快递雨」：朝目标扔出一堆大快递箱，5 个箱子砸在周围（每个 90、半径 1.6、砸晕），冷却 9 秒；机甲形态照样能搜刮（够得远、材料 +50%）；慢，装甲 1600（×0.9）' },
-  { k: 'bastion', name: '铁卫', hp: 2400, armor: 0.7, dmg: 95, rate: 0.75, reach: 3.4, arc: 1.6, /* (round 35) 2.5 → 3.4, 1.25 → 1.6 */ kb: 7, spd: 0.95, skill: 'slam', sn: '震地', cd: 12, noise: 8, style: 'big', atk: 'heavy', col: ['#55606c', '#2c333b', '#e2b93b'], glow: '#5fe0ff', tag: '最耐打（2400，挨打 ×0.7），普攻三连：下砸拳、跺脚、拳头炮（打出 7 格），走路撞开丧尸；慢。技能「震地」：周围 4.5 格 220 伤害并震晕 1.6 秒，冷却 12 秒' },
-  { k: 'falcon', name: '苍隼', hp: 1000, armor: 1.1, dmg: 55, rate: 0.5, reach: 2.4, arc: 1.15, kb: 5, spd: 1.3, skill: 'fly', sn: '飞行', cd: 1, noise: 9, style: 'fly', atk: 'rocket', range: 16, blast: 2.0, /* (round 35) 1.6 → 2.0 */ col: ['#dfe6ee', '#3a5a7a', '#59b8ff'], glow: '#9fe8ff', tag: '会飞：技能键起飞 / 降落，像旋翼机一样越过屋顶一直飞（飞着耗电 ×2，丧尸够不着，喷吐者能打到）；普攻是肩上的火箭弹（55、半径 2.0、射程 16）；装甲薄（1000，挨打 ×1.1）' },
+  { k: 'worker', name: '工蜂', hp: 1600, armor: 0.9, dmg: 36, rate: 0.5, /* (round 36n) one parcel 45 / 0.55 s → three parcels of 36 / 0.5 s */ reach: 2.4, arc: 1.2, kb: 4, spd: 1.0, skill: 'parcels', sn: '快递雨', cd: 12, /* (round 36n) 5 × 90, cd 9 → a torrent of 36 × 55 over 2 s, cd 12 */ noise: 5, style: 'worker', atk: 'parcel', range: 12, blast: 1.4, /* (round 35) 1.1 → 1.6; (round 36n) → 1.4 (three at a time) */ col: ['#f1d9a0', '#5b4a3a', '#8fd6c4'], glow: '#9ff0e0' /* (round 36i) cream + mint chibi (36h teal toy robot moved to 疾风; originally orange #e07a1f) */, tag: '被动：走过踩平的树、石头、废铁、原木、灌木直接收进资源（普通采集的 60%）。快递机甲：普攻一次扔出 3 个快递箱砸丧尸（每个 36、半径 1.4、射程 12）；技能「快递雨」：2 秒里朝目标一带倾泻 36 个大快递箱（每个 55、半径 1.5、砸晕），冷却 12 秒；机甲形态照样能搜刮（够得远、材料 +50%）；慢，装甲 1600（×0.9）' },
+  { k: 'bastion', name: '铁卫', hp: 2400, armor: 0.7, dmg: 95, rate: 0.75, reach: 3.4, arc: 1.6, /* (round 35) 2.5 → 3.4, 1.25 → 1.6 */ kb: 7, spd: 0.95, skill: 'slam', sn: '掀地', cd: 10, /* (round 36n) 震地 4.5 / 220 / cd 12 → 掀地 7 / 260 / cd 10, throws them up */ noise: 8, style: 'big', atk: 'heavy', col: ['#55606c', '#2c333b', '#e2b93b'], glow: '#5fe0ff', tag: '最耐打（2400，挨打 ×0.7），普攻是捶地：左拳、右拳、双拳，每下砸一圈（半径 2.5，第三下 3.1 更痛），走路撞开丧尸；慢。技能「掀地」：把周围 7 格的地掀起来，丧尸全被掀飞到空中（260 伤害，越近越痛，落地晕 2 秒），冷却 10 秒' },
+  { k: 'falcon', name: '苍隼', hp: 1000, armor: 1.1, dmg: 55, rate: 0.5, reach: 2.4, arc: 1.15, kb: 5, spd: 1.3, skill: 'fly', sn: '飞行', cd: 1, noise: 9, style: 'fly', atk: 'rocket', range: 16, blast: 2.0, /* (round 35) 1.6 → 2.0 */ col: ['#dfe6ee', '#3a5a7a', '#59b8ff'], glow: '#9fe8ff', tag: '会飞：技能键起飞 / 降落，像旋翼机一样越过屋顶一直飞（飞着耗电 ×2，丧尸够不着，喷吐者能打到）；普攻是肩上的火箭弹（55、半径 2.0、射程 16）；飞在天上时一次齐射 3 发、每发 72；装甲薄（1000，挨打 ×1.1）' },
   { k: 'howitzer', name: '重炮', hp: 2000, armor: 0.8, dmg: 60, rate: 0.6, reach: 2.4, arc: 1.1, kb: 6, spd: 0.8, skill: 'volley', sn: '齐射', cd: 7, noise: 10, style: 'cannon', atk: 'cannon', range: 18, blast: 1.9, /* (round 35) 1.4 → 1.9 */ dmg2: 60, col: ['#5a6b3a', '#2e3622', '#c8b88a'], glow: '#ff9a3a', tag: '普攻是手臂炮（60、半径 1.9、射程 18，不耗弹药），耐打（2000，挨打 ×0.8）；最慢。技能「齐射」：朝目标打 3 发炮弹（每发 110、半径 2.2，用坦克的炮弹），冷却 7 秒' },
 ];
 const MECH_CRUSH = new Set([21, 22, 27, 29, 32, 39, 40, 41]); // (round 34d) what a mech just walks over and flattens: rocks, trees, fences, rubble, bins, scrap, logs, bushes
 const inMech = p => !!(p && p.ride && p.mform === 1 && MECHS[p.veh]);
+const mechMul = () => 1 + BAL.mechUpg * Math.max(0, (W.upg || 0) - BAL.upgStart); /* (round 36n) */
 const mechOf = p => MECHS[p && p.veh] || MECHS[4];
 const mhpOf = (p, v) => { v = v || p.veh; const M = MECHS[v]; if (!M) return 0; const h = p.mh && p.mh[v]; return h == null ? M.hp : h; };
 const PILLION = 0.38;                                   // how far behind the driver the back-seat rider sits
@@ -216,7 +217,7 @@ const ZT = {
   shade: { name: '隐身者', hp: 420, spd: 1.5, r: 0.3, h: 1.25, dmg: 12, bdmg: 10, cd: 0.9, sc: 1.2, look: 'walker', skin: '#50505e', elite: { k: 'cloak', cd: 6, col: '#c0c0e0', tip: '隐身摸到你身边偷袭，留意空气里的扭曲，附近炸一下就现形' } },
 };
 const ELITES = ['blinker', 'caller', 'warden', 'shade'];
-const BUILD_TAG = '第 36 轮之十三'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
+const BUILD_TAG = '第 36 轮之十四'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
 // aim assist (SET.assist): fire-button lock range (x weapon range), lock-on time before it fires, spread while auto-aimed, mouse/finger magnet
 const PORT = 1.25; // firing port: your own shots pass a wall / door you built if it is this close to you
 const ASSIST = [{ name: '关', range: 0, acq: 0, spread: 1, mag: 0 }, { name: '标准', range: 0.75, acq: 0.3, spread: 1.5, mag: 1 }, { name: '强', range: 1, acq: 0, spread: 1, mag: 1 }];
@@ -331,7 +332,9 @@ const CRAFT = [
 /* ---------- balance ---------- */
 const BAL = {
   nights: 15,
-  upgStart: 3, upgMax: 6,         // (round 36f) 强化弹头 (+12% team damage a level) starts at 3 (was 0, bought up to 5 in the shop); the 击杀精英 task's three tiers push it to 6
+  flyRk: 3, flyRkMul: 1.3, /* (round 36n) 苍隼 in the air: three rockets a shot, ×1.3 each */ rainN: 36, rainT: 2.0, rainR: 4.5, rainDmg: 55, /* (round 36n) 工蜂 快递雨 */
+  mgSpread: 0.03, droneN: 10, droneT: 10, droneDmg: 7, droneRate: 0.3, droneRange: 12, quakeR: 7, quakeDmg: 260, /* (round 36n) 疾风 machine gun + 浮游炮; 铁卫 掀地 */
+  upgStart: 3, upgMax: 6, mechUpg: 0.12, /* (round 36n) mechs gain +12% for each 弹头 level earned above the start (they used to gain nothing) */         // (round 36f) 强化弹头 (+12% team damage a level) starts at 3 (was 0, bought up to 5 in the shop); the 击杀精英 task's three tiers push it to 6
   dayLen: [300, 240],            // first day, later days (seconds); (round 34b) from day 2 dayFor(n) shortens it
   dayFor: n => n <= 1 ? 300 : Math.max(150, 240 - (n - 1) * 12), // day n (after night n - 1): 240, 228, 216 … down to 150
   pMaxHp: 100, pSpeed: 4.4, pReach: 7.5, /* (round 25) 6.5 → 7.5 */
@@ -344,7 +347,7 @@ const BAL = {
   slamR: 2.6, slamWind: 0.55, slamDmg: 22, slamKB: 7, slamCD: 4,  // brute ground slam: red ring, then everything inside gets hit and thrown
   bashR: 2.4, bashCos: 0.34, bashKB: 20, bashStun: 1.0, bashDmg: 20, bashCD: 0.85, bashMax: 8, // shield bash: everything in front (up to 8) shoved ~3 tiles back and stunned
   padDist: 9, padUp: 2,  /* (round 25) 5 → 9 tiles */                                        // jump pad: how far / how many floors up it can throw you
-  ramDmg: 30, ramCD: 0.7, ramSpd: 2.2,                         // armoured car: hitting a zombie at speed
+  ramDmg: 70, ramCD: 0.7, ramSpd: 1.6, /* (round 36n) 30 / 2.2 → 70 / 1.6, and it knocks them down */                         // armoured car: hitting a zombie at speed
   cargoSearch: 0.5, cargoLoot: 1.5, cargoReach: 2.3,           // cargo trike: search time x, loot x, reach from the seat
   knifeDmg: 55, knifeKB: 2.5, knifeCD: 0.5, knifeRange: 2.3, knifeLunge: 1.3, knifeBack: 2, // melee (was a shove: 18 dmg, KB 6, CD 0.55, 1.3 cone)
   nadeCap: 10, medCap: 8, gnCap: 8,                            // (round 24) carry: frag grenades / medkits / each special grenade (was 10 / 5 in 23d)
@@ -367,7 +370,7 @@ const BAL = {
   refund: 0.5,
   nightSpawn: n => Math.round(32 + n * 15),     // (round 34b: 30 + 12n → 32 + 15n; round 18: was 22 + 9n)
   bloodMul: 1.5,
-  hpMul: n => 1 + 0.18 * (n - 1),               // (round 34b: 0.15 → 0.18 per night)
+  hpMul: n => 1 + 0.18 * (Math.min(n, 8) - 1) + 0.08 * Math.max(0, n - 8), /* (round 36n) +18% a night up to night 8, then +8% (was +18% all the way: night 19 ×4.24 → ×3.14) */ // (round 34b: 0.15 → 0.18 per night)
   nightLv: n => Math.max(1, n),                 // (round 34b) back to a step every night (round 31 had one every two nights)
   lvN: n => Math.max(1, n),                     // the night number the numbers are worked out from (round 31–34a: in steps of two)
   spdMul: n => Math.min(1.6, 1 + 0.035 * (n - 1)), // (round 34b: 0.03 → 0.035 per night, capped at ×1.6)

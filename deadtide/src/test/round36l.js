@@ -70,6 +70,20 @@ const { chromium } = require('playwright');
   check('翼龙兽 can turn up from night 7 (not before; night 6 has no kaiju at all)', s[6] === 0 && s[7] > 0, JSON.stringify(s));
   s = await S(() => ({ runner: ZT.runner.hp, dog: ZT.dog.hp, climber: ZT.climber.hp, screamer: ZT.screamer.hp, walker: ZT.walker.hp }));
   check('fast zombies are frailer than the slow ones', s.runner < s.walker && s.dog < s.runner && s.climber < s.walker && s.screamer < 150, JSON.stringify(s));
+  // (round 36n) late nights: zombie hp grows +8% a night after night 8; mechs gain from 弹头 levels above the start; 疾风 tougher, spinning third kick
+  s = await S(() => ({ h1: BAL.hpMul(1), h8: +BAL.hpMul(8).toFixed(2), h19: +BAL.hpMul(19).toFixed(2), gale: [MECHS[1].hp, MECHS[1].armor, MECHS[1].dmg, MECHS[1].cd] }));
+  check('zombie hp growth slows after night 8 (night 19 ×3.14, was ×4.24); 疾风 1000 hp / armour 1.0 / gun 15 / 浮游炮 cd 22', s.h1 === 1 && s.h8 === 2.26 && s.h19 === 3.14 && s.gale.join() === '1000,1,15,22', JSON.stringify(s));
+  s = await S(() => { const me = W.p[ME]; W.zs.length = 0; const sv = { ride: me.ride, veh: me.veh, mform: me.mform, vx: me.vx, vy: me.vy, hp: me.hp, invT: me.invT }; me.invT = 0; me.mform = 0;
+    me.ride = 1; me.veh = 1; me.vx = 3; me.vy = 0; let dodged = 0; for (let k = 0; k < 200; k++) { me.hp = 100; hurtPlayer(me, 10); if (me.hp === 100) dodged++; } const rate = rideK(me).rate;
+    me.veh = 4; me.vx = 0; me.hp = 50; hurtPlayer(me, 10); const armour = 50 - me.hp; me.hitAt = W.t - 5; const h0 = me.hp; for (let k = 0; k < 60; k++) stepActions(me, 1 / 60); const heal = +(me.hp - h0).toFixed(1);
+    Object.assign(me, sv); return { dodged, rate, armour, heal }; });
+  check('vehicle forms (round 36n): bike dodges ~40% while moving and fires at full rate; armoured car takes 30% and heals 4/s after 3 s unhurt', s.dodged > 55 && s.dodged < 110 && s.rate === 1 && Math.abs(s.armour - 3) < 0.01 && s.heal > 3 && s.heal < 5, JSON.stringify(s));
+  // (round 36n) 工蜂 throws three parcels a go and pours out a torrent; 苍隼 fires a salvo of three harder rockets in the air
+  s = await S(() => { const me = W.p[ME]; const sv = { ride: me.ride, veh: me.veh, mform: me.mform, mfly: me.mfly, aimPt: me.aimPt }; W.zs.length = 0; me.aimPt = null; me.aim = 0; me.ride = 1; me.mform = 1;
+    me.veh = 3; W.dly = []; mechShoot(me, 'parcel', null, 0); const boxes = W.dly.filter(q => q.box).map(q => Math.round(q.dmg)); W.dly = []; me.mcd = 0; mechSkill(me, { x: me.x + 8, y: me.y }); const pour = W.dly.filter(q => q.launch).length, span = Math.max(...W.dly.map(q => q.t)); W.dly = [];
+    me.veh = 5; me.mfly = false; mechShoot(me, 'rocket', null, 0); const ground = W.dly.filter(q => q.shell).map(q => Math.round(q.dmg)); W.dly = []; me.mfly = true; const air = airborne(me); mechShoot(me, 'rocket', null, 0); const sky = W.dly.filter(q => q.shell).map(q => Math.round(q.dmg)); W.dly = [];
+    Object.assign(me, sv); me.mcd = 0; return { boxes, want: Math.round(36 * mechMul()), pour, span: +span.toFixed(2), ground, air, sky }; });
+  check('工蜂: 3 parcels a throw (36 each × 弹头); 快递雨 pours 36 over ~2 s · 苍隼: 1 rocket on foot, 3 × 72 in the air', s.boxes.length === 3 && s.boxes.every(d => d === s.want) && s.pour === 36 && s.span > 1.9 && s.ground.join() === '55' && s.air && s.sky.length === 3 && s.sky.every(d => d === 72), JSON.stringify(s));
   check('no page errors', !errs.length, errs.join(' | '));
   console.log(ok ? 'ALL PASS' : 'SOME FAIL'); await b.close(); process.exit(ok ? 0 : 1);
 })();
