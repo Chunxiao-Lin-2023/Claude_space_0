@@ -425,7 +425,43 @@ function mkRabbit(E) {
   const col = bxAt(S, 'chest', bxMesh(new THREE.TorusGeometry(0.29, 0.03, 10, 40), gold), [0.08, 1.4, 0]); col.rotation.set(Math.PI / 2, 0.3, 0);
   bxAt(S, 'chest', bxMesh(new THREE.SphereGeometry(0.06, 18, 14), gold), [0.37, 1.32, 0]);
   const silk = bxStd({ color: '#d0183a', roughness: 0.55 }); for (const z of [-1, 1]) bxAt(S, 'chest', bxMesh(bxStrand([[0, 0, 0], [0.02, -0.1, z * 0.04], [0.0, -0.22, z * 0.05]], 0.022, 0.012, 6, 6), silk), [0.38, 1.27, z * 0.02]);
+  U.whips = [1, -1].map(s => { const m = new THREE.Mesh(rbWhipGeo(), jade); m.visible = false; m.frustumCulled = false; m.userData.s = s; g.add(m); return m; }); /* (round 38e) the stretched ears are their own tubes while lashing */
   U.ph = 0; U.wasAir = false; U.land = 9; return g;
+}
+// (round 38e) 玉兔's ears as whips: a tube of RBW_N segments rebuilt each frame while lashing. Each segment points where the ear base pointed a moment earlier
+// (the tip lags the root), so the motion rolls down the ear like a whip and cracks at the end; the ear also stretches several times its length and twists.
+const RBW_N = 28, RBW_M = 10;
+function rbWhipGeo() { const G = new THREE.BufferGeometry(), nv = (RBW_N + 1) * RBW_M, idx = [];
+  for (let k = 0; k < RBW_N; k++) for (let j = 0; j < RBW_M; j++) { const a = k * RBW_M + j, b = k * RBW_M + (j + 1) % RBW_M, c = a + RBW_M, d = b + RBW_M; idx.push(a, c, b, b, c, d); }
+  G.setIndex(idx); G.setAttribute('position', new THREE.BufferAttribute(new Float32Array(nv * 3), 3)); G.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(nv * 3), 3)); G.setAttribute('color', new THREE.BufferAttribute(new Float32Array(nv * 3), 3)); return G; }
+const rbKey = (K, t) => { if (t <= K[0][0]) return K[0][1]; for (let i = 1; i < K.length; i++) if (t < K[i][0]) { const u = (t - K[i - 1][0]) / (K[i][0] - K[i - 1][0]); return K[i - 1][1] + (K[i][1] - K[i - 1][1]) * u * u * (3 - 2 * u); } return K[K.length - 1][1]; };
+const RBW = { // per move: A = ear angle in the side plane (0 straight ahead, π/2 up, π back), S = body turn, E = stretch, lag = how far behind the tip runs (s)
+  lash: { end: 0.62, A: [[0, 0.55 * Math.PI], [0.13, 0.9 * Math.PI], [0.23, -0.16 * Math.PI], [0.36, -0.1 * Math.PI], [0.62, 0.55 * Math.PI]], S: [[0, 0]], E: [[0, 0], [0.13, 0.3], [0.23, 1], [0.38, 1], [0.6, 0]], L: 5.2, lag: 0.13, yaw: 0.06 },
+  spin: { end: 0.78, A: [[0, 0.55 * Math.PI], [0.13, 0.3 * Math.PI], [0.21, -0.05 * Math.PI], [0.52, -0.05 * Math.PI], [0.78, 0.55 * Math.PI]], S: [[0, 0], [0.13, -0.6], [0.52, Math.PI * 2], [0.78, Math.PI * 2]], E: [[0, 0], [0.13, 0.45], [0.21, 1], [0.52, 1], [0.76, 0]], L: 4.9, lag: 0.06, yaw: 0.32 } };
+const RBV = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
+const RBC = { J: new THREE.Color('#eef7f0'), J2: new THREE.Color('#acd8bc'), Pk: new THREE.Color('#f6b8c4'), V: new THREE.Color('#5fbf92') };
+function rbWhip(U, B, g, mv, t, wt) { // lay out both ear tubes for move mv at time t; returns the right ear's tip (g-local) for effects
+  g.updateMatrixWorld(true); let tipOut = null;
+  for (const m of U.whips) { const s = m.userData.s, base = (s > 0 ? B.earL : B.earR).getWorldPosition(RBV[0]); g.worldToLocal(base);
+    const G = m.geometry, P = G.attributes.position.array, C = G.attributes.color.array, E = rbKey(mv.E, t), len = 0.7 + (mv.L - 0.7) * E, seg = len / RBW_N;
+    const taut = mv === RBW.lash ? (t > 0.2 && t < 0.38 ? 0.35 : 1) : 0.5, amp = 0.45 * E * taut, sq = 1 / Math.sqrt(1 + 1.3 * E);
+    let x = base.x, y = base.y, z = base.z;
+    for (let k = 0; k <= RBW_N; k++) { const f = k / RBW_N, tk = Math.max(0, t - f * mv.lag - (s < 0 ? 0.02 : 0)), A = rbKey(mv.A, tk), th = rbKey(mv.S, tk) + s * mv.yaw;
+      const dx = Math.cos(A) * Math.cos(th), dy = Math.sin(A), dz = -Math.cos(A) * Math.sin(th); // this segment's direction
+      if (k > 0) { x += dx * seg; y += dy * seg; z += dz * seg; }
+      let lx = Math.sin(th), lz = Math.cos(th); const ld = lx * dx + lz * dz; lx -= dx * ld; let ly = -dy * ld; lz -= dz * ld; const ln = Math.hypot(lx, ly, lz) || 1; lx /= ln; ly /= ln; lz /= ln; // sideways, across the ear
+      let nx = dy * lz - dz * ly, ny = dz * lx - dx * lz, nz = dx * ly - dy * lx; // the ear's face
+      const tw = s * 1.9 * f * E + 0.7 * Math.sin(f * 7 - wt * 18) * E * taut, ct = Math.cos(tw), st = Math.sin(tw); // twist along the length
+      const l2x = lx * ct + nx * st, l2y = ly * ct + ny * st, l2z = lz * ct + nz * st; nx = nx * ct - lx * st; ny = ny * ct - ly * st; nz = nz * ct - lz * st;
+      const wv = amp * Math.sin(f * 3.2 * Math.PI - wt * 26) * f, cx = x + l2x * wv + nx * wv * 0.5, cy = y + l2y * wv + ny * wv * 0.5, cz = z + l2z * wv + nz * wv * 0.5; // a wave running down it
+      const W2 = (0.025 + 0.085 * Math.sin(Math.PI * Math.min(1, f * 1.08 + 0.04))) * (f > 0.96 ? (1 - f) / 0.04 * 0.6 + 0.4 : 1) * (0.55 + 0.45 * sq), T2 = (0.02 + 0.03 * (1 - f)) * (0.6 + 0.4 * sq);
+      for (let j = 0; j < RBW_M; j++) { const a = j / RBW_M * Math.PI * 2, ca = Math.cos(a), sa = Math.sin(a), o = (k * RBW_M + j) * 3;
+        P[o] = cx + l2x * ca * W2 + nx * sa * T2; P[o + 1] = cy + l2y * ca * W2 + ny * sa * T2; P[o + 2] = cz + l2z * ca * W2 + nz * sa * T2;
+        const c = sa > 0.35 && Math.abs(ca) < 0.8 ? RBC.Pk : (f > 0.85 ? RBC.V : (j % 3 ? RBC.J : RBC.J2)), mixT = f > 0.85 ? (f - 0.85) / 0.15 * 0.5 : 0;
+        C[o] = c === RBC.V ? RBC.J.r + (RBC.V.r - RBC.J.r) * mixT : c.r; C[o + 1] = c === RBC.V ? RBC.J.g + (RBC.V.g - RBC.J.g) * mixT : c.g; C[o + 2] = c === RBC.V ? RBC.J.b + (RBC.V.b - RBC.J.b) * mixT : c.b; }
+      if (k === RBW_N && s < 0) tipOut = [cx, cy, cz]; }
+    G.attributes.position.needsUpdate = true; G.attributes.color.needsUpdate = true; G.computeVertexNormals(); G.computeBoundingSphere(); m.visible = true; }
+  return tipOut;
 }
 // (round 38d) one hop as keyframes over its phase (0 crouch · 0.15 push · 0.3 lift-off · 0.5 apex · 0.68 reach · 0.78 front paws down · 0.9 hind paws down), read through a looping Catmull-Rom so every joint moves smoothly
 const RB_GAIT = { y: [[0, -0.25], [0.15, -0.05], [0.3, 0.25], [0.5, 1], [0.68, 0.55], [0.78, 0.0], [0.9, -0.18]], pt: [[0, 0.02], [0.15, 0.16], [0.3, 0.2], [0.5, -0.1], [0.68, -0.4], [0.78, -0.55], [0.9, -0.25]],
@@ -447,13 +483,14 @@ function rabbitTick(p, g, dt, ev = 9) { /* (round 38d) a real bounding gait — 
   if (moving || U.hf > 0) { U.hf += dt * freq; if (U.hf >= 1) U.hf = moving ? U.hf - 1 : 0; }
   U.H = (U.H || 0.3) + (0.3 + 0.12 * Math.min(1, sp / 5) - (U.H || 0.3)) * dk; const f = U.hf, w = U.gw, H = U.H, K = (n) => rbCyc(RB_GAIT[n], f) * w;
   const sqL = U.land < 0.3 ? Math.sin(U.land / 0.3 * Math.PI) * (1 - U.land / 0.3 * 0.4) * (1 - w) : 0, mCr = moon >= 0 && moon < 0.12 ? Math.sin(moon / 0.12 * Math.PI) : 0;
-  const t = p._mpT != null ? p._mpT : 9, lash = t < 0.62, hard = (p._mcombo || 0) === 2;
-  const wind = lash ? (t < 0.1 ? ease(t / 0.1) : t < 0.18 ? 1 - ease((t - 0.1) / 0.08) : 0) : 0, strike = lash ? (t < 0.1 ? 0 : t < 0.2 ? ease((t - 0.1) / 0.1) : t < 0.32 ? 1 : 1 - ease(Math.min(1, (t - 0.32) / 0.3))) : 0;
+  const t = p._mpT != null ? p._mpT : 9, hard = (p._mcombo || 0) === 2, mv = hard ? RBW.spin : RBW.lash, lash = t < mv.end;
+  const wind = lash && !hard ? (t < 0.13 ? ease(t / 0.13) : t < 0.2 ? 1 - ease((t - 0.13) / 0.07) : 0) : 0, strike = lash && !hard ? (t < 0.13 ? 0 : t < 0.23 ? ease((t - 0.13) / 0.1) : t < 0.38 ? 1 : 1 - ease(Math.min(1, (t - 0.38) / 0.24))) : 0;
+  const spinY = lash && hard ? rbKey(RBW.spin.S, t) : 0, spinC = lash && hard ? Math.sin(Math.PI * clamp(t / 0.7, 0, 1)) : 0;
   const by = K('y') * H - mCr * 0.1 + drop, vy = (by - (U.py != null ? U.py : by)) / Math.max(dt, 1e-3); U.py = by;
   U.body.position.set(K('sx') + strike * 0.06, by, 0);
   const sq = K('sq') + 0.2 * sqL + 0.15 * mCr; U.body.scale.set(1 + sq * 0.5 - Math.min(0, sq) * 0.3, 1 - sq + (air ? 0.04 : 0), 1 + sq * 0.4);
   const flip = moon > 0.18 && moon < 0.85 ? -Math.PI * 2 * ease((moon - 0.18) / 0.62) : 0, pitch = K('pt');
-  bxR(B.root, 0, 0, pitch - 0.18 * U.aw + flip - strike * 0.14 + wind * 0.08);
+  bxR(B.root, 0, spinY, pitch - 0.18 * U.aw + flip - strike * 0.14 + wind * 0.08 - spinC * 0.12); U.body.position.y -= spinC * 0.08;
   const br = Math.sin(wt * 2) * 0.012 * (1 - w); B.chest.scale.set(1 + br, 1 + br, 1 + br);
   // hind legs fold in the crouch, kick straight back on the push, tuck in flight and swing through past the front paws; front legs reach out to land and sweep back under the chest
   const hTh = K('th') + U.aw * 0.6 + 0.35 * sqL + 0.4 * mCr, hFt = K('ft') - U.aw * 0.7 - 0.3 * mCr;
@@ -466,17 +503,19 @@ function rabbitTick(p, g, dt, ev = 9) { /* (round 38d) a real bounding gait — 
   const target = clamp(vy * 0.18, -0.7, 0.7) + clamp(sp / 6, 0, 0.35) + 0.12;
   U.ev = (U.ev || 0) + ((target - (U.ea || 0)) * 140 - (U.ev || 0) * 13) * dt; U.ea = (U.ea || 0) + U.ev * dt; if (!isFinite(U.ea)) { U.ea = 0; U.ev = 0; }
   const tw = (wt % 3.7) < 0.18 ? Math.sin((wt % 3.7) / 0.18 * Math.PI) : 0, back = U.ea + U.aw * 0.5;
-  const eRz = back * (1 - strike) * (1 - wind) + wind * (0.95 + (hard ? 0.25 : 0)) - strike * (hard ? 2.1 : 1.85), eSt = 1 + wind * 0.15 + strike * (hard ? 2.4 : 2.1);
-  const crack = strike > 0 && t < 0.3 ? Math.sin(clamp((t - 0.1) / 0.2, 0, 1) * Math.PI) : 0, tip = back * 0.6 * (1 - strike) + wind * 0.5 + crack * 0.7 - strike * 0.25 + (U.ev || 0) * 0.02;
-  bxR(B.earL, -0.15 + 0.12 * strike - tw * 0.2 * (1 - strike), 0, eRz); bxR(B.earR, 0.15 - 0.12 * strike, 0, eRz - tw * 0.12 * (1 - strike));
-  B.earL.scale.set(1, eSt, 1); B.earR.scale.set(1, eSt, 1); bxR(B.earLt, 0, 0, tip); bxR(B.earRt, 0, 0, tip);
+  const tip = back * 0.6 + (U.ev || 0) * 0.02, eS = lash ? 0.001 : 1; // while lashing the real ears tuck away and the whip tubes take over
+  bxR(B.earL, -0.15 - tw * 0.2, 0, back); bxR(B.earR, 0.15, 0, back - tw * 0.12); B.earL.scale.setScalar(eS); B.earR.scale.setScalar(eS); bxR(B.earLt, 0, 0, tip); bxR(B.earRt, 0, 0, tip);
   bxR(B.head, Math.sin(wt * 0.8) * 0.05 * (1 - w), Math.sin(wt * 0.5) * 0.15 * (1 - w) * (1 - strike), -pitch * 0.6 + 0.12 * U.aw + sqL * 0.15 - strike * 0.28 + wind * 0.15 + (1 - w) * Math.sin(wt * 1.2) * 0.04);
   bxR(B.tail, 0, Math.sin(wt * 5) * 0.2 * (1 - w), K('tl'));
   const blink = (wt % 4.3) < 0.12 ? 0.1 : 1; for (const e of U.eyes) e.scale.set(1, blink, 1);
   // effects: a jade swoosh when the ears crack, dust where they hit; little puffs from the hind paws as they push off
-  if (lash && (U.lt == null || U.lt < 0.19) && t >= 0.19) { sfx('ewhip', p.x, p.y); g.getWorldPosition(EVW); const a0 = p._ly || 0, ca = Math.cos(a0), sa = Math.sin(a0);
-    for (let k = 0; k < 14; k++) { const d = 1 + k / 13 * 3.2, sd = k % 2 ? 0.45 : -0.45; addP({ x: EVW.x + ca * d - sa * sd, y: EVW.z + sa * d + ca * sd, z: EVW.y + 0.25 + (1 - k / 13) * 0.8, vx: ca * 1.5, vy: sa * 1.5, vz: 0.6, g: 1, col: k % 3 ? '#d8fff0' : '#7fd8c4', s: 0.1, life: 0.35 }); }
-    for (let k = 0; k < (hard ? 14 : 8); k++) { const a = FXR() * 6.28; addP({ x: EVW.x + ca * 3.4, y: EVW.z + sa * 3.4, z: EVW.y + 0.1, vx: Math.cos(a) * 2.5, vy: Math.sin(a) * 2.5, vz: 1.2, g: 3, col: '#cfe8d8', s: 0.09, life: 0.45 }); } }
+  if (lash) { const tp = rbWhip(U, B, g, mv, t, wt); // the crack: a snap and a burst of jade at the tip; the spin leaves a ring of sparkles where the tips pass
+    if (tp) { const v = RBV[1].set(tp[0], tp[1], tp[2]); g.localToWorld(v);
+      if (!hard && (U.lt == null || U.lt < 0.26) && t >= 0.26) { sfx('ewhip', p.x, p.y); for (let k = 0; k < 16; k++) { const a = FXR() * 6.28, sp2 = 2 + FXR() * 3; addP({ x: v.x, y: v.z, z: v.y, vx: Math.cos(a) * sp2, vy: Math.sin(a) * sp2, vz: FXR() * 2, g: 2, col: k % 3 ? '#d8fff0' : '#7fd8c4', s: 0.11, life: 0.4 }); }
+        fxAdd({ kind: 'ring', x: v.x, y: v.z, z: Math.max(v.y, 0.05), s0: 0.2, s1: 1.8, life: 0.3, col: '#d8fff0', op: 0.6 }); }
+      if (!hard && t > 0.15 && t < 0.34 && FXR() < 0.9) addP({ x: v.x, y: v.z, z: v.y, vx: 0, vy: 0, vz: 0.2, g: 0, col: '#e8fff6', s: 0.12, life: 0.25 });
+      if (hard && t > 0.16 && t < 0.56) { addP({ x: v.x, y: v.z, z: v.y, vx: 0, vy: 0, vz: 0.3, g: 0, col: FXR() < 0.5 ? '#d8fff0' : '#7fd8c4', s: 0.14, life: 0.35 }); if ((U.lt == null || U.lt < 0.3) && t >= 0.3) { sfx('ewhip', p.x, p.y); g.getWorldPosition(EVW); fxAdd({ kind: 'ring', x: EVW.x, y: EVW.z, z: EVW.y + 0.1, s0: 1, s1: 5.8, life: 0.4, col: '#bff8ff', op: 0.55 }); } } } }
+  else if (U.whips[0].visible) for (const m of U.whips) m.visible = false;
   U.lt = t;
   if (w > 0.5 && U.pf != null && U.pf < 0.13 && f >= 0.13 && FXR() < 0.8) { g.getWorldPosition(EVW); const a0 = (p._ly || 0) + Math.PI; for (let k = 0; k < 4; k++) addP({ x: EVW.x + Math.cos(a0) * 0.4, y: EVW.z + Math.sin(a0) * 0.4, z: EVW.y + 0.05, vx: Math.cos(a0 + frnd(-0.6, 0.6)) * 1.5, vy: Math.sin(a0 + frnd(-0.6, 0.6)) * 1.5, vz: 0.5, g: 2, col: '#cdbf9a', s: 0.07, life: 0.35 }); }
   U.pf = f;

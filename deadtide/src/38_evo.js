@@ -93,7 +93,8 @@ function evoAttack(p, M) {
     emit({ k: 'mhit', o: p.i, h: n ? 1 : 0, x: r2(hx), y: r2(hy), z: r2(p.z + 0.6), r: 1.2, bite: 1 }); return;
   }
   if (M.atk === 'ears') { // (round 38d) 玉兔: both ears stretch out and lash down in front; the third lash hits harder
-    (W.dly = W.dly || []).push({ t: 0.2, ears: 1, a, o: p.i, dmg: M.dmg * mul * (p.mcmb === 2 ? 1.5 : 1), big: p.mcmb === 2 ? 1 : 0 }); return;
+    if (p.mcmb === 2) (W.dly = W.dly || []).push({ t: 0.32, earspin: 1, o: p.i, dmg: M.dmg * mul * 1.6 }); /* the third one spins round, ears out */
+    else (W.dly = W.dly || []).push({ t: 0.27, ears: 1, a, o: p.i, dmg: M.dmg * mul }); return;
   }
   if (M.atk === 'shell') { // (round 38b) 玄龟: pulls in and charges with the shell — 3.6 tiles, everything on the way is rammed aside, a thump where it stops
     const E2 = evoLineEnd(p, a, 3.6), L2 = Math.hypot(E2.x - p.x, E2.y - p.y); let n = 0;
@@ -107,10 +108,14 @@ function evoAttack(p, M) {
     (W.dly = W.dly || []).push({ t: 0.17, stomp: 1, x: p.x + ca * 2.1, y: p.y + sa * 2.1, L: p.L, R: 1.9, dmg: M.dmg * mul, o: p.i, st: 0.6, kb: 4, ring: 'slap' }); return; /* (round 38b) a paw raised high and slapped down on them */
   }
 }
-function evoEars(p, a, dmg, hard) { const M = mechOf(p), ca = Math.cos(a), sa = Math.sin(a), R = M.reach || 4.2; let n = 0; // a strip 2 tiles wide straight ahead
-  for (const z of W.zs) { if (z.hp <= 0 || z.hidden || Math.abs(z.z - p.z) > 2.6) continue; const rx = z.x - p.x, ry = z.y - p.y, t = rx * ca + ry * sa, off = Math.abs(rx * sa - ry * ca); if (t < -0.3 || t > R + z.r || off > 1.0 + z.r) continue;
+function evoEars(p, a, dmg, hard) { const M = mechOf(p), ca = Math.cos(a), sa = Math.sin(a), R = M.reach || 6.2; let n = 0; // a strip 3 tiles wide straight ahead
+  for (const z of W.zs) { if (z.hp <= 0 || z.hidden || Math.abs(z.z - p.z) > 2.6) continue; const rx = z.x - p.x, ry = z.y - p.y, t = rx * ca + ry * sa, off = Math.abs(rx * sa - ry * ca); if (t < -0.3 || t > R + z.r || off > 1.5 + z.r) continue;
     const big = ZT[z.k].boss || ZT[z.k].kaiju, kb = big ? 0.8 : hard ? 8 : 5; hurtZombie(z, dmg, p, ca * kb, sa * kb); z.stun = Math.max(z.stun || 0, big ? 0.15 : hard ? 1.0 : 0.45); n++; }
   emit({ k: 'mhit', o: p.i, h: n ? 1 : 0, x: r2(p.x + ca * R * 0.75), y: r2(p.y + sa * R * 0.75), z: r2(p.z + 0.3), r: hard ? 1.6 : 1.1, claw: 1 }); noiseAt(p.x, p.y, 6, p.z); }
+function evoEarSpin(p, dmg) { const R = 5.8; let n = 0; // (round 38e) 玉兔's third lash: a full turn with the ears stretched out — everything around is flung away
+  for (const z of W.zs) { if (z.hp <= 0 || z.hidden || Math.abs(z.z - p.z) > 2.6) continue; const dx = z.x - p.x, dy = z.y - p.y, d = Math.hypot(dx, dy); if (d > R + z.r) continue;
+    const big = ZT[z.k].boss || ZT[z.k].kaiju, kb = big ? 1 : 9; hurtZombie(z, dmg, p, dx / (d || 1) * kb, dy / (d || 1) * kb); z.stun = Math.max(z.stun || 0, big ? 0.2 : 1.0); n++; }
+  emit({ k: 'mhit', o: p.i, h: n ? 1 : 0, x: r2(p.x), y: r2(p.y), z: r2(p.z + 0.3), r: R, g: 0 }); noiseAt(p.x, p.y, 8, p.z); }
 function evoClaw(p, a, dmg) { const M = mechOf(p); let n = 0;
   for (const z of W.zs) { if (z.hp <= 0 || z.hidden || Math.abs(z.z - p.z) > 2.6) continue; const dx = z.x - p.x, dy = z.y - p.y, d = Math.hypot(dx, dy); if (d > M.reach + z.r || Math.cos(angDiff(Math.atan2(dy, dx), a)) < Math.cos(M.arc || 1.5) && d > 0.6) continue; const big = ZT[z.k].boss || ZT[z.k].kaiju; hurtZombie(z, dmg, p, dx / (d || 1) * (big ? 1 : 5), dy / (d || 1) * (big ? 1 : 5)); z.stun = Math.max(z.stun || 0, big ? 0.05 : 0.4); n++; }
   emit({ k: 'mhit', o: p.i, h: n ? 1 : 0, x: r2(p.x + Math.cos(a) * 2), y: r2(p.y + Math.sin(a) * 2), z: r2(p.z + 0.4), r: 1, claw: 1 }); }
