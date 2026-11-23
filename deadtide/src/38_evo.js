@@ -39,15 +39,19 @@ function stepEvoWorld(dt) {
     for (const z of W.zs) { if (z.hp <= 0 || z.hidden || Math.abs(z.z - c.z) > 1.8 || Math.hypot(z.x - c.x, z.y - c.y) > c.r + z.r) continue; hurtZombie(z, 30 * 0.25 * (c.m || 1), o || null, 0, 0, true); z.psn = Math.max(z.psn || 0, 1); z.psnBy = c.o; z.psnM = c.m || 1; } }
 }
 // a round blow on the ground (shell bash, paw slam, landing): everything inside takes it
-function evoRound(p, cx, cy, R, dmg, kb, stun) { let n = 0;
-  for (const z of W.zs) { if (z.hp <= 0 || z.hidden || Math.abs(z.z - p.z) > 2.6) continue; const dx = z.x - cx, dy = z.y - cy, d = Math.hypot(dx, dy); if (d > R + z.r) continue; const big = ZT[z.k].boss || ZT[z.k].kaiju; hurtZombie(z, dmg, p, dx / (d || 1) * (big ? kb * 0.15 : kb), dy / (d || 1) * (big ? kb * 0.15 : kb)); z.stun = Math.max(z.stun || 0, big ? 0.1 : stun); n++; }
-  emit({ k: 'mhit', o: p.i, h: n ? 1 : 0, x: r2(cx), y: r2(cy), z: r2(p.z + 0.15), g: 1, r: R }); return n; }
+function evoRound(p, cx, cy, R, dmg, kb, stun, psn, psnM, ring) { let n = 0;
+  for (const z of W.zs) { if (z.hp <= 0 || z.hidden || Math.abs(z.z - p.z) > 2.6) continue; const dx = z.x - cx, dy = z.y - cy, d = Math.hypot(dx, dy); if (d > R + z.r) continue; const big = ZT[z.k].boss || ZT[z.k].kaiju; hurtZombie(z, dmg, p, dx / (d || 1) * (big ? kb * 0.15 : kb), dy / (d || 1) * (big ? kb * 0.15 : kb)); z.stun = Math.max(z.stun || 0, big ? 0.1 : stun); if (psn) { z.psn = Math.max(z.psn || 0, psn); z.psnBy = p.i; z.psnM = psnM || 1; } n++; }
+  emit({ k: 'mhit', o: p.i, h: n ? 1 : 0, x: r2(cx), y: r2(cy), z: r2(p.z + 0.15), g: ring === 'whip' ? 0 : 1, r: R, ev: ring || undefined }); return n; }
 // open ground near a point (for hops and the 月落 landing): standable, nothing overhead, not water
 function evoLand(p, ang, D, rMax) {
   for (let r = 0; r <= rMax; r++) for (let k = 0; k < (r ? 12 : 1); k++) { const a2 = k / 12 * Math.PI * 2, x = p.x + Math.cos(ang) * D + Math.cos(a2) * r, y = p.y + Math.sin(ang) * D + Math.sin(a2) * r, cx = Math.floor(x), cy = Math.floor(y);
     if (!inMap(cx, cy)) continue; const g = gAt(cx, cy); if (skyTop(cx, cy) > g || !standable(cx, cy, g, 'p') || ttAt(cx, cy) === TT.water) continue; return { x: cx + 0.5, y: cy + 0.5, L: g }; }
   return null;
 }
+// how far it can go along a line before a wall or a drop it can't take
+function evoLineEnd(p, ang, D) { const ca = Math.cos(ang), sa = Math.sin(ang); let ex = p.x, ey = p.y, L1 = p.L;
+  for (let s = 0; s < D * 4; s++) { const nx = ex + ca * 0.25, ny = ey + sa * 0.25; if (Math.floor(nx) !== Math.floor(ex) || Math.floor(ny) !== Math.floor(ey)) { const L2 = transition(Math.floor(ex), Math.floor(ey), Math.floor(nx), Math.floor(ny), L1, 'p', true); if (L2 < 0) break; L1 = L2; } ex = nx; ey = ny; }
+  return { x: ex, y: ey }; }
 // the target a beast attack goes for (mechLock with the beast's reach), and the angle to it
 function evoTarget(p, M, range) { const T = mechLock(p, Object.assign({}, M, { atk: 'kick', reach: range - 2.4 })); return T; }
 function evoAttack(p, M) {
@@ -56,10 +60,11 @@ function evoAttack(p, M) {
   let T = null, a = p.aim;
   if (M.atk === 'feather') { // 火凤: a fan of five burning feathers
     const A = p.aimPt && !p.aimPt.auto ? p.aimPt : null; if (!A) { T = mgunPick(p, M.range, p.x, p.y, (inAirZ(p) != null ? inAirZ(p) : p.z) + 0.6); if (T) a = Math.atan2(T.y - p.y, T.x - p.x); } else a = Math.atan2(A.y - p.y, A.x - p.x);
-    const sz = (inAirZ(p) != null ? inAirZ(p) : p.z) + 0.6, tz = T ? T.z + T.h * 0.5 : A && A.z != null ? A.z + 0.4 : p.z + 0.4, ends = [];
-    for (let k = -2; k <= 2; k++) { const aa = a + k * 0.16, hd = T ? Math.hypot(T.x - p.x, T.y - p.y) : 8, dz = (tz - sz) / Math.max(1, hd); let dx = Math.cos(aa), dy = Math.sin(aa), d3 = dz; const n = Math.hypot(dx, dy, d3); dx /= n; dy /= n; d3 /= n;
-      const r = mgunRay(p.x, p.y, sz, dx, dy, d3, M.range); if (r.z) { hurtZombie(r.z, M.dmg * mul, p, dx * 0.6, dy * 0.6); r.z.burn = Math.max(r.z.burn || 0, 2.5); r.z.burnBy = p.i; } ends.push(r2(p.x + dx * r.d), r2(p.y + dy * r.d), r2(sz + d3 * r.d)); }
-    p.mAim = a; emit({ k: 'efe', o: p.i, x: r2(p.x), y: r2(p.y), z: r2(sz), e: ends, a: r2(a) }); noiseAt(p.x, p.y, 8, p.z); return;
+    const sz = (inAirZ(p) != null ? inAirZ(p) : p.z) + 0.9, tz = T ? T.z + T.h * 0.5 : A && A.z != null ? A.z + 0.4 : p.z + 0.4, ends = [], starts = [], px_ = -Math.sin(a), py_ = Math.cos(a); /* (round 38b) the wings flap and the feathers leave from the wing tips */
+    for (let k = -2; k <= 2; k++) { const wing = k < 0 ? -1 : k > 0 ? 1 : (p._fw = -(p._fw || 1)), off = wing * (0.7 + Math.abs(k) * 0.35), ox = p.x + px_ * off * 1.25, oy = p.y + py_ * off * 1.25, oz = sz + 0.25 - Math.abs(k) * 0.08;
+      const gx = T ? T.x : A ? A.x : p.x + Math.cos(a) * 8, gy = T ? T.y : A ? A.y : p.y + Math.sin(a) * 8, aa = Math.atan2(gy - oy, gx - ox) + k * 0.07, hd = Math.max(1, Math.hypot(gx - ox, gy - oy)), /* each feather converges on the target from its wing */ dz = (tz - oz) / Math.max(1, hd); let dx = Math.cos(aa), dy = Math.sin(aa), d3 = dz; const n = Math.hypot(dx, dy, d3); dx /= n; dy /= n; d3 /= n;
+      const r = mgunRay(ox, oy, oz, dx, dy, d3, M.range); if (r.z) { hurtZombie(r.z, M.dmg * mul, p, dx * 0.6, dy * 0.6); r.z.burn = Math.max(r.z.burn || 0, 2.5); r.z.burnBy = p.i; } starts.push(r2(ox), r2(oy), r2(oz)); ends.push(r2(ox + dx * r.d), r2(oy + dy * r.d), r2(oz + d3 * r.d)); }
+    p.mAim = a; emit({ k: 'efe', o: p.i, x: r2(p.x), y: r2(p.y), z: r2(sz), s: starts, e: ends, a: r2(a) }); noiseAt(p.x, p.y, 8, p.z); return;
   }
   T = evoTarget(p, M, M.reach + 1); if (T) a = Math.atan2(T.y - p.y, T.x - p.x); p.mAim = a; const ca = Math.cos(a), sa = Math.sin(a);
   emit({ k: 'mpunch', o: p.i, s: p.mside, c: p.mcmb, a: r2(a) });
@@ -68,7 +73,10 @@ function evoAttack(p, M) {
       hurtZombie(z, M.dmg * mul, p, ca * 0.3, sa * 0.3, true); z.burn = Math.max(z.burn || 0, 3); z.burnBy = p.i; n++; }
     if (!(p._brT > W.t)) { p._brT = W.t + 0.1; emit({ k: 'ebr', o: p.i, a: r2(a) }); } noiseAt(p.x, p.y, 6, p.z); return;
   }
-  if (M.atk === 'bite') { // 青蛇: strikes at the target, a short lunge, venom
+  if (M.atk === 'bite' && p.mcmb < 2) { // (round 38b) 青蛇: the first two blows whip the tail round in a full circle — knocks them away, a touch of venom
+    (W.dly = W.dly || []).push({ t: 0.16, stomp: 1, x: p.x - ca * 0.4, y: p.y - sa * 0.4, L: p.L, R: 3.4, dmg: M.dmg * 0.8 * mul, o: p.i, st: 0.35, kb: 8, psn: 2.5, psnM: mul, ring: 'whip' }); return;
+  }
+  if (M.atk === 'bite') { // 青蛇: strikes at the target, a short lunge, venom (the third blow)
     const d = T ? Math.hypot(T.x - p.x, T.y - p.y) : 0; if (T && d > 1.4) { const st = Math.min(d - 1.1, M.reach - 1); mechMove(p, { dash: { dx: ca * st, dy: sa * st, t: 0, T: 0.14 } }); }
     let n = 0; const hx = p.x + ca * Math.min(d || 1.4, M.reach), hy = p.y + sa * Math.min(d || 1.4, M.reach);
     for (const z of W.zs) { if (z.hp <= 0 || z.hidden || Math.abs(z.z - p.z) > 2.4) continue; if (Math.hypot(z.x - hx, z.y - hy) > 1.25 + z.r) continue; hurtZombie(z, M.dmg * mul, p, ca * 2, sa * 2); z.psn = Math.max(z.psn || 0, 4); z.psnBy = p.i; z.psnM = mul; z.stun = Math.max(z.stun || 0, 0.25); n++; }
@@ -79,13 +87,16 @@ function evoAttack(p, M) {
     mechMove(p, { jmp: { t: 0, T: 0.45, x0: p.x, y0: p.y, x1: L.x, y1: L.y, L: L.L, h: 1.8, mech: 1 } });
     (W.dly = W.dly || []).push({ t: 0.45, stomp: 1, x: L.x, y: L.y, L: L.L, R: 2.4, dmg: M.dmg * mul, o: p.i, st: 0.9 }); return;
   }
-  if (M.atk === 'shell') { // 玄龟: rams forward with the shell
-    mechMove(p, { dash: { dx: ca * 0.8, dy: sa * 0.8, t: 0, T: 0.12 } }); (W.dly = W.dly || []).push({ t: 0.12, stomp: 1, x: p.x + ca * 1.6, y: p.y + sa * 1.6, L: p.L, R: 2.8, dmg: M.dmg * mul, o: p.i, st: 0.7, kb: 9 }); return;
+  if (M.atk === 'shell') { // (round 38b) 玄龟: pulls in and charges with the shell — 3.6 tiles, everything on the way is rammed aside, a thump where it stops
+    const E2 = evoLineEnd(p, a, 3.6), L2 = Math.hypot(E2.x - p.x, E2.y - p.y); let n = 0;
+    for (const z of W.zs) { if (z.hp <= 0 || z.hidden || Math.abs(z.z - p.z) > 2.4) continue; const rx = z.x - p.x, ry = z.y - p.y, t = clamp(rx * ca + ry * sa, 0, L2 + 0.8), off = Math.hypot(rx - ca * t, ry - sa * t); if (off > 1.5 + z.r) continue;
+      const big = ZT[z.k].boss || ZT[z.k].kaiju, sd = Math.sign(ca * ry - sa * rx) || 1, kb = big ? 1 : 7; hurtZombie(z, M.dmg * mul, p, ca * kb * 0.7 - sa * sd * kb * 0.7, sa * kb * 0.7 + ca * sd * kb * 0.7); z.stun = Math.max(z.stun || 0, big ? 0.15 : 0.8); n++; }
+    mechMove(p, { dash: { t: 0, T: 0.3, dx: E2.x - p.x, dy: E2.y - p.y } }); (W.dly = W.dly || []).push({ t: 0.3, stomp: 1, x: E2.x + ca * 0.8, y: E2.y + sa * 0.8, L: p.L, R: 1.8, dmg: M.dmg * 0.4 * mul, o: p.i, st: 0.4, kb: 6, ring: 'ram' }); return;
   }
   if (M.atk === 'claw') { // 铁熊: left paw, right paw, then both paws slam down
     if (T) { const d = Math.hypot(T.x - p.x, T.y - p.y); if (d > M.reach * 0.75 + 0.2) { const st = Math.min(d - M.reach * 0.75, 2); mechMove(p, { dash: { dx: ca * st, dy: sa * st, t: 0, T: 0.12 } }); } }
     if (p.mcmb === 2) { (W.dly = W.dly || []).push({ t: 0.22, stomp: 1, x: p.x + ca * 1.9, y: p.y + sa * 1.9, L: p.L, R: 2.6, dmg: M.dmg * 1.5 * mul, o: p.i, st: 1.0, kb: 7 }); return; }
-    (W.dly = W.dly || []).push({ t: 0.14, claw: 1, a, o: p.i, dmg: M.dmg * mul }); return;
+    (W.dly = W.dly || []).push({ t: 0.17, stomp: 1, x: p.x + ca * 2.1, y: p.y + sa * 2.1, L: p.L, R: 1.9, dmg: M.dmg * mul, o: p.i, st: 0.6, kb: 4, ring: 'slap' }); return; /* (round 38b) a paw raised high and slapped down on them */
   }
 }
 function evoClaw(p, a, dmg) { const M = mechOf(p); let n = 0;
