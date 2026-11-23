@@ -427,36 +427,61 @@ function mkRabbit(E) {
   const silk = bxStd({ color: '#d0183a', roughness: 0.55 }); for (const z of [-1, 1]) bxAt(S, 'chest', bxMesh(bxStrand([[0, 0, 0], [0.02, -0.1, z * 0.04], [0.0, -0.22, z * 0.05]], 0.022, 0.012, 6, 6), silk), [0.38, 1.27, z * 0.02]);
   U.ph = 0; U.wasAir = false; U.land = 9; return g;
 }
-function rabbitTick(p, g, dt, ev = 9) {
-  const U = g.userData, B = U.B, sp = p._spd || 0, jz = p.rjz != null ? p.rjz : p.jz || 0, air = jz > 0.05, wt = W.t + p.i * 1.3;
-  const hopping = sp > 0.4 && !air; U.ph += dt * (hopping ? 3 + sp * 1.1 : 0);
+// (round 38d) one hop as keyframes over its phase (0 crouch · 0.15 push · 0.3 lift-off · 0.5 apex · 0.68 reach · 0.78 front paws down · 0.9 hind paws down), read through a looping Catmull-Rom so every joint moves smoothly
+const RB_GAIT = { y: [[0, -0.25], [0.15, -0.05], [0.3, 0.25], [0.5, 1], [0.68, 0.55], [0.78, 0.0], [0.9, -0.18]], pt: [[0, 0.02], [0.15, 0.16], [0.3, 0.2], [0.5, -0.1], [0.68, -0.4], [0.78, -0.55], [0.9, -0.25]],
+  sx: [[0, -0.05], [0.15, -0.02], [0.3, 0.04], [0.5, 0.12], [0.68, 0.1], [0.78, 0.02], [0.9, -0.05]], th: [[0, 0.45], [0.15, -0.3], [0.3, -0.9], [0.5, -0.3], [0.68, 0.5], [0.78, 0.8], [0.9, 0.95]],
+  ft: [[0, -0.45], [0.15, -0.6], [0.3, -0.9], [0.5, -0.6], [0.68, -0.5], [0.78, -0.7], [0.9, -0.85]], ar: [[0, -0.3], [0.15, -0.5], [0.3, -0.45], [0.5, 0.4], [0.68, 1.1], [0.78, 0.75], [0.9, 0.1]],
+  hd: [[0, 0], [0.15, -0.2], [0.3, -0.3], [0.5, 0.2], [0.68, 0.35], [0.78, -0.3], [0.9, -0.2]], sq: [[0, 0.07], [0.15, -0.03], [0.3, -0.08], [0.5, -0.03], [0.68, 0], [0.78, 0.05], [0.9, 0.06]],
+  tl: [[0, 0], [0.15, 0.3], [0.3, 0.4], [0.5, 0.1], [0.68, -0.1], [0.78, -0.3], [0.9, -0.1]] };
+function rbCyc(Kf, f) { const n = Kf.length; let i = n - 1; for (let k = 0; k < n; k++) if (Kf[k][0] <= f) i = k; const at = k => Kf[((k % n) + n) % n][1], ph = k => Kf[((k % n) + n) % n][0] + Math.floor(k / n);
+  const a = ph(i), b = ph(i + 1), u = clamp((f - a) / (b - a), 0, 1), p0 = at(i - 1), p1 = at(i), p2 = at(i + 1), p3 = at(i + 2);
+  return 0.5 * (2 * p1 + (p2 - p0) * u + (2 * p0 - 5 * p1 + 4 * p2 - p3) * u * u + (3 * p1 - p0 - 3 * p2 + p3) * u * u * u); }
+function rabbitTick(p, g, dt, ev = 9) { /* (round 38d) a real bounding gait — push off with the hind legs, fly, land on the front paws, swing the hind legs past — and the ears lash forward */
+  const U = g.userData, B = U.B, sp = p._spd || 0, jz = p.rjz != null ? p.rjz : p.jz || 0, air = jz > 0.05, wt = W.t + p.i * 1.3, dk = 1 - Math.exp(-dt * 7);
   if (U.wasAir && !air) U.land = 0; U.wasAir = air; U.land += dt;
   const moon = p._msK === 'moon' && p._msT != null && p._msT < 1.15 ? p._msT : -1;
-  let drop = 0; if (ev < 0.45) { drop = Math.pow(1 - ev / 0.45, 2) * 3.2; } else if (ev < 0.5) U.land = Math.min(U.land, ev - 0.45);
-  const hop = hopping ? Math.abs(Math.sin(U.ph)) : 0, push = hopping ? Math.max(0, Math.cos(U.ph * 2)) : 0;
-  const sq = U.land < 0.28 ? Math.sin(U.land / 0.28 * Math.PI) * (1 - U.land / 0.28 * 0.4) : 0, crouch = moon >= 0 && moon < 0.12 ? Math.sin(moon / 0.12 * Math.PI) : 0;
-  U.body.position.y = hop * 0.36 + drop; const sY = 1 - 0.22 * sq - 0.15 * crouch + (air ? 0.06 : 0) + 0.06 * hop; U.body.scale.set(1 + (1 - sY) * 0.6, sY, 1 + (1 - sY) * 0.6);
-  // root pitch: leaning into the hop, a forward flip during 月落
-  const flip = moon > 0.18 && moon < 0.85 ? -Math.PI * 2 * ease((moon - 0.18) / 0.62) : 0;
-  bxR(B.root, 0, 0, (hopping ? -0.12 + Math.cos(U.ph * 2) * 0.14 : 0) + (air ? -0.2 : 0) + flip);
-  if (flip) { B.root.position.y = B.root.userData.rest.y; }
-  const br = Math.sin(wt * 2) * 0.012; B.chest.scale.set(1 + br, 1 + br, 1 + br);
-  // legs: push back on the ground, tuck in the air
-  const tuck = air ? 1 : 0; for (const [th, ft, s] of [[B.thighL, B.footL, 1], [B.thighR, B.footR, -1]]) {
-    bxR(th, 0, 0, 0.55 * tuck - 0.5 * push + 0.25 * hop + crouch * 0.4 + 0.3 * sq); bxR(ft, 0, 0, -0.7 * tuck + 0.6 * push - crouch * 0.3); }
-  const reach = moon > 0 && moon < 0.6 ? 1 : 0;
+  let drop = 0; if (ev < 0.45) drop = Math.pow(1 - ev / 0.45, 2) * 3.2; else if (ev < 0.5) U.land = Math.min(U.land, ev - 0.45);
+  // gait: one phase per hop (see RB_GAIT); a hop that has started always finishes
+  const moving = sp > 0.3 && !air && moon < 0; U.gw = (U.gw || 0) + ((moving ? 1 : 0) - (U.gw || 0)) * dk; U.aw = (U.aw || 0) + ((air ? 1 : 0) - (U.aw || 0)) * (1 - Math.exp(-dt * 12));
+  const freq = clamp(1.3 + sp * 0.32, 1.5, 3.0); U.hf = U.hf || 0;
+  if (moving || U.hf > 0) { U.hf += dt * freq; if (U.hf >= 1) U.hf = moving ? U.hf - 1 : 0; }
+  U.H = (U.H || 0.3) + (0.3 + 0.12 * Math.min(1, sp / 5) - (U.H || 0.3)) * dk; const f = U.hf, w = U.gw, H = U.H, K = (n) => rbCyc(RB_GAIT[n], f) * w;
+  const sqL = U.land < 0.3 ? Math.sin(U.land / 0.3 * Math.PI) * (1 - U.land / 0.3 * 0.4) * (1 - w) : 0, mCr = moon >= 0 && moon < 0.12 ? Math.sin(moon / 0.12 * Math.PI) : 0;
+  const t = p._mpT != null ? p._mpT : 9, lash = t < 0.62, hard = (p._mcombo || 0) === 2;
+  const wind = lash ? (t < 0.1 ? ease(t / 0.1) : t < 0.18 ? 1 - ease((t - 0.1) / 0.08) : 0) : 0, strike = lash ? (t < 0.1 ? 0 : t < 0.2 ? ease((t - 0.1) / 0.1) : t < 0.32 ? 1 : 1 - ease(Math.min(1, (t - 0.32) / 0.3))) : 0;
+  const by = K('y') * H - mCr * 0.1 + drop, vy = (by - (U.py != null ? U.py : by)) / Math.max(dt, 1e-3); U.py = by;
+  U.body.position.set(K('sx') + strike * 0.06, by, 0);
+  const sq = K('sq') + 0.2 * sqL + 0.15 * mCr; U.body.scale.set(1 + sq * 0.5 - Math.min(0, sq) * 0.3, 1 - sq + (air ? 0.04 : 0), 1 + sq * 0.4);
+  const flip = moon > 0.18 && moon < 0.85 ? -Math.PI * 2 * ease((moon - 0.18) / 0.62) : 0, pitch = K('pt');
+  bxR(B.root, 0, 0, pitch - 0.18 * U.aw + flip - strike * 0.14 + wind * 0.08);
+  const br = Math.sin(wt * 2) * 0.012 * (1 - w); B.chest.scale.set(1 + br, 1 + br, 1 + br);
+  // hind legs fold in the crouch, kick straight back on the push, tuck in flight and swing through past the front paws; front legs reach out to land and sweep back under the chest
+  const hTh = K('th') + U.aw * 0.6 + 0.35 * sqL + 0.4 * mCr, hFt = K('ft') - U.aw * 0.7 - 0.3 * mCr;
+  for (const [th, ft, s] of [[B.thighL, B.footL, 1], [B.thighR, B.footR, -1]]) { bxR(th, 0, 0, hTh + (s > 0 ? 0 : 0.05 * w)); bxR(ft, 0, 0, hFt); }
+  const reachM = moon > 0 && moon < 0.6 ? 1 : 0, fAr = K('ar'), fHd = K('hd');
   for (const [ar, hd, s] of [[B.armL, B.handL, 1], [B.armR, B.handR, -1]]) {
-    bxR(ar, s * (0.1 * tuck), 0, 0.5 * tuck - 0.35 * hop + reach * 2.2 + Math.sin(wt * 2 + s) * 0.04 - 0.3 * sq); bxR(hd, 0, 0, 0.3 * tuck + reach * 0.4); }
-  // ears: flop back with speed, stream in the air, twitch now and then, boing on landing
-  const tw = (wt % 3.7) < 0.18 ? Math.sin((wt % 3.7) / 0.18 * Math.PI) : 0, boing = U.land < 0.9 ? Math.sin(U.land * 18) * Math.exp(-U.land * 4) : 0;
-  const back = (air ? 0.9 : 0.25 * hop) + clamp(sp / 5, 0, 0.3) - boing * 0.7;
-  bxR(B.earL, -0.15 - 0.08 * hop - tw * 0.25, 0, -back); bxR(B.earR, 0.15 + 0.08 * hop, 0, -back - tw * 0.15);
-  bxR(B.earLt, 0, 0, -back * 0.7 - boing * 0.5); bxR(B.earRt, 0, 0, -back * 0.7 - boing * 0.5);
-  bxR(B.head, Math.sin(wt * 0.8) * 0.05, Math.sin(wt * 0.5) * 0.15 * (sp < 0.4 ? 1 : 0), (air ? 0.18 : Math.sin(wt * 1.2) * 0.04) + sq * 0.15);
-  bxR(B.tail, 0, Math.sin(wt * 5) * 0.2, 0);
+    bxR(ar, s * 0.1 * U.aw, 0, fAr + (s > 0 ? 0.05 : -0.05) * w + 0.5 * U.aw + reachM * 2.2 + Math.sin(wt * 2 + s) * 0.04 * (1 - w) - 0.3 * sqL - strike * 0.3 + wind * 0.3);
+    bxR(hd, 0, 0, fHd + 0.3 * U.aw + reachM * 0.4); }
+  // ears: a damped spring rides the body's vertical motion (they lag up and flop back as it rises, swing forward as it lands); the lash stretches both out and whips them down in front
+  const target = clamp(vy * 0.18, -0.7, 0.7) + clamp(sp / 6, 0, 0.35) + 0.12;
+  U.ev = (U.ev || 0) + ((target - (U.ea || 0)) * 140 - (U.ev || 0) * 13) * dt; U.ea = (U.ea || 0) + U.ev * dt; if (!isFinite(U.ea)) { U.ea = 0; U.ev = 0; }
+  const tw = (wt % 3.7) < 0.18 ? Math.sin((wt % 3.7) / 0.18 * Math.PI) : 0, back = U.ea + U.aw * 0.5;
+  const eRz = back * (1 - strike) * (1 - wind) + wind * (0.95 + (hard ? 0.25 : 0)) - strike * (hard ? 2.1 : 1.85), eSt = 1 + wind * 0.15 + strike * (hard ? 2.4 : 2.1);
+  const crack = strike > 0 && t < 0.3 ? Math.sin(clamp((t - 0.1) / 0.2, 0, 1) * Math.PI) : 0, tip = back * 0.6 * (1 - strike) + wind * 0.5 + crack * 0.7 - strike * 0.25 + (U.ev || 0) * 0.02;
+  bxR(B.earL, -0.15 + 0.12 * strike - tw * 0.2 * (1 - strike), 0, eRz); bxR(B.earR, 0.15 - 0.12 * strike, 0, eRz - tw * 0.12 * (1 - strike));
+  B.earL.scale.set(1, eSt, 1); B.earR.scale.set(1, eSt, 1); bxR(B.earLt, 0, 0, tip); bxR(B.earRt, 0, 0, tip);
+  bxR(B.head, Math.sin(wt * 0.8) * 0.05 * (1 - w), Math.sin(wt * 0.5) * 0.15 * (1 - w) * (1 - strike), -pitch * 0.6 + 0.12 * U.aw + sqL * 0.15 - strike * 0.28 + wind * 0.15 + (1 - w) * Math.sin(wt * 1.2) * 0.04);
+  bxR(B.tail, 0, Math.sin(wt * 5) * 0.2 * (1 - w), K('tl'));
   const blink = (wt % 4.3) < 0.12 ? 0.1 : 1; for (const e of U.eyes) e.scale.set(1, blink, 1);
+  // effects: a jade swoosh when the ears crack, dust where they hit; little puffs from the hind paws as they push off
+  if (lash && (U.lt == null || U.lt < 0.19) && t >= 0.19) { sfx('ewhip', p.x, p.y); g.getWorldPosition(EVW); const a0 = p._ly || 0, ca = Math.cos(a0), sa = Math.sin(a0);
+    for (let k = 0; k < 14; k++) { const d = 1 + k / 13 * 3.2, sd = k % 2 ? 0.45 : -0.45; addP({ x: EVW.x + ca * d - sa * sd, y: EVW.z + sa * d + ca * sd, z: EVW.y + 0.25 + (1 - k / 13) * 0.8, vx: ca * 1.5, vy: sa * 1.5, vz: 0.6, g: 1, col: k % 3 ? '#d8fff0' : '#7fd8c4', s: 0.1, life: 0.35 }); }
+    for (let k = 0; k < (hard ? 14 : 8); k++) { const a = FXR() * 6.28; addP({ x: EVW.x + ca * 3.4, y: EVW.z + sa * 3.4, z: EVW.y + 0.1, vx: Math.cos(a) * 2.5, vy: Math.sin(a) * 2.5, vz: 1.2, g: 3, col: '#cfe8d8', s: 0.09, life: 0.45 }); } }
+  U.lt = t;
+  if (w > 0.5 && U.pf != null && U.pf < 0.13 && f >= 0.13 && FXR() < 0.8) { g.getWorldPosition(EVW); const a0 = (p._ly || 0) + Math.PI; for (let k = 0; k < 4; k++) addP({ x: EVW.x + Math.cos(a0) * 0.4, y: EVW.z + Math.sin(a0) * 0.4, z: EVW.y + 0.05, vx: Math.cos(a0 + frnd(-0.6, 0.6)) * 1.5, vy: Math.sin(a0 + frnd(-0.6, 0.6)) * 1.5, vz: 0.5, g: 2, col: '#cdbf9a', s: 0.07, life: 0.35 }); }
+  U.pf = f;
   if (moon > 0 && moon < 1 && FXR() < dt * 40) { g.getWorldPosition(EVW); addP({ x: EVW.x + frnd(-0.5, 0.5), y: EVW.z + frnd(-0.5, 0.5), z: EVW.y + 1, vx: 0, vy: 0, vz: -1, g: 0, col: '#bff8ff', s: 0.12, life: 0.6 }); }
-  if (U.land < 0.05 && FXR() < 0.5) { g.getWorldPosition(EVW); for (let k = 0; k < 8; k++) { const a = k / 8 * 6.28; addP({ x: EVW.x, y: EVW.z, z: EVW.y + 0.05, vx: Math.cos(a) * 2.5, vy: Math.sin(a) * 2.5, vz: 0.4, g: 2, col: '#d8fff0', s: 0.08, life: 0.4 }); } }
+  if (U.land < 0.05 && w < 0.3 && FXR() < 0.5) { g.getWorldPosition(EVW); for (let k = 0; k < 8; k++) { const a = k / 8 * 6.28; addP({ x: EVW.x, y: EVW.z, z: EVW.y + 0.05, vx: Math.cos(a) * 2.5, vy: Math.sin(a) * 2.5, vz: 0.4, g: 2, col: '#d8fff0', s: 0.08, life: 0.4 }); } }
 }
 
 

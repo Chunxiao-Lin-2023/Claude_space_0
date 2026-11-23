@@ -149,8 +149,8 @@ const EVO = [null,
     tag: '贴地游走，最快；有人打它 35% 闪开。普攻只用尾巴：前两下甩尾横扫一圈（半径 3.6，120，抽飞 + 晕 1 秒 + 中毒），第三下尾巴从头顶砸下（前方半径 2.7，165，晕 1.6 秒）。技能「毒雾」：吐出一团毒雾（半径 4.5，9 秒，每秒 30 + 减速一半），冷却 9 秒' },
   { k: 'dragon', evo: 1, name: '赤龙', from: '赤刃', hp: 1200, armor: 0.7, spd: 1.75, dmg: 24, rate: 0.12, reach: 6.5, atk: 'breath', skill: 'dragdash', sn: '龙腾', cd: 8, col: ['#c8282a', '#5a1012', '#f2c040'], glow: '#ffb040', noise: 7,
     tag: '浮在半空的长龙。普攻「龙息」：按住朝前喷火（6.5 格扇形，每 0.12 秒 24，点着丧尸）。技能「龙腾」：卷着火朝前冲 12 格，路上的丧尸受 260 并着火，冲过的路烧 5 秒（每秒 30），冷却 8 秒' },
-  { k: 'rabbit', evo: 1, name: '玉兔', from: '工蜂', hp: 1600, armor: 0.8, spd: 1.6, dmg: 110, rate: 0.75, reach: 6, atk: 'hop', skill: 'moon', sn: '月落', cd: 10, col: ['#eef4f2', '#7fd8c4', '#ff9ab0'], glow: '#bff8ff', noise: 4,
-    tag: '一蹦一跳，蹦起来能越过墙和丧尸。普攻「蹦踩」：蹦到目标身上踩下去（6 格内，半径 2.4，110）。技能「月落」：高高跳起砸向 14 格内的落点（半径 6，320，砸晕 1.5 秒），之后月光照着坑 6 秒（里面的丧尸减速、每秒 22），冷却 10 秒；照样能踩平收资源' },
+  { k: 'rabbit', evo: 1, name: '玉兔', from: '工蜂', hp: 1600, armor: 0.8, spd: 1.6, dmg: 110, rate: 0.7, reach: 4.2, atk: 'ears', skill: 'moon', sn: '月落', cd: 10, col: ['#eef4f2', '#7fd8c4', '#ff9ab0'], glow: '#bff8ff', noise: 4,
+    tag: '一蹦一跳的白玉兔。普攻「耳鞭」：两只耳朵一下拉长，往正前方抽下去（前方 4.2 格、宽 2 格一条，110，抽退 + 晕），连到第三下抽得更狠（×1.5，晕 1 秒）。技能「月落」：高高跳起砸向 14 格内的落点（半径 6，320，砸晕 1.5 秒），之后月光照着坑 6 秒（里面的丧尸减速、每秒 22），冷却 10 秒；照样能踩平收资源' },
   { k: 'turtle', evo: 1, name: '玄龟', from: '铁卫', hp: 2400, armor: 0.35, spd: 0.95, dmg: 150, rate: 0.85, reach: 3, atk: 'shell', skill: 'spin', sn: '旋甲', cd: 10, col: ['#3d5a48', '#1d2a22', '#c9a446'], glow: '#7fffd0', noise: 6,
     tag: '最硬（挨打 ×0.35），身边 5 格的队友挨打少 40%（玄甲）。普攻「甲撞」：缩进壳里往前冲 3.6 格，路上的丧尸都被撞开（150，撞晕），停下时再震一下。技能「旋甲」：缩进壳里高速旋转 6 秒，刀枪不入、跑得快，碰到的丧尸每 0.4 秒 70 并弹飞，冷却 10 秒' },
   { k: 'phoenix', evo: 1, name: '火凤', from: '苍隼', hp: 1000, armor: 0.85, spd: 1.6, dmg: 34, rate: 0.45, range: 14, atk: 'feather', skill: 'rebirth', sn: '涅槃', cd: 16, col: ['#ff6a1e', '#9a1a10', '#ffd24a'], glow: '#ffcf60', noise: 8,
@@ -232,7 +232,7 @@ const ZT = {
   shade: { name: '隐身者', hp: 420, spd: 1.5, r: 0.3, h: 1.25, dmg: 12, bdmg: 10, cd: 0.9, sc: 1.2, look: 'walker', skin: '#50505e', elite: { k: 'cloak', cd: 6, col: '#c0c0e0', tip: '隐身摸到你身边偷袭，留意空气里的扭曲，附近炸一下就现形' } },
 };
 const ELITES = ['blinker', 'caller', 'warden', 'shade'];
-const BUILD_TAG = '第 38 轮之三'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
+const BUILD_TAG = '第 38 轮之四'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
 // aim assist (SET.assist): fire-button lock range (x weapon range), lock-on time before it fires, spread while auto-aimed, mouse/finger magnet
 const PORT = 1.25; // firing port: your own shots pass a wall / door you built if it is this close to you
 const ASSIST = [{ name: '关', range: 0, acq: 0, spread: 1, mag: 0 }, { name: '标准', range: 0.75, acq: 0.3, spread: 1.5, mag: 1 }, { name: '强', range: 1, acq: 0, spread: 1, mag: 1 }];

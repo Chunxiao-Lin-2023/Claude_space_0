@@ -56,6 +56,7 @@ function sfx(n, x, y) {
     case 'ambush': noise(0.18, 0.4 * v, 'bandpass', 900, 400, 1); tone('sawtooth', 160 * r, 60, 0.2, 0.2 * v, 0, 900); break;
     case 'cannon': noise(0.06, 0.8 * v, 'bandpass', 1600 * r, 700, 0.8); tone('sine', 70 * r, 26, 0.55, 0.75 * v); noise(0.7, 0.75 * v, 'lowpass', 1100 * r, 60, 0.6); noise(1.1, 0.18 * v, 'lowpass', 400, 60, 0.6, 0.2); tone('triangle', 900, 700, 0.05, 0.04 * v, 0.6); break; // (round 36f) the tank / 重炮 cannon: a deep blast, a rolling tail, the breech clank
     case 'gyro': noise(0.04, 0.3 * v, 'bandpass', 2800 * r, 1800, 1.2); tone('sine', 160 * r, 80, 0.05, 0.18 * v); break; // (round 36f) the gyrocopter's gun: lighter, faster
+    case 'ewhip': noise(0.18, 0.3 * v, 'bandpass', 1200 * r, 4000, 2); noise(0.05, 0.25 * v, 'highpass', 4000, 4000, 2, 0.15); break; // (round 38d) ears lashing through the air, a crack at the end
     case 'mswing': noise(0.3, 0.32 * v, 'bandpass', 500 * r, 1500, 1.2); tone('sine', 90 * r, 140, 0.22, 0.12 * v); noise(0.06, 0.08 * v, 'highpass', 3000, 3000, 2, 0.0); break; // (round 36f) a heavy mech arm swinging (servo + air)
     case 'mslash': noise(0.2, 0.3 * v, 'bandpass', 5200 * r, 1200, 2); tone('sine', 2600 * r, 2200, 0.35, 0.05 * v, 0.02); tone('sine', 3900 * r, 3400, 0.3, 0.03 * v, 0.03); break; // (round 36f) 赤刃's 太刀: a ringing 'shing' and the cut
     case 'mclang': noise(0.06, 0.4 * v, 'bandpass', 2400 * r, 1400, 2); tone('triangle', 620 * r, 520, 0.18, 0.1 * v); tone('sine', 80 * r, 40, 0.18, 0.4 * v); break; // (round 36f) a mech blow landing: metal on meat

@@ -5031,8 +5031,8 @@ const EVO = [null,
     tag: '贴地游走，最快；有人打它 35% 闪开。普攻只用尾巴：前两下甩尾横扫一圈（半径 3.6，120，抽飞 + 晕 1 秒 + 中毒），第三下尾巴从头顶砸下（前方半径 2.7，165，晕 1.6 秒）。技能「毒雾」：吐出一团毒雾（半径 4.5，9 秒，每秒 30 + 减速一半），冷却 9 秒' },
   { k: 'dragon', evo: 1, name: '赤龙', from: '赤刃', hp: 1200, armor: 0.7, spd: 1.75, dmg: 24, rate: 0.12, reach: 6.5, atk: 'breath', skill: 'dragdash', sn: '龙腾', cd: 8, col: ['#c8282a', '#5a1012', '#f2c040'], glow: '#ffb040', noise: 7,
     tag: '浮在半空的长龙。普攻「龙息」：按住朝前喷火（6.5 格扇形，每 0.12 秒 24，点着丧尸）。技能「龙腾」：卷着火朝前冲 12 格，路上的丧尸受 260 并着火，冲过的路烧 5 秒（每秒 30），冷却 8 秒' },
-  { k: 'rabbit', evo: 1, name: '玉兔', from: '工蜂', hp: 1600, armor: 0.8, spd: 1.6, dmg: 110, rate: 0.75, reach: 6, atk: 'hop', skill: 'moon', sn: '月落', cd: 10, col: ['#eef4f2', '#7fd8c4', '#ff9ab0'], glow: '#bff8ff', noise: 4,
-    tag: '一蹦一跳，蹦起来能越过墙和丧尸。普攻「蹦踩」：蹦到目标身上踩下去（6 格内，半径 2.4，110）。技能「月落」：高高跳起砸向 14 格内的落点（半径 6，320，砸晕 1.5 秒），之后月光照着坑 6 秒（里面的丧尸减速、每秒 22），冷却 10 秒；照样能踩平收资源' },
+  { k: 'rabbit', evo: 1, name: '玉兔', from: '工蜂', hp: 1600, armor: 0.8, spd: 1.6, dmg: 110, rate: 0.7, reach: 4.2, atk: 'ears', skill: 'moon', sn: '月落', cd: 10, col: ['#eef4f2', '#7fd8c4', '#ff9ab0'], glow: '#bff8ff', noise: 4,
+    tag: '一蹦一跳的白玉兔。普攻「耳鞭」：两只耳朵一下拉长，往正前方抽下去（前方 4.2 格、宽 2 格一条，110，抽退 + 晕），连到第三下抽得更狠（×1.5，晕 1 秒）。技能「月落」：高高跳起砸向 14 格内的落点（半径 6，320，砸晕 1.5 秒），之后月光照着坑 6 秒（里面的丧尸减速、每秒 22），冷却 10 秒；照样能踩平收资源' },
   { k: 'turtle', evo: 1, name: '玄龟', from: '铁卫', hp: 2400, armor: 0.35, spd: 0.95, dmg: 150, rate: 0.85, reach: 3, atk: 'shell', skill: 'spin', sn: '旋甲', cd: 10, col: ['#3d5a48', '#1d2a22', '#c9a446'], glow: '#7fffd0', noise: 6,
     tag: '最硬（挨打 ×0.35），身边 5 格的队友挨打少 40%（玄甲）。普攻「甲撞」：缩进壳里往前冲 3.6 格，路上的丧尸都被撞开（150，撞晕），停下时再震一下。技能「旋甲」：缩进壳里高速旋转 6 秒，刀枪不入、跑得快，碰到的丧尸每 0.4 秒 70 并弹飞，冷却 10 秒' },
   { k: 'phoenix', evo: 1, name: '火凤', from: '苍隼', hp: 1000, armor: 0.85, spd: 1.6, dmg: 34, rate: 0.45, range: 14, atk: 'feather', skill: 'rebirth', sn: '涅槃', cd: 16, col: ['#ff6a1e', '#9a1a10', '#ffd24a'], glow: '#ffcf60', noise: 8,
@@ -5114,7 +5114,7 @@ const ZT = {
   shade: { name: '隐身者', hp: 420, spd: 1.5, r: 0.3, h: 1.25, dmg: 12, bdmg: 10, cd: 0.9, sc: 1.2, look: 'walker', skin: '#50505e', elite: { k: 'cloak', cd: 6, col: '#c0c0e0', tip: '隐身摸到你身边偷袭，留意空气里的扭曲，附近炸一下就现形' } },
 };
 const ELITES = ['blinker', 'caller', 'warden', 'shade'];
-const BUILD_TAG = '第 38 轮之三'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
+const BUILD_TAG = '第 38 轮之四'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
 // aim assist (SET.assist): fire-button lock range (x weapon range), lock-on time before it fires, spread while auto-aimed, mouse/finger magnet
 const PORT = 1.25; // firing port: your own shots pass a wall / door you built if it is this close to you
 const ASSIST = [{ name: '关', range: 0, acq: 0, spread: 1, mag: 0 }, { name: '标准', range: 0.75, acq: 0.3, spread: 1.5, mag: 1 }, { name: '强', range: 1, acq: 0, spread: 1, mag: 1 }];
@@ -6560,7 +6560,7 @@ function stepDelayed(dt) {
     if (q.thr != null) { const z = W.zs.find(z => z.id === q.thr); if (z && z.hp > 0) { const f = clamp(1 - q.t / q.T, 0, 1), gz = surfZ(q.x, q.y, q.L); z.x = lerp(q.x0, q.x, f); z.y = lerp(q.y0, q.y, f); z.z = lerp(q.z0, gz, f) + Math.sin(f * Math.PI) * 3; z.stun = Math.max(z.stun || 0, 0.3);
       if (q.t <= 0) { z.L = q.L; z.z = gz; const o = W.p[q.o]; hurtZombie(z, 200 * mechMul(), o, 0, 0); for (const y of W.zs) { if (y === z || y.hp <= 0 || y.hidden) continue; const d = Math.hypot(y.x - q.x, y.y - q.y); if (d < 2) { hurtZombie(y, 100, o, (y.x - q.x) / (d || 1) * 5, (y.y - q.y) / (d || 1) * 5); y.stun = Math.max(y.stun || 0, 0.8); } } emit({ k: 'slam', x: r2(q.x), y: r2(q.y), z: r2(gz), r: 2 }); emit({ k: 'sfx', n: 'smash', x: q.x, y: q.y }); } } else q.t = 0; continue; } // (round 34b) a thrown zombie flies, then smashes down
     if (q.t > 0) continue; if (q.punch != null) { if (W.p[q.punch]) mechPunchHit(W.p[q.punch], q.c, q.a); continue; } const o = W.p[q.o];
-    if (q.stomp) { if (o) { evoRound(o, q.x, q.y, q.R, q.dmg, q.kb || 8, q.st || 1, q.psn, q.psnM, q.ring); if (q.moon) { const gz = surfZ(q.x, q.y, q.L); emit({ k: 'moonfx', x: r2(q.x), y: r2(q.y), z: r2(gz), r: q.R }); if (q.zone) { (W.evz = W.evz || []).push({ k: 'moon', x: q.x, y: q.y, z: gz, r: q.R, t: q.zone, o: q.o, m: q.dmg / 320 }); (W.cz = W.cz || []).push({ k: 5, x: r2(q.x), y: r2(q.y), z: r2(gz), r: q.R, t: q.zone }); emit({ k: 'ezone', zk: 'moon', x: r2(q.x), y: r2(q.y), z: r2(gz), r: q.R, t: q.zone }); } } } continue; } if (q.claw) { if (o && inMech(o)) evoClaw(o, q.a, q.dmg); continue; } /* (round 37) beast blows */
+    if (q.stomp) { if (o) { evoRound(o, q.x, q.y, q.R, q.dmg, q.kb || 8, q.st || 1, q.psn, q.psnM, q.ring); if (q.moon) { const gz = surfZ(q.x, q.y, q.L); emit({ k: 'moonfx', x: r2(q.x), y: r2(q.y), z: r2(gz), r: q.R }); if (q.zone) { (W.evz = W.evz || []).push({ k: 'moon', x: q.x, y: q.y, z: gz, r: q.R, t: q.zone, o: q.o, m: q.dmg / 320 }); (W.cz = W.cz || []).push({ k: 5, x: r2(q.x), y: r2(q.y), z: r2(gz), r: q.R, t: q.zone }); emit({ k: 'ezone', zk: 'moon', x: r2(q.x), y: r2(q.y), z: r2(gz), r: q.R, t: q.zone }); } } } continue; } if (q.claw) { if (o && inMech(o)) evoClaw(o, q.a, q.dmg); continue; } if (q.ears) { if (o && inMech(o)) evoEars(o, q.a, q.dmg, q.big); continue; } /* (round 38d) 玉兔 */ /* (round 37) beast blows */
     if (q.launch) { if (o && inMech(o)) { const ft = q.ft * frnd(0.85, 1.1), sd = rand() < 0.5 ? -1 : 1, ca2 = Math.cos(o.aim), sa2 = Math.sin(o.aim); emit({ k: 'mrkt', o: q.o, kd: 'bigparcel', x: r2(o.x - ca2 * 0.5 * q.s2 - sa2 * sd * 0.3), y: r2(o.y - sa2 * 0.5 * q.s2 + ca2 * sd * 0.3), z: r2(pZ(o) + 2.4 * q.s2), e: [r2(q.x), r2(q.y), r2(q.zz)], t: r2(ft) }); W.dly.push({ t: ft, box: 1, big: 1, x: q.x, y: q.y, zz: q.zz, R: 1.5, dmg: BAL.rainDmg * mechMul(), o: q.o }); } continue; } /* (round 36n) one parcel of the 快递雨 torrent leaves the rack */
     if (q.fistZ != null) { const z = W.zs.find(z => z.id === q.fistZ); if (z && z.hp > 0) { const big = ZT[z.k].boss || ZT[z.k].kaiju; hurtZombie(z, 140 * mechMul(), o, q.dx * (big ? 2 : 9), q.dy * (big ? 2 : 9)); z.stun = Math.max(z.stun || 0, big ? 0.2 : 1); emit({ k: 'mhit', o: q.o, h: 1, x: r2(z.x), y: r2(z.y), z: r2(z.z + 0.8), r: 1 }); } continue; }
     if (q.shell) { explode(q.x, q.y, q.zz != null ? q.zz : surfZ(q.x, q.y, q.L) + 0.3, o, q.R, q.dmg); continue; }
@@ -8017,10 +8017,8 @@ function evoAttack(p, M) {
     for (const z of W.zs) { if (z.hp <= 0 || z.hidden || Math.abs(z.z - p.z) > 2.4) continue; if (Math.hypot(z.x - hx, z.y - hy) > 1.25 + z.r) continue; hurtZombie(z, M.dmg * mul, p, ca * 2, sa * 2); z.psn = Math.max(z.psn || 0, 4); z.psnBy = p.i; z.psnM = mul; z.stun = Math.max(z.stun || 0, 0.25); n++; }
     emit({ k: 'mhit', o: p.i, h: n ? 1 : 0, x: r2(hx), y: r2(hy), z: r2(p.z + 0.6), r: 1.2, bite: 1 }); return;
   }
-  if (M.atk === 'hop') { // 玉兔: hop onto the target and stamp
-    const d = T ? Math.min(M.reach, Math.hypot(T.x - p.x, T.y - p.y)) : 3, L = evoLand(p, a, d, 2) || { x: p.x, y: p.y, L: p.L };
-    mechMove(p, { jmp: { t: 0, T: 0.45, x0: p.x, y0: p.y, x1: L.x, y1: L.y, L: L.L, h: 1.8, mech: 1 } });
-    (W.dly = W.dly || []).push({ t: 0.45, stomp: 1, x: L.x, y: L.y, L: L.L, R: 2.4, dmg: M.dmg * mul, o: p.i, st: 0.9 }); return;
+  if (M.atk === 'ears') { // (round 38d) 玉兔: both ears stretch out and lash down in front; the third lash hits harder
+    (W.dly = W.dly || []).push({ t: 0.2, ears: 1, a, o: p.i, dmg: M.dmg * mul * (p.mcmb === 2 ? 1.5 : 1), big: p.mcmb === 2 ? 1 : 0 }); return;
   }
   if (M.atk === 'shell') { // (round 38b) 玄龟: pulls in and charges with the shell — 3.6 tiles, everything on the way is rammed aside, a thump where it stops
     const E2 = evoLineEnd(p, a, 3.6), L2 = Math.hypot(E2.x - p.x, E2.y - p.y); let n = 0;
@@ -8034,6 +8032,10 @@ function evoAttack(p, M) {
     (W.dly = W.dly || []).push({ t: 0.17, stomp: 1, x: p.x + ca * 2.1, y: p.y + sa * 2.1, L: p.L, R: 1.9, dmg: M.dmg * mul, o: p.i, st: 0.6, kb: 4, ring: 'slap' }); return; /* (round 38b) a paw raised high and slapped down on them */
   }
 }
+function evoEars(p, a, dmg, hard) { const M = mechOf(p), ca = Math.cos(a), sa = Math.sin(a), R = M.reach || 4.2; let n = 0; // a strip 2 tiles wide straight ahead
+  for (const z of W.zs) { if (z.hp <= 0 || z.hidden || Math.abs(z.z - p.z) > 2.6) continue; const rx = z.x - p.x, ry = z.y - p.y, t = rx * ca + ry * sa, off = Math.abs(rx * sa - ry * ca); if (t < -0.3 || t > R + z.r || off > 1.0 + z.r) continue;
+    const big = ZT[z.k].boss || ZT[z.k].kaiju, kb = big ? 0.8 : hard ? 8 : 5; hurtZombie(z, dmg, p, ca * kb, sa * kb); z.stun = Math.max(z.stun || 0, big ? 0.15 : hard ? 1.0 : 0.45); n++; }
+  emit({ k: 'mhit', o: p.i, h: n ? 1 : 0, x: r2(p.x + ca * R * 0.75), y: r2(p.y + sa * R * 0.75), z: r2(p.z + 0.3), r: hard ? 1.6 : 1.1, claw: 1 }); noiseAt(p.x, p.y, 6, p.z); }
 function evoClaw(p, a, dmg) { const M = mechOf(p); let n = 0;
   for (const z of W.zs) { if (z.hp <= 0 || z.hidden || Math.abs(z.z - p.z) > 2.6) continue; const dx = z.x - p.x, dy = z.y - p.y, d = Math.hypot(dx, dy); if (d > M.reach + z.r || Math.cos(angDiff(Math.atan2(dy, dx), a)) < Math.cos(M.arc || 1.5) && d > 0.6) continue; const big = ZT[z.k].boss || ZT[z.k].kaiju; hurtZombie(z, dmg, p, dx / (d || 1) * (big ? 1 : 5), dy / (d || 1) * (big ? 1 : 5)); z.stun = Math.max(z.stun || 0, big ? 0.05 : 0.4); n++; }
   emit({ k: 'mhit', o: p.i, h: n ? 1 : 0, x: r2(p.x + Math.cos(a) * 2), y: r2(p.y + Math.sin(a) * 2), z: r2(p.z + 0.4), r: 1, claw: 1 }); }
@@ -12053,36 +12055,61 @@ function mkRabbit(E) {
   const silk = bxStd({ color: '#d0183a', roughness: 0.55 }); for (const z of [-1, 1]) bxAt(S, 'chest', bxMesh(bxStrand([[0, 0, 0], [0.02, -0.1, z * 0.04], [0.0, -0.22, z * 0.05]], 0.022, 0.012, 6, 6), silk), [0.38, 1.27, z * 0.02]);
   U.ph = 0; U.wasAir = false; U.land = 9; return g;
 }
-function rabbitTick(p, g, dt, ev = 9) {
-  const U = g.userData, B = U.B, sp = p._spd || 0, jz = p.rjz != null ? p.rjz : p.jz || 0, air = jz > 0.05, wt = W.t + p.i * 1.3;
-  const hopping = sp > 0.4 && !air; U.ph += dt * (hopping ? 3 + sp * 1.1 : 0);
+// (round 38d) one hop as keyframes over its phase (0 crouch · 0.15 push · 0.3 lift-off · 0.5 apex · 0.68 reach · 0.78 front paws down · 0.9 hind paws down), read through a looping Catmull-Rom so every joint moves smoothly
+const RB_GAIT = { y: [[0, -0.25], [0.15, -0.05], [0.3, 0.25], [0.5, 1], [0.68, 0.55], [0.78, 0.0], [0.9, -0.18]], pt: [[0, 0.02], [0.15, 0.16], [0.3, 0.2], [0.5, -0.1], [0.68, -0.4], [0.78, -0.55], [0.9, -0.25]],
+  sx: [[0, -0.05], [0.15, -0.02], [0.3, 0.04], [0.5, 0.12], [0.68, 0.1], [0.78, 0.02], [0.9, -0.05]], th: [[0, 0.45], [0.15, -0.3], [0.3, -0.9], [0.5, -0.3], [0.68, 0.5], [0.78, 0.8], [0.9, 0.95]],
+  ft: [[0, -0.45], [0.15, -0.6], [0.3, -0.9], [0.5, -0.6], [0.68, -0.5], [0.78, -0.7], [0.9, -0.85]], ar: [[0, -0.3], [0.15, -0.5], [0.3, -0.45], [0.5, 0.4], [0.68, 1.1], [0.78, 0.75], [0.9, 0.1]],
+  hd: [[0, 0], [0.15, -0.2], [0.3, -0.3], [0.5, 0.2], [0.68, 0.35], [0.78, -0.3], [0.9, -0.2]], sq: [[0, 0.07], [0.15, -0.03], [0.3, -0.08], [0.5, -0.03], [0.68, 0], [0.78, 0.05], [0.9, 0.06]],
+  tl: [[0, 0], [0.15, 0.3], [0.3, 0.4], [0.5, 0.1], [0.68, -0.1], [0.78, -0.3], [0.9, -0.1]] };
+function rbCyc(Kf, f) { const n = Kf.length; let i = n - 1; for (let k = 0; k < n; k++) if (Kf[k][0] <= f) i = k; const at = k => Kf[((k % n) + n) % n][1], ph = k => Kf[((k % n) + n) % n][0] + Math.floor(k / n);
+  const a = ph(i), b = ph(i + 1), u = clamp((f - a) / (b - a), 0, 1), p0 = at(i - 1), p1 = at(i), p2 = at(i + 1), p3 = at(i + 2);
+  return 0.5 * (2 * p1 + (p2 - p0) * u + (2 * p0 - 5 * p1 + 4 * p2 - p3) * u * u + (3 * p1 - p0 - 3 * p2 + p3) * u * u * u); }
+function rabbitTick(p, g, dt, ev = 9) { /* (round 38d) a real bounding gait — push off with the hind legs, fly, land on the front paws, swing the hind legs past — and the ears lash forward */
+  const U = g.userData, B = U.B, sp = p._spd || 0, jz = p.rjz != null ? p.rjz : p.jz || 0, air = jz > 0.05, wt = W.t + p.i * 1.3, dk = 1 - Math.exp(-dt * 7);
   if (U.wasAir && !air) U.land = 0; U.wasAir = air; U.land += dt;
   const moon = p._msK === 'moon' && p._msT != null && p._msT < 1.15 ? p._msT : -1;
-  let drop = 0; if (ev < 0.45) { drop = Math.pow(1 - ev / 0.45, 2) * 3.2; } else if (ev < 0.5) U.land = Math.min(U.land, ev - 0.45);
-  const hop = hopping ? Math.abs(Math.sin(U.ph)) : 0, push = hopping ? Math.max(0, Math.cos(U.ph * 2)) : 0;
-  const sq = U.land < 0.28 ? Math.sin(U.land / 0.28 * Math.PI) * (1 - U.land / 0.28 * 0.4) : 0, crouch = moon >= 0 && moon < 0.12 ? Math.sin(moon / 0.12 * Math.PI) : 0;
-  U.body.position.y = hop * 0.36 + drop; const sY = 1 - 0.22 * sq - 0.15 * crouch + (air ? 0.06 : 0) + 0.06 * hop; U.body.scale.set(1 + (1 - sY) * 0.6, sY, 1 + (1 - sY) * 0.6);
-  // root pitch: leaning into the hop, a forward flip during 月落
-  const flip = moon > 0.18 && moon < 0.85 ? -Math.PI * 2 * ease((moon - 0.18) / 0.62) : 0;
-  bxR(B.root, 0, 0, (hopping ? -0.12 + Math.cos(U.ph * 2) * 0.14 : 0) + (air ? -0.2 : 0) + flip);
-  if (flip) { B.root.position.y = B.root.userData.rest.y; }
-  const br = Math.sin(wt * 2) * 0.012; B.chest.scale.set(1 + br, 1 + br, 1 + br);
-  // legs: push back on the ground, tuck in the air
-  const tuck = air ? 1 : 0; for (const [th, ft, s] of [[B.thighL, B.footL, 1], [B.thighR, B.footR, -1]]) {
-    bxR(th, 0, 0, 0.55 * tuck - 0.5 * push + 0.25 * hop + crouch * 0.4 + 0.3 * sq); bxR(ft, 0, 0, -0.7 * tuck + 0.6 * push - crouch * 0.3); }
-  const reach = moon > 0 && moon < 0.6 ? 1 : 0;
+  let drop = 0; if (ev < 0.45) drop = Math.pow(1 - ev / 0.45, 2) * 3.2; else if (ev < 0.5) U.land = Math.min(U.land, ev - 0.45);
+  // gait: one phase per hop (see RB_GAIT); a hop that has started always finishes
+  const moving = sp > 0.3 && !air && moon < 0; U.gw = (U.gw || 0) + ((moving ? 1 : 0) - (U.gw || 0)) * dk; U.aw = (U.aw || 0) + ((air ? 1 : 0) - (U.aw || 0)) * (1 - Math.exp(-dt * 12));
+  const freq = clamp(1.3 + sp * 0.32, 1.5, 3.0); U.hf = U.hf || 0;
+  if (moving || U.hf > 0) { U.hf += dt * freq; if (U.hf >= 1) U.hf = moving ? U.hf - 1 : 0; }
+  U.H = (U.H || 0.3) + (0.3 + 0.12 * Math.min(1, sp / 5) - (U.H || 0.3)) * dk; const f = U.hf, w = U.gw, H = U.H, K = (n) => rbCyc(RB_GAIT[n], f) * w;
+  const sqL = U.land < 0.3 ? Math.sin(U.land / 0.3 * Math.PI) * (1 - U.land / 0.3 * 0.4) * (1 - w) : 0, mCr = moon >= 0 && moon < 0.12 ? Math.sin(moon / 0.12 * Math.PI) : 0;
+  const t = p._mpT != null ? p._mpT : 9, lash = t < 0.62, hard = (p._mcombo || 0) === 2;
+  const wind = lash ? (t < 0.1 ? ease(t / 0.1) : t < 0.18 ? 1 - ease((t - 0.1) / 0.08) : 0) : 0, strike = lash ? (t < 0.1 ? 0 : t < 0.2 ? ease((t - 0.1) / 0.1) : t < 0.32 ? 1 : 1 - ease(Math.min(1, (t - 0.32) / 0.3))) : 0;
+  const by = K('y') * H - mCr * 0.1 + drop, vy = (by - (U.py != null ? U.py : by)) / Math.max(dt, 1e-3); U.py = by;
+  U.body.position.set(K('sx') + strike * 0.06, by, 0);
+  const sq = K('sq') + 0.2 * sqL + 0.15 * mCr; U.body.scale.set(1 + sq * 0.5 - Math.min(0, sq) * 0.3, 1 - sq + (air ? 0.04 : 0), 1 + sq * 0.4);
+  const flip = moon > 0.18 && moon < 0.85 ? -Math.PI * 2 * ease((moon - 0.18) / 0.62) : 0, pitch = K('pt');
+  bxR(B.root, 0, 0, pitch - 0.18 * U.aw + flip - strike * 0.14 + wind * 0.08);
+  const br = Math.sin(wt * 2) * 0.012 * (1 - w); B.chest.scale.set(1 + br, 1 + br, 1 + br);
+  // hind legs fold in the crouch, kick straight back on the push, tuck in flight and swing through past the front paws; front legs reach out to land and sweep back under the chest
+  const hTh = K('th') + U.aw * 0.6 + 0.35 * sqL + 0.4 * mCr, hFt = K('ft') - U.aw * 0.7 - 0.3 * mCr;
+  for (const [th, ft, s] of [[B.thighL, B.footL, 1], [B.thighR, B.footR, -1]]) { bxR(th, 0, 0, hTh + (s > 0 ? 0 : 0.05 * w)); bxR(ft, 0, 0, hFt); }
+  const reachM = moon > 0 && moon < 0.6 ? 1 : 0, fAr = K('ar'), fHd = K('hd');
   for (const [ar, hd, s] of [[B.armL, B.handL, 1], [B.armR, B.handR, -1]]) {
-    bxR(ar, s * (0.1 * tuck), 0, 0.5 * tuck - 0.35 * hop + reach * 2.2 + Math.sin(wt * 2 + s) * 0.04 - 0.3 * sq); bxR(hd, 0, 0, 0.3 * tuck + reach * 0.4); }
-  // ears: flop back with speed, stream in the air, twitch now and then, boing on landing
-  const tw = (wt % 3.7) < 0.18 ? Math.sin((wt % 3.7) / 0.18 * Math.PI) : 0, boing = U.land < 0.9 ? Math.sin(U.land * 18) * Math.exp(-U.land * 4) : 0;
-  const back = (air ? 0.9 : 0.25 * hop) + clamp(sp / 5, 0, 0.3) - boing * 0.7;
-  bxR(B.earL, -0.15 - 0.08 * hop - tw * 0.25, 0, -back); bxR(B.earR, 0.15 + 0.08 * hop, 0, -back - tw * 0.15);
-  bxR(B.earLt, 0, 0, -back * 0.7 - boing * 0.5); bxR(B.earRt, 0, 0, -back * 0.7 - boing * 0.5);
-  bxR(B.head, Math.sin(wt * 0.8) * 0.05, Math.sin(wt * 0.5) * 0.15 * (sp < 0.4 ? 1 : 0), (air ? 0.18 : Math.sin(wt * 1.2) * 0.04) + sq * 0.15);
-  bxR(B.tail, 0, Math.sin(wt * 5) * 0.2, 0);
+    bxR(ar, s * 0.1 * U.aw, 0, fAr + (s > 0 ? 0.05 : -0.05) * w + 0.5 * U.aw + reachM * 2.2 + Math.sin(wt * 2 + s) * 0.04 * (1 - w) - 0.3 * sqL - strike * 0.3 + wind * 0.3);
+    bxR(hd, 0, 0, fHd + 0.3 * U.aw + reachM * 0.4); }
+  // ears: a damped spring rides the body's vertical motion (they lag up and flop back as it rises, swing forward as it lands); the lash stretches both out and whips them down in front
+  const target = clamp(vy * 0.18, -0.7, 0.7) + clamp(sp / 6, 0, 0.35) + 0.12;
+  U.ev = (U.ev || 0) + ((target - (U.ea || 0)) * 140 - (U.ev || 0) * 13) * dt; U.ea = (U.ea || 0) + U.ev * dt; if (!isFinite(U.ea)) { U.ea = 0; U.ev = 0; }
+  const tw = (wt % 3.7) < 0.18 ? Math.sin((wt % 3.7) / 0.18 * Math.PI) : 0, back = U.ea + U.aw * 0.5;
+  const eRz = back * (1 - strike) * (1 - wind) + wind * (0.95 + (hard ? 0.25 : 0)) - strike * (hard ? 2.1 : 1.85), eSt = 1 + wind * 0.15 + strike * (hard ? 2.4 : 2.1);
+  const crack = strike > 0 && t < 0.3 ? Math.sin(clamp((t - 0.1) / 0.2, 0, 1) * Math.PI) : 0, tip = back * 0.6 * (1 - strike) + wind * 0.5 + crack * 0.7 - strike * 0.25 + (U.ev || 0) * 0.02;
+  bxR(B.earL, -0.15 + 0.12 * strike - tw * 0.2 * (1 - strike), 0, eRz); bxR(B.earR, 0.15 - 0.12 * strike, 0, eRz - tw * 0.12 * (1 - strike));
+  B.earL.scale.set(1, eSt, 1); B.earR.scale.set(1, eSt, 1); bxR(B.earLt, 0, 0, tip); bxR(B.earRt, 0, 0, tip);
+  bxR(B.head, Math.sin(wt * 0.8) * 0.05 * (1 - w), Math.sin(wt * 0.5) * 0.15 * (1 - w) * (1 - strike), -pitch * 0.6 + 0.12 * U.aw + sqL * 0.15 - strike * 0.28 + wind * 0.15 + (1 - w) * Math.sin(wt * 1.2) * 0.04);
+  bxR(B.tail, 0, Math.sin(wt * 5) * 0.2 * (1 - w), K('tl'));
   const blink = (wt % 4.3) < 0.12 ? 0.1 : 1; for (const e of U.eyes) e.scale.set(1, blink, 1);
+  // effects: a jade swoosh when the ears crack, dust where they hit; little puffs from the hind paws as they push off
+  if (lash && (U.lt == null || U.lt < 0.19) && t >= 0.19) { sfx('ewhip', p.x, p.y); g.getWorldPosition(EVW); const a0 = p._ly || 0, ca = Math.cos(a0), sa = Math.sin(a0);
+    for (let k = 0; k < 14; k++) { const d = 1 + k / 13 * 3.2, sd = k % 2 ? 0.45 : -0.45; addP({ x: EVW.x + ca * d - sa * sd, y: EVW.z + sa * d + ca * sd, z: EVW.y + 0.25 + (1 - k / 13) * 0.8, vx: ca * 1.5, vy: sa * 1.5, vz: 0.6, g: 1, col: k % 3 ? '#d8fff0' : '#7fd8c4', s: 0.1, life: 0.35 }); }
+    for (let k = 0; k < (hard ? 14 : 8); k++) { const a = FXR() * 6.28; addP({ x: EVW.x + ca * 3.4, y: EVW.z + sa * 3.4, z: EVW.y + 0.1, vx: Math.cos(a) * 2.5, vy: Math.sin(a) * 2.5, vz: 1.2, g: 3, col: '#cfe8d8', s: 0.09, life: 0.45 }); } }
+  U.lt = t;
+  if (w > 0.5 && U.pf != null && U.pf < 0.13 && f >= 0.13 && FXR() < 0.8) { g.getWorldPosition(EVW); const a0 = (p._ly || 0) + Math.PI; for (let k = 0; k < 4; k++) addP({ x: EVW.x + Math.cos(a0) * 0.4, y: EVW.z + Math.sin(a0) * 0.4, z: EVW.y + 0.05, vx: Math.cos(a0 + frnd(-0.6, 0.6)) * 1.5, vy: Math.sin(a0 + frnd(-0.6, 0.6)) * 1.5, vz: 0.5, g: 2, col: '#cdbf9a', s: 0.07, life: 0.35 }); }
+  U.pf = f;
   if (moon > 0 && moon < 1 && FXR() < dt * 40) { g.getWorldPosition(EVW); addP({ x: EVW.x + frnd(-0.5, 0.5), y: EVW.z + frnd(-0.5, 0.5), z: EVW.y + 1, vx: 0, vy: 0, vz: -1, g: 0, col: '#bff8ff', s: 0.12, life: 0.6 }); }
-  if (U.land < 0.05 && FXR() < 0.5) { g.getWorldPosition(EVW); for (let k = 0; k < 8; k++) { const a = k / 8 * 6.28; addP({ x: EVW.x, y: EVW.z, z: EVW.y + 0.05, vx: Math.cos(a) * 2.5, vy: Math.sin(a) * 2.5, vz: 0.4, g: 2, col: '#d8fff0', s: 0.08, life: 0.4 }); } }
+  if (U.land < 0.05 && w < 0.3 && FXR() < 0.5) { g.getWorldPosition(EVW); for (let k = 0; k < 8; k++) { const a = k / 8 * 6.28; addP({ x: EVW.x, y: EVW.z, z: EVW.y + 0.05, vx: Math.cos(a) * 2.5, vy: Math.sin(a) * 2.5, vz: 0.4, g: 2, col: '#d8fff0', s: 0.08, life: 0.4 }); } }
 }
 
 
@@ -12443,6 +12470,7 @@ function sfx(n, x, y) {
     case 'ambush': noise(0.18, 0.4 * v, 'bandpass', 900, 400, 1); tone('sawtooth', 160 * r, 60, 0.2, 0.2 * v, 0, 900); break;
     case 'cannon': noise(0.06, 0.8 * v, 'bandpass', 1600 * r, 700, 0.8); tone('sine', 70 * r, 26, 0.55, 0.75 * v); noise(0.7, 0.75 * v, 'lowpass', 1100 * r, 60, 0.6); noise(1.1, 0.18 * v, 'lowpass', 400, 60, 0.6, 0.2); tone('triangle', 900, 700, 0.05, 0.04 * v, 0.6); break; // (round 36f) the tank / 重炮 cannon: a deep blast, a rolling tail, the breech clank
     case 'gyro': noise(0.04, 0.3 * v, 'bandpass', 2800 * r, 1800, 1.2); tone('sine', 160 * r, 80, 0.05, 0.18 * v); break; // (round 36f) the gyrocopter's gun: lighter, faster
+    case 'ewhip': noise(0.18, 0.3 * v, 'bandpass', 1200 * r, 4000, 2); noise(0.05, 0.25 * v, 'highpass', 4000, 4000, 2, 0.15); break; // (round 38d) ears lashing through the air, a crack at the end
     case 'mswing': noise(0.3, 0.32 * v, 'bandpass', 500 * r, 1500, 1.2); tone('sine', 90 * r, 140, 0.22, 0.12 * v); noise(0.06, 0.08 * v, 'highpass', 3000, 3000, 2, 0.0); break; // (round 36f) a heavy mech arm swinging (servo + air)
     case 'mslash': noise(0.2, 0.3 * v, 'bandpass', 5200 * r, 1200, 2); tone('sine', 2600 * r, 2200, 0.35, 0.05 * v, 0.02); tone('sine', 3900 * r, 3400, 0.3, 0.03 * v, 0.03); break; // (round 36f) 赤刃's 太刀: a ringing 'shing' and the cut
     case 'mclang': noise(0.06, 0.4 * v, 'bandpass', 2400 * r, 1400, 2); tone('triangle', 620 * r, 520, 0.18, 0.1 * v); tone('sine', 80 * r, 40, 0.18, 0.4 * v); break; // (round 36f) a mech blow landing: metal on meat
