@@ -9,7 +9,7 @@ const { chromium } = require('playwright');
   await p.evaluate(() => (SET.mode = 'classic', SET.map = 'town', SET.bconf = 0, $('soloBtn').click())); await p.waitForFunction(() => W && W.t > 0.5);
   // drive frames by hand at an uneven ~120 Hz: the bike / gyrocopter on screen must move every frame and keep its heading
   let s = await p.evaluate(async () => {
-    window.requestAnimationFrame = () => 0; await new Promise(r => setTimeout(r, 100));
+    window.requestAnimationFrame = () => 0; await new Promise(r => setTimeout(r, 100)); const fps0 = SET.fps; SET.fps = 0; /* (round 37b) this checks the uncapped 120 Hz path */
     const out = {}, ri = readInput;
     for (const v of [5, 1]) {
       const me = W.p[ME]; W.zs.length = 0; W.spawnQ = []; W.phase = 'day'; W.clock = 999; window.__dbg.god = true;
@@ -20,7 +20,7 @@ const { chromium } = require('playwright');
       out[v] = { still: d.filter(q => Math.abs(q) < 1e-5).length, n: d.length, ly: +(Math.max(...ly) - Math.min(...ly)).toFixed(3) };
       me.ride = false;
     }
-    window.readInput = ri; return out; });
+    window.readInput = ri; SET.fps = fps0; return out; });
   check('riding at 120 Hz: the drawn bike moves on (almost) every frame and keeps its heading (was: stood still every other frame)', s[1].still <= 6 && s[1].ly < 0.1, JSON.stringify(s[1]));
   check('riding at 120 Hz: the drawn gyrocopter moves on every frame and keeps its heading', s[5].still === 0 && s[5].ly < 0.15, JSON.stringify(s[5]));
   // explosives: smaller radius, steeper falloff, bosses take less; fewer frag grenades and launcher shells

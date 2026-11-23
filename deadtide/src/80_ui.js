@@ -81,7 +81,7 @@ function uiKeys(me) {
 }
 function toast(t, col) { const el = $('toast'); el.textContent = t; el.style.color = col || ''; el.classList.add('show'); UI.toastT = 1.6; }
 function banner(t, s, col) { $('bnT').textContent = t; $('bnT').style.color = col || ''; $('bnS').textContent = s || ''; $('banner').classList.add('show'); UI.bannerT = 3.2; }
-function uiMute() { $('muteBtn').textContent = SET.mute ? '🔇' : '🔊'; $('pMute').textContent = '声音：' + (SET.mute ? '关' : '开'); if ($('pQual') && typeof qualLabel === 'function') $('pQual').textContent = qualLabel(); }
+function uiMute() { $('muteBtn').textContent = SET.mute ? '🔇' : '🔊'; $('pMute').textContent = '声音：' + (SET.mute ? '关' : '开'); if ($('pQual') && typeof qualLabel === 'function') $('pQual').textContent = qualLabel(); if ($('pFps') && typeof fpsLabel === 'function') $('pFps').textContent = fpsLabel(); }
 /* HUD */
 function blockIcon(id) {
   const c = document.createElement('canvas'); c.width = 52; c.height = 52; const g = c.getContext('2d'), col = B[id].col || '#888';
@@ -370,7 +370,7 @@ function togglePause(force) {
   if (!$('craft').classList.contains('hidden')) { closeCraft(); return; }
   if (!$('kit').classList.contains('hidden')) { closeKit(); return; }
   el.classList.toggle('hidden', !open);
-  $('pauseT').innerHTML = (NETROLE === 'solo' ? '暂停' : '菜单（游戏继续中）') + ' <small style="font-size:11px;opacity:.6;font-weight:400">版本：' + BUILD_TAG + '</small>'; $('pQual').textContent = qualLabel(); $('pAssist').textContent = '辅助瞄准：' + assistLv().name;
+  $('pauseT').innerHTML = (NETROLE === 'solo' ? '暂停' : '菜单（游戏继续中）') + ' <small style="font-size:11px;opacity:.6;font-weight:400">版本：' + BUILD_TAG + '</small>'; $('pQual').textContent = qualLabel(); $('pFps').textContent = fpsLabel(); $('pAssist').textContent = '辅助瞄准：' + assistLv().name;
   $('pHub').classList.toggle('hidden', !HUB);
   STATE.paused = open && NETROLE === 'solo';
 }
@@ -502,6 +502,7 @@ function initUI() {
   for (const [id, close] of [['craft', () => closeCraft()], ['kit', () => closeKit()]]) $(id).addEventListener('pointerdown', e => { if (e.target !== e.currentTarget) return; e.stopPropagation(); e.preventDefault(); close(); });
   $('keys').addEventListener('pointerdown', e => { e.stopPropagation(); if (!e.target.closest('.kh')) return; SET.keysOff = !SET.keysOff; saveSet(); UI.keysK = ''; if (W && W.p[ME]) uiKeys(W.p[ME]); sfx('click'); });
   $('pAssist').onclick = () => { SET.assist = ((SET.assist == null ? 1 : SET.assist) + 1) % 3; saveSet(); $('pAssist').textContent = '辅助瞄准：' + assistLv().name; sfx('click'); };
+  $('pFps').onclick = () => { const o = [60, 30, 0], i = o.indexOf(fpsCap()); SET.fps = o[(i + 1) % 3]; saveSet(); $('pFps').textContent = fpsLabel(); sfx('click'); }; /* (round 37b) */
   $('pQual').onclick = () => { const o = ['auto', 0, 1, 2], i = o.indexOf(SET.q == null ? 'auto' : SET.q); SET.q = o[(i + 1) % 4]; if (SET.q === 'auto') SET.qa = 0; saveSet(); applyQual(); $('pQual').textContent = qualLabel(); sfx('click'); };
   $('readyBtn').onclick = () => inGame() && toggleReady();
   $('tasks').addEventListener('pointerdown', e => { e.stopPropagation(); if (UI.tkPin && !e.target.closest('.tksum,.tkhide')) return; /* (round 36f) touching the open list (to scroll it) keeps it open */ UI.tkPin = !UI.tkPin; UI.tkOpenT = 0; sfx('click'); });

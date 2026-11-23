@@ -43,6 +43,7 @@ const TK = TitleKit.create({
   sfx: () => { audioInit(); sfx('click'); },
   settings: [
     { group: '声音', key: 'mute', label: '静音', type: 'toggle', get: () => !!SET.mute, set: v => { audioInit(); setMute(v); uiMute(); } },
+    { group: '画面', key: 'fps', label: '帧率', sub: '锁 60 帧：高刷屏（120 Hz）不再多画一倍，不容易发热；30 帧最省电', type: 'seg', options: [{ v: 60, label: '60' }, { v: 30, label: '30 省电' }, { v: 0, label: '不限' }], get: () => fpsCap(), set: v => { SET.fps = v; saveSet(); uiMute(); } },
     { group: '画面', key: 'q', label: '画质', sub: '自动：太卡时会自己降一档', type: 'seg', options: [{ v: 'auto', label: '自动' }, { v: 0, label: '高' }, { v: 1, label: '中' }, { v: 2, label: '低' }], get: () => SET.q == null ? 'auto' : SET.q, set: v => { SET.q = v; if (v === 'auto') SET.qa = 0; saveSet(); applyQual(); uiMute(); } },
     { key: 'shadows', label: '阴影', type: 'toggle', get: () => !!SET.shadows, set: v => { SET.shadows = v ? 1 : 0; saveSet(); toast('阴影设置在下次进入游戏时生效'); } },
     { group: '操作', key: 'assist', label: '辅助瞄准', type: 'seg', options: ASSIST.map((a, i) => ({ v: i, label: a.name })), get: () => SET.assist == null ? 1 : SET.assist, set: v => { SET.assist = v; saveSet(); } },

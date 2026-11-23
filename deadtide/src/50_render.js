@@ -21,6 +21,9 @@ function applyQual() {
   if (typeof decoVis === 'function') decoVis();
 }
 const QNAME = ['高', '中', '低'];
+/* (round 37b) frame-rate cap: 60 by default (a 120 Hz screen otherwise draws twice as often for no real gain), 30 = power saving, 0 = no cap */
+const fpsCap = () => SET.fps == null ? 60 : +SET.fps;
+const fpsLabel = () => '帧率：' + (fpsCap() === 30 ? '30（省电）' : fpsCap() ? '60' : '不限');
 const qualLabel = () => '画质：' + (SET.q == null || SET.q === 'auto' ? '自动（' + QNAME[qualPick()] + '）' : QNAME[SET.q]);
 // auto: average frame time over 3 s of play; slower than ~30 fps steps down one level (never back up on its own)
 function qualTick(dt) {
@@ -28,7 +31,7 @@ function qualTick(dt) {
   QUAL.t += dt; if (QUAL.t < 6) return; // skip the loading hitch at the start
   QUAL.acc += dt; QUAL.n++;
   if (QUAL.acc >= 3) { const avg = QUAL.acc / QUAL.n; QUAL.acc = 0; QUAL.n = 0;
-    if (avg > 1 / 32) { SET.qa = Math.min(2, (SET.qa || 0) + 1); saveSet(); applyQual(); toast('画面有点卡，已自动调低画质（暂停菜单可改）', '#ffd27a'); } }
+    if (avg > 1.9 / (fpsCap() || 60)) { /* (round 37b) judged against the cap, so 30 fps power saving doesn't count as lag */ SET.qa = Math.min(2, (SET.qa || 0) + 1); saveSet(); applyQual(); toast('画面有点卡，已自动调低画质（暂停菜单可改）', '#ffd27a'); } }
 }
 const CAM = { rot: 0, yaw: -Math.PI / 4, zoom: 9, tx: 32, ty: 28, tz: 0, shake: 0, pitch: 0.62 };
 const VIEW = { auto: true, L: 0 };

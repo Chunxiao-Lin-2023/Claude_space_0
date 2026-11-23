@@ -1,5 +1,5 @@
 /* ================= game start, main loop, title-screen attract mode ================= */
-let ACC = 0, LAST = 0, HUD_BUILT = false, TIPS = [];
+let ACC = 0, LAST = 0, LASTF = 0, HUD_BUILT = false, TIPS = [];
 function startGame(seed, names, diff, me, mode, map) {
   TIPS.forEach(clearTimeout); TIPS = [];
   mode = MODES[mode] ? mode : (MODES[SET.mode] ? SET.mode : 'siege'); setMap(map || SET.map || MODES[mode].map);
@@ -34,6 +34,7 @@ function demoStep(dt) {
 function smoothZ(dt) { for (const p of W.p) { const z = p.rz != null ? p.rz : p.z; if (p.zv == null) p.zv = z; if (z < p.zv - 0.05) p.zv = Math.max(z, p.zv - 7 * dt); else p.zv = lerp(p.zv, z, Math.min(1, dt * 20)); } }
 function frame(now) {
   requestAnimationFrame(frame);
+  { const cap = fpsCap(); if (cap && LASTF) { const iv = 1000 / cap, el = now - LASTF; if (el < iv - 1) return; LASTF += iv; if (now - LASTF > iv) LASTF = now; } else LASTF = now; } /* (round 37b) skip screen refreshes beyond the frame-rate cap */
   const dt = Math.min(0.05, (now - (LAST || now)) / 1000); LAST = now;
   const sp = DBG && DBG.speed != null ? DBG.speed : 1;
   try {

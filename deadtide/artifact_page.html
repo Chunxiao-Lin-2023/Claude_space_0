@@ -704,6 +704,7 @@ body:not(.touch) #hTL .items{flex-wrap:wrap;gap:1px 10px}body:not(.touch):not([d
     <button id="pHelp" class="ghost">玩法和操作</button>
     <button id="pMute" class="ghost">声音：开</button>
     <button id="pQual" class="ghost">画质：自动</button>
+    <button id="pFps" class="ghost">帧率：60</button>
     <button id="pAssist" class="ghost">辅助瞄准：标准</button>
     <button id="pTitle" class="danger">存档并返回标题</button>
     <button id="pHub" class="danger hidden">返回游戏厅</button>
@@ -5111,7 +5112,7 @@ const ZT = {
   shade: { name: '隐身者', hp: 420, spd: 1.5, r: 0.3, h: 1.25, dmg: 12, bdmg: 10, cd: 0.9, sc: 1.2, look: 'walker', skin: '#50505e', elite: { k: 'cloak', cd: 6, col: '#c0c0e0', tip: '隐身摸到你身边偷袭，留意空气里的扭曲，附近炸一下就现形' } },
 };
 const ELITES = ['blinker', 'caller', 'warden', 'shade'];
-const BUILD_TAG = '第 37 轮'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
+const BUILD_TAG = '第 37 轮之二'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
 // aim assist (SET.assist): fire-button lock range (x weapon range), lock-on time before it fires, spread while auto-aimed, mouse/finger magnet
 const PORT = 1.25; // firing port: your own shots pass a wall / door you built if it is this close to you
 const ASSIST = [{ name: '关', range: 0, acq: 0, spread: 1, mag: 0 }, { name: '标准', range: 0.75, acq: 0.3, spread: 1.5, mag: 1 }, { name: '强', range: 1, acq: 0, spread: 1, mag: 1 }];
@@ -8712,6 +8713,9 @@ function applyQual() {
   if (typeof decoVis === 'function') decoVis();
 }
 const QNAME = ['高', '中', '低'];
+/* (round 37b) frame-rate cap: 60 by default (a 120 Hz screen otherwise draws twice as often for no real gain), 30 = power saving, 0 = no cap */
+const fpsCap = () => SET.fps == null ? 60 : +SET.fps;
+const fpsLabel = () => '帧率：' + (fpsCap() === 30 ? '30（省电）' : fpsCap() ? '60' : '不限');
 const qualLabel = () => '画质：' + (SET.q == null || SET.q === 'auto' ? '自动（' + QNAME[qualPick()] + '）' : QNAME[SET.q]);
 // auto: average frame time over 3 s of play; slower than ~30 fps steps down one level (never back up on its own)
 function qualTick(dt) {
@@ -8719,7 +8723,7 @@ function qualTick(dt) {
   QUAL.t += dt; if (QUAL.t < 6) return; // skip the loading hitch at the start
   QUAL.acc += dt; QUAL.n++;
   if (QUAL.acc >= 3) { const avg = QUAL.acc / QUAL.n; QUAL.acc = 0; QUAL.n = 0;
-    if (avg > 1 / 32) { SET.qa = Math.min(2, (SET.qa || 0) + 1); saveSet(); applyQual(); toast('画面有点卡，已自动调低画质（暂停菜单可改）', '#ffd27a'); } }
+    if (avg > 1.9 / (fpsCap() || 60)) { /* (round 37b) judged against the cap, so 30 fps power saving doesn't count as lag */ SET.qa = Math.min(2, (SET.qa || 0) + 1); saveSet(); applyQual(); toast('画面有点卡，已自动调低画质（暂停菜单可改）', '#ffd27a'); } }
 }
 const CAM = { rot: 0, yaw: -Math.PI / 4, zoom: 9, tx: 32, ty: 28, tz: 0, shake: 0, pitch: 0.62 };
 const VIEW = { auto: true, L: 0 };
@@ -12921,7 +12925,7 @@ function uiKeys(me) {
 }
 function toast(t, col) { const el = $('toast'); el.textContent = t; el.style.color = col || ''; el.classList.add('show'); UI.toastT = 1.6; }
 function banner(t, s, col) { $('bnT').textContent = t; $('bnT').style.color = col || ''; $('bnS').textContent = s || ''; $('banner').classList.add('show'); UI.bannerT = 3.2; }
-function uiMute() { $('muteBtn').textContent = SET.mute ? '🔇' : '🔊'; $('pMute').textContent = '声音：' + (SET.mute ? '关' : '开'); if ($('pQual') && typeof qualLabel === 'function') $('pQual').textContent = qualLabel(); }
+function uiMute() { $('muteBtn').textContent = SET.mute ? '🔇' : '🔊'; $('pMute').textContent = '声音：' + (SET.mute ? '关' : '开'); if ($('pQual') && typeof qualLabel === 'function') $('pQual').textContent = qualLabel(); if ($('pFps') && typeof fpsLabel === 'function') $('pFps').textContent = fpsLabel(); }
 /* HUD */
 function blockIcon(id) {
   const c = document.createElement('canvas'); c.width = 52; c.height = 52; const g = c.getContext('2d'), col = B[id].col || '#888';
@@ -13210,7 +13214,7 @@ function togglePause(force) {
   if (!$('craft').classList.contains('hidden')) { closeCraft(); return; }
   if (!$('kit').classList.contains('hidden')) { closeKit(); return; }
   el.classList.toggle('hidden', !open);
-  $('pauseT').innerHTML = (NETROLE === 'solo' ? '暂停' : '菜单（游戏继续中）') + ' <small style="font-size:11px;opacity:.6;font-weight:400">版本：' + BUILD_TAG + '</small>'; $('pQual').textContent = qualLabel(); $('pAssist').textContent = '辅助瞄准：' + assistLv().name;
+  $('pauseT').innerHTML = (NETROLE === 'solo' ? '暂停' : '菜单（游戏继续中）') + ' <small style="font-size:11px;opacity:.6;font-weight:400">版本：' + BUILD_TAG + '</small>'; $('pQual').textContent = qualLabel(); $('pFps').textContent = fpsLabel(); $('pAssist').textContent = '辅助瞄准：' + assistLv().name;
   $('pHub').classList.toggle('hidden', !HUB);
   STATE.paused = open && NETROLE === 'solo';
 }
@@ -13342,6 +13346,7 @@ function initUI() {
   for (const [id, close] of [['craft', () => closeCraft()], ['kit', () => closeKit()]]) $(id).addEventListener('pointerdown', e => { if (e.target !== e.currentTarget) return; e.stopPropagation(); e.preventDefault(); close(); });
   $('keys').addEventListener('pointerdown', e => { e.stopPropagation(); if (!e.target.closest('.kh')) return; SET.keysOff = !SET.keysOff; saveSet(); UI.keysK = ''; if (W && W.p[ME]) uiKeys(W.p[ME]); sfx('click'); });
   $('pAssist').onclick = () => { SET.assist = ((SET.assist == null ? 1 : SET.assist) + 1) % 3; saveSet(); $('pAssist').textContent = '辅助瞄准：' + assistLv().name; sfx('click'); };
+  $('pFps').onclick = () => { const o = [60, 30, 0], i = o.indexOf(fpsCap()); SET.fps = o[(i + 1) % 3]; saveSet(); $('pFps').textContent = fpsLabel(); sfx('click'); }; /* (round 37b) */
   $('pQual').onclick = () => { const o = ['auto', 0, 1, 2], i = o.indexOf(SET.q == null ? 'auto' : SET.q); SET.q = o[(i + 1) % 4]; if (SET.q === 'auto') SET.qa = 0; saveSet(); applyQual(); $('pQual').textContent = qualLabel(); sfx('click'); };
   $('readyBtn').onclick = () => inGame() && toggleReady();
   $('tasks').addEventListener('pointerdown', e => { e.stopPropagation(); if (UI.tkPin && !e.target.closest('.tksum,.tkhide')) return; /* (round 36f) touching the open list (to scroll it) keeps it open */ UI.tkPin = !UI.tkPin; UI.tkOpenT = 0; sfx('click'); });
@@ -13400,6 +13405,7 @@ const TK = TitleKit.create({
   sfx: () => { audioInit(); sfx('click'); },
   settings: [
     { group: '声音', key: 'mute', label: '静音', type: 'toggle', get: () => !!SET.mute, set: v => { audioInit(); setMute(v); uiMute(); } },
+    { group: '画面', key: 'fps', label: '帧率', sub: '锁 60 帧：高刷屏（120 Hz）不再多画一倍，不容易发热；30 帧最省电', type: 'seg', options: [{ v: 60, label: '60' }, { v: 30, label: '30 省电' }, { v: 0, label: '不限' }], get: () => fpsCap(), set: v => { SET.fps = v; saveSet(); uiMute(); } },
     { group: '画面', key: 'q', label: '画质', sub: '自动：太卡时会自己降一档', type: 'seg', options: [{ v: 'auto', label: '自动' }, { v: 0, label: '高' }, { v: 1, label: '中' }, { v: 2, label: '低' }], get: () => SET.q == null ? 'auto' : SET.q, set: v => { SET.q = v; if (v === 'auto') SET.qa = 0; saveSet(); applyQual(); uiMute(); } },
     { key: 'shadows', label: '阴影', type: 'toggle', get: () => !!SET.shadows, set: v => { SET.shadows = v ? 1 : 0; saveSet(); toast('阴影设置在下次进入游戏时生效'); } },
     { group: '操作', key: 'assist', label: '辅助瞄准', type: 'seg', options: ASSIST.map((a, i) => ({ v: i, label: a.name })), get: () => SET.assist == null ? 1 : SET.assist, set: v => { SET.assist = v; saveSet(); } },
@@ -13461,7 +13467,7 @@ function tkRoom() {
 
 /* ---- 90_main.js ---- */
 /* ================= game start, main loop, title-screen attract mode ================= */
-let ACC = 0, LAST = 0, HUD_BUILT = false, TIPS = [];
+let ACC = 0, LAST = 0, LASTF = 0, HUD_BUILT = false, TIPS = [];
 function startGame(seed, names, diff, me, mode, map) {
   TIPS.forEach(clearTimeout); TIPS = [];
   mode = MODES[mode] ? mode : (MODES[SET.mode] ? SET.mode : 'siege'); setMap(map || SET.map || MODES[mode].map);
@@ -13496,6 +13502,7 @@ function demoStep(dt) {
 function smoothZ(dt) { for (const p of W.p) { const z = p.rz != null ? p.rz : p.z; if (p.zv == null) p.zv = z; if (z < p.zv - 0.05) p.zv = Math.max(z, p.zv - 7 * dt); else p.zv = lerp(p.zv, z, Math.min(1, dt * 20)); } }
 function frame(now) {
   requestAnimationFrame(frame);
+  { const cap = fpsCap(); if (cap && LASTF) { const iv = 1000 / cap, el = now - LASTF; if (el < iv - 1) return; LASTF += iv; if (now - LASTF > iv) LASTF = now; } else LASTF = now; } /* (round 37b) skip screen refreshes beyond the frame-rate cap */
   const dt = Math.min(0.05, (now - (LAST || now)) / 1000); LAST = now;
   const sp = DBG && DBG.speed != null ? DBG.speed : 1;
   try {
