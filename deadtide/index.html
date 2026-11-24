@@ -5148,7 +5148,7 @@ const ZT = {
   shade: { name: '隐身者', hp: 420, spd: 1.5, r: 0.35, h: 1.6, dmg: 12, bdmg: 10, cd: 0.9, sc: 1.55, look: 'walker', skin: '#50505e', elite: { k: 'cloak', cd: 6, col: '#c0c0e0', tip: '隐身摸到你身边偷袭，留意空气里的扭曲，附近炸一下就现形' } },
 };
 const ELITES = ['blinker', 'caller', 'warden', 'shade'];
-const BUILD_TAG = '第 40 轮'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
+const BUILD_TAG = '第 40b 轮'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
 // aim assist (SET.assist): fire-button lock range (x weapon range), lock-on time before it fires, spread while auto-aimed, mouse/finger magnet
 const PORT = 1.25; // firing port: your own shots pass a wall / door you built if it is this close to you
 const ASSIST = [{ name: '关', range: 0, acq: 0, spread: 1, mag: 0 }, { name: '标准', range: 0.75, acq: 0.3, spread: 1.5, mag: 1 }, { name: '强', range: 1, acq: 0, spread: 1, mag: 1 }];
@@ -11797,50 +11797,66 @@ function mechUpgBuild(J) {
 }
 function mechUpgTick(J, p, dt, sp, mx) { if (!J.upgA || !J._ul) return; for (const f of J.upgA) if (J._ul > f.lv) f(p, dt, sp, mx || 1); }
 /* ================= (round 40) fusion modules: what the second mech turns into on the body ================= */
-// Built once per (body, module kind) and kept on the body's model; sized from the body's bounding box. tick(F, body p, dt, gunner aim, since the gunner's last shot)
+// Built once per (body, module kind) and kept on the body's model; fitted to its chest, shoulders and head (round 40b). tick(F, body p, dt, gunner aim, since the gunner's last shot)
 function fuseModBuild(mm, kp) {
-  const J = mm.userData.J; mm.updateMatrixWorld(true); const s0 = mm.scale.x; const bb = new THREE.Box3().setFromObject(J.root).applyMatrix4(mm.matrixWorld.clone().invert()), H = bb.max.y - bb.min.y, HW = Math.max(bb.max.z, -bb.min.z), BX = bb.min.x;
+  /* (round 40b) fitted to the body: everything is laid out in the chest's own frame (J.ch) from measured anchors — the shoulder joints,
+     the chest box without arms / head / upgrade parts, the head box — so plates sit on the shoulders, the wings and the rider come off
+     the real back, and the cannons sit on the real shoulder line whatever the body's shape; it also leans and turns with the torso */
+  const J = mm.userData.J, ch = J.ch; mm.updateMatrixWorld(true);
+  const upg = J.upg ? [].concat(...J.upg) : [], CB = mechUpgBox(ch, [J.head, ...J.arms.map(a => a.sh), ...upg]);
+  const inv = new THREE.Matrix4().copy(ch.matrixWorld).invert(), shs = J.arms.map(a => new THREE.Vector3().setFromMatrixPosition(a.sh.matrixWorld).applyMatrix4(inv));
+  const SZ = shs.length ? Math.max(...shs.map(q => Math.abs(q.z))) : CB.max.z, SY = shs.length ? shs.reduce((t, q) => t + q.y, 0) / shs.length : CB.max.y * 0.85, SX = shs.length ? shs.reduce((t, q) => t + q.x, 0) / shs.length : 0;
+  const BACK = Math.min(CB.min.x, SX - 0.12), FRONT = Math.max(CB.max.x, SX + 0.12), BOT = CB.min.y, A = (J.D && J.D.arm) || 1;
+  const hb = mechUpgBox(J.head, upg), hs = J.head.scale.x || 1, hbC = mechUpgBox(ch, [...ch.children.filter(o => o !== J.head), ...upg]), HZ = Math.max(hbC.max.z, -hbC.min.z); /* the head's half-width in the chest frame (工蜂's is huge) */
+  const old = Object.values(mm.userData.fmods || {}), fb = mechUpgBox(J.root, [...upg, ...old]), HW = Math.max(fb.max.z, -fb.min.z, 0.5) * J.root.scale.x; /* side-to-side only (a katana sticking out front would blow the halo up), without other fusions' parts */
   const Lm = (c, e) => new THREE.MeshLambertMaterial({ color: c, emissive: e || '#000000' }), gold = Lm('#f2c232', '#6a4600'), glow = c => new THREE.MeshBasicMaterial({ color: c });
   const add2 = c => new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
-  const g = new THREE.Group(); g.name = 'fmod' + kp; const P = (par, geo, mt, x, y, z, rx, ry, rz) => { const o = new THREE.Mesh(geo, mt); o.position.set(x || 0, y || 0, z || 0); o.rotation.set(rx || 0, ry || 0, rz || 0); o.castShadow = !mt.transparent; par.add(o); return o; };
+  const g = new THREE.Group(); g.name = 'fmod' + kp; ch.add(g); const ex = []; g.userData.ex = ex;
+  const P = (par, geo, mt, x, y, z, rx, ry, rz) => { const o = new THREE.Mesh(geo, mt); o.position.set(x || 0, y || 0, z || 0); o.rotation.set(rx || 0, ry || 0, rz || 0); o.castShadow = !mt.transparent; par.add(o); return o; };
   const G2 = (par, x, y, z) => { const q = new THREE.Group(); q.position.set(x || 0, y || 0, z || 0); par.add(q); return q; };
   const B = (w, h, d) => new THREE.BoxGeometry(w, h, d), Cy = (r1, r2, h, s) => new THREE.CylinderGeometry(r1, r2, h, s || 14);
   let tick = () => {};
-  const yawTo = (F, p, gA) => -angDiff(p._ly != null ? p._ly : gA, gA);
-  if (kp === 1) { // 疾风 → a little hovering gun that circles the body and turns to whatever the gunner aims at
-    const mini = mkMech(1); mini.scale.setScalar(0.42); const o = G2(g, 0, H * 0.7, 0); o.add(mini); P(o, new THREE.TorusGeometry(0.45, 0.04, 6, 24), add2('#7fe8ff'), 0, -0.05, 0, Math.PI / 2);
-    tick = (F, p, dt, gA, gT) => { const a = W.t * 0.9, R = HW * 0.75 + 0.45; o.position.set(Math.cos(a) * R * 0.7 - 0.1, H * 0.62 + Math.sin(W.t * 2.2) * 0.1, Math.sin(a) * R); mini.rotation.y = yawTo(F, p, gA); mini.position.x = gT < 0.12 ? -0.12 : 0; };
-  } else if (kp === 2) { // 赤刃 → red lacquered plates on the shoulders + a giant blade floating at the back that slashes for the gunner
-    const red = Lm('#a8262a'), lac = Lm('#1d1416');
-    for (const s of [-1, 1]) { const sp = G2(g, 0, H * 0.72, s * (HW * 0.72 + 0.05)); for (let q = 0; q < 3; q++) { P(sp, B(0.75 - q * 0.08, 0.2, 0.08), q % 2 ? lac : red, 0, -q * 0.17, s * q * 0.03, s * 0.35, 0, 0); P(sp, B(0.76 - q * 0.08, 0.03, 0.09), gold, 0, -q * 0.17 - 0.1, s * q * 0.03, s * 0.35); } }
-    P(g, new THREE.TorusGeometry(H * 0.18, 0.04, 6, 20, Math.PI * 1.15), gold, 0.1, H * 0.98, 0, 0, Math.PI / 2, Math.PI * 0.93);
-    const bl = G2(g, BX + 0.05, H * 0.6, 0), sw = G2(bl, 0, 0, 0); const L = H * 0.62;
-    P(sw, B(L, 0.22, 0.04), Lm('#e8ecf0', '#203040'), L / 2 + 0.25, 0, 0); P(sw, B(L, 0.04, 0.05), glow('#ffa040'), L / 2 + 0.25, -0.12, 0); P(sw, new THREE.ConeGeometry(0.11, 0.25, 4).rotateZ(-Math.PI / 2), Lm('#e8ecf0', '#203040'), L + 0.37, 0, 0); P(sw, B(0.06, 0.3, 0.2), gold, 0.2, 0, 0); P(sw, B(0.22, 0.07, 0.07), lac, 0.05, 0, 0); P(sw, B(L * 0.9, 0.22, 0.02), add2('#ff5a1a'), L / 2 + 0.3, -0.12, 0);
-    tick = (F, p, dt, gA, gT) => { const y = yawTo(F, p, gA), k = gT < 0.35 ? gT / 0.35 : 1, sl = gT < 0.35; bl.rotation.y = sl ? y : 0; bl.position.y = H * 0.6 + Math.sin(W.t * 2) * 0.06; if (sl) sw.rotation.set(0, lerp(-1.1, 1.1, ease(k)), lerp(0.9, -0.4, ease(k))); else sw.rotation.set(0, -Math.PI / 2, Math.PI / 4 + Math.sin(W.t * 1.5) * 0.04); }; /* at rest it hangs diagonally across the back, flat side out; it swings toward the gunner's aim to cut */
-  } else if (kp === 3) { // 工蜂 → rides piggyback on the body as a backpack launcher
-    const mini = mkMech(3); mini.scale.setScalar(0.5); const o = G2(g, BX - 0.15, H * 0.45, 0); o.add(mini); mini.rotation.y = Math.PI;
-    const tb = G2(o, -0.1, 1.15, 0); P(tb, Cy(0.13, 0.13, 0.8).rotateZ(Math.PI / 2), Lm('#8fd6c4'), 0.25, 0, 0); P(tb, Cy(0.15, 0.15, 0.08).rotateZ(Math.PI / 2), Lm('#5b4a3a'), 0.62, 0, 0); P(tb, new THREE.CircleGeometry(0.1, 14), glow('#9ff0e0'), 0.665, 0, 0, 0, Math.PI / 2);
-    tick = (F, p, dt, gA, gT) => { tb.rotation.y = yawTo(F, p, gA); tb.rotation.z = 0.35; tb.position.x = -0.1 - (gT < 0.15 ? 0.12 : 0); o.position.y = H * 0.45 + Math.sin(W.t * 3) * 0.03; };
-  } else if (kp === 4) { // 铁卫 → heavy hazard-striped plating + a tower shield that slams forward for the gunner
-    const gr = Lm('#55606c'), dk = Lm('#2c333b'), yl = Lm('#e2b93b', '#2a1c00');
-    for (const s of [-1, 1]) { const sp = G2(g, 0, H * 0.78, s * (HW * 0.7 + 0.05)); P(sp, new THREE.SphereGeometry(0.3, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2), gr, 0, 0, 0, 0, 0, s * 0.3).scale.set(1.2, 0.8, 1); P(sp, B(0.66, 0.07, 0.38), yl, 0, 0.04, s * 0.05, 0, 0, s * 0.3); P(sp, B(0.68, 0.04, 0.4), dk, 0, 0.08, s * 0.05, 0, 0, s * 0.3); }
-    P(g, B(0.15, H * 0.3, HW * 1.4), gr, 0.42, H * 0.6, 0); P(g, B(0.16, 0.05, HW * 1.42), yl, 0.43, H * 0.72, 0);
-    const sh = G2(g, 0.25, H * 0.45, -(HW * 0.75 + 0.25)); P(sh, B(0.12, H * 0.46, H * 0.3), gr, 0, 0, 0); P(sh, B(0.13, H * 0.38, H * 0.22), dk, 0.01, 0, 0); P(sh, B(0.14, 0.07, H * 0.3), yl, 0, H * 0.21, 0); P(sh, B(0.14, 0.07, H * 0.3), yl, 0, -H * 0.21, 0); P(sh, new THREE.CircleGeometry(0.15, 6), glow('#5fe0ff'), 0.09, 0, 0, 0, Math.PI / 2);
-    tick = (F, p, dt, gA, gT) => { const k = gT < 0.3 ? Math.sin(gT / 0.3 * Math.PI) : 0; sh.position.x = 0.3 + k * 0.7; sh.rotation.y = -k * 0.6; };
-  } else if (kp === 5) { // 苍隼 → two big wings on the back with jets and rocket rails under them
-    const wh = Lm('#dfe6ee'), bl = Lm('#3a5a7a'), lb = Lm('#59b8ff', '#0a2a40'), wings = [];
-    for (const s of [-1, 1]) { const w = G2(g, BX + 0.1, H * 0.78, s * 0.25); const span = H * 0.62; P(w, B(0.7, 0.06, span), wh, -0.1, 0, s * span / 2, 0, 0, 0); P(w, B(0.4, 0.07, span * 0.8), bl, -0.4, 0.01, s * span * 0.45); P(w, B(0.72, 0.065, 0.12), lb, -0.1, 0.01, s * span * 0.98);
-      P(w, Cy(0.11, 0.14, 0.5).rotateZ(Math.PI / 2), Lm('#8a9198'), -0.2, -0.12, s * span * 0.35); P(w, new THREE.CircleGeometry(0.1, 12), glow('#9fe8ff'), -0.46, -0.12, s * span * 0.35, 0, -Math.PI / 2);
-      for (let q = 0; q < 3; q++) { P(w, Cy(0.035, 0.035, 0.4).rotateZ(Math.PI / 2), wh, 0.05, -0.09, s * (span * 0.55 + q * 0.12)); P(w, new THREE.ConeGeometry(0.035, 0.1, 8).rotateZ(-Math.PI / 2), Lm('#d83a2a'), 0.3, -0.09, s * (span * 0.55 + q * 0.12)); }
-      const fl = P(w, new THREE.ConeGeometry(0.09, 0.6, 10).rotateZ(Math.PI / 2).translate(-0.3, 0, 0), add2('#7fd8ff'), -0.46, -0.12, s * span * 0.35); wings.push({ w, s, fl }); }
-    tick = (F, p, dt, gA, gT) => { const sp = clamp((p._spd || 0) / 3, 0, 1); for (const { w, s, fl } of wings) { w.rotation.x = s * (0.55 + 0.06 * Math.sin(W.t * 2.5)); w.rotation.y = s * 0.35; w.rotation.z = -0.15; /* swept up and back */ fl.scale.set(0.6 + sp * 0.9 + (gT < 0.1 ? 0.6 : 0), 1, 1); } };
-  } else if (kp === 6) { // 重炮 → two long cannons on the shoulders that train on the gunner's aim and recoil
-    const ol = Lm('#5a6b3a'), dk = Lm('#2e3622'), st = Lm('#8a9198'), guns = [];
-    for (const s of [-1, 1]) { const b = G2(g, -0.1, H * 0.95, s * (HW * 0.7)); P(b, B(0.5, 0.3, 0.32), dk, 0, 0, 0); const gn = G2(b, 0.1, 0.05, 0); P(gn, Cy(0.11, 0.11, 0.5).rotateZ(Math.PI / 2), ol, 0.2, 0, 0); P(gn, Cy(0.075, 0.075, H * 0.55).rotateZ(Math.PI / 2), st, 0.45 + H * 0.27, 0, 0); P(gn, Cy(0.12, 0.12, 0.2).rotateZ(Math.PI / 2), Lm('#18191b'), 0.45 + H * 0.55, 0, 0); P(gn, new THREE.CircleGeometry(0.06, 12), glow('#ff9a3a'), 0.56 + H * 0.55, 0, 0, 0, Math.PI / 2); guns.push({ b, gn, s }); }
-    tick = (F, p, dt, gA, gT) => { const y = yawTo(F, p, gA); for (const { b, gn, s } of guns) { b.rotation.y = clamp(y, -1.2, 1.2); gn.position.x = 0.1 - (gT < 0.25 ? 0.25 * (1 - gT / 0.25) * (s > 0 ? 1 : (gT > 0.08 ? 1 : 0)) : 0); } };
+  const yawTo = (F, p, gA) => -angDiff(p._ly != null ? p._ly : gA, gA) - (J.pel.rotation.y + J.tor.rotation.y); /* relative to where the chest faces now */
+  if (kp === 1) { // 疾风 → a little gun drone that hovers around the body at head height and turns to whatever the gunner aims at
+    const mini = mkMech(1); mini.scale.setScalar(0.4); const o = G2(g, 0, SY + 0.2, 0); o.add(mini);
+    P(o, new THREE.TorusGeometry(0.22, 0.03, 6, 20), add2('#7fe8ff'), 0, -0.04, 0, Math.PI / 2); const jet = P(o, new THREE.ConeGeometry(0.1, 0.34, 10).rotateX(Math.PI), add2('#7fd8ff'), 0, -0.2, 0);
+    tick = (F, p, dt, gA, gT) => { const a = W.t * 0.8, R = SZ + 0.62; o.position.set(SX + Math.cos(a) * R * 0.8, SY + 0.22 + Math.sin(W.t * 2.2) * 0.07, Math.sin(a) * R); mini.rotation.y = yawTo(F, p, gA); mini.position.x = gT < 0.12 ? -0.1 : 0; jet.scale.y = 0.8 + Math.sin(W.t * 23) * 0.2; };
+  } else if (kp === 2) { // 赤刃 → red lacquered sode hanging off each shoulder, a gold crescent on the helmet, a greatsword across the back that slashes for the gunner
+    const red = Lm('#a8262a'), lac = Lm('#1d1416'), wd = 0.5 * A;
+    for (const s of [-1, 1]) { const sp = G2(g, SX, SY + 0.1, s * (SZ + 0.16 * A)); sp.rotation.x = -s * 0.22; P(sp, B(wd + 0.02, 0.06, 0.13), red, 0, 0.03, -s * 0.03); P(sp, B(wd + 0.03, 0.02, 0.135), gold, 0, 0.065, -s * 0.03);
+      for (let q = 0; q < 3; q++) { P(sp, B(wd - q * 0.03, 0.15, 0.05), q % 2 ? lac : red, 0, -0.06 - q * 0.135, s * q * 0.035); P(sp, B(wd - q * 0.03 + 0.01, 0.022, 0.06), gold, 0, -0.13 - q * 0.135, s * q * 0.035); } }
+    const hw = Math.max(0.12, (hb.max.z - hb.min.z) / 2), cr = G2(J.head, hb.max.x - 0.04 / hs, hb.max.y - 0.06 / hs, 0); ex.push(cr);
+    P(cr, new THREE.TorusGeometry(hw * 1.25, 0.03 / hs, 6, 22, Math.PI * 0.9), gold, 0, hw * 0.25, 0, 0, Math.PI / 2, Math.PI * 1.05); P(cr, B(0.05 / hs, 0.09 / hs, 0.07 / hs), gold, 0, 0, 0);
+    const bl = G2(g, BACK - 0.08, SY - 0.12, 0), sw = G2(bl, 0, 0, 0); const L = clamp((SY - BOT) * 1.35 + 0.3, 1.0, 1.45);
+    P(sw, B(L, 0.2, 0.04), Lm('#e8ecf0', '#203040'), L / 2 + 0.25, 0, 0); P(sw, B(L, 0.04, 0.05), glow('#ffa040'), L / 2 + 0.25, -0.11, 0); P(sw, new THREE.ConeGeometry(0.1, 0.24, 4).rotateZ(-Math.PI / 2), Lm('#e8ecf0', '#203040'), L + 0.37, 0, 0); P(sw, B(0.06, 0.3, 0.2), gold, 0.2, 0, 0); P(sw, B(0.22, 0.07, 0.07), lac, 0.05, 0, 0); P(sw, B(L * 0.9, 0.2, 0.02), add2('#ff5a1a'), L / 2 + 0.3, -0.11, 0);
+    tick = (F, p, dt, gA, gT) => { const y = yawTo(F, p, gA), k = gT < 0.35 ? gT / 0.35 : 1, sl = gT < 0.35; bl.rotation.y = sl ? y : 0; bl.position.set(sl ? SX : BACK - 0.08, SY - 0.12 + Math.sin(W.t * 2) * 0.04, 0); if (sl) sw.rotation.set(0, lerp(-1.1, 1.1, ease(k)), lerp(0.9, -0.4, ease(k))); else sw.rotation.set(0, -Math.PI / 2, Math.PI / 4 + Math.sin(W.t * 1.5) * 0.03); }; /* at rest it hangs diagonally across the back, flat side out; it swings toward the gunner's aim to cut */
+  } else if (kp === 3) { // 工蜂 → rides piggyback (facing backwards) as a backpack launcher, head peeking over the shoulders
+    const mini = mkMech(3), ms = 0.46; mini.updateMatrixWorld(true); const msy = new THREE.Vector3().setFromMatrixPosition(mini.userData.J.arms[0].sh.matrixWorld).y * ms; mini.scale.setScalar(ms); const o = G2(g, BACK - 0.2, SY + 0.04 - msy, 0); /* its shoulders just under the body's, the big head over them */ o.add(mini); mini.rotation.y = Math.PI;
+    const tb = G2(o, 0, msy + 0.05, 0.36); P(tb, Cy(0.12, 0.12, 0.7).rotateZ(Math.PI / 2), Lm('#8fd6c4'), 0.2, 0, 0); P(tb, Cy(0.14, 0.14, 0.08).rotateZ(Math.PI / 2), Lm('#5b4a3a'), 0.52, 0, 0); P(tb, new THREE.CircleGeometry(0.09, 14), glow('#9ff0e0'), 0.565, 0, 0, 0, Math.PI / 2);
+    const y0 = o.position.y; tick = (F, p, dt, gA, gT) => { tb.rotation.y = yawTo(F, p, gA); tb.rotation.z = 0.3; tb.position.x = gT < 0.15 ? -0.1 : 0; o.position.y = y0 + Math.sin(W.t * 3) * 0.025; };
+  } else if (kp === 4) { // 铁卫 → heavy hazard-striped pauldrons + a chest plate + a tower shield on the left that slams forward for the gunner
+    const gr = Lm('#8794a1'), dk = Lm('#4a5560'), yl = Lm('#e2b93b', '#2a1c00');
+    for (const s of [-1, 1]) { const sp = G2(g, SX, SY + 0.12, s * (SZ + 0.05)); sp.rotation.x = -s * 0.25; P(sp, new THREE.SphereGeometry(0.27 * A, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2), gr, 0, 0, 0).scale.set(1.25, 0.75, 1.05); P(sp, Cy(0.28 * A, 0.3 * A, 0.07, 18), yl, 0, -0.02, 0).scale.set(1.25, 1, 1.05); P(sp, Cy(0.3 * A, 0.31 * A, 0.035, 18), dk, 0, -0.06, 0).scale.set(1.25, 1, 1.05); }
+    const cw = Math.max(0.2, Math.min(CB.max.z, SZ - 0.1)), chh = Math.max(0.3, (SY - BOT) * 0.62); P(g, B(0.07, chh, cw * 1.5), gr, FRONT + 0.03, SY - chh / 2 - 0.02, 0); P(g, B(0.075, 0.05, cw * 1.52), yl, FRONT + 0.035, SY - 0.06, 0); P(g, B(0.075, 0.05, cw * 1.52), yl, FRONT + 0.035, SY - chh + 0.05, 0);
+    const h = clamp((SY - BOT) * 1.5, 0.85, 1.15), w = h * 0.6, sh = G2(g, 0.2, SY - 0.42, -(SZ + 0.3 * A + 0.1)); P(sh, B(0.1, h, w), gr, 0, 0, 0); P(sh, B(0.11, h * 0.8, w * 0.72), dk, 0.01, 0, 0);
+    for (const t of [-1, 1]) P(sh, B(0.12, 0.06, w), yl, 0, t * h * 0.44, 0); P(sh, new THREE.CircleGeometry(0.12, 6), glow('#5fe0ff'), 0.07, h * 0.08, 0, 0, Math.PI / 2); P(sh, B(0.12, 0.04, w * 0.5), gold, 0.02, -h * 0.12, 0);
+    tick = (F, p, dt, gA, gT) => { const k = gT < 0.3 ? Math.sin(gT / 0.3 * Math.PI) : 0; sh.position.x = 0.2 + k * 0.6; sh.rotation.y = -k * 0.5; };
+  } else if (kp === 5) { // 苍隼 → two big wings off the upper back, swept up and back, jets and rocket rails underneath
+    const wh = Lm('#dfe6ee'), bl = Lm('#3a5a7a'), lb = Lm('#59b8ff', '#0a2a40'), wings = [], span = clamp(SZ * 2.1, 1.05, 1.45);
+    P(g, B(0.16, 0.42, SZ * 0.9), bl, BACK - 0.04, SY + 0.08, 0); /* the wing root on the back */
+    for (const s of [-1, 1]) { const w = G2(g, BACK - 0.02, SY + 0.26, s * 0.18); /* (round 40b) chord centred on the root so the wing doesn't trail far behind and read low */
+      P(w, B(0.56, 0.06, span), wh, 0.08, 0, s * span / 2); P(w, B(0.32, 0.07, span * 0.8), bl, -0.16, 0.01, s * span * 0.45); P(w, B(0.58, 0.065, 0.1), lb, 0.08, 0.01, s * span * 0.98);
+      P(w, Cy(0.1, 0.13, 0.46).rotateZ(Math.PI / 2), Lm('#8a9198'), -0.02, -0.11, s * span * 0.32); P(w, new THREE.CircleGeometry(0.09, 12), glow('#9fe8ff'), -0.26, -0.11, s * span * 0.32, 0, -Math.PI / 2);
+      for (let q = 0; q < 3; q++) { P(w, Cy(0.032, 0.032, 0.36).rotateZ(Math.PI / 2), wh, 0.18, -0.08, s * (span * 0.55 + q * 0.11)); P(w, new THREE.ConeGeometry(0.032, 0.09, 8).rotateZ(-Math.PI / 2), Lm('#d83a2a'), 0.4, -0.08, s * (span * 0.55 + q * 0.11)); }
+      const fl = P(w, new THREE.ConeGeometry(0.08, 0.55, 10).rotateZ(Math.PI / 2).translate(-0.27, 0, 0), add2('#7fd8ff'), -0.26, -0.11, s * span * 0.32); wings.push({ w, s, fl }); }
+    tick = (F, p, dt, gA, gT) => { const sp = clamp((p._spd || 0) / 3, 0, 1); for (const { w, s, fl } of wings) { w.rotation.set(-s * (0.62 + 0.05 * Math.sin(W.t * 2.5)), -s * 0.22, 0.08, 'YXZ'); /* raised into a V and swept back */ fl.scale.set(0.6 + sp * 0.9 + (gT < 0.1 ? 0.6 : 0), 1, 1); } };
+  } else if (kp === 6) { // 重炮 → two cannons sitting on the shoulder line that train on the gunner's aim and recoil
+    const ol = Lm('#5a6b3a'), dk = Lm('#2e3622'), st = Lm('#8a9198'), guns = [], bz = Math.max(0.3, SZ * 0.8, HZ + 0.24), L = 0.85; /* clear of the head so the barrels don't run through it */
+    for (const s of [-1, 1]) { if (bz > SZ * 0.9) P(g, B(0.14, 0.1, bz - SZ * 0.5), dk, (SX + BACK) / 2, SY + 0.12, s * (bz + SZ * 0.5) / 2); /* a mounting arm out from the shoulder */ const b = G2(g, (SX + BACK) / 2, SY + 0.24, s * bz); P(b, B(0.46, 0.26, 0.3), dk, 0, 0, 0); P(b, B(0.3, 0.12, 0.2), ol, 0, -0.17, 0); const gn = G2(b, 0.1, 0.05, 0); P(gn, Cy(0.1, 0.1, 0.42).rotateZ(Math.PI / 2), ol, 0.18, 0, 0); P(gn, Cy(0.065, 0.065, L).rotateZ(Math.PI / 2), st, 0.38 + L / 2, 0, 0); P(gn, Cy(0.1, 0.1, 0.16).rotateZ(Math.PI / 2), Lm('#18191b'), 0.38 + L, 0, 0); P(gn, new THREE.CircleGeometry(0.05, 12), glow('#ff9a3a'), 0.465 + L, 0, 0, 0, Math.PI / 2); guns.push({ b, gn, s }); }
+    tick = (F, p, dt, gA, gT) => { const y = yawTo(F, p, gA); for (const { b, gn, s } of guns) { b.rotation.y = clamp(y, -1.2, 1.2); gn.position.x = 0.1 - (gT < 0.25 ? 0.22 * (1 - gT / 0.25) * (s > 0 ? 1 : (gT > 0.08 ? 1 : 0)) : 0); } };
   }
-  const ring = P(g, new THREE.RingGeometry(HW + 0.5, HW + 0.7, 40), add2('#ffd040'), 0, 0.05, 0, -Math.PI / 2); // the fusion halo at its feet
-  g.userData.tick = (F, p, dt, gA, gT) => { tick(F, p, dt, gA, gT); ring.material.opacity = 0.35 + 0.2 * Math.sin(W.t * 4); ring.rotation.z = W.t * 0.6; };
+  const ring = P(mm, new THREE.RingGeometry(HW + 0.1, HW + 0.22, 40), add2('#ffd040'), 0, 0.05, 0, -Math.PI / 2); ex.push(ring); // the fusion halo at its feet
+  g.userData.tick = (F, p, dt, gA, gT) => { tick(F, p, dt, gA, gT); ring.material.opacity = 0.3 + 0.18 * Math.sin(W.t * 4); ring.rotation.z = W.t * 0.6; };
   return g;
 }
 // per frame, on the body's model: size it up, show this fusion's module, aim it with the gunner
@@ -11849,8 +11865,8 @@ function fuseDraw(p, m, dt) {
   const on = !!(F && F.a === p.i && J.k === F.kb), sc = on ? (F.same ? FUS.sameScale : FUS.scale) : 1, cur = mm.userData.fsc || 1;
   const s2 = lerp(cur, sc, Math.min(1, dt * 4)); mm.userData.fsc = Math.abs(s2 - sc) < 0.005 ? sc : s2;
   const mods = mm.userData.fmods || (mm.userData.fmods = {});
-  for (const k in mods) mods[k].visible = on && +k === F.kp;
-  if (!on) return; const md = mods[F.kp] || (mods[F.kp] = (() => { const g = fuseModBuild(mm, F.kp); mm.add(g); return g; })());
+  for (const k in mods) { const v = on && +k === F.kp; mods[k].visible = v; for (const o of mods[k].userData.ex) o.visible = v; }
+  if (!on) return; const md = mods[F.kp] || (mods[F.kp] = fuseModBuild(mm, F.kp)); /* (round 40b) it attaches itself: the chest, the helmet, the feet */
   const G = W.p[F.g], gT = W.t - (RND.fgT != null ? RND.fgT : -9); md.userData.tick(F, p, dt, G ? G.aim : p.aim, gT);
 }
 
