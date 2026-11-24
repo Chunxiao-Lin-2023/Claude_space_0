@@ -30,8 +30,31 @@ const { chromium } = require('playwright');
     for (const lv of [0, 2, 3]) { W.wlv[2] = lv; me.mag[2] = 30; const h0 = z.hp; let shot = null;
       const fx0 = window.fxEvent; window.fxEvent = e => { if (e.k === 'shot' && e.w === 2) shot = e; return fx0(e); }; try { fireWeapon(me, 2); } finally { window.fxEvent = fx0; } out['l' + lv] = [shot ? shot.e.length : -1, Math.round(h0 - z.hp)]; }
     W.wlv[6] = 2; W.proj.length = 0; me.mag[6] = 5; fireWeapon(me, 6); out.gl = W.proj.filter(b => b.k === 'gl').map(b => b.dm).join(','); W.wlv[6] = 0; W.wlv[2] = 0; W.zs.length = 0; return out; });
-  check('Lv2 fires two rounds side by side, Lv3 three; total damage ×1.16 / ×1.26 of one round', s.l0[0] === 1 && s.l2[0] === 2 && s.l3[0] === 3 && Math.abs(s.l2[1] / s.l0[1] - 1.16) < 0.12 && Math.abs(s.l3[1] / s.l0[1] - 1.26) < 0.15, JSON.stringify(s));
-  check('the launcher fires one shell per barrel at ×0.58', s.gl === '0.58,0.58', s.gl);
+  check('Lv2 双持 fires two rounds (×0.6 each = ×1.2); Lv3 rifle adds the shoulder MG (2 × 0.55 + 0.45)', s.l0[0] === 1 && s.l2[0] === 2 && s.l3[0] === 3 && Math.abs(s.l2[1] / s.l0[1] - 1.2) < 0.12 && Math.abs(s.l3[1] / s.l0[1] - 1.55) < 0.18, JSON.stringify(s));
+  check('the launcher fires one shell per hand at ×0.6', s.gl === '0.6,0.6', s.gl);
+  // (39c) the Lv3 final forms
+  s = await S(() => { const me = W.p[ME], out = {}; me.ride = false; me.down = false; W.zs.length = 0; let an = 0, ok = false;
+    const x0 = me.x, y0 = me.y, z0 = me.z, L0 = me.L;
+    for (let n = 0; n < 3000 && !ok; n++) { me.x = 20 + Math.floor(Math.random() * (MW - 40)) + 0.5; me.y = 20 + Math.floor(Math.random() * (MH - 40)) + 0.5; me.L = 0; me.z = surfZ(me.x, me.y, 0); if (blkAt(Math.floor(me.x), Math.floor(me.y), 0)) continue;
+    for (let k = 0; k < 16 && !ok; k++) { an = k / 16 * Math.PI * 2; const [sx, sy, sz] = shoulder(me); ok = rayWorld(sx, sy, sz, Math.cos(an), Math.sin(an), 0, 14, { lean: 0 }).d >= 14 && rayWorld(sx, sy, sz + 1, Math.cos(an), Math.sin(an), 0, 14, { lean: 0 }).d >= 14; } }
+    out.open = ok; me.aim = an; const at = d => ({ x: me.x + Math.cos(an) * d, y: me.y + Math.sin(an) * d });
+    const zl = []; for (const d of [3, 5, 7, 9]) { const z = spawnZombie('walker', 0); Object.assign(z, at(d)); z.L = me.L; z.z = me.z; z.sleep = false; z.hp = z.maxHp = 1e5; zl.push(z); }
+    me.aimPt = { ...at(10), z: me.z + 0.9 }; window.__dbg.aimAt = () => me.aimPt;
+    const fire = (wi) => { const ev = []; const fx0 = window.fxEvent; window.fxEvent = e => { if (e.k === 'shot') ev.push(e); return fx0(e); }; try { me.mag[wi] = 50; fireWeapon(me, wi); } finally { window.fxEvent = fx0; } return ev; };
+    W.wlv = W.wlv.map(() => 3);
+    let ev = fire(0); out.pistol = ev[0].e.length + ':' + ev[0].e.filter(q => q.length === 7).length;
+    let h0 = zl.map(z => z.hp); ev = fire(3); out.rail = zl.map((z, i) => h0[i] > z.hp ? 1 : 0).join('') + (ev[0].rl ? 'R' : '');
+    W.zs.length = 0; ev = fire(4); out.split = ev[0].e.length;
+    const far = spawnZombie('walker', 0); Object.assign(far, at(10)); far.L = me.L; far.z = me.z; far.hp = far.maxHp = 1e5; const fh = far.hp; W.evz = []; me._fwZ = -9; ev = fire(5); out.whip = [Math.round(fh - far.hp), ev[0].fl ? ev[0].fl.length : 0, W.evz.length].join('/');
+    W.proj.length = 0; fire(6); out.rk = W.proj.filter(b => b.rk).length + '/' + W.proj.filter(b => !b.rk).length;
+    W.zs.length = 0; const z2 = spawnZombie('walker', 0); Object.assign(z2, at(5)); z2.L = me.L; z2.z = me.z; z2.hp = z2.maxHp = 1e5; me.wpn = 0; me._fT = W.t - 2; me._drT = 0; const evs = []; const fx0 = window.fxEvent; window.fxEvent = e => { if (e.k === 'shot') evs.push(e); return fx0(e); }; try { for (let i = 0; i < 60; i++) droneTick(me, 1 / 60); } finally { window.fxEvent = fx0; } out.drone = evs.filter(e => e.dr).length + ':' + (z2.hp < 1e5 ? 'hit' : 'miss');
+    W.wlv = W.wlv.map(() => 0); W.zs.length = 0; me.x = x0; me.y = y0; me.z = z0; me.L = L0; return out; });
+  check('Lv3 pistol: two hands + two drones (drone rounds start at the drones)', s.pistol === '4:2', JSON.stringify(s));
+  check('Lv3 sniper: rail rounds go through every zombie on the line', s.rail === '1111R', s.rail);
+  check('Lv3 crossbow: each bolt splits into five in the open (2 + 10)', s.split === 12, s.split);
+  check('Lv3 flamer: the 13-tile fire whip reaches 10 tiles and leaves ground fire', s.whip.split('/')[0] > 0 && +s.whip.split('/')[1] >= 9 && +s.whip.split('/')[2] === 1, s.whip);
+  check('Lv3 launcher: two rockets off the back as well as two shells', s.rk === '2/2', s.rk);
+  check('Lv3 pistol drones keep shooting by themselves when you stop', /^[1-9]\d*:hit$/.test(s.drone), s.drone);
   // trimmed build list: cover 2, traps 2, turrets 3; retired kinds can't be built through the action, but old ones still stand
   s = await S(() => { const me = W.p[ME], out = {}; out.items = ITEMS.map(g => g.k + ':' + g.ids.map(id => B[id].name).join('|')).join(' ');
     const x = Math.floor(me.x) + 2, y = Math.floor(me.y), L = me.L; W.res = { wood: 99, stone: 99, steel: 99, parts: 99 }; doAct(me, 'build', { x, y, l: L, b: 58, d: 0 }); out.frost = W.blk[ci(x, y, L)];

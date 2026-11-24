@@ -353,7 +353,7 @@ function drawFx() {
   drawTracers();
   let f = 0; for (const fl of RND.flashes) { if (f >= 8) break; const s = (fl.big ? 1.6 : 1) * (1 - fl.t / fl.life); setInst(OBJ.flashM, f++, fl.x, fl.z, fl.y, 0, s, s, s); } OBJ.flashM.count = f; OBJ.flashM.instanceMatrix.needsUpdate = true;
   let b = 0; for (const bo of RND.booms) { if (b >= 8) break; const s = (bo.r || BAL.nadeR) * (0.3 + bo.t * 1.4); setInst(OBJ.boom, b++, bo.x, bo.z, bo.y, 0, s, s, s); } OBJ.boom.count = b; OBJ.boom.instanceMatrix.needsUpdate = true; OBJ.boom.material.opacity = RND.booms.length ? 0.55 * (1 - RND.booms[0].t / 0.6) : 0;
-  let ng = 0, na = 0; for (const p of W.proj) { if (p.k === 'gl') { setInst(OBJ.nade, ng++, p.x, p.z, p.y, W.t * 12, 1.3, 1.3, 1.3); if (Math.random() < 0.5) addP({ x: p.x, y: p.y, z: p.z, vz: 0.2, g: -0.2, col: '#9a948a', s: 0.07, life: 0.4, smoke: 1 }); } else if (p.k === 'nade') setInst(OBJ.nade, ng++, p.x, p.z, p.y, W.t * 8, 1, 1, 1); else setInst(OBJ.acid, na++, p.x, p.z, p.y, 0, 1, 1, 1); }
+  let ng = 0, na = 0; for (const p of W.proj) { if (p.k === 'gl') { setInst(OBJ.nade, ng++, p.x, p.z, p.y, W.t * 12, p.rk ? 0.9 : 1.3, p.rk ? 0.9 : 1.3, p.rk ? 0.9 : 1.3); if (p.rk) for (let k = 0; k < 2; k++) addP({ x: p.x - p.vx * 0.02 * k, y: p.y - p.vy * 0.02 * k, z: p.z, vx: -p.vx * 0.05, vy: -p.vy * 0.05, vz: 0.1, g: 0, col: k ? '#ffd060' : '#ff6a1a', s: 0.11, life: 0.18 }); /* (round 39c) rockets burn */ if (Math.random() < 0.5) addP({ x: p.x, y: p.y, z: p.z, vz: 0.2, g: -0.2, col: '#9a948a', s: 0.07, life: 0.4, smoke: 1 }); } else if (p.k === 'nade') setInst(OBJ.nade, ng++, p.x, p.z, p.y, W.t * 8, 1, 1, 1); else setInst(OBJ.acid, na++, p.x, p.z, p.y, 0, 1, 1, 1); }
   OBJ.nade.count = ng; OBJ.acid.count = na; OBJ.nade.instanceMatrix.needsUpdate = OBJ.acid.instanceMatrix.needsUpdate = true;
   // flashes + explosions light pool
   const srcs = RND.flashes.map(fl => [fl.x, fl.z, fl.y, (fl.big ? 6 : 4) * (1 - fl.t / fl.life), 5]).concat(RND.booms.map(bo => [bo.x, bo.z + 0.6, bo.y, 40 * (1 - bo.t / 0.6), 12])).sort((a, b) => b[3] - a[3]);
@@ -649,7 +649,7 @@ function fxEvent(e) {
   if (!W) return;
   const guest = NETROLE === 'guest';
   switch (e.k) {
-    case 'shot': if (guest && e.o === ME) break; shotFx(e.o, e.w, e.e); break;
+    case 'shot': if (guest && e.o === ME && wlvOf(e.w) < 2 && !e.dr) break; shotFx(e.o, e.w, e.e, e); break; /* (round 39c) upgraded guns aren't predicted on a guest: draw the host's shot */
     case 'cshot': { RND.tracers.push({ x: e.x, y: e.y, z: e.z, x2: e.e[0], y2: e.e[1], z2: e.e[2], t: 0, life: 0.12, w: 0.09, col: [1, 0.7, 0.35] }); RND.flashes.push({ x: e.x, y: e.y, z: e.z, t: 0, life: 0.08 }); sfx('cannon', e.x, e.y); const q = W.p[e.o]; if (q) q._crec = 1; for (let k = 0; k < 6; k++) addP({ x: e.x, y: e.y, z: e.z, vx: frnd(-0.6, 0.6), vy: frnd(-0.6, 0.6), vz: frnd(0.2, 0.8), g: -0.3, col: '#8d8a84', s: 0.1, life: 0.8, smoke: 1 }); break; } // (round 31) tank cannon
     case 'gshot': if (e.mg) { const q = W.p[e.o]; if (q) { q._mgT = W.t; q._mA = e.a; q._mAT = 0.3; } } /* (round 36n) 疾风's machine gun */ RND.tracers.push({ x: e.x, y: e.y, z: e.z, x2: e.e[0], y2: e.e[1], z2: e.e[2], t: 0, life: 0.07, w: e.mg ? 0.025 : 0.03, col: e.mg ? [1, 0.9, 0.55] : [1, 0.8, 0.4] }); RND.flashes.push({ x: e.x, y: e.y, z: e.z, t: 0, life: 0.04 }); if (thr('gyro', 0.1)) sfx('gyro', e.x, e.y); if (e.h) addP({ x: e.e[0], y: e.e[1], z: e.e[2], vx: frnd(-1, 1), vy: frnd(-1, 1), vz: 1, col: '#7a1010', s: 0.06, life: 0.4 }); break; // (round 30) gyrocopter chin gun
     case 'tshot': { if (e.i != null) (RND.taim = RND.taim || {})[e.i] = Math.atan2(e.ty - e.y, e.tx - e.x);
@@ -711,7 +711,7 @@ function fxEvent(e) {
     case 'ebr': { const q = W.p[e.o]; if (q) { q._brT = W.t; q._mA = e.a; q._mAT = 0.3; } if (thr('ebr', 0.25)) sfx('flamer', q ? q.x : 0, q ? q.y : 0); break; } /* (round 37) beast events */
     case 'drones': droneEvent(e); break; case 'dsh': droneShots(e); break; /* (round 36n) 浮游炮 */
     case 'bpget': { const who = e.p === ME ? '' : (W.p[e.p] ? W.p[e.p].name + ' ' : ''); toast(who + (e.t === 'v' ? '找到蓝图：' + bpName(e.v) + '（商店里能造了）' : e.t === 'a' ? '找到图纸：' + ARM[e.v].n + '（商店 → 武器 · 道具 里穿上）' : e.t === 'm' ? '找到图纸：' + MECHS[e.v].name + '强化（商店 → 载具 里装上）' : '找到图纸：' + WPN[e.v].name + '改装（商店 → 武器 里装上）'), '#7fd0ff'); sfx('ready'); } break; /* (round 38j) */
-    case 'bpuse': { const who = e.p === ME ? '' : (W.p[e.p] ? W.p[e.p].name + ' ' : ''); toast(who + (e.t === 'a' ? '穿上了' + ARM[e.v].n + '（' + ARM[e.v].d + '）' + (e.full ? ' —— 全套战甲！' + ARM_SET : '') : e.t === 'm' ? MECHS[e.v].name + ' 装上了「' + mupName(e.v, e.lv) + '」' : WPN[e.v].name + ' 装上了「' + GUP[e.lv].n + '」'), '#7fd0ff'); sfx('thunk'); } break;
+    case 'bpuse': { const who = e.p === ME ? '' : (W.p[e.p] ? W.p[e.p].name + ' ' : ''); toast(who + (e.t === 'a' ? '穿上了' + ARM[e.v].n + '（' + ARM[e.v].d + '）' + (e.full ? ' —— 全套战甲！' + ARM_SET : '') : e.t === 'm' ? MECHS[e.v].name + ' 装上了「' + mupName(e.v, e.lv) + '」' : WPN[e.v].name + (e.lv >= 3 ? ' 进化成了「' + GEVO[e.v] + '」—— ' + GEVO_D[e.v] : e.lv === 2 ? ' 升级「双持」：左手再拿一把' : ' 装上了「' + GUP[e.lv].n + '」')), '#7fd0ff'); sfx('thunk'); } break;
     case 'mcc': { const q = W.p[e.p], L = { stg: ['硬直！', '#ffb04a', '机甲被震住了：看到地上的红圈 / 冲撞预警就提前走开'], slw: ['减速', '#a6e06a', '酸液让机甲变慢了：离开酸液，或者等它过去'], brk: ['破甲', '#ff6a5a', '防暴尸撬开了装甲：6 秒内机甲挨打 +25%，先把它打掉'], lat: ['被扒住', '#e0a0ff', '攀爬者扒在机甲上（越多越慢）：普攻甩掉一只，放技能 / 变形 / 进化全部甩掉'], off: ['甩掉了' + (e.n > 1 ? ' ×' + e.n : ''), '#d8fff0'] }[e.c]; /* (round 38g) */
       if (L) { RND.floats.push({ x: e.x, y: e.y, z: e.z + 3.2, text: L[0], col: L[1], t: 0 }); if (e.p === ME && L[2]) { UI.ccTip = UI.ccTip || {}; if (!UI.ccTip[e.c]) { UI.ccTip[e.c] = 1; toast(L[2], L[1]); } } if (e.c === 'stg' && q) { sfx('mclang', e.x, e.y); if (e.p === ME) shake(e.x, e.y, 0.35); } } } break;
     case 'dodge': RND.floats.push({ x: e.x, y: e.y, z: e.z + 1.6, text: '闪避', col: '#9ff0ff', t: 0 }); if (thr('dodge', 0.2)) sfx('mdash', e.x, e.y); break; /* (round 36n) */
@@ -744,26 +744,36 @@ function fxEvent(e) {
       if (e.local || !(guest && e.o === ME && /reload|swap/.test(e.n))) sfx(e.n, e.x, e.y); break;
   }
 }
-function shotFx(o, wi, ends) {
+function shotFx(o, wi, ends, E) {
   const p = W.p[o]; if (!p) return;
   p._lastShot = W.t;
   const mw = muzzleW(o, wi); let z0 = (p.zv != null ? p.zv : p.z) + (p.down ? 0.25 : 0.72), mx = p.x + Math.cos(p.aim) * 0.55, my = p.y + Math.sin(p.aim) * 0.55;
   if (mw && Math.hypot(mw[0] - p.x, mw[1] - p.y) < 1.2) { mx = mw[0]; my = mw[1]; z0 = mw[2]; }
-  if (WPN[wi].flame) { // a roaring tongue of fire
-    const FL = wlvOf(wi); for (let k = 0; k < 7 + FL * 2; k++) { const a = p.aim + frnd(-0.3, 0.3), v = frnd(5, 9) * (1 + 0.08 * FL); addP({ x: mx, y: my, z: z0 - 0.03, vx: Math.cos(a) * v, vy: Math.sin(a) * v, vz: frnd(-0.3, 0.8), g: -1.5, col: FL >= 2 && k % 4 === 3 ? '#6ac8ff' : FL >= 3 && k % 3 === 0 ? '#fff6d0' : k % 3 === 0 ? '#fff0a0' : k % 3 === 1 ? (FL >= 3 ? '#ffd040' : '#ffb030') : '#ff5a1a', /* (round 39) Lv2 blue-hot core, Lv3 gold */ s: frnd(0.08, 0.16), life: frnd(0.35, 0.55), smoke: k === 6 ? 1 : 0 }); }
+  if (WPN[wi].flame && E && E.fl) { // (round 39c) 长龙火鞭: a glowing line of fire along the whip, flames licking up from it
+    const P = E.fl, fz = E.fz != null ? E.fz : z0; for (let k = 1; k < P.length; k++) { const [xa, ya] = P[k - 1], [x2, y2] = P[k], hz = fz - 0.05 * k, x1 = k > 1 ? xa - (x2 - xa) * 0.35 : xa, y1 = k > 1 ? ya - (y2 - ya) * 0.35 : ya; /* overlap the pieces so the line reads as one */
+      RND.tracers.push({ x: x1, y: y1, z: hz, x2, y2, z2: hz - 0.05, t: 0, life: 0.1, w: 0.32 - k * 0.012, col: [1, 0.45, 0.08] }); RND.tracers.push({ x: x1, y: y1, z: hz, x2, y2, z2: hz - 0.05, t: 0, life: 0.1, w: 0.12, col: [1, 0.9, 0.5] });
+      if (Math.random() < 0.7) addP({ x: lerp(x1, x2, Math.random()), y: lerp(y1, y2, Math.random()), z: hz, vx: frnd(-0.5, 0.5), vy: frnd(-0.5, 0.5), vz: frnd(0.6, 1.6), g: -1.2, col: k % 3 ? '#ffb030' : '#fff0a0', s: frnd(0.1, 0.2), life: frnd(0.25, 0.45), smoke: k % 5 === 0 ? 1 : 0 }); }
+    RND.flashes.push({ x: mx, y: my, z: z0, t: 0, life: 0.05 }); p.recoilT = 0.04; p._kick = Math.max(p._kick || 0, 0.25); if (thr('flame' + o, 0.18)) sfx('flamer', p.x, p.y); return;
+  }
+  if (WPN[wi].flame) { // a roaring tongue of fire (one per flamer in hand)
+    const FL = wlvOf(wi), NH = FL >= 2 && !p.ride ? 2 : 1; for (let k = 0; k < (7 + FL * 2) * NH; k++) { const a = p.aim + frnd(-0.3, 0.3), v = frnd(5, 9), hh = k % NH; addP({ x: mx - Math.sin(p.aim) * hh * 0.32, y: my + Math.cos(p.aim) * hh * 0.32, z: z0 - 0.03, vx: Math.cos(a) * v, vy: Math.sin(a) * v, vz: frnd(-0.3, 0.8), g: -1.5, col: FL >= 2 && k % 4 === 3 ? '#6ac8ff' : FL >= 3 && k % 3 === 0 ? '#fff6d0' : k % 3 === 0 ? '#fff0a0' : k % 3 === 1 ? (FL >= 3 ? '#ffd040' : '#ffb030') : '#ff5a1a', /* (round 39) Lv2 blue-hot core, Lv3 gold */ s: frnd(0.08, 0.16), life: frnd(0.35, 0.55), smoke: k === 6 ? 1 : 0 }); }
     RND.flashes.push({ x: mx, y: my, z: z0, t: 0, life: 0.05 }); p.recoilT = 0.04; p._kick = Math.max(p._kick || 0, 0.25);
     if (thr('flame' + o, 0.18)) sfx('flamer', p.x, p.y); return;
   }
-  if (WPN[wi].gl) { for (let k = 0; k < 4; k++) addP({ x: mx, y: my, z: z0, vx: frnd(-0.4, 0.4), vy: frnd(-0.4, 0.4), vz: frnd(0.2, 0.6), g: -0.3, col: '#8a8478', s: 0.12, life: 0.6, smoke: 1 }); RND.flashes.push({ x: mx, y: my, z: z0, t: 0, life: 0.07, big: 1 }); p.recoilT = 0.08; p._kick = 1; sfx('launcher', p.x, p.y); if (o === ME) CAM.shake = Math.max(CAM.shake, 0.2); return; }
+  if (WPN[wi].gl) { if (wlvOf(wi) >= 3 && !p.ride) { const bx = p.x - Math.cos(p.aim) * 0.25, by = p.y - Math.sin(p.aim) * 0.25; for (let k = 0; k < 6; k++) addP({ x: bx, y: by, z: z0 + 0.3, vx: frnd(-0.6, 0.6) - Math.cos(p.aim) * 1.5, vy: frnd(-0.6, 0.6) - Math.sin(p.aim) * 1.5, vz: frnd(0.2, 0.8), g: -0.3, col: k % 2 ? '#ff9a3a' : '#9a948a', s: 0.12, life: 0.6, smoke: k % 2 ? 0 : 1 }); p._podT = W.t; } /* (round 39c) the back pod's backblast */
+    for (let k = 0; k < 4 * (wlvOf(wi) >= 2 && !p.ride ? 2 : 1); k++) addP({ x: mx - Math.sin(p.aim) * (k & 1) * 0.32 * (wlvOf(wi) >= 2 ? 1 : 0), y: my + Math.cos(p.aim) * (k & 1) * 0.32 * (wlvOf(wi) >= 2 ? 1 : 0), z: z0, vx: frnd(-0.4, 0.4), vy: frnd(-0.4, 0.4), vz: frnd(0.2, 0.6), g: -0.3, col: '#8a8478', s: 0.12, life: 0.6, smoke: 1 }); RND.flashes.push({ x: mx, y: my, z: z0, t: 0, life: 0.07, big: 1 }); p.recoilT = 0.08; p._kick = 1; sfx('launcher', p.x, p.y); if (o === ME) CAM.shake = Math.max(CAM.shake, 0.2); return; }
   const mx0 = mx, my0 = my, GL = wlvOf(wi); if (GL >= 2) for (let k = 0; k < (GL >= 3 ? 4 : 2); k++) { const aa = p.aim + frnd(-0.6, 0.6), v = frnd(1.5, 3.5); addP({ x: mx, y: my, z: z0, vx: Math.cos(aa) * v, vy: Math.sin(aa) * v, vz: frnd(0, 1.2), col: GL >= 3 ? '#ffd040' : '#8fe8ff', s: 0.045, life: 0.18, g: 2 }); } /* (round 39) muzzle sparks */
-  const PL = WPN[wi].pellets || 1, NS = GUP[GL].s; let ki = 0;
-  for (const [x2, y2, z2, wall] of ends) {
-    const bq = Math.floor(ki++ / PL) - (NS - 1) / 2, mx = mx0 - Math.sin(p.aim) * bq * 0.07, my = my0 + Math.cos(p.aim) * bq * 0.07; /* (round 39b) each round leaves its own barrel */
-    RND.tracers.push({ x: mx, y: my, z: z0, x2, y2, z2, t: 0, life: (wi === 3 ? 0.18 : wi === 4 ? 0.22 : 0.09) * (1 + 0.25 * GL), w: (wi === 3 ? 0.06 : wi === 1 ? 0.025 : wi === 4 ? 0.03 : 0.035) * [1, 1.25, 1.4, 1.55][GL], col: GL >= 3 ? [1, 0.82, 0.28] : GL === 2 ? [0.55, 0.95, 1] : wi === 4 ? [0.75, 0.55, 0.3] : null }); /* (round 39) upgraded guns: thicker tracers, cyan at Lv2, gold at Lv3 */
-    if (GL >= 2) RND.tracers.push({ x: mx, y: my, z: z0, x2, y2, z2, t: 0, life: 0.26 + 0.08 * GL, w: 0.05 + 0.015 * GL, col: GL >= 3 ? [0.22, 0.15, 0.03] : [0.05, 0.16, 0.2] }); /* (round 39b) a soft glowing trail that lingers behind the round */
+  const PL = WPN[wi].pellets || 1, rail = E && E.rl; let ki = 0;
+  for (const en of ends) { const [x2, y2, z2, wall] = en;
+    let mx = mx0, my = my0, zs = z0; if (en.length >= 7) { mx = en[4]; my = en[5]; zs = en[6]; if (E && E.dr || wi === 0) { RND.flashes.push({ x: mx, y: my, z: zs, t: 0, life: 0.05 }); } } /* (round 39c) drones / shoulder guns / split bolts carry their own start */
+    else { const idx = ki++, h = Math.floor(idx / PL); mx = mx0 - Math.sin(p.aim) * h * 0.32; my = my0 + Math.cos(p.aim) * h * 0.32; if (h && idx % PL === 0) RND.flashes.push({ x: mx, y: my, z: z0, t: 0, life: 0.06 }); } /* the off-hand gun */
+    if (rail) { RND.tracers.push({ x: mx, y: my, z: zs, x2, y2, z2, t: 0, life: 0.38, w: 0.1, col: [0.85, 0.7, 1] }); RND.tracers.push({ x: mx, y: my, z: zs, x2, y2, z2, t: 0, life: 0.55, w: 0.3, col: [0.25, 0.12, 0.45] }); for (let k = 0; k < 6; k++) { const f = Math.random(); addP({ x: lerp(mx, x2, f), y: lerp(my, y2, f), z: lerp(zs, z2, f), vx: frnd(-0.4, 0.4), vy: frnd(-0.4, 0.4), vz: frnd(0.2, 0.8), col: '#d8b8ff', s: 0.05, life: 0.4, g: 0 }); } continue; } /* (round 39c) 电磁轨道炮: a violet rail beam */
+    RND.tracers.push({ x: mx, y: my, z: zs, x2, y2, z2, t: 0, life: (wi === 3 ? 0.18 : wi === 4 ? 0.22 : 0.09) * (1 + 0.25 * GL), w: (wi === 3 ? 0.06 : wi === 1 ? 0.025 : wi === 4 ? 0.03 : 0.035) * [1, 1.25, 1.4, 1.55][GL], col: GL >= 3 ? [1, 0.82, 0.28] : GL === 2 ? [0.55, 0.95, 1] : wi === 4 ? [0.75, 0.55, 0.3] : null }); /* (round 39) upgraded guns: thicker tracers, cyan at Lv2, gold at Lv3 */
+    if (GL >= 2) RND.tracers.push({ x: mx, y: my, z: zs, x2, y2, z2, t: 0, life: 0.26 + 0.08 * GL, w: 0.05 + 0.015 * GL, col: GL >= 3 ? [0.22, 0.15, 0.03] : [0.05, 0.16, 0.2] }); /* (round 39b) a soft glowing trail that lingers behind the round */
     if (GL >= 3 && wall) for (let k = 0; k < 3; k++) addP({ x: x2, y: y2, z: z2, vx: frnd(-2, 2), vy: frnd(-2, 2), vz: frnd(0.5, 2.5), col: '#ffe070', s: 0.05, life: 0.3, floor: z2 - 1, g: 5 });
     if (wall) { for (let k = 0; k < 5; k++) addP({ x: x2, y: y2, z: z2, vx: frnd(-2.5, 2.5), vy: frnd(-2.5, 2.5), vz: frnd(0, 2.5), col: k % 2 ? '#ffd76a' : '#fff2c0', s: 0.035, life: 0.22, floor: z2 - 1, g: 6 }); addP({ x: x2, y: y2, z: z2, vx: frnd(-0.3, 0.3), vy: frnd(-0.3, 0.3), vz: 0.3, g: -0.2, col: '#8a8070', s: 0.08, life: 0.4, smoke: 1 }); }
   }
+  if (E && E.dr) return; /* (round 39c) a drone firing on its own: no recoil, no sound burst */
   RND.flashes.push({ x: mx, y: my, z: z0, t: 0, life: 0.06, big: wi === 1 || wi === 3 });
   p.recoilT = 0.08; p._kick = 1;
   if (wi && wi < 4) addP({ x: p.x, y: p.y, z: z0, vx: -Math.sin(p.aim) * frnd(1, 2), vy: Math.cos(p.aim) * frnd(1, 2), vz: frnd(1.5, 2.5), col: '#c9a23a', s: 0.04, life: 0.7, floor: z0 - 0.72 });

@@ -88,7 +88,7 @@ function pFlags(p) { return (p.down ? 1 : 0) | (p.dead ? 2 : 0) | (p.gone ? 4 : 
 function makeSnap() {
   const P = p => [r2(p.x), r2(p.y), p.L, r2(p.vx), r2(p.vy), r2(p.aim), Math.ceil(p.hp), pFlags(p), Math.round(p.downT * 10) / 10, p.wpn, p.mag.join(','), p.ammo.join(','), p.owned.join(''), p.nades, p.meds, Math.round(p.useT * 100), Math.round(p.medT * 10) / 10, Math.round(p.reloadT * 10) / 10, p.kills, Math.round(p.anim * 10) / 10, p.sel, p.aimPt ? [r2(p.aimPt.x), r2(p.aimPt.y), r2(p.aimPt.z)] : 0, p.vehs || 0, p.shield ? 1 : 0, p.melee || 0, p.gn || [0, 0, 0], p.lives || 0, Math.round((p.fuel || 0) * 10) / 10, airborne(p) ? r2(p.z) : 0, p.gam || 0, p.shl || 0, p.vehs & 126 ? [p.mform || 0, Math.round((p.mtr || 0) * 10) / 10, [1, 2, 3, 4, 5, 6].map(v => p.mh && p.mh[v] != null ? Math.round(p.mh[v]) : -1), Math.round((p.bat || 0) * 10) / 10, Math.round((p.mcd || 0) * 10) / 10, Math.round(p.evo || 0), (p.evoOn ? 1 : 0) | (p.spinT > 0 ? 2 : 0) | (p.rageT > 0 ? 4 : 0) | (p.rebT > 0 ? 8 : 0), (p.ccStg > 0 ? 1 : 0) | (p.ccSlw > 0 ? 2 : 0) | (p.ccBrk > 0 ? 4 : 0) | (Math.min(3, p.ccLat || 0) << 3)] : 0, p.arm || 0]; /* (round 38k) armour bits; (round 37) 进化 meter + beast flags; (round 38g) control on the mech */
   const z = []; for (const q of W.zs) z.push(q.id, ZI.indexOf(q.k), Math.round(q.x * 100), Math.round(q.y * 100), q.L, Math.round(q.z * 100), Math.round(q.face * 100), Math.ceil(q.hp / q.max * 100), (q.climbing ? 1 : 0) | (q.atk > 0 ? 2 : 0) | (q.hitT > 0 ? 4 : 0) | (q.moving ? 8 : 0) | (q.burn > 0 ? 16 : 0) | (q.scr > 0 ? 32 : 0) | (q.rage > 0 ? 64 : 0) | (q.hidden ? 128 : 0) | (q.sleep ? 256 : 0) | ((q.aw || 0) > 0.15 ? 512 : 0) | ((q.tl || 0) << 10) | ((q.kt || 0) << 12) | (q.kc ? 16384 : 0) | (q.sh > 0 ? 32768 : 0) | (q.ck ? 65536 : 0)); // (round 35) bit 15: a 护盾者's bubble is up, bit 16: cloaked; kt also carries a flyer's dive / an elite's skill // tl (round 23): brute tells, 2 bits; kt / kc (round 34): kaiju skill state
-  const pr = []; for (const b of W.proj) pr.push(b.k === 'nade' ? (b.gt ? 2 + b.gt : 0) : b.k === 'gl' ? 2 : 1, r2(b.x), r2(b.y), r2(b.z), r2(b.vx), r2(b.vy), r2(b.vz));
+  const pr = []; for (const b of W.proj) pr.push(b.k === 'nade' ? (b.gt ? 2 + b.gt : 0) : b.k === 'gl' ? (b.rk ? 9 : 2) : 1, r2(b.x), r2(b.y), r2(b.z), r2(b.vx), r2(b.vy), r2(b.vz));
   const d = []; for (const i of W.dirty) d.push(i, Math.round(W.bhp[i]), Math.round(W.shp[i])); W.dirty.clear();
   return { t: 's', T: r2(W.t), ph: W.phase, cl: Math.round(W.clock * 10) / 10, dl: W.dayLen, n: W.night, nt: Math.round(W.nightT), tk: NET.tkv === W.tkv && (NET.tkN = (NET.tkN || 0) + 1) % 12 ? 0 : (NET.tkv = W.tkv, W.tasks.map(t => [t.k, t.need, t.got, t.done, t.txt, t.rt])), res: RES.map(r => W.res[r.k]), u: W.upg, k: W.kills, p: W.p.map(P), z, pr, d, sl: W.spawnQ.length, cz: (W.cz || []).map(c => [c.k, c.x, c.y, c.z, c.r, r2(c.t)]), ob: NET.obv === W.obv ? 0 : (NET.obv = W.obv, W.obj), pk: W.perk || 0, bp: [W.vbp ? vbpMask() : -1, (W.mlv || []).join(''), (W.wlv || []).join(''), (W.bps || []).join(',')] }; /* (round 38i) blueprints */ // (round 32) permanent upgrades (the caps read them)
 }
@@ -163,7 +163,7 @@ function applySnap(s) {
   }
   W.zs = zs;
   W.cz = (s.cz || []).map(a => ({ k: a[0], x: a[1], y: a[2], z: a[3], r: a[4], t: a[5] }));
-  W.proj = []; for (let k = 0; k < s.pr.length; k += 7) W.proj.push({ gt: s.pr[k] >= 3 ? s.pr[k] - 2 : 0, k: ['nade', 'acid', 'gl', 'nade', 'nade', 'nade'][s.pr[k]], x: s.pr[k + 1], y: s.pr[k + 2], z: s.pr[k + 3], vx: s.pr[k + 4], vy: s.pr[k + 5], vz: s.pr[k + 6] });
+  W.proj = []; for (let k = 0; k < s.pr.length; k += 7) W.proj.push({ rk: s.pr[k] === 9 ? 1 : 0, gt: s.pr[k] >= 3 && s.pr[k] < 9 ? s.pr[k] - 2 : 0, k: s.pr[k] === 9 ? 'gl' : ['nade', 'acid', 'gl', 'nade', 'nade', 'nade'][s.pr[k]], x: s.pr[k + 1], y: s.pr[k + 2], z: s.pr[k + 3], vx: s.pr[k + 4], vy: s.pr[k + 5], vz: s.pr[k + 6] });
   for (let k = 0; k < s.d.length; k += 3) { const i = s.d[k]; if (W.blk[i]) W.bhp[i] = s.d[k + 1]; if (W.slab[i]) W.shp[i] = s.d[k + 2]; W.ver++; }
 }
 function guestNetTick(dt) {
@@ -184,6 +184,7 @@ function guestPredictFire(dt) {
   if (p.reloadVis > 0) p.reloadVis -= dt;
   const wi = p.down ? 0 : p.wpn, w = WPN[wi];
   if (!p.inp.fire || p.build || p.dead || p.lfW[p.down ? 0 : p.wpn] > 0 || p.reloadT > 0 || p.reloadVis > 0 || p.medT > 0 || p.mag[wi] <= 0) return;
+  if (wlvOf(wi) >= 2) return; /* (round 39c) dual / final-form guns: the host's shot event draws it */
   p.lfW[wi] = w.rate * rideK(p).rate; p.mag[wi]--;
   if (w.flame || w.gl) { shotFx(ME, wi, []); return; }
   const [sx, sy, sz] = shoulder(p), [ax, ay, az] = aimDir(p), ends = [];
