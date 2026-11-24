@@ -306,7 +306,7 @@ function bpList(t) { // (round 38j) found upgrade blueprints of one kind ('m' me
   if (t === 'a') { const me = W.p[ME]; return (W.bps || []).map((b, k) => [b, k]).filter(([b]) => b[0] === 'a').map(([b, k]) => { const n = +b.slice(1), c = armCost(), has = armHas(me, n), ok = !has && affordable(W.res, c); /* (round 38k) armour: worn by whoever installs it */
     return `<div class="sres bpr"><b>图纸</b><span>${ARM[n].n}（${ARM[n].d}）${has ? ' · 你已穿着，留给队友' : ''}</span><button class="sbtn${ok ? '' : ' no'}" data-bi="${k}" ${has ? 'disabled' : ''}><b>${has ? '已有' : '穿上'}</b><span>${has ? '' : costText(c)}</span></button></div>`; }).join(''); }
   return (W.bps || []).map((b, k) => [b, k]).filter(([b]) => b[0] === t).map(([b, k]) => { const n = +b.slice(1), lv = t === 'm' ? mlvOf(n) : wlvOf(n), c = t === 'm' ? mlvCost(lv) : gunCost(lv), ok = affordable(W.res, c), U = t === 'm' ? MUP[lv + 1] : GUP[lv + 1];
-    const eff = t === 'm' ? (U.t > MUP[lv].t ? '更耐打 ×' + U.t : '') + (U.d > MUP[lv].d ? (U.t > MUP[lv].t ? '、' : '') + '伤害 ×' + U.d : '') : (U.m > GUP[lv].m ? '弹匣 ×' + U.m : '') + (U.r > GUP[lv].r ? (U.m > GUP[lv].m ? '、' : '') + '射速 ×' + U.r : '');
+    const eff = t === 'm' ? (U.t > MUP[lv].t ? '更耐打 ×' + U.t : '') + (U.d > MUP[lv].d ? (U.t > MUP[lv].t ? '、' : '') + '伤害 ×' + U.d : '') : [U.m > GUP[lv].m ? '弹匣 ×' + U.m : '', U.s > GUP[lv].s ? '一次 ' + U.s + ' 发（总伤害 ×' + Math.round(U.s * U.f * 100) / 100 + '）' : ''].filter(Boolean).join('、'); /* (round 39b) */
     return `<div class="sres bpr"><b>图纸</b><span>${t === 'm' ? MECHS[n].name : WPN[n].name} · ${U.n}（Lv${lv + 1}，${eff}）</span><button class="sbtn${ok ? '' : ' no'}" data-bi="${k}"><b>安装</b><span>${costText(c)}</span></button></div>`; }).join(''); }
 function renderCraft() {
   const me = W.p[ME], tab = SET.shopTab && SHOP_TABS.some(t => t[0] === SET.shopTab) ? SET.shopTab : 'gun';
@@ -327,7 +327,7 @@ function renderCraft() {
       const buy = CRAFT.find(c => c.wpn === k), am = CRAFT.find(c => c.ammo && c.ammo[0] === k), own = me.owned[k];
       const st = own ? (w.inf ? '子弹无限' : me.mag[k] + ' / ' + me.ammo[k]) : '没有'; // (round 32) backpack cap is in the long-press card
       const btns = !own && buy ? shopBtn(buy, '造') : own && am ? shopBtn(am, '买' + am.name.replace(/^.*?(×\s*\d+)$/, '$1')) : own && w.inf ? '<span class="sfree">不用买</span>' : '';
-      return card('w' + k, own, w.name + (wlvOf(k) ? ' <small class="mlv">' + GUP[wlvOf(k)].n + '</small>' : ''), st, btns, { t: w.name, d: (w.tag || '') + (wlvOf(k) ? '<br>改装：' + GUP[wlvOf(k)].n + '（弹匣 ×' + GUP[wlvOf(k)].m + '、射速 ×' + GUP[wlvOf(k)].r + '）' : '') + (own && !w.inf ? '<br>背包最多带 ' + ammoCap(k) + ' 发' : '') + (am ? '<br>弹药：' + am.name + '，' + costText(am.cost) : '') });
+      return card('w' + k, own, w.name + (wlvOf(k) ? ' <small class="mlv">' + GUP[wlvOf(k)].n + '</small>' : ''), st, btns, { t: w.name, d: (w.tag || '') + (wlvOf(k) ? '<br>改装：' + GUP[wlvOf(k)].n + '（弹匣 ×' + GUP[wlvOf(k)].m + (GUP[wlvOf(k)].s > 1 ? '、一次 ' + GUP[wlvOf(k)].s + ' 发' : '') + '）' : '') + (own && !w.inf ? '<br>背包最多带 ' + ammoCap(k) + ' 发' : '') + (am ? '<br>弹药：' + am.name + '，' + costText(am.cost) : '') });
     }).join('');
     h += card('knife', true, '刀', '近战', '<span class="sfree">右键 / V</span>', { t: '刀（近战）', d: '右键 / V（触屏「刀」键）：冲上去砍一只，背后砍双倍，睡着的一刀死。不用买、不会坏。' });
   } else {

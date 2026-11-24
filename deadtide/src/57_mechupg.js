@@ -58,7 +58,7 @@ function mechUpgBuild(J) {
   if (k === 2) { // ---------------- 赤刃: the samurai ----------------
     const red = Lm(M.col[0]), lac = Lm('#1d1416'), gd = Lm('#d4ad4a', '#4a3000'), lace = Lm('#b0242a');
     // Lv1 大铠: big layered 大袖 shoulder plates with gold rims, a lacquered 胴 with three lames, gold-trimmed 臑当 shin guards, a 喉輪 collar
-    for (const a of AR) for (let q = 0; q < 4; q++) { const z = a.s * (0.36 + q * 0.03), y = -0.08 - q * 0.13; R(0, a.sh, q % 2 ? lac : red, 0.46, 0.13, 0.05, 0.02, 0, y, z, 0, 0, a.s * 0.3); B(0, a.sh, gd, 0.47, 0.022, 0.056, 0, y - 0.065, z, 0, 0, a.s * 0.3); for (const xq of [-0.13, 0.13]) B(0, a.sh, lace, 0.016, 0.12, 0.058, xq, y, z, 0, 0, a.s * 0.3); }
+    for (const a of AR) { const ws = G(0, a.sh, 0, -0.02, a.s * 0.34, 0, 0, a.s * 0.42); R(0, ws, lac, 0.5, 0.56, 0.04, 0.02, 0, -0.26, -a.s * 0.012); for (let q = 0; q < 4; q++) { const y = -0.06 - q * 0.135; R(0, ws, red, 0.5, 0.15, 0.07, 0.025, 0, y, a.s * 0.02); B(0, ws, gd, 0.51, 0.025, 0.075, 0, y - 0.07, a.s * 0.02); } for (const xq of [-0.15, 0, 0.15]) B(0, ws, lace, 0.025, 0.54, 0.08, xq, -0.26, a.s * 0.025); } /* one solid 大袖: lacquered backing, four overlapping red lames with gold edges, laced together */
     for (let q = 0; q < 3; q++) { R(0, ch, q % 2 ? red : lac, 0.06, 0.1, 0.84, 0.02, 0.4 - q * 0.02, 0.12 - q * 0.11, 0, 0.12); B(0, ch, gd, 0.065, 0.015, 0.85, 0.405 - q * 0.02, 0.07 - q * 0.11, 0, 0.12); }
     R(0, ch, lac, 0.44, 0.1, 0.86, 0.04, 0.0, 0.7, 0); B(0, ch, gd, 0.45, 0.02, 0.87, 0.0, 0.66, 0);
     for (const L of LG) { R(0, L.kn, lac, 0.06, 0.62, 0.3, 0.02, 0.2, -0.42, 0, 0.07); for (const yy of [-0.16, -0.42, -0.68]) B(0, L.kn, gd, 0.065, 0.025, 0.31, 0.2 - (yy + 0.42) * 0.07, yy, 0, 0.07); }

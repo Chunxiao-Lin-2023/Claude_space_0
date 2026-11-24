@@ -62,7 +62,7 @@ function charScene() {
   // survivors' shared geometry
   PGEO.limb = limbGeo(1, 0.8, 7);
   // thick additive tracers + blood decals on the floor
-  OBJ.tracerI = inst(boxG(1, 1, 1, 0.5, 0, 0), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }), 140, false);
+  OBJ.tracerI = inst(boxG(1, 1, 1, 0.5, 0, 0), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }), 260, false);
   OBJ.decal = inst(new THREE.CircleGeometry(1, 9).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.85, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }), 220, false);
   OBJ.decal.receiveShadow = false;
 }
@@ -286,6 +286,10 @@ const PCOL = [
   { j: '#2f9e94', j2: '#1f6f68', h: '#16161c', p: '#3b3a33', sk: '#d6a77f', boot: '#1d1d22', acc: '#c94b4b' },
 ];
 const _lzV = new THREE.Vector3(), _lzS = new THREE.Vector3();
+function gunTint(q, gl) { // (round 39b) recolour the gun body for its level: dark parts take the main colour, light parts the trim
+  const b = q && q.userData.base; if (!b) return; const T = OBJ.gunTint[gl];
+  for (const [o, m0] of b) { if (!T) { o.material = m0; continue; } const c = m0.color, l = 0.3 * c.r + 0.59 * c.g + 0.11 * c.b; o.material = l > 0.3 ? T[1] : T[0]; }
+}
 function laserTick(p, m, wi, gl, grip) { // (round 39) Lv2+ guns throw a laser-sight beam to what you aim at (red; gold at Lv3)
   const q = m.guns[wi], bm = q && q.userData.beam; if (!bm) return;
   const on = gl >= 2 && q.visible && m.g.visible !== false && !p.down && !p.dead && !p.build && grip < 0.5 && !(p.reloadT > 0) && !WPN[wi].flame; bm.visible = on; if (!on) return;
@@ -393,10 +397,15 @@ function mkPlayerModel(i) {
         mesh(boxG(0.03, 0.08, 0.03, 0.3, 0.13, 0), '#1a1c20', u[1]); mesh(boxG(0.012, 0.06, 0.05, 0.3, 0.16, 0), '#1a1c20', u[1]); gm(boxG(0.01, 0.012, 0.012, 0.31, 0.18, 0), '#7fe8ff', u[1]); mesh(cx(0.075, 0.065, 0.06, 0.47, 0.05, 0), '#1a1c20', u[1]); mesh(boxG(0.07, 0.035, 0.04, 0.33, -0.03, 0), '#22262c', u[1]); gm(boxG(0.01, 0.018, 0.018, 0.366, -0.03, 0), '#ff3a3a', u[1]);
         for (const xx of [0.15, 0.27, 0.39]) mesh(cx(0.068, 0.068, 0.025, xx, 0.05, 0), GLD, u[2]); mesh(cx(0.095, 0.095, 0.03, -0.06, 0.02, 0), GLD, u[2]); gm(cx(0.069, 0.069, 0.008, 0.21, 0.05, 0), '#ffb030', u[2]); gm(cx(0.069, 0.069, 0.008, 0.33, 0.05, 0), '#ffb030', u[2]); },
     ];
+    const BR = [[0.14, 0.02, 0.045], [0.36, 0.03, 0.062], [0.32, 0.022, 0.05], [0.48, 0.022, 0.05], [0.3, 0.012, 0.05], [0.18, 0.03, 0.068], [0.4, 0.055, 0.11]]; /* (round 39b) extra barrels: [length, radius, side offset] */
     guns.forEach((q, k) => { if (!B[k]) return; const up = [grp(q), grp(q), grp(q)]; B[k](up);
+      const [bl, br, bz] = BR[k], [mx, my] = MZ[k]; [[1, 1, '#5fe3ff'], [2, -1, '#ffd040']].forEach(([lv, sd, gc]) => { const z = sd * bz; mesh(cx(br, br, bl, mx - bl / 2, my, z), '#2a2e34', up[lv]); mesh(cx(br * 1.35, br * 1.35, 0.03, mx - bl + 0.02, my, z), '#1a1c20', up[lv]); gm(cx(br * 1.15, br * 1.15, 0.02, mx - 0.005, my, z), gc, up[lv]);
+        mesh(boxG(Math.min(0.1, bl * 0.4), 0.02, Math.abs(z) + 0.01, mx - bl * 0.6, my, z / 2), '#2a2e34', up[lv]); }); /* one more barrel per level: two at Lv2, three at Lv3 — one round each */
       const bm = new THREE.Mesh(new THREE.BoxGeometry(1, 0.014, 0.014).translate(0.5, 0, 0), beamM()); bm.position.set(MZ[k][0], MZ[k][1], 0); bm.visible = false; q.add(bm); q.userData.beam = bm; /* the laser sight (Lv2 red, Lv3 gold) */
       const dot = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 6), new THREE.MeshBasicMaterial({ color: '#ff5050' })); dot.position.x = 1; bm.add(dot); bm.userData.dot = dot;
-      up.forEach(u => { u.visible = false; u.traverse(o => { if (o.isMesh) o.castShadow = false; }); }); q.userData.up = up; }); }
+      up.forEach(u => { u.visible = false; u.traverse(o => { if (o.isMesh) o.castShadow = false; }); }); q.userData.up = up;
+      const base = []; q.traverse(o => { if (o.isMesh && !o.material.isMeshBasicMaterial && !up.some(u => u === o.parent || u === o.parent.parent || u === o.parent.parent?.parent) && o !== bm) base.push([o, o.material]); }); q.userData.base = base; }); }
+  if (!OBJ.gunTint) OBJ.gunTint = [null, ['#56603a', '#ff8a2a', '#000000', '#3a1400'], ['#1f5585', '#62e6ff', '#0a2a48', '#1a6a8a'], ['#d9a92a', '#fff0b0', '#4a3000', '#7a5a20']].map(c => c && [new THREE.MeshLambertMaterial({ color: c[0], emissive: c[2] }), new THREE.MeshLambertMaterial({ color: c[1], emissive: c[3] })]); /* (round 39b) a gun's colour by level: olive + orange / blue anodised / gold */
   const knife = grp(aim); for (const [geo, col] of [[boxG(0.075, 0.03, 0.03, -0.02, 0, 0), '#2a2420'], [boxG(0.02, 0.05, 0.05, 0.025, 0, 0), '#3a3a3a'], [boxG(0.15, 0.012, 0.035, 0.11, 0, 0), '#cfd4d8']]) mesh(geo, col, knife); knife.visible = false;
   const hammer = mk([[boxG(0.03, 0.32, 0.03, 0, 0.1, 0), '#8a6a44'], [boxG(0.12, 0.06, 0.06, 0.02, 0.26, 0), '#5a5f66']]);
   const medkit = mk([[boxG(0.14, 0.1, 0.2, 0, 0, 0), '#e8e2d6'], [boxG(0.145, 0.03, 0.08, 0, 0, 0), '#c83a32'], [boxG(0.145, 0.08, 0.03, 0, 0, 0), '#c83a32']]);
@@ -569,7 +578,7 @@ function drawPlayers(vl, dt) {
     const bashing = p.melee === 1 && p.shield, kn = p.knT > 0 && !build && !med && !p.down ? clamp(1 - p.knT / (bashing ? 0.3 : 0.28), 0, 1) : -1;
     const fired0 = W.t - (p._lastShot || -9) < 1.4, busy = reload || med || thr || build || kn >= 0 || fired0 || !!(p.inp && p.inp.fire);
     p._grip = lerp(p._grip || 0, RP && !busy ? 1 : 0, Math.min(1, dt * 7)); const grip = RP ? p._grip : 0; // (round 27) riding and not shooting: hands on the bars
-    m.guns.forEach((gm, k) => gm.visible = !build && !med && !thr && kn < 0 && k === wi && grip < 0.5); { const ug = m.guns[wi] && m.guns[wi].userData.up, gl = wlvOf(wi); if (ug && m._gl !== wi * 10 + gl) { m._gl = wi * 10 + gl; ug.forEach((u, k) => u.visible = gl > k); } laserTick(p, m, wi, gl, grip); } /* (round 38j) the gun's upgrade parts */ { const ab = p.arm || 0; if (m._arm !== ab && m.ARMG) { m._arm = ab; m.ARMG.forEach((L, k) => { const on = !!(ab >> k & 1); for (const o of L) o.visible = on; }); m.ASET.forEach(o => { o.visible = ab === 63; }); const pk = m.ARMG[5][0]; if (pk && pk.userData.pack) pk.userData.pack.visible = !(ab & 32); if (m.head.userData.tail) m.head.userData.tail.visible = !(ab & 1); for (const o of m.head.children) if (!m.ARMG[0].includes(o) && !m.ASET.includes(o) && o !== m.head.userData.tail) o.visible = !(ab & 1); } /* a closed helmet hides the face and hair inside it */ } /* (round 38k) armour pieces */ m.knife.visible = kn >= 0 && !bashing; m.hammer.visible = build; m.medkit.visible = med; m.nade.visible = thr;
+    m.guns.forEach((gm, k) => gm.visible = !build && !med && !thr && kn < 0 && k === wi && grip < 0.5); { const ug = m.guns[wi] && m.guns[wi].userData.up, gl = wlvOf(wi); if (ug && m._gl !== wi * 10 + gl) { m._gl = wi * 10 + gl; ug.forEach((u, k) => u.visible = gl > k); gunTint(m.guns[wi], gl); } laserTick(p, m, wi, gl, grip); } /* (round 38j) the gun's upgrade parts */ { const ab = p.arm || 0; if (m._arm !== ab && m.ARMG) { m._arm = ab; m.ARMG.forEach((L, k) => { const on = !!(ab >> k & 1); for (const o of L) o.visible = on; }); m.ASET.forEach(o => { o.visible = ab === 63; }); const pk = m.ARMG[5][0]; if (pk && pk.userData.pack) pk.userData.pack.visible = !(ab & 32); if (m.head.userData.tail) m.head.userData.tail.visible = !(ab & 1); for (const o of m.head.children) if (!m.ARMG[0].includes(o) && !m.ASET.includes(o) && o !== m.head.userData.tail) o.visible = !(ab & 1); } /* a closed helmet hides the face and hair inside it */ } /* (round 38k) armour pieces */ m.knife.visible = kn >= 0 && !bashing; m.hammer.visible = build; m.medkit.visible = med; m.nade.visible = thr;
     // stance: shouldered up when shooting or standing, low ready (muzzle down, butt still in the shoulder) when on the move
     const S = STANCE[wi], fired = W.t - (p._lastShot || -9) < 1.4, plain = down || build || med || thr;
     p._rdy = lerp(p._rdy == null ? 1 : p._rdy, plain || !moving || fired || (p.inp && p.inp.fire) ? 1 : 0, Math.min(1, dt * 8));
@@ -640,7 +649,7 @@ const _qd = new THREE.Quaternion(), _xa = new THREE.Vector3(1, 0, 0), _dv = new 
 function drawTracers() {
   const T = OBJ.tracerI; let n = 0;
   for (const t of RND.tracers) {
-    if (n >= 140) break;
+    if (n >= 260) break;
     const a = 1 - t.t / t.life, f = t.t / t.life * 0.7;
     const x1 = lerp(t.x, t.x2, f), y1 = lerp(t.y, t.y2, f), z1 = lerp(t.z, t.z2, f);
     _dv.set(t.x2 - x1, t.z2 - z1, t.y2 - y1); const len = _dv.length(); if (len < 0.01) continue; _dv.divideScalar(len);
@@ -649,7 +658,7 @@ function drawTracers() {
   }
   // sniper laser sight
   for (const p of W.p) {
-    if (n >= 140 || p.gone || p.dead || p.down || p.build || p.wpn !== 3 || p.reloadT > 0 || !OBJ.pl[p.i] || !OBJ.pl[p.i].g.visible) continue;
+    if (n >= 260 || p.gone || p.dead || p.down || p.build || p.wpn !== 3 || p.reloadT > 0 || !OBJ.pl[p.i] || !OBJ.pl[p.i].g.visible) continue;
     const [sx, sy, sz] = shoulder(p), [ax, ay, az] = aimDir(p), hit = rayWorld(sx, sy, sz, ax, ay, az, 30, { lean: LEAN }), x0 = sx + ax * 0.6, y0 = sy + ay * 0.6, z0 = sz + az * 0.6;
     _dv.set(ax, az, ay); _qd.setFromUnitVectors(_xa, _dv); tmpV.set(x0, z0 + (p.jz || 0), y0); tmpS.set(Math.max(0.1, hit.d - 0.6), 0.012, 0.012);
     tmpM.compose(tmpV, _qd, tmpS); T.setMatrixAt(n, tmpM); T.setColorAt(n, tmpC.setRGB(0.9, 0.08, 0.05)); n++;

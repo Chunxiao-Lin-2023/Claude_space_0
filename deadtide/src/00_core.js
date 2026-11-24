@@ -166,7 +166,7 @@ const bpOn = () => !!(W && W.vbp) && !(typeof isSiege === 'function' && isSiege(
 const upgOn = () => !!W && (bpOn() || (typeof isSiege === 'function' && isSiege())); /* (round 39) mech / gun / armour blueprints drop in every mode (尸城求生 keeps its own vehicle blueprints) */
 const vbpMask = () => W && W.vbp ? W.vbp.reduce((m, k) => m | 1 << VKEY(k), 0) : 126;
 const mlvOf = v => ((W && W.mlv) || [])[v] || 0;
-const UPG_MAX = 3, GUP = [{ n: '原厂', m: 1, r: 1 }, { n: '扩容弹匣', m: 1.4, r: 1 }, { n: '制退器 + 瞄具', m: 1.4, r: 1.15 }, { n: '精工镀金', m: 1.7, r: 1.25 }]; /* (round 38j) gun upgrade levels: magazine × m, fire rate × r */
+const UPG_MAX = 3, GUP = [{ n: '原厂', m: 1, r: 1, s: 1, f: 1 }, { n: '扩容弹匣', m: 1.4, r: 1, s: 1, f: 1 }, { n: '双联枪管', m: 1.4, r: 1, s: 2, f: 0.58 }, { n: '三联镀金', m: 1.7, r: 1, s: 3, f: 0.42 }]; /* (round 38j) gun upgrade levels: magazine × m, fire rate × r; (round 39b) s rounds side by side per trigger (one barrel each), f damage per round: ×1 / ×1.16 / ×1.26 in all, wider spread hits more of a crowd */
 const MUP = [{ n: '原厂', d: 1, t: 1 }, { n: '强化装甲', d: 1, t: 1.15 }, { n: '动力背包', d: 1.15, t: 1.15 }, { n: '王牌涂装', d: 1.25, t: 1.25 }]; /* mech upgrade levels: damage × d, toughness × t */
 /* (round 38k) 等身战甲: six pieces each found as a blueprint and worn by whoever installs it; modest bonuses, and each piece shows on the model */
 const ARM = [{ k: 'helm', n: '战甲头盔', d: '视野 +3 格、受到伤害 −5%' }, { k: 'chest', n: '战甲胸甲', d: '受到伤害 −20%' }, { k: 'pauld', n: '战甲肩甲', d: '被击退减半、受到伤害 −8%' }, { k: 'gaunt', n: '战甲护臂', d: '换弹快 25%、射速 +10%' }, { k: 'legs', n: '战甲腿甲', d: '步行快 12%' }, { k: 'pack', n: '动力背包', d: '生命上限 +40、4 秒没挨打就每秒回 3 血' }]; /* (round 38l) stronger: a full set can kite a horde or a 怪兽 */
@@ -257,7 +257,7 @@ const ZT = {
   shade: { name: '隐身者', hp: 420, spd: 1.5, r: 0.35, h: 1.6, dmg: 12, bdmg: 10, cd: 0.9, sc: 1.55, look: 'walker', skin: '#50505e', elite: { k: 'cloak', cd: 6, col: '#c0c0e0', tip: '隐身摸到你身边偷袭，留意空气里的扭曲，附近炸一下就现形' } },
 };
 const ELITES = ['blinker', 'caller', 'warden', 'shade'];
-const BUILD_TAG = '第 39 轮'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
+const BUILD_TAG = '第 39 轮之二'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
 // aim assist (SET.assist): fire-button lock range (x weapon range), lock-on time before it fires, spread while auto-aimed, mouse/finger magnet
 const PORT = 1.25; // firing port: your own shots pass a wall / door you built if it is this close to you
 const ASSIST = [{ name: '关', range: 0, acq: 0, spread: 1, mag: 0 }, { name: '标准', range: 0.75, acq: 0.3, spread: 1.5, mag: 1 }, { name: '强', range: 1, acq: 0, spread: 1, mag: 1 }];

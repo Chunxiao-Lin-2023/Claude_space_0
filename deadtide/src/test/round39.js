@@ -22,6 +22,16 @@ const { chromium } = require('playwright');
     W.wlv[2] = 3; fr(10); out.col3 = bm.material.color.getHexString(); W.wlv[2] = 0; return out; });
   check('every gun has three levels of its own parts', s.parts.every(x => x !== 'x' && x.split('/').every(n => +n >= 1)), s.parts.join(' '));
   check('laser sight from Lv2 (red), reaching the aim point, gold at Lv3; none at Lv1', !s.b1 && s.b2 && s.col2 === 'ff3a3a' && s.len > 4 && s.len < 8 && s.col3 === 'ffd040', JSON.stringify(s));
+  // (39b) more barrels = more rounds side by side: Lv2 two at ×0.58, Lv3 three at ×0.42; shells too
+  s = await S(() => { const me = W.p[ME], out = {}; W.zs.length = 0; me.ride = false; me.down = false;
+    const z = spawnZombie('brute', 0); z.L = me.L; z.z = me.z; z.sleep = false; z.hp = z.maxHp = 1e6; const at = []; let an = 0;
+    for (let k = 0; k < 16; k++) { an = k / 16 * Math.PI * 2; z.x = me.x + Math.cos(an) * 3; z.y = me.y + Math.sin(an) * 3; if (los(me.x, me.y, me.z + 1, z.x, z.y, z.z + 1, 0)) break; }
+    me.aim = an; window.__dbg.aimAt = () => ({ x: z.x, y: z.y, z: z.z + 0.9 }); me.aimPt = { x: z.x, y: z.y, z: z.z + 0.9 };
+    for (const lv of [0, 2, 3]) { W.wlv[2] = lv; me.mag[2] = 30; const h0 = z.hp; let shot = null;
+      const fx0 = window.fxEvent; window.fxEvent = e => { if (e.k === 'shot' && e.w === 2) shot = e; return fx0(e); }; try { fireWeapon(me, 2); } finally { window.fxEvent = fx0; } out['l' + lv] = [shot ? shot.e.length : -1, Math.round(h0 - z.hp)]; }
+    W.wlv[6] = 2; W.proj.length = 0; me.mag[6] = 5; fireWeapon(me, 6); out.gl = W.proj.filter(b => b.k === 'gl').map(b => b.dm).join(','); W.wlv[6] = 0; W.wlv[2] = 0; W.zs.length = 0; return out; });
+  check('Lv2 fires two rounds side by side, Lv3 three; total damage ×1.16 / ×1.26 of one round', s.l0[0] === 1 && s.l2[0] === 2 && s.l3[0] === 3 && Math.abs(s.l2[1] / s.l0[1] - 1.16) < 0.12 && Math.abs(s.l3[1] / s.l0[1] - 1.26) < 0.15, JSON.stringify(s));
+  check('the launcher fires one shell per barrel at ×0.58', s.gl === '0.58,0.58', s.gl);
   // trimmed build list: cover 2, traps 2, turrets 3; retired kinds can't be built through the action, but old ones still stand
   s = await S(() => { const me = W.p[ME], out = {}; out.items = ITEMS.map(g => g.k + ':' + g.ids.map(id => B[id].name).join('|')).join(' ');
     const x = Math.floor(me.x) + 2, y = Math.floor(me.y), L = me.L; W.res = { wood: 99, stone: 99, steel: 99, parts: 99 }; doAct(me, 'build', { x, y, l: L, b: 58, d: 0 }); out.frost = W.blk[ci(x, y, L)];

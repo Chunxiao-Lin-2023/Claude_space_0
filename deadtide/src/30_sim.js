@@ -736,28 +736,31 @@ function aimDir(p) {
 function fireWeapon(p, wi) {
   const w = WPN[wi], rk = rideK(p); if (p.cdW) p.cdW[wi] = w.rate * rk.rate * rofMul(wi) * (armHas(p, 3) ? 0.91 : 1); else p.fireCD = w.rate * rk.rate * rofMul(wi) * (armHas(p, 3) ? 0.91 : 1); /* (round 38l) gauntlets steady the aim */ /* (round 38i) 快速击发 */ p.mag[wi]--;
   noiseAt(p.x, p.y, SIEGE.gunNoise[w.k] || SIEGE.noiseR, p.z);
-  const [sx, sy, sz] = shoulder(p), [ax, ay, az] = aimDir(p);
+  let [sx, sy, sz] = shoulder(p); const [ax, ay, az] = aimDir(p);
   const yaw = Math.atan2(ay, ax), pitch = Math.asin(clamp(az, -1, 1));
-  const mul = (1 + 0.12 * W.upg) * (rideVeh(p) && rideVeh(p).rideDmg || 1), ends = []; /* (round 36n) 骑射: +15% on the bike */
+  const GS = GUP[wlvOf(wi)], mul = (1 + 0.12 * W.upg) * (rideVeh(p) && rideVeh(p).rideDmg || 1), ends = []; /* (round 36n) 骑射: +15% on the bike */
   if (w.gl) { // launcher: an explosive shell on a flat arc that bursts on whatever it touches
-    const v = 17; W.proj.push({ k: 'gl', ox: p.x, oy: p.y, x: sx + ax * 0.45, y: sy + ay * 0.45, z: sz, vx: Math.cos(pitch) * Math.cos(yaw) * v, vy: Math.cos(pitch) * Math.sin(yaw) * v, vz: Math.sin(pitch) * v + 1.2, o: p.i, t: 2.6 });
+    const v = 17; for (let q = 0; q < GS.s; q++) { const yq = yaw + (q - (GS.s - 1) / 2) * 0.12; W.proj.push({ k: 'gl', ox: p.x, oy: p.y, x: sx + ax * 0.45, y: sy + ay * 0.45, z: sz, vx: Math.cos(pitch) * Math.cos(yq) * v, vy: Math.cos(pitch) * Math.sin(yq) * v, vz: Math.sin(pitch) * v + 1.2, o: p.i, t: 2.6, dm: GS.f }); } /* (round 39b) one shell per barrel */
     emit({ k: 'shot', o: p.i, w: wi, e: [] }); return;
   }
   if (w.flame) { // a cone of fire: everything in front, in range and in sight catches fire
     for (const z of W.zs) {
       if (z.hp <= 0 || Math.abs(z.L - p.L) > 1) continue;
-      const dx = z.x - sx, dy = z.y - sy, d = Math.hypot(dx, dy); if (d > w.range + z.r) continue;
-      if (Math.abs(angDiff(yaw, Math.atan2(dy, dx))) > w.spread + z.r / Math.max(d, 0.5)) continue;
+      const dx = z.x - sx, dy = z.y - sy, d = Math.hypot(dx, dy); if (d > w.range * (1 + 0.08 * (GS.s - 1)) + z.r) continue; /* (round 39b) more nozzles: a wider, longer, hotter cone */
+      if (Math.abs(angDiff(yaw, Math.atan2(dy, dx))) > w.spread * (1 + 0.22 * (GS.s - 1)) + z.r / Math.max(d, 0.5)) continue;
       if (!los(sx, sy, sz, z.x, z.y, z.z + z.h * 0.5, LEAN)) continue;
-      hurtZombie(z, w.dmg * mul, p, 0, 0, true); z.burn = Math.max(z.burn || 0, w.burn); z.burnBy = p.i;
+      hurtZombie(z, w.dmg * mul * GS.s * GS.f, p, 0, 0, true); z.burn = Math.max(z.burn || 0, w.burn); z.burnBy = p.i;
     }
     modeAreaHit(sx + Math.cos(yaw) * w.range * 0.5, sy + Math.sin(yaw) * w.range * 0.5, w.range * 0.5, w.dmg * mul * 0.8);
     emit({ k: 'shot', o: p.i, w: wi, e: [] }); return;
   }
   if (w.bloom) p.bloom = Math.min(2.2, (p.bloom || 0) + w.bloom);
-  for (let k = 0; k < w.pellets; k++) {
+  const NR = w.pellets * GS.s, cy = Math.cos(yaw), sy2 = Math.sin(yaw); /* (round 39b) GS.s barrels side by side, each fanned out a little */
+  for (let k = 0; k < NR; k++) {
+    const bq = Math.floor(k / w.pellets) - (GS.s - 1) / 2, ox = -sy2 * bq * 0.16, oy = cy * bq * 0.16, fan = bq * (w.pellets > 1 ? 0.06 : 0.035);
+    const sx0 = sx, sy0 = sy; { const t2 = rayWorld(sx, sy, sz, ox, oy, 0, 0.17, { lean: LEAN }); if (t2.d >= 0.16) { sx += ox; sy += oy; } }
     const sp = w.spread * rk.spread * (p.down ? 1.6 : 1) * (1 + (w.bloom ? p.bloom : 0)) * (p.inp.auto ? p.inp.auto : 1); // auto-aim fires looser
-    const yw = yaw + (rand() - 0.5) * 2 * sp, pt = pitch + (rand() - 0.5) * sp;
+    const yw = yaw + fan + (rand() - 0.5) * 2 * sp, pt = pitch + (rand() - 0.5) * sp;
     const dx = Math.cos(pt) * Math.cos(yw), dy = Math.cos(pt) * Math.sin(yw), dz = Math.sin(pt);
     const wall = rayWorld(sx, sy, sz, dx, dy, dz, w.range, { lean: LEAN });
     const hits = [];
@@ -771,7 +774,7 @@ function fireWeapon(p, wi) {
     for (const [d, z] of hits) {
       if (left <= 0) break;
       const hzv = sz + dz * d, head = hzv > z.z + z.h * 0.76;
-      let dmg = w.dmg * mul * (head ? (w.hs || BAL.headshot) : 1);
+      let dmg = w.dmg * mul * GS.f * (head ? (w.hs || BAL.headshot) : 1);
       if (w.falloff) dmg *= d < 3 ? 1 : Math.max(0.35, 1 - (d - 3) / (w.range - 3) * 0.65); // shotgun: brutal up close
       let armor = false;
       if (ZT[z.k].armor && !(w.pierce >= 3) && Math.cos(angDiff(z.face, Math.atan2(-dy, -dx))) > 0.2) { dmg *= ZT[z.k].armor; armor = true; } // riot gear: only piercing shots or a flank get through
@@ -784,6 +787,7 @@ function fireWeapon(p, wi) {
     }
     if (left > 0 || !hz) { endD = wall.d; if (wall.i >= 0 && W.blk[wall.i] === 44) modeHit(wall.i, w.dmg * mul * (w.falloff ? 0.7 : 1)); if (wall.i >= 0 && redBarrel(wall.i)) barrelBoom(wall.i, p); }
     ends.push([r2(sx + dx * endD), r2(sy + dy * endD), r2(sz + dz * endD), !hz && wall.i >= 0 ? 1 : 0]);
+    sx = sx0; sy = sy0;
   }
   emit({ k: 'shot', o: p.i, w: wi, e: ends });
 }
@@ -1197,7 +1201,7 @@ function stepProj(dt) {
       const hb = blkAt(cx, cy, Math.floor(nz / FH)), port = hb && B[hb].cost && b.ox != null && Math.hypot(nx - b.ox, ny - b.oy) < PORT + 0.4;
       let boom = b.t <= 0 || !inMap(cx, cy) || (solidFor(hb, 'b') && !port) || nz <= floorUnder(nx, ny, b.z + 0.05);
       if (!boom) for (const z of W.zs) if (z.hp > 0 && d2(z.x, z.y, nx, ny) < z.r + 0.2 && nz > z.z - 0.1 && nz < z.z + z.h + 0.15) { boom = true; break; }
-      if (boom) { b.dead = true; explode(b.x, b.y, Math.max(b.z, floorUnder(b.x, b.y, b.z + 0.05)) + 0.15, W.p[b.o], WPN[6].blastR, WPN[6].dmg); } else { b.x = nx; b.y = ny; b.z = nz; }
+      if (boom) { b.dead = true; explode(b.x, b.y, Math.max(b.z, floorUnder(b.x, b.y, b.z + 0.05)) + 0.15, W.p[b.o], WPN[6].blastR, WPN[6].dmg * (b.dm || 1)); } else { b.x = nx; b.y = ny; b.z = nz; }
     } else if (b.k === 'nade') {
       b.t -= dt;
       const nx = b.x + b.vx * dt, ny = b.y + b.vy * dt, nz = b.z + b.vz * dt;
