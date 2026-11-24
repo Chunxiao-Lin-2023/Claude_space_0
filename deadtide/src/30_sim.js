@@ -91,7 +91,7 @@ function gyroFire(p) {
 // Higher floors see further; each vehicle / mech has its own reach (the armoured car's slits least, flying most); nights are shorter-sighted.
 function visR(p) { if (!p || p.gone || p.dead) return 0; const V = BAL.vis; let r = V.foot + Math.max(0, (p.L || 0) - gAt(Math.floor(p.x), Math.floor(p.y))) * V.floor;
   if (p.ride && VEH[p.veh]) r = inMech(p) ? (airborne(p) ? V.fly : V.mech) : airborne(p) ? VEH[p.veh].vis : (VEH[p.veh].vis || V.foot) + (r - V.foot);
-  if (!p.ride && armHas(p, 0)) r += 2; /* (round 38k) helmet */
+  if (!p.ride && armHas(p, 0)) r += 3; /* (round 38k/l) helmet */
   return r * (W.phase === 'night' ? V.night : 1); }
 let VIS = [];
 function visTick() { VIS = W.p.filter(p => !p.gone && !p.dead).map(p => ({ x: p.rx != null ? p.rx : p.x, y: p.ry != null ? p.ry : p.y, r2: visR(p) ** 2 })); }
@@ -402,7 +402,7 @@ function stepMove(p, dt) {
   }
   if (p.dash) { const D = p.dash, f = Math.min(dt, D.T - D.t) / D.T; moveEnt(p, D.dx * f, D.dy * f, 'p', true); D.t += dt; if (D.t >= D.T) p.dash = null; p.z = pZ(p); p.anim += dt * 8; return; }
   if (p.L > 0 && p.L > skyTop(p.x, p.y)) { p.L = skyTop(p.x, p.y); p.z = pZ(p); } // (round 31) knocked down mid-air, or a save made in flight: fall to what is below
-  const spd = BAL.pSpeed * (p.down ? 0.22 : 1) * (p.medT > 0 && !p.ride ? 0.45 : 1) * (p.build ? 0.9 : 1) * (inMud(p.x, p.y, p.L) && !(p.ride && VEH[p.veh] && VEH[p.veh].mud) ? MUD_SLOW : 1) * (p.ride && VEH[p.veh] ? (inMech(p) ? mechOf(p).spd * (p.spinT > 0 ? 1.7 : 1) : VEH[p.veh].spd) : 1) * (p.mtr > 0 ? 0 : 1) * ccSpeed(p) * (!p.ride && armHas(p, 4) ? 1.06 : 1); /* (round 38k) leg armour */ // (round 34b) standing still while it transforms; (round 38g) staggered / slowed / climbers on it
+  const spd = BAL.pSpeed * (p.down ? 0.22 : 1) * (p.medT > 0 && !p.ride ? 0.45 : 1) * (p.build ? 0.9 : 1) * (inMud(p.x, p.y, p.L) && !(p.ride && VEH[p.veh] && VEH[p.veh].mud) ? MUD_SLOW : 1) * (p.ride && VEH[p.veh] ? (inMech(p) ? mechOf(p).spd * (p.spinT > 0 ? 1.7 : 1) : VEH[p.veh].spd) : 1) * (p.mtr > 0 ? 0 : 1) * ccSpeed(p) * (!p.ride && armHas(p, 4) ? 1.12 : 1); /* (round 38k/l) leg armour */ // (round 34b) standing still while it transforms; (round 38g) staggered / slowed / climbers on it
   const tx = I.mx * k * spd, ty = I.my * k * spd, a = Math.min(1, dt * 14);
   p.vx = lerp(p.vx, tx, a); p.vy = lerp(p.vy, ty, a);
   p.kbx *= Math.max(0, 1 - dt * 6); p.kby *= Math.max(0, 1 - dt * 6);
@@ -523,6 +523,7 @@ function stepActions(p, dt) {
     const dx = z.x - p.x, dy = z.y - p.y, d = Math.hypot(dx, dy) || 0.01;
     if (d < p.r + z.r + 0.3 && dx * p.vx + dy * p.vy > 0) { z.ramT = W.t + BAL.ramCD; const k = ZT[z.k].boss || z.k === 'brute' ? 1 : 5; hurtZombie(z, BAL.ramDmg, p, dx / d * k, dy / d * k); if (k > 1) z.stun = Math.max(z.stun || 0, 0.8); emit({ k: 'sfx', n: 'bash', x: z.x, y: z.y }); }
   }
+  if (armHas(p, 5) && !p.down && !p.dead && p.hp < p.maxHp && W.t - (p.hitAt || -9) > 4) p.hp = Math.min(p.maxHp, p.hp + 3 * dt); /* (round 38l) power pack: heals when you get a breather */
   { const hv = rideVeh(p) || paxVeh(p); if (hv && hv.heal && !p.down && !p.dead && p.hp < p.maxHp && W.t - (p.hitAt || -9) > 3) p.hp = Math.min(p.maxHp, p.hp + hv.heal * dt); } /* (round 36n) the armoured car is a mobile first-aid post */
   if (p.invT > 0) p.invT -= dt;
   for (let k = 0; k < NW; k++) { if (p.cdW[k] > 0) p.cdW[k] -= dt; if (p.rlBg[k] > 0) { p.rlBg[k] -= dt; if (p.rlBg[k] <= 0) { p.rlBg[k] = 0; reloadInto(p, k); } } }
@@ -719,7 +720,7 @@ function restockSpots(initial) {
 function startReload(p) {
   const wi = p.down ? 0 : p.wpn, w = WPN[wi];
   if (p.reloadT > 0 || p.mag[wi] >= magCap(wi) || (!w.inf && p.ammo[wi] <= 0)) return;
-  p.reloadT = w.reload * (armHas(p, 3) ? 0.85 : 1); p.reloadW = wi; /* (round 38k) gauntlets */ emit({ k: 'sfx', n: 'reload', x: p.x, y: p.y, o: p.i });
+  p.reloadT = w.reload * (armHas(p, 3) ? 0.75 : 1); p.reloadW = wi; /* (round 38k) gauntlets */ emit({ k: 'sfx', n: 'reload', x: p.x, y: p.y, o: p.i });
 }
 function finishReload(p) { reloadInto(p, p.reloadW); }
 function reloadInto(p, wi) { const w = WPN[wi], need = magCap(wi) - p.mag[wi], take = w.inf ? need : Math.min(need, p.ammo[wi]); p.mag[wi] += take; if (!w.inf) p.ammo[wi] -= take; }
@@ -733,7 +734,7 @@ function aimDir(p) {
   const L = Math.hypot(dx, dy, dz); return [dx / L, dy / L, dz / L];
 }
 function fireWeapon(p, wi) {
-  const w = WPN[wi], rk = rideK(p); if (p.cdW) p.cdW[wi] = w.rate * rk.rate * rofMul(wi); else p.fireCD = w.rate * rk.rate * rofMul(wi); /* (round 38i) 快速击发 */ p.mag[wi]--;
+  const w = WPN[wi], rk = rideK(p); if (p.cdW) p.cdW[wi] = w.rate * rk.rate * rofMul(wi) * (armHas(p, 3) ? 0.91 : 1); else p.fireCD = w.rate * rk.rate * rofMul(wi) * (armHas(p, 3) ? 0.91 : 1); /* (round 38l) gauntlets steady the aim */ /* (round 38i) 快速击发 */ p.mag[wi]--;
   noiseAt(p.x, p.y, SIEGE.gunNoise[w.k] || SIEGE.noiseR, p.z);
   const [sx, sy, sz] = shoulder(p), [ax, ay, az] = aimDir(p);
   const yaw = Math.atan2(ay, ax), pitch = Math.asin(clamp(az, -1, 1));
@@ -823,7 +824,7 @@ function hurtPlayer(p, dmg, src) {
     if (p.mh[p.veh] <= 0) mechEject(p, M.name + '的装甲被打穿了，变回载具：装甲会慢慢恢复，商店里能马上修好');
     dmg *= p.evoOn ? BAL.evoPass : BAL.mechPass; if (dmg < 0.5) return;
   }
-  dmg *= armDmgMul(p); /* (round 38k) body armour */
+  dmg *= armDmgMul(p) * (armFull(p) && src && src.k && ZT[src.k] && (ZT[src.k].kaiju || ZT[src.k].elite) ? 0.85 : 1); /* (round 38k/l) body armour; the full set shrugs off big hitters a bit more */
   if (p.ride && VEH[p.veh] && VEH[p.veh].armor) dmg *= VEH[p.veh].armor;                                   // (round 22) inside the armoured car
   else if (paxVeh(p) && paxVeh(p).armor && paxVeh(p).port) dmg *= paxVeh(p).armor; /* (round 36n) the armoured car's back seat is inside the armour too */
   { const bv = rideVeh(p); if (bv && bv.dodge && Math.hypot(p.vx || 0, p.vy || 0) > 1.5 && rand() < bv.dodge) { emit({ k: 'dodge', p: p.i, x: r2(p.x), y: r2(p.y), z: r2(p.z) }); return; } } /* (round 36n) 自行车 闪避 */
@@ -909,7 +910,7 @@ function doAct(p, a, v) {
     case 'build': doBuild(p, v.x, v.y, v.l, v.b, v.d); break;
     case 'demo': doDemolish(p, v.x, v.y, v.l); break;
     case 'crush': if (inMech(p) && typeof v === 'number' && v >= 0 && v < NC && MECH_CRUSH.has(W.blk[v]) && !(W.mine && W.mine.has(v)) && Math.hypot(cx_(v) + 0.5 - p.x, cy_(v) + 0.5 - p.y) < 2.6) { const r = B[W.blk[v]].res, g = GATHER[W.blk[v]]; if (p.veh === 3 && g) { mechScar(v, null, null, BAL.workerRegrow); const n = Math.max(1, Math.round(rand(g.n[0], g.n[1]) * BAL.workerGather)); W.res[g.res] += n; taskAdd('gather'); emit({ k: 'loot', p: p.i, x: cx_(v) + 0.5, y: cy_(v) + 0.5, z: cl_(v) * FH + 1, text: '+' + n + ' ' + RES.find(q => q.k === g.res).name }); setCell(v, 0, W.slab[v], null, 'mine'); } /* (round 36) 工蜂's passive: what it flattens is gathered (and so doesn't grow back) */ else { mechScar(v); setCell(v, 0, W.slab[v], null, 'brk'); if (r && rand() < 0.5) W.res[r] = (W.res[r] || 0) + 1; } emit({ k: 'sfx', n: 'bash', x: cx_(v) + 0.5, y: cy_(v) + 0.5 }); } break; // (round 34d) a mech flattens what is in its way
-    case 'bpinst': { const b = (W.bps || [])[v | 0]; if (!b || isSiege()) break; const t = b[0], k = +b.slice(1); if (t === 'a') { if (armHas(p, k)) { emit({ k: 'deny', p: p.i, why: '你已经穿着' + ARM[k].n + '了：让队友来装' }); break; } const c = armCost(); if (!affordable(W.res, c)) { emit({ k: 'deny', p: p.i, why: '材料不足' }); break; } for (const r in c) W.res[r] -= c[r]; W.bps.splice(v | 0, 1); p.arm = (p.arm || 0) | 1 << k; if (k === 5) { p.maxHp = pMaxHpOf(p); p.hp = Math.min(p.maxHp, p.hp + 15); } emit({ k: 'bpuse', p: p.i, t, v: k, full: armFull(p) ? 1 : 0 }); break; } /* (round 38k) armour: worn by whoever installs it */
+    case 'bpinst': { const b = (W.bps || [])[v | 0]; if (!b || isSiege()) break; const t = b[0], k = +b.slice(1); if (t === 'a') { if (armHas(p, k)) { emit({ k: 'deny', p: p.i, why: '你已经穿着' + ARM[k].n + '了：让队友来装' }); break; } const c = armCost(); if (!affordable(W.res, c)) { emit({ k: 'deny', p: p.i, why: '材料不足' }); break; } for (const r in c) W.res[r] -= c[r]; W.bps.splice(v | 0, 1); p.arm = (p.arm || 0) | 1 << k; if (k === 5) { p.maxHp = pMaxHpOf(p); p.hp = Math.min(p.maxHp, p.hp + 40); } emit({ k: 'bpuse', p: p.i, t, v: k, full: armFull(p) ? 1 : 0 }); break; } /* (round 38k) armour: worn by whoever installs it */
       const lv = t === 'm' ? mlvOf(k) : wlvOf(k), c = t === 'm' ? mlvCost(lv) : gunCost(lv); /* (round 38j) install a found upgrade blueprint with materials */
       if (lv >= UPG_MAX) { W.bps.splice(v | 0, 1); break; } if (!affordable(W.res, c)) { emit({ k: 'deny', p: p.i, why: '材料不足' }); break; } for (const r in c) W.res[r] -= c[r]; W.bps.splice(v | 0, 1);
       if (t === 'm') W.mlv[k] = lv + 1; else W.wlv[k] = lv + 1; emit({ k: 'bpuse', p: p.i, t, v: k, lv: lv + 1 }); } break;
