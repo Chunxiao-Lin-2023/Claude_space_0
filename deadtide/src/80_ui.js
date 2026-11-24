@@ -302,6 +302,8 @@ function shopBtn(c, label) {
   return `<button class="sbtn${why ? ' no' : ''}" data-c="${c.id}" ${hard ? 'disabled' : ''}><b>${label || c.name}</b><span>${hard ? why : (Object.keys(c.cost).length ? costText(c.cost) : '免费') + (why ? ' · 不够' : '')}</span></button>`;
 }
 function bpList(t) { // (round 38j) found upgrade blueprints of one kind ('m' mech / 'g' gun), each with an install button
+  if (t === 'a') { const me = W.p[ME]; return (W.bps || []).map((b, k) => [b, k]).filter(([b]) => b[0] === 'a').map(([b, k]) => { const n = +b.slice(1), c = armCost(), has = armHas(me, n), ok = !has && affordable(W.res, c); /* (round 38k) armour: worn by whoever installs it */
+    return `<div class="sres bpr"><b>图纸</b><span>${ARM[n].n}（${ARM[n].d}）${has ? ' · 你已穿着，留给队友' : ''}</span><button class="sbtn${ok ? '' : ' no'}" data-bi="${k}" ${has ? 'disabled' : ''}><b>${has ? '已有' : '穿上'}</b><span>${has ? '' : costText(c)}</span></button></div>`; }).join(''); }
   return (W.bps || []).map((b, k) => [b, k]).filter(([b]) => b[0] === t).map(([b, k]) => { const n = +b.slice(1), lv = t === 'm' ? mlvOf(n) : wlvOf(n), c = t === 'm' ? mlvCost(lv) : gunCost(lv), ok = affordable(W.res, c), U = t === 'm' ? MUP[lv + 1] : GUP[lv + 1];
     const eff = t === 'm' ? (U.t > MUP[lv].t ? '更耐打 ×' + U.t : '') + (U.d > MUP[lv].d ? (U.t > MUP[lv].t ? '、' : '') + '伤害 ×' + U.d : '') : (U.m > GUP[lv].m ? '弹匣 ×' + U.m : '') + (U.r > GUP[lv].r ? (U.m > GUP[lv].m ? '、' : '') + '射速 ×' + U.r : '');
     return `<div class="sres bpr"><b>图纸</b><span>${t === 'm' ? MECHS[n].name : WPN[n].name} · ${U.n}（Lv${lv + 1}，${eff}）</span><button class="sbtn${ok ? '' : ' no'}" data-bi="${k}"><b>安装</b><span>${costText(c)}</span></button></div>`; }).join(''); }
@@ -314,7 +316,7 @@ function renderCraft() {
   // (round 36f) cards carry only a name, what you have and the button; everything else (what it does, setting a default vehicle) is in the long-press card
   const T = UI.stips = {}, card = (k, own, name, em, btns, tip, cls) => { T[k] = tip; return `<div class="sc${own ? ' own' : ''}${cls ? ' ' + cls : ''}" data-k="${k}"><div class="sh"><b>${name}</b><em>${em}</em></div><div class="sb">${btns}</div></div>`; };
   if (tab === 'gun') {
-    if (bpOn()) { const bl = bpList('g'); if (bl) h += `<div class="stop">${bl}</div>`; } /* (round 38j) gun upgrade blueprints you found, ready to install */
+    if (bpOn()) { const me2 = W.p[ME], na = ARM.filter((a, k) => armHas(me2, k)).length, bl = bpList('a') + bpList('g') + (na ? `<div class="sres" data-k="arm"><b>战甲 ${na}/6</b><span>${ARM.map((a, k) => armHas(me2, k) ? a.n.replace('战甲', '') : '').filter(Boolean).join(' · ')}${na === 6 ? ' · 全套' : ''}</span></div>` : ''); if (na) T.arm = { t: '等身战甲', d: ARM.map((a, k) => (armHas(me2, k) ? '✓ ' : '· ') + a.n + '：' + a.d).join('<br>') + '<br>' + ARM_SET }; if (bl) h += `<div class="stop">${bl}</div>`; } /* (round 38k) armour + gun blueprints */ /* (round 38j) gun upgrade blueprints you found, ready to install */
     { const c = CRAFT.find(x => x.med); h += card('med', me.meds > 0, c.name, me.meds + ' / ' + BAL.medCap, shopBtn(c, '买'), { t: c.name, d: c.desc }, 'smed'); }
     h += `<div class="sgrid2">`;
     for (const c of CRAFT.filter(x => x.nade)) { const n = c.gt ? gCount(me, c.gt) : me.nades, cap = c.gt ? BAL.gnCap : BAL.nadeCap; h += card(c.id, n > 0, c.name.replace(' ×2', ''), n + ' / ' + cap, shopBtn(c, '买 ×2'), { t: c.name, d: c.desc }); }
@@ -346,7 +348,7 @@ function renderCraft() {
   }
   $('clist').innerHTML = h;
   $('clist').querySelectorAll('button[data-c]').forEach(b => b.addEventListener('click', () => shopBuy(CRAFT.find(c => c.id === b.dataset.c))));
-  $('clist').querySelectorAll('button[data-bi]').forEach(b => b.addEventListener('click', () => { const k = +b.dataset.bi, bp = W.bps[k]; if (!bp) return; const t = bp[0], n = +bp.slice(1), c = t === 'm' ? mlvCost(mlvOf(n)) : gunCost(wlvOf(n)); if (!affordable(W.res, c)) { toast('材料不足', '#ff8a7a'); sfx('deny'); return; } act('bpinst', k); sfx('click'); setTimeout(() => { if (!$('craft').classList.contains('hidden')) renderCraft(); }, NETROLE === 'guest' ? 300 : 0); })); /* (round 38j) */
+  $('clist').querySelectorAll('button[data-bi]').forEach(b => b.addEventListener('click', () => { const k = +b.dataset.bi, bp = W.bps[k]; if (!bp) return; const t = bp[0], n = +bp.slice(1), c = t === 'a' ? armCost() : t === 'm' ? mlvCost(mlvOf(n)) : gunCost(wlvOf(n)); if (!affordable(W.res, c)) { toast('材料不足', '#ff8a7a'); sfx('deny'); return; } act('bpinst', k); sfx('click'); setTimeout(() => { if (!$('craft').classList.contains('hidden')) renderCraft(); }, NETROLE === 'guest' ? 300 : 0); })); /* (round 38j) */
   $('clist').querySelectorAll('button[data-g]').forEach(b => b.addEventListener('click', () => { closeCraft(); selItem(+b.dataset.g); }));
   $('clist').querySelectorAll('button.mel').forEach(b => b.addEventListener('click', () => { switchMelee(+b.dataset.m); setTimeout(renderCraft, NETROLE === 'guest' ? 250 : 0); }));
   shopTipWire();

@@ -358,10 +358,46 @@ function mkPlayerModel(i) {
   const hammer = mk([[boxG(0.03, 0.32, 0.03, 0, 0.1, 0), '#8a6a44'], [boxG(0.12, 0.06, 0.06, 0.02, 0.26, 0), '#5a5f66']]);
   const medkit = mk([[boxG(0.14, 0.1, 0.2, 0, 0, 0), '#e8e2d6'], [boxG(0.145, 0.03, 0.08, 0, 0, 0), '#c83a32'], [boxG(0.145, 0.08, 0.03, 0, 0, 0), '#c83a32']]);
   const nade = mk([[new THREE.IcosahedronGeometry(0.05, 0), '#3c4a32']]);
+  // (round 38k) 等身战甲: six pieces (helmet, breastplate, pauldrons, gauntlets, leg armour, power pack), each its own group so a partial set shows exactly what you wear;
+  // gunmetal plates with lighter panels and trim, and glowing seams in the player's colour (cyan / amber) that all light up with the full set
+  const ARMG = [[], [], [], [], [], []], ASET = [];
+  { const B = '#444d5a', P = C.j, E = '#c3ccd6', GL = new THREE.MeshBasicMaterial({ color: i % 2 ? '#ffb547' : '#5fe3ff' }), DK = '#12161c';
+    const am = (k, geo, col, par, x, y, z) => { const m = mesh(geo, col, par, x, y, z); m.visible = false; ARMG[k].push(m); return m; };
+    const ag = (k, geo, par, x, y, z, set) => { const m = new THREE.Mesh(geo, GL); m.position.set(x || 0, y || 0, z || 0); par.add(m); m.visible = false; (set ? ASET : ARMG[k]).push(m); return m; };
+    const cyl = (r1, r2, h, n) => new THREE.CylinderGeometry(r1, r2, h, n || 10);
+    // helmet: closed shell, dark visor with a glowing slit, cheek plates, ear pods, crest
+    am(0, boxG(0.25, 0.2, 0.235, -0.005, 0.13, 0), B, head); am(0, boxG(0.22, 0.06, 0.215, -0.015, 0.245, 0), B, head); am(0, boxG(0.16, 0.012, 0.14, -0.02, 0.278, 0), P, head);
+    am(0, boxG(0.16, 0.035, 0.022, -0.03, 0.29, 0), E, head); am(0, boxG(0.03, 0.075, 0.215, 0.115, 0.125, 0), DK, head); ag(0, boxG(0.008, 0.022, 0.19, 0.132, 0.128, 0), head);
+    for (const s of [-1, 1]) { am(0, boxG(0.07, 0.07, 0.025, 0.08, 0.075, s * 0.116), P, head); am(0, cyl(0.045, 0.045, 0.03).rotateX(Math.PI / 2), P, head, -0.01, 0.13, s * 0.123); ag(0, cyl(0.016, 0.016, 0.034, 8).rotateX(Math.PI / 2), head, -0.01, 0.13, s * 0.124); }
+    am(0, boxG(0.012, 0.05, 0.13, 0.124, 0.19, 0), P, head); for (const s of [-1, 1]) am(0, boxG(0.16, 0.02, 0.012, -0.01, 0.2, s * 0.119), P, head); /* forehead plate + side stripes in the player's colour */
+    am(0, boxG(0.05, 0.06, 0.16, 0.11, 0.055, 0), B, head); am(0, boxG(0.006, 0.008, 0.1, 0.136, 0.048, 0), E, head); am(0, boxG(0.006, 0.008, 0.1, 0.136, 0.064, 0), E, head); am(0, boxG(0.05, 0.08, 0.2, -0.12, 0.06, 0), B, head);
+    ag(0, boxG(0.12, 0.008, 0.026, -0.03, 0.309, 0), head, 0, 0, 0, 1);
+    // breastplate: front plate, segmented abdomen, pectoral panels, a glowing core, side and back plates, raised collar
+    am(1, boxG(0.05, 0.19, 0.25, 0.122, 0.27, 0), B, torso); am(1, boxG(0.04, 0.05, 0.2, 0.112, 0.145, 0), B, torso); am(1, boxG(0.04, 0.045, 0.18, 0.106, 0.09, 0), B, torso);
+    for (const s of [-1, 1]) { am(1, boxG(0.012, 0.11, 0.09, 0.15, 0.285, s * 0.062), P, torso); am(1, boxG(0.13, 0.15, 0.03, 0.01, 0.25, s * 0.15), B, torso); ag(1, boxG(0.008, 0.16, 0.01, 0.15, 0.27, s * 0.125), torso, 0, 0, 0, 1); }
+    am(1, cyl(0.042, 0.042, 0.01, 12).rotateZ(Math.PI / 2), E, torso, 0.152, 0.255, 0); ag(1, cyl(0.03, 0.03, 0.014, 12).rotateZ(Math.PI / 2), torso, 0.156, 0.255, 0);
+    am(1, boxG(0.04, 0.24, 0.22, -0.115, 0.24, 0), B, torso); am(1, cyl(0.145, 0.138, 0.075, 10).translate(0, 0.065, 0).scale(0.83, 1, 1), B, torso); am(1, boxG(0.02, 0.05, 0.07, 0.118, 0.065, 0), E, torso); ag(1, boxG(0.008, 0.02, 0.04, 0.13, 0.066, 0), torso); /* waist plates + buckle */ am(1, cyl(0.135, 0.16, 0.055, 10).translate(0, 0.39, 0).scale(0.85, 1, 1), E, torso);
+    // pauldrons: three overlapping curved shells over each shoulder (like plate armour), the top one trimmed, a glow line along its edge
+    const shell = (r, len) => new THREE.CylinderGeometry(r, r * 0.92, len, 14, 1, false, 0, Math.PI).rotateZ(Math.PI / 2);
+    arms.forEach((A, k) => { const s = k ? 1 : -1, q = new THREE.Group(); q.rotation.x = s * 0.42; q.position.y = 0.01; A.sh.add(q);
+      am(2, cyl(0.064, 0.057, 0.15, 10).translate(0, -0.1, 0), B, A.sh); am(2, boxG(0.02, 0.1, 0.05, 0.058, -0.1, 0), P, A.sh); /* rerebrace over the upper arm */
+      am(2, shell(0.088, 0.16), B, q, 0, 0.02, s * 0.012); am(2, shell(0.079, 0.14), P, q, 0, -0.022, s * 0.036); am(2, shell(0.07, 0.12), B, q, 0, -0.06, s * 0.055);
+      am(2, boxG(0.165, 0.014, 0.02, 0, 0.106, s * 0.012), E, q); ag(2, boxG(0.13, 0.01, 0.01, 0, 0.082, s * 0.062), q); ag(2, boxG(0.1, 0.009, 0.009, 0, 0.045, s * 0.088), q, 0, 0, 0, 1);
+      // gauntlets: bracer, outer plate, cuff, knuckle guard, glow strip
+      am(3, boxG(0.08, 0.13, 0.08, 0, -0.1, 0), B, A.el); am(3, boxG(0.07, 0.1, 0.018, 0.005, -0.1, s * 0.045), P, A.el); am(3, boxG(0.09, 0.025, 0.09, 0, -0.035, 0), E, A.el); am(3, boxG(0.07, 0.03, 0.072, 0.012, -0.168, 0), E, A.el);
+      ag(3, boxG(0.008, 0.08, 0.008, 0.042, -0.1, s * 0.022), A.el); });
+    // leg armour: thigh plates, knee caps, shin guards with glow strips, armoured boots with toe caps
+    legs.forEach((Lg, k) => { const s = k ? 1 : -1;
+      am(4, boxG(0.05, 0.15, 0.1, 0.05, -0.11, 0), B, Lg.th); am(4, boxG(0.09, 0.12, 0.02, 0, -0.11, s * 0.062), P, Lg.th); am(4, boxG(0.075, 0.08, 0.1, 0.056, -0.012, 0), E, Lg.kn);
+      am(4, boxG(0.045, 0.16, 0.085, 0.046, -0.12, 0), B, Lg.kn); ag(4, boxG(0.008, 0.1, 0.01, 0.071, -0.12, 0), Lg.kn); am(4, boxG(0.19, 0.06, 0.12, 0.045, -0.02, 0), B, Lg.ft); am(4, boxG(0.05, 0.05, 0.11, 0.122, -0.03, 0), P, Lg.ft); });
+    // power pack (replaces the backpack): armoured body, twin coils with glowing strips, vent and nozzles
+    const pk = grp(torso, -0.15, 0.2, 0); pk.visible = false; ARMG[5].push(pk); pk.userData.pack = pack;
+    mesh(boxG(0.13, 0.27, 0.24, 0, 0, 0), B, pk); mesh(boxG(0.02, 0.18, 0.12, -0.072, 0, 0), P, pk); mesh(boxG(0.1, 0.03, 0.2, 0, 0.15, 0), E, pk);
+    for (const s of [-1, 1]) { mesh(cyl(0.035, 0.035, 0.24), P, pk, -0.06, 0, s * 0.085); const gm = new THREE.Mesh(boxG(0.01, 0.18, 0.012, -0.097, 0, s * 0.085), GL); pk.add(gm); mesh(cyl(0.025, 0.035, 0.05, 8), E, pk, -0.03, -0.155, s * 0.07); } }
   SCN.add(g);
   // (round 22) riot shield strapped to the left forearm side, facing the aim
   const shield = grp(torso, 0.17, 0.16, -0.19); mesh(boxG(0.035, 0.5, 0.3, 0, 0, 0), '#2e3a44', shield); mesh(boxG(0.04, 0.12, 0.22, 0.005, 0.12, 0), '#8fb4c8', shield); mesh(boxG(0.04, 0.03, 0.3, 0.004, -0.06, 0), '#e8d26a', shield); shield.visible = false;
-  return { g, lower, hips, legs, upper, torso, head, aim, arms, gunG, guns, knife, hammer, medkit, nade, mats, i, shield };
+  return { g, lower, hips, legs, upper, torso, head, aim, arms, gunG, guns, knife, hammer, medkit, nade, mats, i, shield, ARMG, ASET };
 }
 // two-bone IK inside the aim rig: put the hand of arm A at target T (aim-rig coordinates)
 const _v1 = new THREE.Vector3(), _v2 = new THREE.Vector3(), _v3 = new THREE.Vector3(), _q1 = new THREE.Quaternion(), _down = new THREE.Vector3(0, -1, 0), _pole = new THREE.Vector3();
@@ -489,7 +525,7 @@ function drawPlayers(vl, dt) {
     const bashing = p.melee === 1 && p.shield, kn = p.knT > 0 && !build && !med && !p.down ? clamp(1 - p.knT / (bashing ? 0.3 : 0.28), 0, 1) : -1;
     const fired0 = W.t - (p._lastShot || -9) < 1.4, busy = reload || med || thr || build || kn >= 0 || fired0 || !!(p.inp && p.inp.fire);
     p._grip = lerp(p._grip || 0, RP && !busy ? 1 : 0, Math.min(1, dt * 7)); const grip = RP ? p._grip : 0; // (round 27) riding and not shooting: hands on the bars
-    m.guns.forEach((gm, k) => gm.visible = !build && !med && !thr && kn < 0 && k === wi && grip < 0.5); { const ug = m.guns[wi] && m.guns[wi].userData.up, gl = wlvOf(wi); if (ug && m._gl !== wi * 10 + gl) { m._gl = wi * 10 + gl; ug.forEach((u, k) => u.visible = gl > k); } } /* (round 38j) the gun's upgrade parts */ m.knife.visible = kn >= 0 && !bashing; m.hammer.visible = build; m.medkit.visible = med; m.nade.visible = thr;
+    m.guns.forEach((gm, k) => gm.visible = !build && !med && !thr && kn < 0 && k === wi && grip < 0.5); { const ug = m.guns[wi] && m.guns[wi].userData.up, gl = wlvOf(wi); if (ug && m._gl !== wi * 10 + gl) { m._gl = wi * 10 + gl; ug.forEach((u, k) => u.visible = gl > k); } } /* (round 38j) the gun's upgrade parts */ { const ab = p.arm || 0; if (m._arm !== ab && m.ARMG) { m._arm = ab; m.ARMG.forEach((L, k) => { const on = !!(ab >> k & 1); for (const o of L) o.visible = on; }); m.ASET.forEach(o => { o.visible = ab === 63; }); const pk = m.ARMG[5][0]; if (pk && pk.userData.pack) pk.userData.pack.visible = !(ab & 32); if (m.head.userData.tail) m.head.userData.tail.visible = !(ab & 1); for (const o of m.head.children) if (!m.ARMG[0].includes(o) && !m.ASET.includes(o) && o !== m.head.userData.tail) o.visible = !(ab & 1); } /* a closed helmet hides the face and hair inside it */ } /* (round 38k) armour pieces */ m.knife.visible = kn >= 0 && !bashing; m.hammer.visible = build; m.medkit.visible = med; m.nade.visible = thr;
     // stance: shouldered up when shooting or standing, low ready (muzzle down, butt still in the shoulder) when on the move
     const S = STANCE[wi], fired = W.t - (p._lastShot || -9) < 1.4, plain = down || build || med || thr;
     p._rdy = lerp(p._rdy == null ? 1 : p._rdy, plain || !moving || fired || (p.inp && p.inp.fire) ? 1 : 0, Math.min(1, dt * 8));

@@ -46,6 +46,14 @@ const { chromium } = require('playwright');
   s = await S(() => { const me = W.p[ME], out = {}; me.vehs = 8; me.veh = 3; me.ride = true; me.mform = 1; me.mtr = 0; me.mh = []; me.evo = 150; me.evoOn = false; // (round 38j) tap X goes back to the vehicle even with a full meter; hold X evolves
     doAct(me, 'xform'); out.tap = [me.evoOn, me.mtr > 0, me.mto]; me.mtr = 0; me.mform = 1; doAct(me, 'xform', 'evo'); out.hold = me.evoOn; doAct(me, 'xform'); out.tapBeast = [me.evoOn, inMech(me)]; me.evo = 40; doAct(me, 'xform', 'evo'); out.notFull = me.evoOn; me.ride = false; me.mform = 0; return out; });
   check('X: tap in mech form → back to the vehicle even when the meter is full; hold → evolve; tap in beast form → mech; hold with < 100% does nothing', s.tap[0] === false && s.tap[1] && s.tap[2] === 0 && s.hold === true && s.tapBeast[0] === false && s.tapBeast[1] && s.notFull === false, JSON.stringify(s));
+  s = await S(() => { const o = spot(true); put(o); const me = W.p[ME], out = {}; W.res = { wood: 999, stone: 999, steel: 999, parts: 999 }; me.arm = 0; me.ride = false; me.mform = 0; // (round 38k) 等身战甲
+    const v0 = visR(me); W.bps = ['a0', 'a1', 'a5', 'a0']; doAct(me, 'bpinst', 0); out.helm = [me.arm, Math.round((visR(me) - v0) / (W.phase === 'night' ? BAL.vis.night : 1) * 10) / 10]; doAct(me, 'bpinst', 0); doAct(me, 'bpinst', 0); out.chest = me.arm; out.hp = me.maxHp - BAL.pMaxHp; doAct(me, 'bpinst', 0); out.dup = W.bps.length;
+    me.hp = 100; me.invT = 0; const h0 = me.hp; hurtPlayer(me, 50); out.dmg = Math.round((h0 - me.hp) * 10) / 10; me.arm = 63; out.full = Math.round(armDmgMul(me) * 1000) / 1000;
+    me.arm = 1 | 2 | 32; me.kbx = me.kby = 0; return out; });
+  check('armour: helmet +2 sight, breastplate −12%, power pack +15 hp, a piece you already wear stays for your teammate; the full set ×0.88×0.96×0.95', s.helm[0] === 1 && s.helm[1] === 2 && s.chest === 35 && s.hp === 15 && s.dup === 1 && s.dmg === 44 && Math.abs(s.full - 0.803) < 0.002, JSON.stringify(s));
+  await S(() => { window.__dbg.skipDraw = false; for (let i = 0; i < 4; i++) { window.__T = (window.__T || performance.now()) + 17; frame(window.__T); } window.__dbg.skipDraw = true; });
+  s = await S(() => { const m = OBJ.pl[ME]; return m.ARMG.map(L => L.length && L.every(o => o.visible) ? 1 : L.some(o => o.visible) ? 0.5 : 0); });
+  check('the model wears exactly the pieces you have (helmet, breastplate, power pack on; the rest off)', s.join() === '1,1,0,0,0,1', JSON.stringify(s));
   s = await S(() => { const ok = saveGame(true); if (!ok) return { skip: 1 }; const S0 = loadSlot(SLOT); return { saved: !!(S0 && S0.bp), vbp: S0 && S0.bp && S0.bp.vbp.join(','), mlv: S0 && S0.bp && S0.bp.mlv[3] }; });
   check('blueprint state is saved', s.skip || (s.saved && s.vbp.startsWith('bike,cargo') && s.mlv === 1), JSON.stringify(s));
   check('no page errors', !errs.length, errs.join(' | '));
