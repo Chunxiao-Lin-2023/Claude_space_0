@@ -1,4 +1,4 @@
-// Round 40d: fusion capsules — found while searching, used alone (J with no partner close): the module fights on its own, G = combined skill, a timer
+// Round 40d/e: fusion capsules — found while searching, used alone (J with no partner close): fire swings body + module together, G = combined skill, a timer
 const { chromium } = require('playwright');
 (async () => {
   const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
@@ -29,7 +29,8 @@ const { chromium } = require('playwright');
     try { doAct(me, 'fuse'); const F = W.fus; out.fused = F ? [F.v, F.kb, F.kp, F.b, F.d === me.i, F.max, F.hp, Math.round(F.left), W.bps.join('|')].join(',') : 'none'; out.ev = ev.some(e => e.k === 'fuse' && e.v === 1 && e.bz > me.z + 5);
       out.mech = [mechOf(me).name, fusRole(me)].join(',');
       const z = spawnZombie('walker', 0); z.x = me.x + 2.2; z.y = me.y + 0.3; z.L = me.L; z.z = me.z; z.hp = z.maxHp = 1e5; z.sleep = false; z.stun = 99; visTick(); me.invT = 0;
-      ev.length = 0; const aim0 = me.aim, gcd0 = me.gcd; F.vg = 0; fuseAI(me, 1 / 60, false); out.ai = [ev.some(e => e.k === 'mpunch' && e.fm === 1), me.aim === aim0, me.gcd === gcd0, F.vg > 0].join(',');
+      ev.length = 0; F.vg = 0; for (let k = 0; k < 90; k++) fuseAI(me, 1 / 60, false); out.idle = ev.some(e => e.k === 'mpunch'); /* (round 40e) no AI: nothing while you don't fire */
+      me.aim = Math.atan2(z.y - me.y, z.x - me.x); me.aimPt = { x: z.x, y: z.y, z: z.z, zb: z }; F.vg = 0; const aim0 = me.aim, gcd0 = me.gcd; fuseAI(me, 1 / 60, true); out.ai = [ev.some(e => e.k === 'mpunch' && e.fm === 1), me.aim === aim0, me.gcd === gcd0, F.vg > 0].join(',');
       for (let k = 0; k < 20; k++) stepDelayed(1 / 60); out.hit = Math.round(1e5 - z.hp) > 0; out.mechBack = mechOf(me).name;
       ev.length = 0; doAct(me, 'nade', { x: me.x + 6, y: me.y }); out.ult = [ev.some(e => e.k === 'fskill'), F.cd > 0].join(',');
       ev.length = 0; doAct(me, 'fswap'); out.swapDeny = ev.some(e => e.k === 'deny');
@@ -43,7 +44,7 @@ const { chromium } = require('playwright');
     } finally { window.fxEvent = fx0; }
     return out; });
   check('J alone uses the first capsule: a virtual partner (module only), pooled hull, it falls from the sky', /^1,4,2,-1,true,3240,/.test(s.fused) && s.fused.endsWith(',45,g1|c5') && s.ev && s.mech === '铁卫,d', JSON.stringify(s));
-  check('the module attacks by itself (its own cooldown, your aim and swing untouched) and hits', s.ai === 'true,true,true,true' && s.hit && s.mechBack === '铁卫', JSON.stringify(s));
+  check('the module attacks only while you fire, at what you aim at (its own cooldown, your swing untouched), and hits', !s.idle && s.ai === 'true,true,true,true' && s.hit && s.mechBack === '铁卫', JSON.stringify(s));
   check('alone you fire the combined skill; K is refused; hits land on the pooled hull', s.ult === 'true,true' && s.swapDeny && s.hurt, JSON.stringify(s));
   check('time up: split, your mech keeps its share; the next capsule works; X splits early; none left → the partner message', s.end === 'true,true,true,true' && s.second === 5 && s.early && s.none, JSON.stringify(s));
   check('the snapshot carries a capsule fusion to a guest', s.guest === '1,6,-1,true', s.guest);
@@ -54,10 +55,10 @@ const { chromium } = require('playwright');
   s = await S(() => { window.__dbg.skipDraw = true; const me = W.p[ME], out = []; if (W.fus) fuseSplit(W.fus, 'x'); put(spot(true)); W.phase = 'day'; Object.assign(me, { ride: true, mform: 1, mtr: 0, bat: 120, mcd: 0, gcd: 0, evoOn: false, aim: 0, aimPt: null, ccStg: 0 }); /* a fresh open spot: nothing between it and the zombie */
     for (const kp of [1, 2, 3, 4, 5, 6]) { W.zs.length = 0; W.dly = []; me.mh = []; me.veh = kp === 4 ? 2 : 4; W.bps = ['c' + kp]; doAct(me, 'fuse'); const F = W.fus; me.invT = 0;
       const z = spawnZombie('walker', 0); z.x = me.x + 2.4; z.y = me.y; z.L = me.L; z.z = me.z; z.hp = z.maxHp = 1e5; z.sleep = false; z.stun = 99; visTick();
-      let n = 0; for (let k = 0; k < 150; k++) { fuseAI(me, 1 / 60, false); stepDelayed(1 / 60); stepProj && stepProj(1 / 60); n = 1e5 - z.hp; }
+      me.aim = 0; me.aimPt = { x: z.x, y: z.y, z: z.z, zb: z }; let n = 0; for (let k = 0; k < 150; k++) { fuseAI(me, 1 / 60, true); stepDelayed(1 / 60); stepProj && stepProj(1 / 60); n = 1e5 - z.hp; }
       out.push(MECHS[kp].name + ':' + Math.round(n) + (n > 0 ? '' : '[' + [!!F, F && F.vg, inMech(me), me.mtr, me.ccStg, zSeen(z), Math.round(Math.hypot(z.x - me.x, z.y - me.y) * 10) / 10, z.hp > 0, me.down, me.dead].join(',') + ']')); fuseSplit(F, 'x'); }
     return out.join(' '); });
-  check('every capsule kind fights on its own (blade, machine gun, parcels, shield, rockets, cannon)', s.split(' ').every(t => +t.split(':')[1] > 0), s);
+  check('every capsule kind\'s module fires with you (blade, machine gun, parcels, shield, rockets, cannon)', s.split(' ').every(t => +t.split(':')[1] > 0), s);
   check('no page errors', !errs.length, errs.join(' | '));
   console.log(ok ? 'ALL PASS' : 'SOME FAILED'); await b.close(); process.exit(ok ? 0 : 1);
 })();

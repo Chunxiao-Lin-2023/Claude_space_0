@@ -478,7 +478,7 @@ bindBtn('bcOk', () => confirmPlan()); bindBtn('bcNo', () => cancelPlan());
   const el = document.getElementById('tNade');
   el.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); audioInit(); if (!inGame()) return; const me = W.p[ME];
     if (!$('wpick').classList.contains('hidden')) { toggleWpick(false); return; }
-    const r = el.getBoundingClientRect(); UI.gk = { id: e.pointerId, x: e.clientX, y: e.clientY, ring: false, tm: setTimeout(() => { const k = UI.gk; if (k && !k.ring && !(INP.nadeAim && INP.nadeAim.drag)) { k.ring = true; INP.nadeAim = null; INP.nadePt = null; toggleWpick(true, 'g'); } }, 380) };
+    const r = el.getBoundingClientRect(); UI.gk = { id: e.pointerId, x: e.clientX, y: e.clientY, ring: false, tm: inMech(me) ? 0 /* (round 40e) a mech has no grenade wheel: hold = aim the skill */ : setTimeout(() => { const k = UI.gk; if (k && !k.ring && !(INP.nadeAim && INP.nadeAim.drag)) { k.ring = true; INP.nadeAim = null; INP.nadePt = null; toggleWpick(true, 'g'); } }, 380) };
     if ((gCount(me, me.gt || 0) > 0 || inMech(me)) && !me.down) INP.nadeAim = { id: e.pointerId, ox: r.left + r.width / 2, oy: r.top + r.height / 2, dx: 0, dy: 0, drag: false, t: me.gt || 0 };
     el.classList.add('on'); try { el.setPointerCapture(e.pointerId); } catch (_) { } });
   el.addEventListener('pointermove', e => { const k = UI.gk; if (k && k.id === e.pointerId && k.ring) { e.preventDefault(); wpickHover(e.clientX, e.clientY); return; }

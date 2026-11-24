@@ -95,8 +95,8 @@ function fuseSnap(G) { const F = fusOf(G), D = F && W.p[F.d]; if (!D || D === G)
 
 /* ================= (round 40d) fusion capsules: fuse on your own ================= */
 // Found while searching ('c' + mech kind in W.bps). With no partner close by, J in mech form uses the first one: that mech drops out of the
-// sky into yours as the module (same pooled hull / ×1.2 damage / names as a co-op fusion) for BAL.capT seconds. You drive and fight with the
-// body; the module fights on its own (fuseAI: the nearest zombie it can reach, or what you aim at while you hold fire); G is the combined skill.
+// sky into yours as the module (same pooled hull / ×1.2 damage / names as a co-op fusion) for BAL.capT seconds. You control all of it: fire
+// swings the body's attack and the module's together (fuseAI, each on its own cooldown) at what you aim at; G is the combined skill.
 const capNext = () => { const b = (W && W.bps || []).find(b => b[0] === 'c'); return b ? +b.slice(1) : 0; };
 const capN = () => (W && W.bps || []).filter(b => b[0] === 'c').length;
 function fuseCapsule(p) {
@@ -109,14 +109,13 @@ function fuseCapsule(p) {
   emit({ k: 'fuse', a: p.i, b: -1, kb, kp, v: 1, x: r2(p.x), y: r2(p.y), z: r2(p.z), bx: r2(p.x + Math.cos(a) * 3.5), by: r2(p.y + Math.sin(a) * 3.5), bz: r2(p.z + 9) });
   return F;
 }
-// the module's own attack, on its own cooldown: the driver's blow is made with the module's mech for this one call (FUS_ALT)
+// the module's attack, on its own cooldown, only while you hold fire, at what you aim at (round 40e: no AI — you control it): the driver's
+// blow is made with the module's mech for this one call (FUS_ALT); your aim / swing / combo are kept as they were
 function fuseAI(p, dt, fire) {
-  const F = W.fus; F.vg = (F.vg || 0) - dt; if (F.vg > 0 || !inMech(p) || p.mtr > 0 || p.ccStg > 0) return;
-  const M = MECHS[F.kp], rg = mechRanged(M) ? (M.range || 16) : M.reach + 1.2; let z = null;
-  if (!fire) { let bd = rg; for (const q of W.zs) { if (!(q.hp > 0) || q.hidden || q.sleep || q.ck || q.ckF || !zSeen(q) || Math.abs(q.z - p.z) > 3) continue; const d = Math.hypot(q.x - p.x, q.y - p.y); if (d < bd + q.r && (M.atk === 'parcel' || los(p.x, p.y, p.z + 1.6, q.x, q.y, q.z + q.h * 0.5))) { bd = d; z = q; } } if (!z) return; }
-  const keep = { gcd: p.gcd, aim: p.aim, aimPt: p.aimPt, mcmb: p.mcmb, mlastT: p.mlastT, mside: p.mside, mAim: p.mAim, mTgt: p.mTgt };
-  p.gcd = 0; p.mcmb = F.vc; p.mlastT = F.vl; if (z) { p.aim = Math.atan2(z.y - p.y, z.x - p.x); p.aimPt = { x: z.x, y: z.y, z: z.z, zb: z }; }
+  const F = W.fus; F.vg = (F.vg || 0) - dt; if (!fire || F.vg > 0 || !inMech(p) || p.mtr > 0 || p.ccStg > 0) return;
+  const keep = { gcd: p.gcd, mcmb: p.mcmb, mlastT: p.mlastT, mside: p.mside, mAim: p.mAim, mTgt: p.mTgt };
+  p.gcd = 0; p.mcmb = F.vc; p.mlastT = F.vl;
   FUS_ALT = true; try { mechPunch(p); } finally { FUS_ALT = false; }
-  F.vc = p.mcmb; F.vl = p.mlastT; F.ga = p.mAim != null ? p.mAim : p.aim; F.vg = M.rate * (fire ? 1 : 1.2);
+  F.vc = p.mcmb; F.vl = p.mlastT; F.ga = p.mAim != null ? p.mAim : p.aim; F.vg = MECHS[F.kp].rate;
   Object.assign(p, keep);
 }

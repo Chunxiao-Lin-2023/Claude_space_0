@@ -539,7 +539,7 @@ function stepActions(p, dt) {
   }
   if (p.down) { p.downT -= dt; if (p.downT <= 0) { p.down = false; p.dead = true; p.reloadT = 0; p.medT = 0; p.ride = false; p.downT = W.phase === 'night' ? BAL.respawnNight : BAL.respawnDay; emit({ k: 'dead', p: p.i, t: p.lives > 0 ? Math.round(p.downT) : -1, n: p.lives || 0 }); checkLose(); return; } }
   const wi = p.down ? 0 : p.wpn, w = WPN[wi];
-  p.gcd = (p.gcd || 0) - dt; if (I.fire && vehGun(p) && vehGun(p) !== 'busy') (vehGun(p) === 'cannon' ? tankFire(p) : vehGun(p) === 'mech' ? mechPunch(p) : gyroFire(p)); if (W.fus && W.fus.v && W.fus.a === p.i) fuseAI(p, dt, !!I.fire); /* (round 40d) the capsule module fights on its own */ // (round 30 / 31) the aircraft's chin gun or the tank's cannon fires instead of your gun
+  p.gcd = (p.gcd || 0) - dt; if (I.fire && vehGun(p) && vehGun(p) !== 'busy') (vehGun(p) === 'cannon' ? tankFire(p) : vehGun(p) === 'mech' ? mechPunch(p) : gyroFire(p)); if (W.fus && W.fus.v && W.fus.a === p.i) fuseAI(p, dt, !!I.fire && vehGun(p) === 'mech'); /* (round 40d) the capsule module fires with you */ // (round 30 / 31) the aircraft's chin gun or the tank's cannon fires instead of your gun
   if (I.fire && !p.build && !vehGun(p) && p.fireCD <= 0 && p.cdW[wi] <= 0 && p.reloadT <= 0 && p.medT <= 0) {
     if (p.mag[wi] > 0) fireWeapon(p, wi);
     else if (w.inf || p.ammo[wi] > 0) startReload(p);
