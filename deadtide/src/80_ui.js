@@ -71,7 +71,7 @@ function uiKeys(me) {
     const pil = !me.ride && !(me.pass >= 0) && pillionFor(me);
     if (me.vehs || me.pass >= 0 || pil) rows.push(['T', me.ride || me.pass >= 0 ? '下车' : pil ? '坐后座' : '上' + (VEH[me.veh] ? VEH[me.veh].name : '车'), me.ride || me.pass >= 0 || pil ? 1 : 0]);
     if (me.vehs & (me.vehs - 1)) rows.push(['⇧T', '换一辆车']);
-    if (me.ride && MECHS[me.veh]) { const E = EVO[me.veh], rdy = E && (me.evo || 0) >= 100 && !me.evoOn; rows.unshift(['X', me.mform !== 1 ? '变成' + MECHS[me.veh].name : me.evoOn ? '变回' + MECHS[me.veh].name + '（长按回载具）' : rdy ? '进化 · ' + E.name + '（长按回载具）' : '变回载具', rdy ? 2 : 0]); } /* (round 37) */
+    if (me.ride && MECHS[me.veh]) { const E = EVO[me.veh], rdy = E && (me.evo || 0) >= 100 && !me.evoOn; rows.unshift(['X', me.mform !== 1 ? '变成' + MECHS[me.veh].name : me.evoOn ? '变回' + MECHS[me.veh].name + '（长按回载具）' : rdy ? '变回载具 · 长按进化 ' + E.name : '变回载具', rdy ? 2 : 0]); /* (round 38j) */ } /* (round 37) */
     if (W.phase === 'day') rows.push(['N', me.ready ? '取消准备' : '准备入夜', me.ready ? 1 : 0]);
   }
   rows.push(['M', '大地图（也可按 Tab）'], ['Q E', '转镜头'], ['Esc', '菜单']);
@@ -245,7 +245,7 @@ function hudTick(dt) {
     $('tWpn').firstElementChild.textContent = w.sn || w.name; $('tWpn').lastElementChild.textContent = w.inf ? '∞' : me.mag[wi] + '/' + me.ammo[wi];
     $('tWpn').classList.toggle('dim', me.down || me.owned.filter(Boolean).length < 2);
     const gt = me.gt || 0, im = inMech(me), gc = im ? ((me.mcd || 0) > 0 ? Math.ceil(me.mcd) : '✓') : gCount(me, gt), tn = $('tNade'), lb = im ? mechOf(me).sn : GREN[gt].sn; $('tNadeN').textContent = gc; tn.classList.toggle('empty', im ? (me.mcd || 0) > 0 : !gc); if (tn.firstChild.nodeValue !== lb) tn.firstChild.nodeValue = lb; // (round 24) shows the picked grenade type
-    const sv = $('tShove'), svm = me.ride && MECHS[me.veh] ? (me.mform === 1 ? (me.evoOn ? 'r' : (me.evo || 0) >= 100 && EVO[me.veh] ? 'e' : 'b') : 'x') : String(me.melee === 1 && me.shield ? 1 : 0); if (sv.dataset.m !== svm) { sv.dataset.m = svm; sv.textContent = svm === 'x' ? '变形' : svm === 'b' ? '变回' : svm === 'e' ? '进化' : svm === 'r' ? '复原' : svm === '1' ? '盾' : '刀'; } sv.classList.toggle('evo', svm === 'e'); sv.style.setProperty('--ev', me.ride && me.mform === 1 && !me.evoOn ? Math.min(100, me.evo || 0) + '%' : '0%'); /* (round 37) tap = 进化 / 复原, hold = back to the vehicle; the button fills up with the meter */ sv.classList.toggle('sw', !!me.shield && !me.ride); sv.classList.toggle('xf', !!me.ride); // (round 34b) driving: the melee key transforms
+    const sv = $('tShove'), svm = me.ride && MECHS[me.veh] ? (me.mform === 1 ? (me.evoOn ? 'r' : (me.evo || 0) >= 100 && EVO[me.veh] ? 'e' : 'b') : 'x') : String(me.melee === 1 && me.shield ? 1 : 0); if (sv.dataset.m !== svm) { sv.dataset.m = svm; sv.textContent = svm === 'x' ? '变形' : svm === 'b' ? '变回' : svm === 'e' ? '变回 · 长按进化' : svm === 'r' ? '复原' : svm === '1' ? '盾' : '刀'; } sv.classList.toggle('evo', svm === 'e'); sv.style.setProperty('--ev', me.ride && me.mform === 1 && !me.evoOn ? Math.min(100, me.evo || 0) + '%' : '0%'); /* (round 37) tap = 进化 / 复原, hold = back to the vehicle; the button fills up with the meter */ sv.classList.toggle('sw', !!me.shield && !me.ride); sv.classList.toggle('xf', !!me.ride); // (round 34b) driving: the melee key transforms
     $('tFire').style.setProperty('--rl', rl);
     $('tLLbl').textContent = ((me.build && BUILD_HOVER ? BUILD_HOVER.L : buildL()) + 1) + 'F';
   }
@@ -301,18 +301,20 @@ function shopBtn(c, label) {
   const me = W.p[ME], why = craftBlocked(me, c), hard = why && why !== '材料不足';
   return `<button class="sbtn${why ? ' no' : ''}" data-c="${c.id}" ${hard ? 'disabled' : ''}><b>${label || c.name}</b><span>${hard ? why : (Object.keys(c.cost).length ? costText(c.cost) : '免费') + (why ? ' · 不够' : '')}</span></button>`;
 }
+function bpList(t) { // (round 38j) found upgrade blueprints of one kind ('m' mech / 'g' gun), each with an install button
+  return (W.bps || []).map((b, k) => [b, k]).filter(([b]) => b[0] === t).map(([b, k]) => { const n = +b.slice(1), lv = t === 'm' ? mlvOf(n) : wlvOf(n), c = t === 'm' ? mlvCost(lv) : gunCost(lv), ok = affordable(W.res, c), U = t === 'm' ? MUP[lv + 1] : GUP[lv + 1];
+    const eff = t === 'm' ? (U.t > MUP[lv].t ? '更耐打 ×' + U.t : '') + (U.d > MUP[lv].d ? (U.t > MUP[lv].t ? '、' : '') + '伤害 ×' + U.d : '') : (U.m > GUP[lv].m ? '弹匣 ×' + U.m : '') + (U.r > GUP[lv].r ? (U.m > GUP[lv].m ? '、' : '') + '射速 ×' + U.r : '');
+    return `<div class="sres bpr"><b>图纸</b><span>${t === 'm' ? MECHS[n].name : WPN[n].name} · ${U.n}（Lv${lv + 1}，${eff}）</span><button class="sbtn${ok ? '' : ' no'}" data-bi="${k}"><b>安装</b><span>${costText(c)}</span></button></div>`; }).join(''); }
 function renderCraft() {
   const me = W.p[ME], tab = SET.shopTab && SHOP_TABS.some(t => t[0] === SET.shopTab) ? SET.shopTab : 'gun';
   $('ctabs').innerHTML = SHOP_TABS.map(([k, n]) => `<button data-t="${k}" class="${k === tab ? 'sel' : ''}">${n}</button>`).join('');
   $('ctabs').querySelectorAll('button').forEach(b => b.onclick = () => { $('stip').classList.add('hidden'); SET.shopTab = b.dataset.t; saveSet(); renderCraft(); sfx('click'); });
-  $('cres').textContent = '材料：' + RES.map(r => r.name + ' ' + W.res[r.k]).join(' · ') + ' · 弹头 Lv' + W.upg + (bpOn() ? ' · 蓝图 ' + (W.bpPts || 0) + '（再搜 ' + (BAL.bpEvery - (W.bpN || 0)) + ' 个得 1 张）' : ''); /* (round 38i) */ // (round 36f) the team damage level (tasks raise it)
+  $('cres').textContent = '材料：' + RES.map(r => r.name + ' ' + W.res[r.k]).join(' · ') + ' · 弹头 Lv' + W.upg; // (round 36f) the team damage level (tasks raise it)
   let h = ''; // (round 36f) the 常买 strip is gone: medkit and grenades head the weapons tab, fuel / ammo / upkeep head the vehicle tab, your own guns come first
   // (round 36f) cards carry only a name, what you have and the button; everything else (what it does, setting a default vehicle) is in the long-press card
   const T = UI.stips = {}, card = (k, own, name, em, btns, tip, cls) => { T[k] = tip; return `<div class="sc${own ? ' own' : ''}${cls ? ' ' + cls : ''}" data-k="${k}"><div class="sh"><b>${name}</b><em>${em}</em></div><div class="sb">${btns}</div></div>`; };
   if (tab === 'gun') {
-    if (bpOn()) { const rf = (k, g, name, step, unit) => { const lv = W[k] || 0, mx = lv >= BAL.gunMax, c = gunCost(lv), ok = !mx && (W.bpPts || 0) > 0 && affordable(W.res, c); return `<div class="sres bpr"><b>${name}</b><span>Lv ${lv}/${BAL.gunMax} · ${unit} +${Math.round(step * lv * 100)}%</span><button class="sbtn bpg${ok ? '' : ' no'}" data-g2="${g}" ${mx ? 'disabled' : ''}><b>${mx ? '满级' : '改装'}</b><span>${mx ? '' : '蓝图 1 · ' + costText(c)}</span></button></div>`; }; /* (round 38i) gun refits paid with blueprints */
-      h += `<div class="stop">${rf('gmag', 'mag', '扩容弹匣', BAL.gmagStep, '弹匣')}${rf('grof', 'rof', '快速击发', BAL.grofStep, '射速')}</div>`;
-      T.gref = { t: '枪械改装', d: '全队所有枪一起升级。扩容弹匣：每级弹匣 +20%（手枪也算）；快速击发：每级射速 +10%。每级要 1 张蓝图加材料，最多 ' + BAL.gunMax + ' 级。蓝图：每搜 ' + BAL.bpEvery + ' 个箱子 / 车 / 柜子得 1 张。' }; }
+    if (bpOn()) { const bl = bpList('g'); if (bl) h += `<div class="stop">${bl}</div>`; } /* (round 38j) gun upgrade blueprints you found, ready to install */
     { const c = CRAFT.find(x => x.med); h += card('med', me.meds > 0, c.name, me.meds + ' / ' + BAL.medCap, shopBtn(c, '买'), { t: c.name, d: c.desc }, 'smed'); }
     h += `<div class="sgrid2">`;
     for (const c of CRAFT.filter(x => x.nade)) { const n = c.gt ? gCount(me, c.gt) : me.nades, cap = c.gt ? BAL.gnCap : BAL.nadeCap; h += card(c.id, n > 0, c.name.replace(' ×2', ''), n + ' / ' + cap, shopBtn(c, '买 ×2'), { t: c.name, d: c.desc }); }
@@ -322,7 +324,7 @@ function renderCraft() {
       const buy = CRAFT.find(c => c.wpn === k), am = CRAFT.find(c => c.ammo && c.ammo[0] === k), own = me.owned[k];
       const st = own ? (w.inf ? '子弹无限' : me.mag[k] + ' / ' + me.ammo[k]) : '没有'; // (round 32) backpack cap is in the long-press card
       const btns = !own && buy ? shopBtn(buy, '造') : own && am ? shopBtn(am, '买' + am.name.replace(/^.*?(×\s*\d+)$/, '$1')) : own && w.inf ? '<span class="sfree">不用买</span>' : '';
-      return card('w' + k, own, w.name, st, btns, { t: w.name, d: (w.tag || '') + (own && !w.inf ? '<br>背包最多带 ' + ammoCap(k) + ' 发' : '') + (am ? '<br>弹药：' + am.name + '，' + costText(am.cost) : '') });
+      return card('w' + k, own, w.name + (wlvOf(k) ? ' <small class="mlv">' + GUP[wlvOf(k)].n + '</small>' : ''), st, btns, { t: w.name, d: (w.tag || '') + (wlvOf(k) ? '<br>改装：' + GUP[wlvOf(k)].n + '（弹匣 ×' + GUP[wlvOf(k)].m + '、射速 ×' + GUP[wlvOf(k)].r + '）' : '') + (own && !w.inf ? '<br>背包最多带 ' + ammoCap(k) + ' 发' : '') + (am ? '<br>弹药：' + am.name + '，' + costText(am.cost) : '') });
     }).join('');
     h += card('knife', true, '刀', '近战', '<span class="sfree">右键 / V</span>', { t: '刀（近战）', d: '右键 / V（触屏「刀」键）：冲上去砍一只，背后砍双倍，睡着的一刀死。不用买、不会坏。' });
   } else {
@@ -335,21 +337,16 @@ function renderCraft() {
     if (me.vehs & 126) { const fx = CRAFT.find(c => c.mfix), bt = CRAFT.find(c => c.mbat), hs = [1, 2, 3, 4, 5, 6].filter(v => ownsVeh(me, v)), low = hs.some(v => mhpOf(me, v) < MECHS[v].hp * 0.5), bat = Math.floor(me.bat != null ? me.bat : BAL.mechBat);
       top += `<div class="sres" data-k="rmech"><b>机甲</b><span class="${bat < BAL.mechBat * 0.3 ? 'lo' : ''}">电 ${bat}/${BAL.mechBat}</span><span class="${low ? 'lo' : ''}">装甲 ${Math.round(Math.min(...hs.map(v => mhpOf(me, v) / MECHS[v].hp)) * 100)}%</span>${shopBtn(fx, '修装甲')}${shopBtn(bt, '充电')}</div>`;
       T.rmech = { t: '机甲维护', d: '装甲：' + hs.map(v => MECHS[v].name + ' ' + Math.round(mhpOf(me, v)) + '/' + MECHS[v].hp).join('，') + '。<br>不是机甲形态时装甲和电会慢慢恢复；这里马上修好 / 充满（要先变回载具）。' }; } // (round 34b)
-    if (bpOn()) top += `<div class="sres"><b>蓝图 ${W.bpPts || 0} 张</b><span>再搜 ${BAL.bpEvery - (W.bpN || 0)} 个箱子得 1 张 · 用来解锁载具 / 改装机甲（武器页还能改装枪）</span></div>`; /* (round 38i) */
+    if (bpOn()) top += bpList('m'); /* (round 38j) mech upgrade blueprints you found */
     if (top) h += `<div class="stop">${top}</div>`;
-    h += CRAFT.filter(c => c.cat === 'veh').map(c => { const v = c.veh, own = (me.vehs || 0) >> v & 1, def = own && me.veh === v, M = MECHS[v], lock = !hasBP(VEH[v].k), lv = mlvOf(v), mc = mlvCost(lv), mx = lv >= BAL.mlvMax, mok = !mx && (W.bpPts || 0) > 0 && affordable(W.res, mc);
-      const refit = bpOn() && !lock && M ? `<button class="sbtn bpm${mok ? '' : ' no'}" data-m2="${v}" ${mx ? 'disabled' : ''}><b>${mx ? '机甲满级' : '改装 Lv' + lv + '→' + (lv + 1)}</b><span>${mx ? '+' + lv * 10 + '%' : '蓝图 1 · ' + costText(mc)}</span></button>` : '';
-      const unlock = `<button class="sbtn bpv${(W.bpPts || 0) > 0 ? '' : ' no'}" data-bv="${VEH[v].k}" ${(W.bpPts || 0) > 0 ? '' : 'disabled'}><b>用蓝图解锁</b><span>${(W.bpPts || 0) > 0 ? '剩 ' + W.bpPts + ' 张' : '还没有蓝图'}</span></button>`;
-      return card('v' + v, own, c.name + (lv ? ' <small class="mlv">改装 Lv' + lv + '</small>' : ''), lock ? '未解锁' : def ? '默认 ✓' : own ? '已有' : '×' + VEH[v].spd, lock ? unlock : (own ? (def ? '<span class="sfree">T 上车</span>' : '<span class="sfree">长按设默认</span>') : shopBtn(c, '造')) + refit,
+    h += CRAFT.filter(c => c.cat === 'veh').map(c => { const v = c.veh, own = (me.vehs || 0) >> v & 1, def = own && me.veh === v, M = MECHS[v], lock = !hasBP(VEH[v].k), lv = mlvOf(v);
+      const refit = '', unlock = '<span class="sfree">搜东西时找它的蓝图</span>'; /* (round 38j) */
+      return card('v' + v, own, c.name + (lv ? ' <small class="mlv">' + MUP[lv].n + '</small>' : ''), lock ? '未解锁' : def ? '默认 ✓' : own ? '已有' : '×' + VEH[v].spd, lock ? unlock : (own ? (def ? '<span class="sfree">T 上车</span>' : '<span class="sfree">长按设默认</span>') : shopBtn(c, '造')) + refit,
         { t: c.name + (M ? ' / ' + M.name : ''), d: c.desc + '<br>速度 ×' + VEH[v].spd + (M ? `<br><b>二阶段 · ${M.name}</b>（骑着按 X / 「变形」，1 秒）：${M.tag}` + (EVO[v] ? `<br><b>第二形态 · ${EVO[v].name}</b>（机甲杀敌攒满进化槽后按 X，持续 ${BAL.evoT} 秒）：${EVO[v].tag}` : '') : '') + (own ? '<br>默认载具：T（触屏点「载具」）就上这辆；Shift+T / 长按「载具」换车' : ''), v: own && !def ? v : null }); }).join('');
   }
   $('clist').innerHTML = h;
   $('clist').querySelectorAll('button[data-c]').forEach(b => b.addEventListener('click', () => shopBuy(CRAFT.find(c => c.id === b.dataset.c))));
-  const bpAct = (a, v, ok, why) => { if (!ok) { toast(why, '#ff8a7a'); sfx('deny'); return; } act(a, v); sfx('click'); setTimeout(() => { if (!$('craft').classList.contains('hidden')) renderCraft(); }, NETROLE === 'guest' ? 300 : 0); }; /* (round 38i) blueprint spending */
-  const bpWhy = c => !(W.bpPts > 0) ? '没有蓝图：每搜 ' + BAL.bpEvery + ' 个箱子得 1 张' : !affordable(W.res, c) ? '材料不足' : '';
-  $('clist').querySelectorAll('button[data-bv]').forEach(b => b.addEventListener('click', () => bpAct('bpveh', b.dataset.bv, W.bpPts > 0, '没有蓝图：每搜 ' + BAL.bpEvery + ' 个箱子得 1 张')));
-  $('clist').querySelectorAll('button[data-m2]').forEach(b => b.addEventListener('click', () => { const v = +b.dataset.m2, why = bpWhy(mlvCost(mlvOf(v))); bpAct('mlv', v, !why, why); }));
-  $('clist').querySelectorAll('button[data-g2]').forEach(b => b.addEventListener('click', () => { const g = b.dataset.g2, why = bpWhy(gunCost(W[g === 'rof' ? 'grof' : 'gmag'] || 0)); bpAct('gun', g, !why, why); }));
+  $('clist').querySelectorAll('button[data-bi]').forEach(b => b.addEventListener('click', () => { const k = +b.dataset.bi, bp = W.bps[k]; if (!bp) return; const t = bp[0], n = +bp.slice(1), c = t === 'm' ? mlvCost(mlvOf(n)) : gunCost(wlvOf(n)); if (!affordable(W.res, c)) { toast('材料不足', '#ff8a7a'); sfx('deny'); return; } act('bpinst', k); sfx('click'); setTimeout(() => { if (!$('craft').classList.contains('hidden')) renderCraft(); }, NETROLE === 'guest' ? 300 : 0); })); /* (round 38j) */
   $('clist').querySelectorAll('button[data-g]').forEach(b => b.addEventListener('click', () => { closeCraft(); selItem(+b.dataset.g); }));
   $('clist').querySelectorAll('button.mel').forEach(b => b.addEventListener('click', () => { switchMelee(+b.dataset.m); setTimeout(renderCraft, NETROLE === 'guest' ? 250 : 0); }));
   shopTipWire();

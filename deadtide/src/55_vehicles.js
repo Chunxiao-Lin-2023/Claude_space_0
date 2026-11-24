@@ -626,6 +626,36 @@ function mSpring(J, key, target, dt, k) {
 const MSTRIDE = 2.4; // ground covered per full walk cycle at full stride
 // (round 34b) the folded-up pose a mech unfolds from when a vehicle transforms: knees to the chest, arms swept back, torso turned round
 const MFOLD = { thL: 1.3, thR: 1.3, knL: 2.4, knR: 2.4, lean: 0.55, cr: 0, bob: 0, roll: 0, yawH: 0, twist: Math.PI, yaw: 0, sh0: -2.4, sh1: -2.4, el0: 2.5, el1: 2.5, ab0: 0.9, ab1: 0.9, blade: -2.9 };
+/* (round 38j) mech upgrades you can see — Lv1 强化装甲 (pauldrons + breastplate), Lv2 动力背包 (thruster pack + forearm spikes), Lv3 王牌涂装 (gold trim, crest, halo) */
+function mechUpgSet(J, lv) { if (J.upg && J._ul === lv) return; J._ul = lv; if (!lv && !J.upg) return; if (!J.upg) J.upg = mechUpgBuild(J); J.upg.forEach((list, k) => list.forEach(o => o.visible = lv > k)); }
+function mechUpgBox(root, skip) { // bounding box of root's meshes in root's own space (skipping some subtrees), from the current pose
+  root.updateMatrixWorld(true); const inv = new THREE.Matrix4().copy(root.matrixWorld).invert(), box = new THREE.Box3(), tb = new THREE.Box3(), m4 = new THREE.Matrix4();
+  const walk = o => { if (skip && skip.includes(o)) return; if (o.isMesh && o.geometry) { if (!o.geometry.boundingBox) o.geometry.computeBoundingBox(); tb.copy(o.geometry.boundingBox).applyMatrix4(m4.multiplyMatrices(inv, o.matrixWorld)); box.union(tb); } for (const c of o.children) walk(c); };
+  for (const c of root.children) walk(c); return box.isEmpty() ? new THREE.Box3(new THREE.Vector3(-0.25, 0, -0.3), new THREE.Vector3(0.25, 0.8, 0.3)) : box; }
+function mechUpgBuild(J) {
+  const M = MECHS[J.k] || MECHS[4], Lm = (c, e) => new THREE.MeshLambertMaterial({ color: c, emissive: e || '#000000' }), plate = Lm(M.col[0]), dark = Lm(M.col[1]), acc = Lm(M.col[2], '#1a1408'), gold = Lm('#f2c232', '#5a3c00');
+  const glow = new THREE.MeshBasicMaterial({ color: M.glow }), flame = new THREE.MeshBasicMaterial({ color: M.glow, transparent: true, opacity: 0.75, blending: THREE.AdditiveBlending, depthWrite: false });
+  const u = [[], [], []], add = (k, par, geo, mat, x, y, z, rz, ry, rx, sx, sy, sz) => { if (!par) return null; const m = mPart(par, geo, mat, x, y, z, rz, ry, rx, sx, sy, sz); u[k].push(m); return m; };
+  const cb = mechUpgBox(J.ch, [...J.arms.map(A => A.sh), J.head].filter(Boolean)), front = cb.max.x, back = cb.min.x, top = cb.max.y, mid = (cb.min.y + cb.max.y) / 2, hw = Math.max(Math.abs(cb.min.z), Math.abs(cb.max.z), 0.2), hh = Math.max(0.2, cb.max.y - cb.min.y);
+  // Lv1 强化装甲: bright shells over the shoulders, a breastplate with a chevron, knee guards
+  for (const A of J.arms) { const sb = mechUpgBox(A.sh, [A.el]), r = clamp(Math.max(sb.max.x - sb.min.x, sb.max.z - sb.min.z) * 0.42, 0.14, 0.27), ty = Math.max(0.05, sb.max.y);
+    add(0, A.sh, new THREE.SphereGeometry(r, 18, 10, 0, Math.PI * 2, 0, Math.PI * 0.5), acc, 0, ty - r * 0.4, A.s * r * 0.15, 0, 0, 0, 1.05, 0.6, 1.05);
+    add(0, A.sh, new THREE.TorusGeometry(r * 1.12, r * 0.12, 6, 20), plate, 0, ty - r * 0.36, A.s * r * 0.15, 0, 0, Math.PI / 2); }
+  add(0, J.ch, new THREE.BoxGeometry(0.08, hh * 0.5, hw * 1.3), plate, front + 0.02, mid + hh * 0.1, 0);
+  for (const s of [-1, 1]) add(0, J.ch, new THREE.BoxGeometry(0.09, 0.07, hw * 0.75), acc, front + 0.05, mid + hh * 0.12, s * hw * 0.3, 0, s * 0.5, 0);
+  for (const Lg of J.legs) if (Lg.kn) add(0, Lg.kn, new THREE.BoxGeometry(0.16, 0.2, 0.18), acc, 0.12, 0, 0);
+  // Lv2 动力背包: a pack on the back with two big glowing thrusters and fins, glowing blades on the forearms
+  const px = back - 0.14;
+  add(1, J.ch, new THREE.BoxGeometry(0.26, hh * 0.62, hw * 1.15), dark, px, mid + hh * 0.08, 0);
+  for (const s of [-1, 1]) { add(1, J.ch, new THREE.CylinderGeometry(0.09, 0.12, 0.3, 14), plate, px - 0.12, mid - hh * 0.1, s * hw * 0.42); add(1, J.ch, new THREE.CircleGeometry(0.085, 14), glow, px - 0.12, mid - hh * 0.1 - 0.152, s * hw * 0.42, 0, 0, Math.PI / 2); add(1, J.ch, new THREE.ConeGeometry(0.08, 0.4, 12, 1, true), flame, px - 0.12, mid - hh * 0.1 - 0.35, s * hw * 0.42, 0, 0, Math.PI); }
+  for (const A of J.arms) { add(1, A.el, new THREE.BoxGeometry(0.03, 0.42, 0.06), glow, -0.08, -0.26, A.s * 0.12); add(1, A.el, new THREE.BoxGeometry(0.06, 0.46, 0.04), dark, -0.05, -0.26, A.s * 0.1); }
+  // Lv3 王牌涂装: gold wings on the pack, gold trim, a tall gold crest and a halo
+  for (const s of [-1, 1]) { add(2, J.ch, new THREE.BoxGeometry(0.05, hh * 0.9, 0.16), gold, px - 0.02, top + hh * 0.18, s * hw * 0.75, 0, 0, s * 0.6); add(2, J.ch, new THREE.BoxGeometry(0.04, hh * 0.6, 0.12), gold, px - 0.04, top + hh * 0.05, s * hw * 1.05, 0, 0, s * 0.95); }
+  add(2, J.ch, new THREE.TorusGeometry(hw * 1.02, 0.03, 6, 28), gold, (front + back) / 2, mid - hh * 0.25, 0, 0, 0, Math.PI / 2, (front - back) / (hw * 2) + 0.15, 1, 1);
+  for (const A of J.arms) { const sb = mechUpgBox(A.sh, [A.el]), r = Math.max(0.16, Math.max(sb.max.x - sb.min.x, sb.max.z - sb.min.z) * 0.62); add(2, A.sh, new THREE.ConeGeometry(0.05, 0.26, 8), gold, 0, Math.max(0.05, sb.max.y) + 0.1, A.s * r * 0.3, 0, 0, A.s * 0.35); }
+  if (J.head) { const hb = mechUpgBox(J.head), ht = hb.isEmpty() ? 0.3 : hb.max.y; for (const s of [-1, 1]) add(2, J.head, new THREE.BoxGeometry(0.05, 0.34, 0.05), gold, 0.03, ht + 0.12, s * 0.1, -0.25, 0, s * 0.3); add(2, J.head, new THREE.TorusGeometry(0.17, 0.022, 6, 24), glow, -0.02, ht + 0.36, 0, 0, 0, Math.PI / 2); }
+  return u;
+}
 function mechTick(p, mm, dt, xf = 1) { // xf < 1: mid-transform (0 = folded up, 1 = standing)
   const J = mm.userData.J, M = mechOf(p), L = J.LEG || MECH_LEG, k = J.k, DS = J.D ? J.D.s : 1;
   // hit-stop: a landed blow freezes the attack pose for a moment

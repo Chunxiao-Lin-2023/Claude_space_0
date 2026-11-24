@@ -71,10 +71,10 @@ function doBash() {
 // knife: find the zombie, turn to it, lunge into reach and slash; the host settles the damage
 // (round 34b) vehicle ⇄ mech (1 s); the host says why not if it can't
 function doXform(v) { const me = W.p[ME]; if (!me || !me.ride || me.down) return; if (me.mtr > 0) return; act('xform', v); sfx('swap'); }
-// (round 37) X / the transform key: tap = one step on (vehicle → mech → beast when the 进化 meter is full; a beast turns back into the mech); hold in mech / beast = straight back to the vehicle
+// (round 37) X / the transform key — (round 38j) tap = vehicle ↔ mech (a beast turns back into the mech); hold in mech = evolve when the 进化 meter is full, hold in beast form = straight back to the vehicle
 let XH = null;
 function xPress() { const me = W.p[ME]; if (!me || !me.ride) return; if (me.mform !== 1) { doXform(); return; } if (XH) return;
-  XH = { done: false }; XH.tm = setTimeout(() => { if (XH && !XH.done) { XH.done = true; doXform('veh'); } }, 450); }
+  XH = { done: false }; XH.tm = setTimeout(() => { if (XH && !XH.done) { XH.done = true; doXform('evo'); } }, 450); }
 function xRelease() { if (!XH) return; clearTimeout(XH.tm); if (!XH.done) doXform(); XH = null; }
 function doKnife() {
   const me = W.p[ME]; if (!me || me.dead || me.down || me.build || me.ride || me.pass >= 0 || me.medT > 0 || me.jmp || (me.knCD || 0) > performance.now()) return;

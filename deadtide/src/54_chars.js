@@ -347,6 +347,13 @@ function mkPlayerModel(i) {
     mk([[boxG(0.42, 0.06, 0.06, 0.18, 0.04, 0), '#4a4f55'], [new THREE.CylinderGeometry(0.035, 0.05, 0.12, 8).rotateZ(Math.PI / 2).translate(0.44, 0.04, 0), '#2a2d30'], [new THREE.CylinderGeometry(0.06, 0.06, 0.26, 10).rotateZ(Math.PI / 2).translate(0.08, -0.06, 0), '#a8322a'], [boxG(0.04, 0.08, 0.04, 0, -0.03, 0), dark]]),
     mk([[new THREE.CylinderGeometry(0.06, 0.06, 0.5, 10).rotateZ(Math.PI / 2).translate(0.2, 0.05, 0), '#3d4a34'], [boxG(0.08, 0.1, 0.07, 0.02, -0.03, 0), dark], [boxG(0.18, 0.06, 0.05, -0.12, 0.03, 0), '#3d4a34'], [boxG(0.06, 0.05, 0.06, 0.3, 0.12, 0), dark]]),
   );
+  { const GA = [[0, -0.11, 0.18, 0.03, 0.06, 0.2, 0.08], [0.14, -0.05, 0.5, 0.04, 0.07, 0.5, 0.25], [0.1, -0.15, 0.5, 0.04, 0.07, 0.36, 0.12], [0.05, -0.07, 0.67, 0.04, 0.07, 0.7, 0.32], [0.1, -0.05, 0.33, 0.03, 0.06, 0.42, 0.12], [0.08, -0.07, 0.5, 0.04, 0.08, 0.42, 0.18], [0.02, -0.1, 0.45, 0.05, 0.11, 0.5, 0.2]]; // (round 38j) gun upgrades you can see: [mag x, mag y, muzzle x, muzzle y, top y, body length, body centre x]
+    guns.forEach((q, k) => { const a = GA[k]; if (!a) return; const up = [grp(q), grp(q), grp(q)];
+      mesh(boxG(0.085, 0.16, 0.06, a[0], a[1], 0), '#30343a', up[0]); mesh(boxG(0.09, 0.03, 0.065, a[0], a[1] - 0.03, 0), '#e08a2a', up[0]); mesh(boxG(0.09, 0.03, 0.065, a[0], a[1] + 0.04, 0), '#e08a2a', up[0]); // Lv1 扩容弹匣: a long magazine taped orange
+      mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.09, 8).rotateZ(Math.PI / 2).translate(a[2] + 0.04, a[3], 0), '#3c4046', up[1]); mesh(boxG(0.014, 0.075, 0.075, a[2] + 0.03, a[3], 0), '#1a1c20', up[1]); mesh(boxG(0.014, 0.075, 0.075, a[2] + 0.06, a[3], 0), '#1a1c20', up[1]); // Lv2: a slotted muzzle brake…
+      mesh(boxG(0.1, 0.05, 0.05, a[6], a[4] + 0.03, 0), '#22262c', up[1]); mesh(boxG(0.018, 0.018, 0.02, a[6] + 0.05, a[4] + 0.04, 0), '#ff3a3a', up[1]); // …and a red-dot sight
+      mesh(boxG(a[5] * 0.85, 0.016, 0.064, a[6], a[4] - 0.004, 0), '#f0c030', up[2]); mesh(boxG(a[5] * 0.6, 0.014, 0.066, a[6], a[3] - 0.022, 0), '#7fe8ff', up[2]); mesh(boxG(0.03, 0.03, 0.07, a[2] - 0.02, a[3], 0), '#f0c030', up[2]); // Lv3 精工镀金: gold rails, a glowing line
+      up.forEach(u => u.visible = false); q.userData.up = up; }); }
   const knife = grp(aim); for (const [geo, col] of [[boxG(0.075, 0.03, 0.03, -0.02, 0, 0), '#2a2420'], [boxG(0.02, 0.05, 0.05, 0.025, 0, 0), '#3a3a3a'], [boxG(0.15, 0.012, 0.035, 0.11, 0, 0), '#cfd4d8']]) mesh(geo, col, knife); knife.visible = false;
   const hammer = mk([[boxG(0.03, 0.32, 0.03, 0, 0.1, 0), '#8a6a44'], [boxG(0.12, 0.06, 0.06, 0.02, 0.26, 0), '#5a5f66']]);
   const medkit = mk([[boxG(0.14, 0.1, 0.2, 0, 0, 0), '#e8e2d6'], [boxG(0.145, 0.03, 0.08, 0, 0, 0), '#c83a32'], [boxG(0.145, 0.08, 0.03, 0, 0, 0), '#c83a32']]);
@@ -403,7 +410,7 @@ function drawPlayers(vl, dt) {
     if (p._xfT != null) p._xfT += dt;
     const xfing = p._xfT != null && p._xfT < BAL.xformT && p.ride && !p.dead && !p.down && MECHS[p.veh];
     if ((inMech(p) || xfing) && !p.dead && !p.down) { // (round 34) in a mech (or turning into / out of one): draw the mech, hide the pilot
-      if (!m.mech || m.mech.userData.J.k !== p.veh) { if (m.mech) m.g.remove(m.mech); m.mech = mkMech(p.veh); m.g.add(m.mech); }
+      if (!m.mech || m.mech.userData.J.k !== p.veh) { if (m.mech) m.g.remove(m.mech); m.mech = mkMech(p.veh); m.g.add(m.mech); } mechUpgSet(m.mech.userData.J, mlvOf(p.veh)); /* (round 38j) */
       const f = xfing ? (p._xfTo ? p._xfT / BAL.xformT : 1 - p._xfT / BAL.xformT) : 1; // 0 = vehicle … 1 = mech
       m.mech.visible = f > 0.2; m.lower.visible = m.upper.visible = false; m.g.rotation.set(0, 0, 0);
       // (round 34b) the vehicle stands up on its tail, folds and splits while the mech unfolds out of it, with sparks
@@ -482,7 +489,7 @@ function drawPlayers(vl, dt) {
     const bashing = p.melee === 1 && p.shield, kn = p.knT > 0 && !build && !med && !p.down ? clamp(1 - p.knT / (bashing ? 0.3 : 0.28), 0, 1) : -1;
     const fired0 = W.t - (p._lastShot || -9) < 1.4, busy = reload || med || thr || build || kn >= 0 || fired0 || !!(p.inp && p.inp.fire);
     p._grip = lerp(p._grip || 0, RP && !busy ? 1 : 0, Math.min(1, dt * 7)); const grip = RP ? p._grip : 0; // (round 27) riding and not shooting: hands on the bars
-    m.guns.forEach((gm, k) => gm.visible = !build && !med && !thr && kn < 0 && k === wi && grip < 0.5); m.knife.visible = kn >= 0 && !bashing; m.hammer.visible = build; m.medkit.visible = med; m.nade.visible = thr;
+    m.guns.forEach((gm, k) => gm.visible = !build && !med && !thr && kn < 0 && k === wi && grip < 0.5); { const ug = m.guns[wi] && m.guns[wi].userData.up, gl = wlvOf(wi); if (ug && m._gl !== wi * 10 + gl) { m._gl = wi * 10 + gl; ug.forEach((u, k) => u.visible = gl > k); } } /* (round 38j) the gun's upgrade parts */ m.knife.visible = kn >= 0 && !bashing; m.hammer.visible = build; m.medkit.visible = med; m.nade.visible = thr;
     // stance: shouldered up when shooting or standing, low ready (muzzle down, butt still in the shoulder) when on the move
     const S = STANCE[wi], fired = W.t - (p._lastShot || -9) < 1.4, plain = down || build || med || thr;
     p._rdy = lerp(p._rdy == null ? 1 : p._rdy, plain || !moving || fired || (p.inp && p.inp.fire) ? 1 : 0, Math.min(1, dt * 8));
