@@ -31,7 +31,7 @@ const { chromium } = require('playwright');
     return { centre: 5000 - a.hp, edge: 5000 - e.hp, boss: 5000 - bz.hp, cap: BAL.nadeCap, gl: ammoCap(6), R: BAL.nadeR, tank: BAL.tankDmg, tankR: BAL.tankR, glDmg: WPN[6].dmg };
   });
   check('grenade: ~220 in the middle, about half near the edge, a boss takes 40% less; carry 10 frags, 60 launcher shells; tank 120 / r 2.3, launcher 160',
-    s.centre > 180 && s.centre <= 220 && s.edge < 130 && s.edge > 0 && s.boss < s.centre * 0.65 * 1.5 && /* (round 38g) a boss has ×1.5 hp and takes ×1.5 from anything but a mech */ s.cap === 10 && s.gl === 60 && s.R === 3 && s.tank === 120 && s.tankR === 2.3 && s.glDmg === 160, JSON.stringify(s));
+    s.centre > 180 && s.centre <= 220 && s.edge < 130 && s.edge > 0 && s.boss < s.centre * 0.65 && /* (round 38h) bosses back to normal hp */ s.cap === 10 && s.gl === 60 && s.R === 3 && s.tank === 120 && s.tankR === 2.3 && s.glDmg === 160, JSON.stringify(s));
   // a two-player save carried on alone keeps the teammate's kit (and a teammate who dropped out is still saved)
   s = await p.evaluate(() => {
     NETROLE = 'host'; startGame(4242, ['甲', '乙'], 'normal', 0, 'classic', 'town'); SLOT = 1; const g = W.p[1]; g.owned[3] = 1; g.ammo[3] = 77; g.meds = 5; g.vehs = 1 << 4; g.gone = true; W.res.steel = 321;

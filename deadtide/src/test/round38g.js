@@ -24,11 +24,11 @@ const { chromium } = require('playwright');
     me.vx = 0; me.vy = 0; me.ride = false; W.zs.length = 0; return out; });
   check('on foot a zombie must hold on ~0.45 s before biting (brushing past costs nothing); a moving vehicle is never bitten', s.brush === 0 && s.hold > 0 && s.drive === 0, JSON.stringify(s));
   s = await S(() => { const o = spot(true); put(o); const me = W.p[ME], out = {}; W.strayT = 1e9;
-    const w = spawnZombie('walker', 0), wd = spawnZombie('warden', 0); out.wardenHp = Math.round(wd.max / w.max * ZT.walker.hp / ZT.warden.hp * 100) / 100;
+    const w = spawnZombie('walker', 0), wd = spawnZombie('warden', 0), kj = spawnZombie('kjaw', 0); out.wardenHp = Math.round(wd.max / w.max * ZT.walker.hp / ZT.warden.hp * 100) / 100; out.kjHp = Math.round(kj.max / (ZT.kjaw.hp * (1 + BAL.kaijuHpPer * (BAL.lvN(Math.max(1, W.night)) - 1)) * W.D.hp * (activeP().length > 1 ? 1.15 : 1)) * 100) / 100; const k0 = kj.hp; hurtZombie(kj, 10, null); out.trapKj = Math.round(k0 - kj.hp);
     const a0 = w.hp; hurtZombie(w, 10, me); out.foot = Math.round(a0 - w.hp); const b0 = wd.hp; hurtZombie(wd, 10, me); out.footBig = Math.round(b0 - wd.hp);
     me.vehs |= 4; me.veh = 2; me.ride = true; me.mform = 1; me.mtr = 0; me.mh = []; const c0 = w.hp; hurtZombie(w, 10, me); out.mech = Math.round(c0 - w.hp); const d0 = wd.hp; hurtZombie(wd, 10, me); out.mechBig = Math.round(d0 - wd.hp);
     const h0 = mhpOf(me); hurtPlayer(me, 100); out.hull = Math.round(h0 - mhpOf(me)); me.ride = false; me.mform = 0; W.zs.length = 0; return out; });
-  check('mech hits ×1.5 (on foot unchanged); 能力者 have ×1.5 hp but on foot you also hit them ×1.5; 赤刃 (×1.0) loses 100/1.5 ≈ 67 per 100', s.foot === 10 && s.mech === 15 && s.footBig === 15 && s.mechBig === 15 && s.wardenHp === 1.5 && s.hull === 67, JSON.stringify(s));
+  check('mech hits ×1.5 (on foot unchanged); 能力者 normal hp (round 38h); 怪兽 ×1.25 hp and non-mech hits on them ×1.25; 赤刃 (×1.0) loses 100/1.5 ≈ 67 per 100', s.foot === 10 && s.mech === 15 && s.footBig === 10 && s.mechBig === 15 && s.wardenHp === 1 && s.kjHp === 1.25 && Math.abs(s.trapKj - 12.5) < 0.6 && s.hull === 67, JSON.stringify(s));
   s = await S(() => { const o = spot(true); put(o); const me = W.p[ME], out = {}; W.strayT = 1e9; me.vehs |= 8; me.veh = 3; me.ride = true; me.mform = 1; me.mtr = 0; me.mh = []; me.bat = 120; me.evo = 0; me.evoOn = false; me.gcd = 0; me.mcd = 0; me.ccL = {}; me.ccStg = me.ccSlw = me.ccBrk = 0;
     out.stg = mechCC(me, 'stg', 0.7) && me.ccStg; out.spd0 = ccSpeed(me); me.gcd = 0; mechPunch(me); out.punchBlocked = me.gcd === 0; me.ccStg = 0; out.dr = (mechCC(me, 'stg', 0.7), me.ccStg); me.ccStg = 0;
     // on foot nothing happens
