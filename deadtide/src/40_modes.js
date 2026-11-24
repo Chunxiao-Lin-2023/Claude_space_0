@@ -236,7 +236,7 @@ Object.assign(MODES.boss, {
     const O = W.obj;
     if (O.cur != null) { const z = W.zs.find(q => q.id === O.cur); O.curK = z ? z.k : O.curK; if (!z || z.hp <= 0) { if (O.curK && !O.dead.includes(O.curK)) { O.dead.push(O.curK); W.res.parts += 15; giveAmmo(2); modeSay(ZT[O.curK].name + ' 倒下了！（' + O.dead.length + '/4）+15 零件、弹药', '#8fe39a', true); } O.cur = null; objChanged(); if (O.dead.length >= BOSSES.length) { endGame('win', '四只尸王都被你们猎杀了'); return; } } else if (Math.random() < dt * 2) objChanged(); }
     // acid pools from the venom king
-    for (const q of O.pools) { q.t -= dt; for (const p of alivePl()) if (!p.down && Math.hypot(p.x - q.x, p.y - q.y) < q.r) hurtPlayer(p, 12 * dt * W.D.dmg); }
+    for (const q of O.pools) { q.t -= dt; for (const p of alivePl()) if (!p.down && Math.hypot(p.x - q.x, p.y - q.y) < q.r) { hurtPlayer(p, 12 * dt * W.D.dmg); mechCC(p, 'slw', 0.4, 0.45, true); } } /* (round 38g) venom pools bog mechs down */
     const n0 = O.pools.length; O.pools = O.pools.filter(q => q.t > 0); if (n0 !== O.pools.length) objChanged();
   },
   hud() {
@@ -310,7 +310,7 @@ function wingStep(z, Z, dt) {
     if (S.k === 'swoop') {
       if (S.t < 0.9) { z.kt = 1; spd = 0; gz = z.z + 0.2; z.face += angDiff(z.face, Math.atan2(S.y - z.y, S.x - z.x)) * Math.min(1, dt * 8); }
       else { z.kt = 2; vzMax = 10; spd = z.spd * F.spd; const toEnd = Math.hypot(S.x2 - z.x, S.y2 - z.y); gx = S.x2; gy = S.y2; gz = Math.max(S.hz, ground() + 0.6);
-        for (const p of W.p) { if (p.gone || p.dead || S.hit.includes(p.i) || !zExposed(p)) continue; if (Math.hypot(p.x - z.x, p.y - z.y, flyAimZ(p) - z.z) < 1.8 + (inMech(p) ? 0.6 : 0)) { S.hit.push(p.i); hurtPlayer(p, 30 * D, z); knock(p, Math.cos(z.face) * 12, Math.sin(z.face) * 12); emit({ k: 'sfx', n: 'smash', x: p.x, y: p.y }); } }
+        for (const p of W.p) { if (p.gone || p.dead || S.hit.includes(p.i) || !zExposed(p)) continue; if (Math.hypot(p.x - z.x, p.y - z.y, flyAimZ(p) - z.z) < 1.8 + (inMech(p) ? 0.6 : 0)) { S.hit.push(p.i); hurtPlayer(p, 30 * D, z); knock(p, Math.cos(z.face) * 12, Math.sin(z.face) * 12); mechCC(p, 'stg', 0.8); /* (round 38g) */ emit({ k: 'sfx', n: 'smash', x: p.x, y: p.y }); } }
         if (toEnd < 0.7 || S.t > 3.2) { z.ks = null; z.kt = 0; z.gnd = 1.7; zExpose(z, 1.7, 'land'); z.kcd = 5 * CDK; emit({ k: 'slam', x: r2(z.x), y: r2(z.y), z: r2(ground()), r: 2 }); } }
     } else if (S.k === 'rain') {
       z.kt = S.t < 0.6 ? 1 : 2; spd = z.spd * 0.4; if (tp) { gx = tp.x + Math.cos(z.fa || 0) * 4; gy = tp.y + Math.sin(z.fa || 0) * 4; }
@@ -356,7 +356,7 @@ function kaijuStep(z, dt) {
   const tgt = alivePl().filter(p => !p.down).sort((a, b) => Math.hypot(a.x - z.x, a.y - z.y) - Math.hypot(b.x - z.x, b.y - z.y))[0];
   const expose = (t, w) => { z.xpT = t; z.stun = Math.max(z.stun || 0, t * 0.9); z.ks = null; z.kt = 0; z.kc = 0; z.hidden = 0; emit({ k: 'kxp', id: z.id, x: r2(z.x), y: r2(z.y), z: r2(z.z + T.h), t: r2(t), w }); };
   const breakWeak = (x, y, R, dmg) => { const x0 = Math.floor(x), y0 = Math.floor(y), Rc = Math.ceil(R); for (let dy = -Rc; dy <= Rc; dy++) for (let dx = -Rc; dx <= Rc; dx++) { if (dx * dx + dy * dy > R * R + 0.5) continue; const cx = x0 + dx, cy = y0 + dy; if (!inMap(cx, cy)) continue; for (const L of [z.L, z.L + 1]) { if (L >= ML) continue; const i = ci(cx, cy, L); if (W.blk[i] && B[W.blk[i]].brk) damageCell(i, dmg); } } };
-  const hitRound = (x, y, zz, R, dmg, kb) => { for (const p of alivePl()) { const ex = p.x - x, ey = p.y - y, e = Math.hypot(ex, ey); if (e < R && Math.abs(p.z - zz) < 2.2) { hurtPlayer(p, dmg * D, z); knock(p, ex / (e || 1) * kb, ey / (e || 1) * kb); } } };
+  const hitRound = (x, y, zz, R, dmg, kb, cc) => { for (const p of alivePl()) { const ex = p.x - x, ey = p.y - y, e = Math.hypot(ex, ey); if (e < R && Math.abs(p.z - zz) < 2.2) { hurtPlayer(p, dmg * D, z); knock(p, ex / (e || 1) * kb, ey / (e || 1) * kb); for (const c of cc || []) mechCC(p, c[0], c[1], c[2]); } } }; /* (round 38g) cc: control on mechs */
   if (!z.rage2 && z.hp < z.max * 0.5 && !z.hidden) { z.rage2 = 1; z.spd *= 1.2; z.kcd = Math.min(z.kcd, 1.2); // berserk: a roar that shoves everyone back, a few crawlers dig up
     for (const p of alivePl()) { const ex = p.x - z.x, ey = p.y - z.y, e = Math.hypot(ex, ey); if (e < 6) knock(p, ex / (e || 1) * 9, ey / (e || 1) * 9); }
     for (let k = 0; k < 3; k++) { const m = zAround('crawler', z.x, z.y, 2, 4.5); if (m) m.mz = 1; }
@@ -368,13 +368,13 @@ function kaijuStep(z, dt) {
     if (S.k === 'breath') { // acid breath: a 1 s wind-up (head back, glowing throat), then 1.6 s of acid in a cone; it pants afterwards
       if (S.t < 1) { z.kt = 1; if (tgt) z.face = angLerp(z.face, Math.atan2(tgt.y - z.y, tgt.x - z.x), Math.min(1, dt * 4)); return true; }
       z.kt = 2; if (tgt) z.face = angLerp(z.face, Math.atan2(tgt.y - z.y, tgt.x - z.x), Math.min(1, dt * 0.9)); if ((S.tick = (S.tick || 0) - dt) <= 0) { S.tick = 0.25;
-        for (const p of alivePl()) { const dx = p.x - z.x, dy = p.y - z.y, d = Math.hypot(dx, dy); if (d < 7.5 && Math.abs(p.z - z.z) < 2.5 && Math.cos(angDiff(Math.atan2(dy, dx), z.face)) > Math.cos(0.5)) hurtPlayer(p, 8 * D, z); }
+        for (const p of alivePl()) { const dx = p.x - z.x, dy = p.y - z.y, d = Math.hypot(dx, dy); if (d < 7.5 && Math.abs(p.z - z.z) < 2.5 && Math.cos(angDiff(Math.atan2(dy, dx), z.face)) > Math.cos(0.5)) { hurtPlayer(p, 8 * D, z); mechCC(p, 'slw', 1.2, 0.35, true); } }
         emit({ k: 'kacid', x: r2(z.x), y: r2(z.y), z: r2(z.z + T.h * 0.75), a: r2(z.face) }); }
       if (S.t >= 2.6) { expose(1.3, 'tired'); z.kcd = 5 * CDK; } return true;
     }
     if (S.k === 'sweep') { // tail sweep all round: 0.8 s wind-up (crouch, tail raised), then a 4.2 radius hit; off balance after
       z.kt = S.t < 0.8 ? 1 : 2;
-      if (S.t >= 0.8 && !S.done) { S.done = 1; hitRound(z.x, z.y, z.z, 4.2, 38, 12); breakWeak(z.x, z.y, 2.2, 200);
+      if (S.t >= 0.8 && !S.done) { S.done = 1; hitRound(z.x, z.y, z.z, 4.2, 38, 12, [['stg', 0.8], ['brk', 6]]); breakWeak(z.x, z.y, 2.2, 200);
         emit({ k: 'slam', x: r2(z.x), y: r2(z.y), z: r2(z.z), r: 2 }); emit({ k: 'sfx', n: 'smash', x: z.x, y: z.y }); }
       if (S.t >= 1.25) { expose(1.0, 'rec'); z.kcd = 4 * CDK; } return true;
     }
@@ -382,7 +382,7 @@ function kaijuStep(z, dt) {
       z.kc = 1; z.face = S.a;
       if (S.t < 0.8) { z.kt = 1; return true; }
       z.kt = 2; const ox = z.x, oy = z.y, ca = Math.cos(S.a), sa = Math.sin(S.a); moveEnt(z, ca * 9 * dt, sa * 9 * dt, 'z', false); z.z = surfZ(z.x, z.y, z.L);
-      for (const p of alivePl()) { if (S.hit.includes(p.i) || Math.abs(p.z - z.z) > 1.5) continue; if (Math.hypot(p.x - z.x, p.y - z.y) < z.r + 0.9) { S.hit.push(p.i); hurtPlayer(p, 40 * D, z); knock(p, ca * 14 - sa * 3, sa * 14 + ca * 3); emit({ k: 'sfx', n: 'smash', x: p.x, y: p.y }); } }
+      for (const p of alivePl()) { if (S.hit.includes(p.i) || Math.abs(p.z - z.z) > 1.5) continue; if (Math.hypot(p.x - z.x, p.y - z.y) < z.r + 0.9) { S.hit.push(p.i); hurtPlayer(p, 40 * D, z); knock(p, ca * 14 - sa * 3, sa * 14 + ca * 3); mechCC(p, 'stg', 1.0); /* (round 38g) */ emit({ k: 'sfx', n: 'smash', x: p.x, y: p.y }); } }
       const stuck = Math.hypot(z.x - ox, z.y - oy) < 9 * dt * 0.35, weak = stuck && z.bump >= 0 && W.blk[z.bump] && B[W.blk[z.bump]].brk && B[W.blk[z.bump]].hp <= 330;
       if (stuck && z.bump >= 0 && W.blk[z.bump] && B[W.blk[z.bump]].brk) { damageCell(z.bump, 500); emit({ k: 'slam', x: r2(z.x + ca), y: r2(z.y + sa), z: r2(z.z), r: 1 }); }
       if (stuck && !weak) { expose(3.0, 'wall'); z.kcd = 6 * CDK; emit({ k: 'sfx', n: 'clank', x: z.x, y: z.y }); return true; } // slammed into something solid
@@ -394,7 +394,7 @@ function kaijuStep(z, dt) {
       if (Math.random() < dt * 14) emit({ k: 'dig', x: r2(z.x), y: r2(z.y), z: r2(z.z), big: 1 });
       if (!S.warn && (S.t > 2.0 || d < 1.2)) { S.warn = 1; S.wt = S.t; emit({ k: 'ktell', s: 'disc', x: r2(z.x), y: r2(z.y), z: r2(surfZ(z.x, z.y, S.L != null ? S.L : z.L)), r: 3, t: 0.55 }); } // the ground bulges first: a beat to step out
       if (S.warn && S.t - S.wt > 0.55) { z.hidden = 0; z.L = S.L != null ? S.L : z.L; z.z = surfZ(z.x, z.y, z.L);
-        hitRound(z.x, z.y, z.z, 3, 42, 10); breakWeak(z.x, z.y, 1.5, 300);
+        hitRound(z.x, z.y, z.z, 3, 42, 10, [['stg', 0.8]]); breakWeak(z.x, z.y, 1.5, 300);
         for (let k = 0; k < 2; k++) { const m = zAround('crawler', z.x, z.y, 1.5, 3.5); if (m) m.mz = 1; }
         emit({ k: 'boom', x: r2(z.x), y: r2(z.y), z: r2(z.z + 0.2), s: 1 }); emit({ k: 'slam', x: r2(z.x), y: r2(z.y), z: r2(z.z), r: 2 }); expose(1.6, 'stuck'); z.kcd = 8 * CDK; }
       return true;
@@ -402,13 +402,13 @@ function kaijuStep(z, dt) {
     if (S.k === 'pounce') { // 裂颚兽: crouches 0.9 s (the landing spot is marked), leaps 0.55 s and lands heavy
       if (S.t < 0.9) { z.kt = 1; z.face = Math.atan2(S.y - z.y, S.x - z.x); return true; }
       z.kt = 2; const f = Math.min(1, (S.t - 0.9) / 0.55); z.x = S.ox + (S.x - S.ox) * f; z.y = S.oy + (S.y - S.oy) * f; z.z = surfZ(z.x, z.y, z.L) + Math.sin(f * Math.PI) * 3.2;
-      if (f >= 1) { z.z = surfZ(z.x, z.y, z.L); hitRound(z.x, z.y, z.z, 2.4, 30, 9); breakWeak(z.x, z.y, 1.2, 260); emit({ k: 'slam', x: r2(z.x), y: r2(z.y), z: r2(z.z), r: 2 }); emit({ k: 'sfx', n: 'smash', x: z.x, y: z.y }); expose(1.0, 'land'); z.kcd = 5 * CDK; }
+      if (f >= 1) { z.z = surfZ(z.x, z.y, z.L); hitRound(z.x, z.y, z.z, 2.4, 30, 9, [['stg', 0.7]]); breakWeak(z.x, z.y, 1.2, 260); emit({ k: 'slam', x: r2(z.x), y: r2(z.y), z: r2(z.z), r: 2 }); emit({ k: 'sfx', n: 'smash', x: z.x, y: z.y }); expose(1.0, 'land'); z.kcd = 5 * CDK; }
       return true;
     }
     if (S.k === 'rock') { // 钢尾兽: rips up a boulder (1 s), hurls it in a high arc at where you will be (the spot is marked), it smashes walls too
       z.kt = S.t < 1 ? 1 : 2; if (S.t < 1 && tgt) z.face = Math.atan2(tgt.y - z.y, tgt.x - z.x);
       if (S.t >= 1 && !S.thrown) { S.thrown = 1; emit({ k: 'krock', x: r2(z.x), y: r2(z.y), z: r2(z.z + T.h * 0.9), x2: r2(S.x), y2: r2(S.y), z2: r2(S.z), t: 0.9 }); emit({ k: 'sfx', n: 'launcher', x: z.x, y: z.y }); }
-      if (S.t >= 1.9) { hitRound(S.x, S.y, S.z, 2.2, 28, 8); const L = Math.max(0, Math.round(S.z / FH)); { const x0 = Math.floor(S.x), y0 = Math.floor(S.y); for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) for (const L2 of [L, L + 1]) { if (!inMap(x0 + dx, y0 + dy) || L2 >= ML) continue; const i = ci(x0 + dx, y0 + dy, L2); if (W.blk[i] && B[W.blk[i]].brk) damageCell(i, 220); } }
+      if (S.t >= 1.9) { hitRound(S.x, S.y, S.z, 2.2, 28, 8, [['stg', 0.6]]); const L = Math.max(0, Math.round(S.z / FH)); { const x0 = Math.floor(S.x), y0 = Math.floor(S.y); for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) for (const L2 of [L, L + 1]) { if (!inMap(x0 + dx, y0 + dy) || L2 >= ML) continue; const i = ci(x0 + dx, y0 + dy, L2); if (W.blk[i] && B[W.blk[i]].brk) damageCell(i, 220); } }
         emit({ k: 'boom', x: r2(S.x), y: r2(S.y), z: r2(S.z + 0.2), s: 1 }); emit({ k: 'slam', x: r2(S.x), y: r2(S.y), z: r2(S.z), r: 2 }); z.ks = null; z.kt = 0; z.kcd = 5 * CDK; }
       return true;
     }

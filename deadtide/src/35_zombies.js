@@ -23,6 +23,7 @@ function stepZombies(dt) {
     const Z = ZT[z.k], climbT = !!Z.climb;
     z.cd -= dt; z.hitT -= dt; z.atk -= dt; z.anim += dt;
     if (z.stun > 0) z.stun -= dt;
+    if (z.mlat != null) { climberLatch(z, dt); if (z.mlat != null) continue; } /* (round 38g) riding a mech */
     if (z.air) { const A = z.air; A.t += dt; moveEnt(z, A.vx * dt, A.vy * dt, 'z', true); const g = surfZ(z.x, z.y, z.L), f = Math.min(1, A.t / A.T); z.z = g + A.h * 4 * f * (1 - f); z.moving = false; if (f >= 1) { z.air = null; z.z = g; emit({ k: 'zland', x: r2(z.x), y: r2(z.y), z: r2(g) }); } continue; } /* (round 36n) thrown up by 铁卫's 掀地 */
     if (ZT[z.k].boss && bossStep(z, dt)) continue;
     if (ZT[z.k].kaiju && !ZT[z.k].fly && kaijuStep(z, dt)) continue; // (round 34)
@@ -107,7 +108,7 @@ function stepZombies(dt) {
         else {
           z.tl = 2; const ox = z.x, oy = z.y, ca = Math.cos(Cg.a), sa = Math.sin(Cg.a);
           moveEnt(z, ca * BAL.chgSpd * dt, sa * BAL.chgSpd * dt, 'z', false); z.z = surfZ(z.x, z.y, z.L);
-          for (const p of W.p) { if (p.gone || p.dead || Cg.hit.includes(p.i) || Math.abs(p.z - z.z) > 0.9) continue; if (d2(p.x, p.y, z.x, z.y) < p.r + z.r + 0.35) { Cg.hit.push(p.i); hurtPlayer(p, BAL.chgDmg * W.D.dmg, z); knock(p, ca * BAL.chgKB - sa * 2, sa * BAL.chgKB + ca * 2); emit({ k: 'sfx', n: 'smash', x: p.x, y: p.y }); } }
+          for (const p of W.p) { if (p.gone || p.dead || Cg.hit.includes(p.i) || Math.abs(p.z - z.z) > 0.9) continue; if (d2(p.x, p.y, z.x, z.y) < p.r + z.r + 0.35) { Cg.hit.push(p.i); hurtPlayer(p, BAL.chgDmg * W.D.dmg, z); mechCC(p, 'stg', 0.7); /* (round 38g) */ knock(p, ca * BAL.chgKB - sa * 2, sa * BAL.chgKB + ca * 2); emit({ k: 'sfx', n: 'smash', x: p.x, y: p.y }); } }
           for (const o of zs) { if (o === z || o.hp <= 0 || o.L !== z.L) continue; const dx = o.x - z.x, dy = o.y - z.y, d = Math.hypot(dx, dy); if (d < z.r + o.r + 0.2 && d > 0.01) { const side = dx * -sa + dy * ca >= 0 ? 1 : -1; o.kbx += -sa * side * 6; o.kby += ca * side * 6; } } // shoved aside
           if (Math.hypot(z.x - ox, z.y - oy) < BAL.chgSpd * dt * 0.35) { // ran into something
             if (z.bump >= 0 && B[W.blk[z.bump]].brk) { W.bhp[z.bump] -= BAL.chgWall; W.dirty.add(z.bump); if (W.bhp[z.bump] <= 0) destroyBlk(z.bump); }
@@ -117,7 +118,7 @@ function stepZombies(dt) {
       } else if (z.slam) {
         hold = true; z.tl = 3; z.slam.t += dt;
         if (z.slam.t >= BAL.slamWind) {
-          for (const p of W.p) { if (p.gone || p.dead || Math.abs(p.z - z.z) > 1) continue; const dx = p.x - z.x, dy = p.y - z.y, d = Math.hypot(dx, dy); if (d < BAL.slamR) { hurtPlayer(p, BAL.slamDmg * W.D.dmg * (d < 1.4 ? 1 : 0.6)); knock(p, dx / (d || 1) * BAL.slamKB, dy / (d || 1) * BAL.slamKB); } }
+          for (const p of W.p) { if (p.gone || p.dead || Math.abs(p.z - z.z) > 1) continue; const dx = p.x - z.x, dy = p.y - z.y, d = Math.hypot(dx, dy); if (d < BAL.slamR) { hurtPlayer(p, BAL.slamDmg * W.D.dmg * (d < 1.4 ? 1 : 0.6)); mechCC(p, 'stg', 0.6); /* (round 38g) */ knock(p, dx / (d || 1) * BAL.slamKB, dy / (d || 1) * BAL.slamKB); } }
           z.slam = null; z.slamCD = BAL.slamCD; emit({ k: 'sfx', n: 'smash', x: z.x, y: z.y }); emit({ k: 'slam', x: r2(z.x), y: r2(z.y), z: r2(z.z), r: BAL.slamR });
         }
       } else {
@@ -155,16 +156,20 @@ function stepZombies(dt) {
       if (tp && zLineClear(z, tp.x, tp.y)) { tx = tp.x; ty = tp.y; } }
     if (attackI >= 0 && Z.kaiju && !(B[W.blk[attackI]] && B[W.blk[attackI]].hp <= 330)) { attackI = -1; tx = null; z.moving = false; } // (round 36l) a kaiju smashes through wood (walls, doors, boards: hp ≤ 330) but not brick / concrete — in a solid building it switches to its ranged attacks
     if (attackI >= 0) { zAttackCell(z, attackI); tx = null; }
-    // bite players in reach
+    // bite players in reach — (round 38g) on foot / in a vehicle it has to hold on for a moment first (z.wu), so just brushing past or driving through a crowd costs nothing; mechs are clawed at once
+    let touch = false;
     for (const p of W.p) {
       if (p.gone || p.dead || Math.abs(p.z - z.z) > 0.8 || z.conf > 0) continue;
       const d = d2(p.x, p.y, z.x, z.y);
       if (d < p.r + z.r + 0.28 + (inMech(p) ? 0.7 : 0)) { /* (round 34) a mech is big: they claw at its legs */
-        z.st = 'attack'; z.atk = 0.3; z.face = Math.atan2(p.y - z.y, p.x - z.x); tx = null;
-        if (z.cd <= 0) { z.cd = Z.cd; hurtPlayer(p, Z.dmg * W.D.dmg, z); if (Z.kb) knock(p, (p.x - z.x) / (d || 1) * Z.kb, (p.y - z.y) / (d || 1) * Z.kb); }
+        const mech = inMech(p), dv = paxVeh(p) ? W.p[p.pass] : p.ride ? p : null, fast = dv && Math.hypot(dv.vx || 0, dv.vy || 0) > BAL.biteDrive; if (fast && !mech) continue; /* a moving vehicle just goes through */
+        touch = true; z.st = 'attack'; z.atk = 0.3; z.face = Math.atan2(p.y - z.y, p.x - z.x); tx = null; z.wu = (z.wu || 0) + dt;
+        if (mech && z.k === 'climber' && z.mlat == null && (p.ccLat || 0) < 3 && !(p.spinT > 0) && !(p.mtr > 0)) { z.mlat = p.i; z.mlo = rand() * Math.PI * 2; z.cd = 0.5; p.ccLat = (p.ccLat || 0) + 1; emit({ k: 'mcc', p: p.i, c: 'lat', x: r2(p.x), y: r2(p.y), z: r2(p.z) }); break; } /* (round 38g) a climber jumps onto the mech */
+        if (z.cd <= 0 && (mech || z.wu >= BAL.biteWU)) { z.cd = Z.cd; hurtPlayer(p, Z.dmg * W.D.dmg, z); if (mech && z.k === 'armored') mechCC(p, 'brk', 6); /* (round 38g) riot gear pries the plates open */ if (Z.kb) knock(p, (p.x - z.x) / (d || 1) * Z.kb, (p.y - z.y) / (d || 1) * Z.kb); }
         break;
       }
     }
+    if (!touch) z.wu = 0;
     // move
     let mx = 0, my = 0;
     if (tx != null && z.stun <= 0) {
@@ -185,7 +190,7 @@ function stepZombies(dt) {
   }
   // separation within a cell neighbourhood
   for (const z of zs) {
-    if (z.hp <= 0 || z.climbing || ZT[z.k].fly || z.air) continue;
+    if (z.hp <= 0 || z.climbing || ZT[z.k].fly || z.air || z.mlat != null) continue;
     const cx = Math.floor(z.x), cy = Math.floor(z.y);
     for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
       const a = grid.get(inMap(cx + dx, cy + dy) ? ci(cx + dx, cy + dy, z.L) : -1); if (!a) continue;
@@ -197,7 +202,7 @@ function stepZombies(dt) {
       }
     }
   }
-  for (const z of zs) if (z.hp > 0 && !z.climbing && !ZT[z.k].fly && !z.air) z.z = surfZ(z.x, z.y, z.L);
+  for (const z of zs) if (z.hp > 0 && !z.climbing && !ZT[z.k].fly && !z.air && z.mlat == null) z.z = surfZ(z.x, z.y, z.L);
   W.zs = zs.filter(z => z.hp > 0);
 }
 

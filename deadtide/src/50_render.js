@@ -544,8 +544,10 @@ function hpBars() {
     const cls = 'hpb' + (low ? ' low' : '') + (p.i === ME ? ' me' : ''); if (e.d.className !== cls) e.d.className = cls;
     const tr = 'translate3d(' + (sx | 0) + 'px,' + (sy | 0) + 'px,0)'; if (e.tr !== tr) { e.tr = tr; e.d.style.transform = tr; }
     const k = ((f * 100) | 0) + col + '|' + (hf >= 0 ? (hf * 100) | 0 : -1);
-    if (e.k !== k) { e.k = k; e.i.style.width = ((f * 100) | 0) + '%'; e.i.style.background = col; e.b.style.display = hf >= 0 ? '' : 'none'; if (hf >= 0) e.b.style.width = ((hf * 100) | 0) + '%'; } }
-  for (const [i, e] of HPB) { const on = seen.has(i); if (e.on !== on) { e.on = on; e.d.style.display = on ? '' : 'none'; } }
+    if (e.k !== k) { e.k = k; e.i.style.width = ((f * 100) | 0) + '%'; e.i.style.background = col; e.b.style.display = hf >= 0 ? '' : 'none'; if (hf >= 0) e.b.style.width = ((hf * 100) | 0) + '%'; }
+    const ct = m ? [p.ccStg > 0 && '硬直', p.ccSlw > 0 && '减速', p.ccBrk > 0 && '破甲', p.ccLat > 0 && '扒住×' + p.ccLat].filter(Boolean).join(' · ') : ''; /* (round 38g) control on the mech, above its bars */
+    if (!e.c) { e.c = document.createElement('div'); e.c.className = 'hpcc'; HPOV.appendChild(e.c); } if (e.ct !== ct) { e.ct = ct; e.c.textContent = ct; e.c.style.display = ct ? '' : 'none'; } if (ct && e.ctr !== tr) { e.ctr = tr; e.c.style.transform = tr; } }
+  for (const [i, e] of HPB) { const on = seen.has(i); if (e.on !== on) { e.on = on; e.d.style.display = on ? '' : 'none'; if (e.c && !on) { e.c.style.display = 'none'; e.ct = ''; } } }
 }
 // DOM overlay: floating loot text, teammate tag, off-screen markers
 const OV = document.getElementById('ov');
@@ -708,6 +710,8 @@ function fxEvent(e) {
     case 'evo': evoEvent(e); break; case 'ezone': evoZone(e); break; /* (round 38c) */ case 'evoready': if (e.p === ME) { toast('进化槽满了：按 X（触屏「进化」）变成' + e.n + '，长按 X 变回载具', '#ffd24a'); sfx('ready'); } break; case 'efe': evoFeathers(e); break; case 'moonfx': evoMoonFx(e); break;
     case 'ebr': { const q = W.p[e.o]; if (q) { q._brT = W.t; q._mA = e.a; q._mAT = 0.3; } if (thr('ebr', 0.25)) sfx('flamer', q ? q.x : 0, q ? q.y : 0); break; } /* (round 37) beast events */
     case 'drones': droneEvent(e); break; case 'dsh': droneShots(e); break; /* (round 36n) 浮游炮 */
+    case 'mcc': { const q = W.p[e.p], L = { stg: ['硬直！', '#ffb04a', '机甲被震住了：看到地上的红圈 / 冲撞预警就提前走开'], slw: ['减速', '#a6e06a', '酸液让机甲变慢了：离开酸液，或者等它过去'], brk: ['破甲', '#ff6a5a', '防暴尸撬开了装甲：6 秒内机甲挨打 +25%，先把它打掉'], lat: ['被扒住', '#e0a0ff', '攀爬者扒在机甲上（越多越慢）：普攻甩掉一只，放技能 / 变形 / 进化全部甩掉'], off: ['甩掉了' + (e.n > 1 ? ' ×' + e.n : ''), '#d8fff0'] }[e.c]; /* (round 38g) */
+      if (L) { RND.floats.push({ x: e.x, y: e.y, z: e.z + 3.2, text: L[0], col: L[1], t: 0 }); if (e.p === ME && L[2]) { UI.ccTip = UI.ccTip || {}; if (!UI.ccTip[e.c]) { UI.ccTip[e.c] = 1; toast(L[2], L[1]); } } if (e.c === 'stg' && q) { sfx('mclang', e.x, e.y); if (e.p === ME) shake(e.x, e.y, 0.35); } } } break;
     case 'dodge': RND.floats.push({ x: e.x, y: e.y, z: e.z + 1.6, text: '闪避', col: '#9ff0ff', t: 0 }); if (thr('dodge', 0.2)) sfx('mdash', e.x, e.y); break; /* (round 36n) */
     case 'zland': for (let k = 0; k < 6; k++) addP({ x: e.x, y: e.y, z: e.z + 0.05, vx: frnd(-1.5, 1.5), vy: frnd(-1.5, 1.5), vz: 0.3, g: -0.2, col: '#9a8a70', s: 0.1, life: 0.45, smoke: 1 }); break;
     case 'mskill': { const q = W.p[e.o]; if (q) { q._msT = 0; q._msK = e.t; }

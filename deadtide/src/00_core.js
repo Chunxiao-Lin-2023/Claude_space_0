@@ -158,6 +158,7 @@ const EVO = [null,
   { k: 'bear', evo: 1, name: '铁熊', from: '重炮', hp: 2000, armor: 0.45, /* (round 38f) 0.55 → 0.45 */ spd: 1.3, dmg: 135, rate: 0.6, reach: 3.4, arc: 1.5, atk: 'claw', skill: 'roar', sn: '熊吼', cd: 11, col: ['#7a5232', '#3a2616', '#d8d0c0'], glow: '#ff8a3a', noise: 9,
     tag: '每杀一只回 1.5% 装甲。普攻「熊掌」：左右掌轮流举高拍下去（前方半径 1.9，135），第三下人立双掌砸地（半径 2.6，×1.5）。技能「熊吼」：一吼震住 9 格内的丧尸 3.5 秒（4 格内再受 120），之后 12 秒狂暴：伤害 +40%、出手更快，冷却 11 秒' },
 ];
+const isBig = z => { const T = ZT[z.k]; return !!(T && (T.elite || T.boss || T.kaiju || z.k === 'boss')); }; /* (round 38g) the tough ones */
 const mechOf = p => (p && p.evoOn && EVO[p.veh]) || MECHS[p && p.veh] || MECHS[4]; /* (round 37) in beast form its EVO entry stands in for the mech */
 const mhpOf = (p, v) => { v = v || p.veh; const M = MECHS[v]; if (!M) return 0; const h = p.mh && p.mh[v]; return h == null ? M.hp : h; };
 const PILLION = 0.38;                                   // how far behind the driver the back-seat rider sits
@@ -204,13 +205,13 @@ const ZT = {
   walker: { name: '游荡者', hp: 70, spd: 1.0, r: 0.31, h: 1.2, dmg: 12, bdmg: 12, cd: 1.0, sc: 1.2 },
   runner: { name: '疾跑者', hp: 45, /* (round 36m) fast ones are frailer: 55 → 45 */ spd: 3.1, r: 0.29, h: 1.14, dmg: 6, bdmg: 7, cd: 0.6, sc: 1.14, lunge: { r: 3.4, cd: 4, dmg: 9 }, sprint: { cd: 7, t: 1.2, mul: 1.45 } }, // (round 34d) pounces and bursts of speed; bite 8 → 6
   climber: { name: '攀爬者', hp: 50, /* (round 36m) fast ones are frailer: 70 → 50 */ spd: 2.3, r: 0.29, h: 0.84, dmg: 6, bdmg: 8, cd: 0.7, sc: 1.08, climb: 1, lunge: { r: 3, cd: 5, dmg: 8 }, sprint: { cd: 8, t: 1.2, mul: 1.4 } },
-  spitter: { name: '喷吐者', hp: 170, spd: 0.9, r: 0.36, h: 1.26, dmg: 8, bdmg: 8, cd: 1.0, sc: 1.26, range: 9, spitCD: 2.6, sprint: { cd: 9, t: 1.0, mul: 1.6 } }, // spits more often; backs off at a run
+  spitter: { name: '喷吐者', hp: 170, spd: 0.9, r: 0.4, h: 1.55, dmg: 8, bdmg: 8, cd: 1.0, sc: 1.55, range: 9, spitCD: 2.6, sprint: { cd: 9, t: 1.0, mul: 1.6 } }, // spits more often; backs off at a run
   brute: { name: '重锤', hp: 800, spd: 1.0, r: 0.44, h: 1.74, dmg: 24, bdmg: 75, cd: 1.6, sc: 1.74, kb: 6, charge: 1, sprint: { cd: 9, t: 1.5, mul: 1.5 } }, // (round 23) faster, plus a telegraphed charge and a ground slam
   boss: { name: '巨尸', hp: 2600, spd: 0.65, r: 0.69, h: 2.64, dmg: 45, bdmg: 220, cd: 2.0, sc: 2.64, kb: 9 },
   dog: { name: '尸犬', hp: 32, /* (round 36m) fast ones are frailer: 40 → 32 */ spd: 3.7, r: 0.27, h: 0.66, dmg: 6, bdmg: 3, cd: 0.5, sc: 1.2, lunge: { r: 3.6, cd: 3, dmg: 8 } },
   crawler: { name: '爬行尸', hp: 60, spd: 0.75, r: 0.3, h: 0.46, dmg: 11, bdmg: 9, cd: 0.9, sc: 1.2 },
-  bloater: { name: '爆尸', hp: 200, spd: 0.75, r: 0.4, h: 1.32, dmg: 8, bdmg: 10, cd: 1.1, sc: 1.32, blast: 1, lob: { r: 7, cd: 5 } }, // lobs a glob of bile
-  screamer: { name: '尖叫者', hp: 120, /* (round 36m) fast ones are frailer: 150 → 120 */ spd: 1.5, r: 0.3, h: 1.26, dmg: 7, bdmg: 6, cd: 0.9, sc: 1.26, scream: 1, sonic: { r: 6, cd: 6, dmg: 7 }, sprint: { cd: 8, t: 1.2, mul: 1.5 } }, // a shriek that knocks you back
+  bloater: { name: '爆尸', hp: 200, spd: 0.75, r: 0.46, h: 1.65, dmg: 8, bdmg: 10, cd: 1.1, sc: 1.65, blast: 1, lob: { r: 7, cd: 5 } }, // lobs a glob of bile
+  screamer: { name: '尖叫者', hp: 120, /* (round 36m) fast ones are frailer: 150 → 120 */ spd: 1.5, r: 0.34, h: 1.5, dmg: 7, bdmg: 6, cd: 0.9, sc: 1.5, scream: 1, sonic: { r: 6, cd: 6, dmg: 7 }, sprint: { cd: 8, t: 1.2, mul: 1.5 } }, // a shriek that knocks you back
   leaper: { name: '飞扑尸王', hp: 2300, spd: 1.15, r: 0.5, h: 2.1, dmg: 30, bdmg: 60, cd: 1.2, sc: 2.0, kb: 7, boss: 1, look: 'boss', skin: '#7a4a3a' },
   digger: { name: '掘地尸王', hp: 2700, spd: 0.95, r: 0.55, h: 2.0, dmg: 34, bdmg: 90, cd: 1.4, sc: 2.0, kb: 8, boss: 1, look: 'brute', skin: '#6a6048' },
   summoner: { name: '召唤尸王', hp: 2100, spd: 0.72, r: 0.5, h: 2.3, dmg: 22, bdmg: 40, cd: 1.4, sc: 2.2, boss: 1, look: 'boss', skin: '#5a5470' },
@@ -220,19 +221,19 @@ const ZT = {
   ktail: { name: '钢尾兽', hp: 2300, spd: 1.0, r: 0.9, h: 2.8, dmg: 32, /* (round 36l) 3000 → 2300, 45 → 32 */ bdmg: 300, cd: 1.6, sc: 1, kb: 10, kaiju: 'tail', skin: '#5a5a66' },
   kwing: { name: '翼龙兽', hp: 1700, spd: 3.0, r: 1.0, h: 1.4, dmg: 0, bdmg: 0, cd: 2, sc: 1, kb: 8, kaiju: 'wing', fly: { alt: 5.2, orbit: 6.5, dive: 16, cd: 4, spd: 4.4 } }, // (round 36m) the flying kaiju: swoops along a marked line and lands (an opening), rains acid on you (roofs too), flaps a gust; hit it hard in a tell and it crashes down
   kdig: { name: '掘地兽', hp: 1800, spd: 0.9, r: 0.8, h: 2.5, dmg: 28, /* (round 36l) 2300 → 1800, 40 → 28 */ bdmg: 220, cd: 1.4, sc: 1, kb: 8, kaiju: 'dig', skin: '#7a5a3a' },
-  armored: { name: '防暴尸', hp: 260, spd: 0.9, r: 0.36, h: 1.26, dmg: 12, bdmg: 16, cd: 1.1, sc: 1.3, armor: 0.3, lunge: { r: 2.8, cd: 5, dmg: 12 } }, // a shield-first lunge
+  armored: { name: '防暴尸', hp: 260, spd: 0.9, r: 0.4, h: 1.5, dmg: 12, bdmg: 16, cd: 1.1, sc: 1.55, armor: 0.3, lunge: { r: 2.8, cd: 5, dmg: 12 } }, // a shield-first lunge
   // (round 35) flyers: flocks that cruise over walls and roofs, circle you and dive in for a peck (36_beasts); a roof over your head keeps them off
   crow: { name: '尸鸦', hp: 22, spd: 4.2, r: 0.3, h: 0.5, dmg: 6, bdmg: 0, cd: 1, sc: 1, fly: { alt: 1.9, orbit: 3.2, dive: 8, cd: 2.4, spd: 2.0 } }, /* (round 36b) peck 5 → 6, dive every 3.4 → 2.4 s, dive speed ×1.8 → ×2.0 */
   vult: { name: '尸鹫', hp: 60, spd: 3.4, r: 0.4, h: 0.6, dmg: 12, bdmg: 0, cd: 1, sc: 1, fly: { alt: 3.4, orbit: 4.4, dive: 10, cd: 3.2, spd: 1.6, bomb: 1 } }, // (round 36l) circles high and drops acid globs on the spot you are heading for (marked)
   bat: { name: '尸蝠', hp: 34, spd: 3.7, r: 0.32, h: 0.5, dmg: 7, bdmg: 0, cd: 1, sc: 1, fly: { alt: 2.2, orbit: 2.6, dive: 9, cd: 2.0, spd: 2.2, drain: 8 } }, /* (round 36b) bite 6 → 7, 2.7 → 2.0 s, ×2.0 → ×2.2 */ // a bite heals it
   // (round 35) 能力者: rare elites, each with one strong telegraphed skill (36_beasts), a coloured aura and a name over the head
-  blinker: { name: '闪影者', hp: 520, spd: 1.55, r: 0.3, h: 1.3, dmg: 14, bdmg: 12, cd: 0.8, sc: 1.2, look: 'runner', skin: '#7a66aa', elite: { k: 'blink', cd: 6.5, col: '#b47aff', tip: '会瞬移到你身后再砍一刀，看到紫光就闪开' } },
-  caller: { name: '唤尸者', hp: 650, spd: 0.85, r: 0.32, h: 1.3, dmg: 12, bdmg: 10, cd: 1.0, sc: 1.28, look: 'screamer', skin: '#5e8268', elite: { k: 'call', cd: 11, col: '#6aff9a', tip: '会从地下叫出一群丧尸，打断它（晕住）就叫不出来' } },
-  warden: { name: '护盾者', hp: 800, spd: 0.8, r: 0.36, h: 1.3, dmg: 16, bdmg: 16, cd: 1.1, sc: 1.3, look: 'spitter', skin: '#5e7eae', elite: { k: 'shield', cd: 9, col: '#6ac8ff', tip: '给周围的丧尸套护盾，钻进蓝色护盾里打才打得动，爆破弹能直接打碎' } },
-  shade: { name: '隐身者', hp: 420, spd: 1.5, r: 0.3, h: 1.25, dmg: 12, bdmg: 10, cd: 0.9, sc: 1.2, look: 'walker', skin: '#50505e', elite: { k: 'cloak', cd: 6, col: '#c0c0e0', tip: '隐身摸到你身边偷袭，留意空气里的扭曲，附近炸一下就现形' } },
+  blinker: { name: '闪影者', hp: 520, spd: 1.55, r: 0.35, h: 1.7, dmg: 14, bdmg: 12, cd: 0.8, sc: 1.6, look: 'runner', skin: '#7a66aa', elite: { k: 'blink', cd: 6.5, col: '#b47aff', tip: '会瞬移到你身后再砍一刀，看到紫光就闪开' } },
+  caller: { name: '唤尸者', hp: 650, spd: 0.85, r: 0.37, h: 1.7, dmg: 12, bdmg: 10, cd: 1.0, sc: 1.65, look: 'screamer', skin: '#5e8268', elite: { k: 'call', cd: 11, col: '#6aff9a', tip: '会从地下叫出一群丧尸，打断它（晕住）就叫不出来' } },
+  warden: { name: '护盾者', hp: 800, spd: 0.8, r: 0.41, h: 1.7, dmg: 16, bdmg: 16, cd: 1.1, sc: 1.7, look: 'spitter', skin: '#5e7eae', elite: { k: 'shield', cd: 9, col: '#6ac8ff', tip: '给周围的丧尸套护盾，钻进蓝色护盾里打才打得动，爆破弹能直接打碎' } },
+  shade: { name: '隐身者', hp: 420, spd: 1.5, r: 0.35, h: 1.6, dmg: 12, bdmg: 10, cd: 0.9, sc: 1.55, look: 'walker', skin: '#50505e', elite: { k: 'cloak', cd: 6, col: '#c0c0e0', tip: '隐身摸到你身边偷袭，留意空气里的扭曲，附近炸一下就现形' } },
 };
 const ELITES = ['blinker', 'caller', 'warden', 'shade'];
-const BUILD_TAG = '第 38 轮之六'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
+const BUILD_TAG = '第 38 轮之七'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
 // aim assist (SET.assist): fire-button lock range (x weapon range), lock-on time before it fires, spread while auto-aimed, mouse/finger magnet
 const PORT = 1.25; // firing port: your own shots pass a wall / door you built if it is this close to you
 const ASSIST = [{ name: '关', range: 0, acq: 0, spread: 1, mag: 0 }, { name: '标准', range: 0.75, acq: 0.3, spread: 1.5, mag: 1 }, { name: '强', range: 1, acq: 0, spread: 1, mag: 1 }];
@@ -371,7 +372,7 @@ const BAL = {
   smokeR: 3.8, smokeT: 10, smokeConf: 1.2,                      // smoke: zombies in the cloud lose you, wander and don't bite (and for 1.2 s after leaving)
   blastR: 4.4, blastDmg: 70, blastKB: 24, blastStun: 1.6,       // blast: little damage, throws everything out of the way (clears a path)
   tankDmg: 120, tankR: 2.3, tankRate: 1.45, /* (round 36b) 1.6 → 1.45 */ tankRange: 20, tankCap: 200, tankStart: 100, // (round 31) tank cannon: a shell that bursts where it hits
-  mechBat: 120, mechLow: 20, mechPass: 0.1, evoPass: 0.05, /* (round 38f) in beast form only half as much gets through to the pilot */ mechRegen: 0.015, batRegen: 0.4, xformT: 1.0, // (round 34b) mech energy (s), low warning, share of a hit the pilot still feels, hull / energy coming back while not a mech (/s), transform time
+  mechBat: 120, mechLow: 20, mechPass: 0.1, evoPass: 0.05, biteWU: 0.45, biteDrive: 2.2, mechDmg: 1.5, mechTough: 1.5, bigHp: 1.5, /* (round 38g) mechs / beasts hit 1.5× harder and lose hull 1.5× slower; bosses / 尸王 / 能力者 / 怪兽 have 1.5× hp, and everything that isn't a mech does 1.5× to them, so on foot nothing changes */ /* (round 38g) on foot / in a vehicle a zombie must hold on 0.45 s before the first bite; a vehicle moving faster than 2.2 isn't bitten */ /* (round 38f) in beast form only half as much gets through to the pilot */ mechRegen: 0.015, batRegen: 0.4, xformT: 1.0, // (round 34b) mech energy (s), low warning, share of a hit the pilot still feels, hull / energy coming back while not a mech (/s), transform time
   gyroDmg: 12, gyroRate: 0.11, /* (round 36b) 0.12 → 0.11 */ gyroSpread: 0.06, gyroRange: 22, gyroCap: 500, gyroStart: 250, // (round 30) gyrocopter chin gun: its own ammo, bought in the shop
   flyHover: 2.2, flyClimb: 0.8, flyDrop: 0.6, fuelLow: 10, refuelT: 4, // (round 29) gyrocopter: cruise 2.2 floors over whatever is below, climb / descend rate (of the take-off curve per second), warn at 10 s of fuel, 4 s to refuel indoors
   zSlope: 0.45, zSlopeC: 0.7, // (round 36) zombie speed going UP a hill slope (climbers barely mind)

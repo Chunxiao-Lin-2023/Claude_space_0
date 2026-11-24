@@ -11,7 +11,7 @@ function evoGainKill(p, z) {
 }
 function evolve(p) {
   const E = EVO[p.veh]; if (!E || !inMech(p) || p.evoOn || (p.evo || 0) < 100 || p.mtr > 0) return;
-  p.evoOn = true; p.evo = 100; p.gcd = 0.4; p.mcd = Math.min(p.mcd || 0, 1); p.spinT = 0; p.rageT = 0; if (E.k === 'phoenix') { p.mfly = true; p.land = false; }
+  ccClear(p); /* (round 38g) evolving breaks every hold */ p.evoOn = true; p.evo = 100; p.gcd = 0.4; p.mcd = Math.min(p.mcd || 0, 1); p.spinT = 0; p.rageT = 0; if (E.k === 'phoenix') { p.mfly = true; p.land = false; }
   p.mh = p.mh || []; p.mh[p.veh] = Math.min(MECHS[p.veh].hp, mhpOf(p) + MECHS[p.veh].hp * 0.3); // it comes out fresh: +30% hull
   for (const z of W.zs) { if (z.hp <= 0 || z.hidden || Math.abs(z.z - p.z) > 2.6) continue; const dx = z.x - p.x, dy = z.y - p.y, d = Math.hypot(dx, dy); if (d > BAL.evoBurst + z.r) continue; const big = ZT[z.k].boss || ZT[z.k].kaiju; hurtZombie(z, 100 * mechMul(), p, dx / (d || 1) * (big ? 1 : 8), dy / (d || 1) * (big ? 1 : 8)); z.stun = Math.max(z.stun || 0, big ? 0.3 : 1); }
   emit({ k: 'evo', o: p.i, on: 1, v: p.veh, x: r2(p.x), y: r2(p.y), z: r2(p.z) }); noiseAt(p.x, p.y, 10, p.z);
@@ -141,3 +141,28 @@ function evoSkill(p, M, ang, dist, tx, ty) {
     p.rageT = 12; /* (round 38c) stun 2.5 → 3.5 s, rage 8 → 12 s */ emit({ k: 'mskill', o: p.i, t: 'roar', x: r2(p.x), y: r2(p.y), z: r2(p.z) }); }
   p.mcd = M.cd; noiseAt(p.x, p.y, 10, p.z);
 }
+
+/* ---------- (round 38g) control on mechs only: stagger (硬直), slow (减速), armour break (破甲), climbers hanging on (扒住) ----------
+   Every one is telegraphed by its source and has an answer; the same kind landing again within 5 s lasts half as long; evolving clears them all. */
+const CC_NAME = { stg: '硬直', slw: '减速', brk: '破甲', lat: '扒住' };
+function mechCC(p, k, t, m, quiet) {
+  if (!p || !inMech(p) || p.dead || p.mtr > 0 || p.spinT > 0) return false;
+  const was = k === 'stg' ? p.ccStg > 0 : k === 'slw' ? p.ccSlw > 0 : p.ccBrk > 0;
+  p.ccL = p.ccL || {}; if (!quiet) { if (W.t - (p.ccL[k] || -9) < 5) t *= 0.5; p.ccL[k] = W.t; }
+  if (k === 'stg') { if ((p.ccStg || 0) >= t) return false; p.ccStg = t; }
+  else if (k === 'slw') { p.ccSlw = Math.max(p.ccSlw || 0, t); p.ccSlm = Math.max(p.ccSlw > t ? p.ccSlm || 0 : 0, m || 0.4); }
+  else if (k === 'brk') p.ccBrk = Math.max(p.ccBrk || 0, t);
+  if (!was) emit({ k: 'mcc', p: p.i, c: k, x: r2(p.x), y: r2(p.y), z: r2(p.z) }); return true;
+}
+function ccClear(p) { p.ccStg = p.ccSlw = p.ccBrk = 0; shakeOff(p, 99); }
+function shakeOff(p, n) { let k = 0; // climbers clinging to this mech are thrown off (one per attack, all on a skill / transform / evolve)
+  for (const z of W.zs) { if (k >= n) break; if (z.hp <= 0 || z.mlat !== p.i) continue; z.mlat = null; const a = rand() * Math.PI * 2; z.x = p.x + Math.cos(a) * 1.2; z.y = p.y + Math.sin(a) * 1.2; z.L = p.L; z.z = surfZ(z.x, z.y, z.L); z.stun = 1.2; z.kbx = Math.cos(a) * 6; z.kby = Math.sin(a) * 6; k++; }
+  if (k) emit({ k: 'mcc', p: p.i, c: 'off', n: k, x: r2(p.x), y: r2(p.y), z: r2(p.z) }); return k; }
+function stepCC(p, dt) { if (p.ccStg > 0) p.ccStg -= dt; if (p.ccSlw > 0) p.ccSlw -= dt; if (p.ccBrk > 0) p.ccBrk -= dt;
+  if (!inMech(p)) { if (p.ccStg > 0 || p.ccSlw > 0 || p.ccBrk > 0 || p.ccLat) ccClear(p); p.ccLat = 0; return; }
+  let n = 0; for (const z of W.zs) if (z.hp > 0 && z.mlat === p.i) n++; p.ccLat = n; }
+const ccSpeed = p => inMech(p) ? (p.ccStg > 0 ? 0 : 1) * (p.ccSlw > 0 ? 1 - (p.ccSlm || 0.4) : 1) * (1 - 0.15 * Math.min(3, p.ccLat || 0)) : 1;
+function climberLatch(z, dt) { const p = W.p[z.mlat], Z = ZT[z.k]; // a climber riding a mech: stays on it and claws the hull
+  if (!p || p.dead || p.gone || !inMech(p) || p.spinT > 0) { z.mlat = null; z.z = surfZ(z.x, z.y, z.L); return; }
+  z.mla = (z.mla || 0) + dt * 0.6; const a = (z.mlo || 0) + Math.sin(z.mla) * 0.4; z.x = p.x + Math.cos(a) * 0.45; z.y = p.y + Math.sin(a) * 0.45; z.L = p.L; z.z = p.z + 1.1 + Math.sin(z.mla * 3) * 0.1; z.face = a + Math.PI; z.st = 'attack'; z.atk = 0.3; z.moving = false;
+  if (z.cd <= 0) { z.cd = Z.cd; hurtPlayer(p, Z.dmg * W.D.dmg, z); } }
