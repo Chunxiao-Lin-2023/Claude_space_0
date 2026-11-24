@@ -100,9 +100,9 @@ defB(42, { key: 'rail', P: 1, Z: 1, nat: 1, brk: 1, vault: 1, hp: 120, col: '#6a
 const ITEMS = [
   { k: 'build', name: '墙·地板·门', ids: [1, 2, 3, 4, 5, 7] },
   { k: 'ladder', name: '梯子', ids: [6] },
-  { k: 'cover', name: '掩体', ids: [53, 12, 14, 8] },
-  { k: 'trap', name: '陷阱', ids: [15, 9, 13, 51] },
-  { k: 'turret', name: '炮塔', ids: [52, 57, 58, 59] },  // (round 28) machine gun / shotgun / slow / sniper
+  { k: 'cover', name: '掩体', ids: [53, 8] },        /* (round 39) trimmed to 2-3 kinds each: 沙袋矮墙 12 / 铁皮掩体 14 / 捕兽夹 15 / 拒马 13 / 减速塔 58 retired (old ones still stand and work) */
+  { k: 'trap', name: '陷阱', ids: [9, 51] },
+  { k: 'turret', name: '炮塔', ids: [52, 57, 59] },  // (round 28) machine gun / shotgun / sniper
   { k: 'pad', name: '跳板', ids: [56] },
 ];
 // (round 28) turrets (every mode): range, seconds between shots, damage, magazine, refill cost
@@ -115,7 +115,8 @@ const TUR = {
 const TRAP_R = 1;                                       // (round 28) traps act on the open floor around them, up to 3×3
 const PAL = ITEMS.flatMap(g => g.ids);
 // (round 23) the gear-type items (cover, traps, turret, lamp, jump pad) go down anywhere in every mode; walls / floors / ladders / doors stay in the build zone outside 尸城求生
-for (const g of ITEMS) if (!['build', 'ladder'].includes(g.k)) for (const id of g.ids) B[id].any = 1;
+const RETIRED = [12, 13, 14, 15, 58]; /* (round 39) no longer buildable */
+for (const g of ITEMS) if (!['build', 'ladder'].includes(g.k)) for (const id of g.ids) B[id].any = 1; for (const id of RETIRED) B[id].any = 1;
 const itemOf = id => ITEMS.find(g => g.ids.includes(id)) || ITEMS[0];
 // vehicles (round 22: their own category; you pick a default and T gets on it). spd = walking speed multiplier, seats 2 = a pillion seat
 const VEH = [null,
@@ -162,6 +163,7 @@ const EVO = [null,
 const VKEY = k => VEH.findIndex(v => v && v.k === k);
 const VSTART = ['bike', 'cargo'];
 const bpOn = () => !!(W && W.vbp) && !(typeof isSiege === 'function' && isSiege());
+const upgOn = () => !!W && (bpOn() || (typeof isSiege === 'function' && isSiege())); /* (round 39) mech / gun / armour blueprints drop in every mode (尸城求生 keeps its own vehicle blueprints) */
 const vbpMask = () => W && W.vbp ? W.vbp.reduce((m, k) => m | 1 << VKEY(k), 0) : 126;
 const mlvOf = v => ((W && W.mlv) || [])[v] || 0;
 const UPG_MAX = 3, GUP = [{ n: '原厂', m: 1, r: 1 }, { n: '扩容弹匣', m: 1.4, r: 1 }, { n: '制退器 + 瞄具', m: 1.4, r: 1.15 }, { n: '精工镀金', m: 1.7, r: 1.25 }]; /* (round 38j) gun upgrade levels: magazine × m, fire rate × r */
@@ -178,7 +180,8 @@ const magCap = wi => Math.max(1, Math.round(WPN[wi].mag * GUP[wlvOf(wi)].m)); /*
 const rofMul = wi => 1 / GUP[wlvOf(wi)].r;
 const gunCost = lv => ({ steel: 12 * (lv + 1), parts: 14 * (lv + 1) });
 const mlvCost = lv => ({ steel: 20 * (lv + 1), parts: 15 * (lv + 1) });
-const bpLabel = b => b[0] === 'm' ? MECHS[+b.slice(1)].name + ' · ' + MUP[Math.min(UPG_MAX, mlvOf(+b.slice(1)) + 1)].n : WPN[+b.slice(1)].name + ' · ' + GUP[Math.min(UPG_MAX, wlvOf(+b.slice(1)) + 1)].n;
+const mupName = (v, lv) => lv && typeof MUPG_NAME !== 'undefined' && MUPG_NAME[v] ? MUPG_NAME[v][lv - 1] : MUP[lv].n; /* (round 39) each mech's own level names */
+const bpLabel = b => b[0] === 'm' ? MECHS[+b.slice(1)].name + ' · ' + mupName(+b.slice(1), Math.min(UPG_MAX, mlvOf(+b.slice(1)) + 1)) : WPN[+b.slice(1)].name + ' · ' + GUP[Math.min(UPG_MAX, wlvOf(+b.slice(1)) + 1)].n;
 const isBig = z => { const T = ZT[z.k]; return !!(T && T.kaiju); }; /* (round 38g) the tough ones — (round 38h) just the 怪兽 now */
 const mechOf = p => (p && p.evoOn && EVO[p.veh]) || MECHS[p && p.veh] || MECHS[4]; /* (round 37) in beast form its EVO entry stands in for the mech */
 const mhpOf = (p, v) => { v = v || p.veh; const M = MECHS[v]; if (!M) return 0; const h = p.mh && p.mh[v]; return h == null ? M.hp : h; };
@@ -193,8 +196,8 @@ const GREN = [
 const gCount = (p, t) => t ? ((p.gn || [])[t - 1] || 0) : p.nades;
 const gCap = t => t ? BAL.gnCap : BAL.nadeCap;
 // blueprints (尸城求生): what you can build / make from the start, and what has to be found first
-const BP_BASE = [1, 4, 6, 7, 12, 53, 56];
-const BP_LIST = [2, 3, 5, 8, 13, 14, 9, 15, 51, 52, 57, 58, 59, 'bike', 'moto', 'cargo', 'armor', 'gyro', 'tank'];
+const BP_BASE = [1, 4, 6, 7, 53, 56]; /* (round 39) sandbags retired */
+const BP_LIST = [2, 3, 5, 8, 9, 51, 52, 57, 59, 'bike', 'moto', 'cargo', 'armor', 'gyro', 'tank'];
 const bpName = k => typeof k === 'number' ? B[k].name : (VEH.find(v => v && v.k === k) || { name: k }).name;
 const SLAB_BRIDGE = 11; // slab id for the pre-built bridges (not buildable)
 defB(11, { key: 'bridge', slab: 1, nat: 1, col: '#7e5a36' });
@@ -254,7 +257,7 @@ const ZT = {
   shade: { name: '隐身者', hp: 420, spd: 1.5, r: 0.35, h: 1.6, dmg: 12, bdmg: 10, cd: 0.9, sc: 1.55, look: 'walker', skin: '#50505e', elite: { k: 'cloak', cd: 6, col: '#c0c0e0', tip: '隐身摸到你身边偷袭，留意空气里的扭曲，附近炸一下就现形' } },
 };
 const ELITES = ['blinker', 'caller', 'warden', 'shade'];
-const BUILD_TAG = '第 38 轮之十二'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
+const BUILD_TAG = '第 39 轮'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
 // aim assist (SET.assist): fire-button lock range (x weapon range), lock-on time before it fires, spread while auto-aimed, mouse/finger magnet
 const PORT = 1.25; // firing port: your own shots pass a wall / door you built if it is this close to you
 const ASSIST = [{ name: '关', range: 0, acq: 0, spread: 1, mag: 0 }, { name: '标准', range: 0.75, acq: 0.3, spread: 1.5, mag: 1 }, { name: '强', range: 1, acq: 0, spread: 1, mag: 1 }];

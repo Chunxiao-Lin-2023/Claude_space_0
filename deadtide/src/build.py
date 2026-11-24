@@ -6,7 +6,7 @@
 import os, re, sys
 D = os.path.dirname(os.path.abspath(__file__))
 src = lambda f: open(os.path.join(D, f), encoding='utf-8').read()
-ORDER = ['vendor/titlekit.js', '00_core.js', '10_world.js', '12_maps.js', '13_outskirts.js', '20_nav.js', '30_sim.js', '35_zombies.js', '36_beasts.js', '38_evo.js', '40_modes.js', '41_siege.js', '50_render.js', '52_arch.js', '54_chars.js', '55_vehicles.js', '56_props.js', '58_beasts_draw.js', '59_evo_draw.js', '60_audio.js', '62_input.js', '70_net.js', '80_ui.js', '85_title.js', '90_main.js', '92_save.js', '99_boot.js']
+ORDER = ['vendor/titlekit.js', '00_core.js', '10_world.js', '12_maps.js', '13_outskirts.js', '20_nav.js', '30_sim.js', '35_zombies.js', '36_beasts.js', '38_evo.js', '40_modes.js', '41_siege.js', '50_render.js', '52_arch.js', '54_chars.js', '55_vehicles.js', '57_mechupg.js', '56_props.js', '58_beasts_draw.js', '59_evo_draw.js', '60_audio.js', '62_input.js', '70_net.js', '80_ui.js', '85_title.js', '90_main.js', '92_save.js', '99_boot.js']
 game = '\n'.join('/* ---- %s ---- */\n' % f + src(f) for f in ORDER)
 vendor = src('three.vendor.js')
 assert '</script' not in game and '</script' not in vendor

@@ -527,13 +527,14 @@ function touchAutoAim(me, dirx, diry, any, cur) {
   const AS = assistLv(), wi = me.down ? 0 : me.wpn, range = WPN[wi].range * AS.range, a0 = Math.atan2(diry, dirx), vl = viewL();
   if (!AS.range) return { x: sx + dirx * 6, y: sy + diry * 6, z: sz, auto: 1 };
   for (const z of W.zs) {
-    if (z.hp <= 0 || z.L > vl || lcHide(Math.floor(z.x), Math.floor(z.y), z.L)) continue;
+    if (z.hp <= 0 || z.hidden || z.L > vl || lcHide(Math.floor(z.x), Math.floor(z.y), z.L) || !zSeen(z)) continue; /* (round 39) never lock on to a zombie you can't see (at night it turned you toward the dark) */
     const dx = z.x - sx, dy = z.y - sy, d = Math.hypot(dx, dy); if (d > range || d < 0.2) continue;
     const da = Math.abs(angDiff(a0, Math.atan2(dy, dx))); if (!any && da > 0.38) continue;
     const score = (any ? d + da * 1.5 : d + da * 12) - (d < 2.5 ? 2.5 : 0);
     if ((score < bs || z === cur) && los(sx, sy, sz, z.x, z.y, z.z + z.h * 0.6, LEAN)) { if (z === cur) cs = score; if (score < bs) { bs = score; best = z; } }
   }
-  if (cur && cs < 1e9 && cs <= bs * 1.35 + 0.6) best = cur;
+  if (cur && cs < 1e9 && (cs <= bs * 1.35 + 0.6 || performance.now() - (INP.swT || 0) < 700)) best = cur; /* (round 39) and don't flick between targets: a switch at most every 0.7 s */
+  if (best && best !== cur) INP.swT = performance.now();
   if (best) return { x: best.x, y: best.y, z: best.z + best.h * 0.6, zb: best, auto: 1 }; /* (round 36k) auto: picked by the touch auto-aim, not by hand — a mech's ranged shot then uses the smart aim */
   return { x: sx + dirx * 6, y: sy + diry * 6, z: sz, auto: 1 };
 }
@@ -613,7 +614,11 @@ function readInput(dt) {
       // just holding the fire button (or a quick tap): lock on to the nearest zombie, otherwise shoot where you face
       trackAim(me); INP.aimT -= dt; if (INP.aimT <= 0 || !me.aimPt) { INP.aimT = 0.12; const f = Math.hypot(I.mx, I.my) > 0.2 ? [I.mx, I.my] : [Math.cos(me.aim), Math.sin(me.aim)]; me.aimPt = touchAutoAim(me, f[0], f[1], true, me.aimPt && me.aimPt.zb); }
       me.aim = Math.atan2(me.aimPt.y - me.y, me.aimPt.x - me.x);
-    } else if (performance.now() - A.t > 600 && Math.hypot(I.mx, I.my) > 0.2) { me.aim = Math.atan2(I.my, I.mx); me.aimPt = null; }
+    } else { /* (round 39) after you stop aiming, keep facing the fight: stay on a live target for 3 s (walking now strafes / backs off), else hold the angle 1.5 s, then turn the way you walk */
+      const now = performance.now(), idle = now - Math.max(A.t || 0, INP.combatT || 0), z = me.aimPt && me.aimPt.zb, keep = z && zAlive(z) && idle < 3000 && Math.hypot(z.x - me.x, z.y - me.y) < WPN[me.down ? 0 : me.wpn].range * 1.15;
+      if (keep) { trackAim(me); me.aim = Math.atan2(me.aimPt.y - me.y, me.aimPt.x - me.x); }
+      else if (idle > 1500 && Math.hypot(I.mx, I.my) > 0.2) { me.aim = Math.atan2(I.my, I.mx); me.aimPt = null; } }
+    if (fing || active || mk || (held && A.btn) || tap) INP.combatT = performance.now();
     const gt = INP.gtap && performance.now() - INP.gtap.t < 250 ? INP.gtap.pt : null; if (gt) { me.aimPt = gt; me.aim = Math.atan2(gt.y - me.y, gt.x - me.x); }
     drawReticle(me, me.aimPt, fing && !blocked && !me.build && !me.dead, INP.tAim.x, fpy);
     // auto-aim (fire button without a finger on the map): a new target takes a moment to lock on, and the shots are looser

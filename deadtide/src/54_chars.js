@@ -285,6 +285,15 @@ const PCOL = [
   { j: '#d9733a', j2: '#a85224', h: '#3a2618', p: '#2f3442', sk: '#e1b892', boot: '#2a2420', acc: '#f0d060' },
   { j: '#2f9e94', j2: '#1f6f68', h: '#16161c', p: '#3b3a33', sk: '#d6a77f', boot: '#1d1d22', acc: '#c94b4b' },
 ];
+const _lzV = new THREE.Vector3(), _lzS = new THREE.Vector3();
+function laserTick(p, m, wi, gl, grip) { // (round 39) Lv2+ guns throw a laser-sight beam to what you aim at (red; gold at Lv3)
+  const q = m.guns[wi], bm = q && q.userData.beam; if (!bm) return;
+  const on = gl >= 2 && q.visible && m.g.visible !== false && !p.down && !p.dead && !p.build && grip < 0.5 && !(p.reloadT > 0) && !WPN[wi].flame; bm.visible = on; if (!on) return;
+  const c = gl >= 3 ? 1 : 0; if (bm.userData.c !== c) { bm.userData.c = c; bm.material.color.set(c ? '#ffd040' : '#ff3a3a'); bm.userData.dot.material.color.set(c ? '#fff0a0' : '#ff6060'); }
+  bm.getWorldPosition(_lzV); bm.parent.getWorldScale(_lzS); const R = WPN[wi].range, ap = p.aimPt; let d = R;
+  if (ap) d = Math.min(R, Math.hypot(ap.x - _lzV.x, ap.z - _lzV.y, ap.y - _lzV.z)); d = Math.max(0.3, d);
+  const ws = _lzS.x || 1; bm.scale.x = d / ws; bm.userData.dot.scale.set(1 / bm.scale.x, 1, 1); bm.material.opacity = 0.42 + 0.12 * Math.sin(W.t * 23 + p.i);
+}
 function mkPlayerModel(i) {
   const C = PCOL[i % 2], g = new THREE.Group(), mats = [];
   const M = col => { const m = new THREE.MeshLambertMaterial({ color: col, flatShading: true }); mats.push(m); return m; };
@@ -347,13 +356,47 @@ function mkPlayerModel(i) {
     mk([[boxG(0.42, 0.06, 0.06, 0.18, 0.04, 0), '#4a4f55'], [new THREE.CylinderGeometry(0.035, 0.05, 0.12, 8).rotateZ(Math.PI / 2).translate(0.44, 0.04, 0), '#2a2d30'], [new THREE.CylinderGeometry(0.06, 0.06, 0.26, 10).rotateZ(Math.PI / 2).translate(0.08, -0.06, 0), '#a8322a'], [boxG(0.04, 0.08, 0.04, 0, -0.03, 0), dark]]),
     mk([[new THREE.CylinderGeometry(0.06, 0.06, 0.5, 10).rotateZ(Math.PI / 2).translate(0.2, 0.05, 0), '#3d4a34'], [boxG(0.08, 0.1, 0.07, 0.02, -0.03, 0), dark], [boxG(0.18, 0.06, 0.05, -0.12, 0.03, 0), '#3d4a34'], [boxG(0.06, 0.05, 0.06, 0.3, 0.12, 0), dark]]),
   );
-  { const GA = [[0, -0.11, 0.18, 0.03, 0.06, 0.2, 0.08], [0.14, -0.05, 0.5, 0.04, 0.07, 0.5, 0.25], [0.1, -0.15, 0.5, 0.04, 0.07, 0.36, 0.12], [0.05, -0.07, 0.67, 0.04, 0.07, 0.7, 0.32], [0.1, -0.05, 0.33, 0.03, 0.06, 0.42, 0.12], [0.08, -0.07, 0.5, 0.04, 0.08, 0.42, 0.18], [0.02, -0.1, 0.45, 0.05, 0.11, 0.5, 0.2]]; // (round 38j) gun upgrades you can see: [mag x, mag y, muzzle x, muzzle y, top y, body length, body centre x]
-    guns.forEach((q, k) => { const a = GA[k]; if (!a) return; const up = [grp(q), grp(q), grp(q)];
-      mesh(boxG(0.085, 0.16, 0.06, a[0], a[1], 0), '#30343a', up[0]); mesh(boxG(0.09, 0.03, 0.065, a[0], a[1] - 0.03, 0), '#e08a2a', up[0]); mesh(boxG(0.09, 0.03, 0.065, a[0], a[1] + 0.04, 0), '#e08a2a', up[0]); // Lv1 扩容弹匣: a long magazine taped orange
-      mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.09, 8).rotateZ(Math.PI / 2).translate(a[2] + 0.04, a[3], 0), '#3c4046', up[1]); mesh(boxG(0.014, 0.075, 0.075, a[2] + 0.03, a[3], 0), '#1a1c20', up[1]); mesh(boxG(0.014, 0.075, 0.075, a[2] + 0.06, a[3], 0), '#1a1c20', up[1]); // Lv2: a slotted muzzle brake…
-      mesh(boxG(0.1, 0.05, 0.05, a[6], a[4] + 0.03, 0), '#22262c', up[1]); mesh(boxG(0.018, 0.018, 0.02, a[6] + 0.05, a[4] + 0.04, 0), '#ff3a3a', up[1]); // …and a red-dot sight
-      mesh(boxG(a[5] * 0.85, 0.016, 0.064, a[6], a[4] - 0.004, 0), '#f0c030', up[2]); mesh(boxG(a[5] * 0.6, 0.014, 0.066, a[6], a[3] - 0.022, 0), '#7fe8ff', up[2]); mesh(boxG(0.03, 0.03, 0.07, a[2] - 0.02, a[3], 0), '#f0c030', up[2]); // Lv3 精工镀金: gold rails, a glowing line
-      up.forEach(u => u.visible = false); q.userData.up = up; }); }
+  { // (round 39) every gun has its own three upgrade levels, sized to read in play: Lv1 bigger magazine, Lv2 a laser sight (a beam you can see) + its own muzzle / optics, Lv3 gold-plated with glowing seams
+    const GLD = '#f0c030', glowM = c => new THREE.MeshBasicMaterial({ color: c }), beamM = () => new THREE.MeshBasicMaterial({ color: '#ff3a3a', transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false });
+    const cx = (r1, r2, L, x, y, z) => new THREE.CylinderGeometry(r1, r2, L, 12).rotateZ(Math.PI / 2).translate(x, y, z), cz = (r, L, x, y, z) => new THREE.CylinderGeometry(r, r, L, 14).rotateX(Math.PI / 2).translate(x, y, z), cy = (r, L, x, y, z) => new THREE.CylinderGeometry(r, r, L, 10).translate(x, y, z);
+    const gm = (geo, c, par) => { const m = new THREE.Mesh(geo, glowM(c)); par.add(m); return m; };
+    // [muzzle x, muzzle y] per gun, for the laser beam
+    const MZ = [[0.19, 0.03], [0.52, 0.04], [0.5, 0.04], [0.68, 0.04], [0.42, 0.05], [0.46, 0.0], [0.47, 0.05]];
+    const B = [
+      (u) => { // 手枪
+        mesh(boxG(0.05, 0.12, 0.04, 0, -0.14, 0), '#30343a', u[0]); mesh(boxG(0.06, 0.025, 0.05, 0, -0.205, 0), '#e08a2a', u[0]);
+        mesh(boxG(0.06, 0.065, 0.05, 0.21, 0.03, 0), '#24282e', u[1]); mesh(boxG(0.012, 0.04, 0.052, 0.2, 0.045, 0), '#0e0f12', u[1]); mesh(boxG(0.012, 0.04, 0.052, 0.225, 0.045, 0), '#0e0f12', u[1]); mesh(boxG(0.08, 0.035, 0.04, 0.12, -0.012, 0), '#22262c', u[1]); gm(boxG(0.01, 0.018, 0.018, 0.165, -0.012, 0), '#ff3a3a', u[1]);
+        mesh(boxG(0.22, 0.028, 0.052, 0.09, 0.06, 0), GLD, u[2]); gm(boxG(0.18, 0.01, 0.053, 0.09, 0.035, 0), '#7fe8ff', u[2]); mesh(boxG(0.06, 0.07, 0.055, 0.215, 0.03, 0), GLD, u[2]); },
+      (u) => { // 霰弹枪
+        for (let q = 0; q < 5; q++) { mesh(cy(0.016, 0.06, 0.1 + q * 0.035, 0.02, -0.04), '#c8322a', u[0]); mesh(cy(0.017, 0.015, 0.1 + q * 0.035, 0.05, -0.04), '#c9a23a', u[0]); } mesh(boxG(0.2, 0.04, 0.012, 0.17, 0.02, -0.03), '#30343a', u[0]); mesh(cx(0.022, 0.022, 0.3, 0.36, -0.005, 0), '#30343a', u[0]);
+        mesh(boxG(0.32, 0.022, 0.07, 0.33, 0.077, 0), '#2a2d32', u[1]); for (let q = 0; q < 5; q++) mesh(boxG(0.025, 0.024, 0.072, 0.2 + q * 0.065, 0.078, 0), '#0e0f12', u[1]); mesh(cx(0.035, 0.035, 0.07, 0.53, 0.04, 0), '#1a1c20', u[1]); mesh(boxG(0.07, 0.035, 0.04, 0.3, -0.03, 0), '#22262c', u[1]); gm(boxG(0.01, 0.018, 0.018, 0.336, -0.03, 0), '#ff3a3a', u[1]);
+        mesh(boxG(0.34, 0.024, 0.074, 0.33, 0.09, 0), GLD, u[2]); mesh(boxG(0.13, 0.065, 0.062, 0.2, 0.0, 0), GLD, u[2]); gm(boxG(0.3, 0.012, 0.075, 0.33, 0.06, 0), '#7fe8ff', u[2]); mesh(cx(0.04, 0.04, 0.05, 0.55, 0.04, 0), GLD, u[2]); },
+      (u) => { // 步枪
+        mesh(cz(0.085, 0.07, 0.08, -0.1, 0), '#30343a', u[0]); mesh(cz(0.06, 0.072, 0.08, -0.1, 0), '#e08a2a', u[0]); mesh(boxG(0.05, 0.06, 0.045, 0.1, -0.04, 0), '#30343a', u[0]);
+        mesh(cx(0.032, 0.032, 0.2, 0.1, 0.12, 0), '#1a1c20', u[1]); mesh(cx(0.04, 0.032, 0.04, 0.215, 0.12, 0), '#1a1c20', u[1]); gm(new THREE.CircleGeometry(0.032, 12).rotateY(Math.PI / 2).translate(0.236, 0.12, 0), '#7fd0ff', u[1]); mesh(boxG(0.03, 0.04, 0.02, 0.1, 0.08, 0), '#1a1c20', u[1]); mesh(cx(0.03, 0.03, 0.08, 0.52, 0.04, 0), '#1a1c20', u[1]); mesh(boxG(0.07, 0.035, 0.04, 0.3, -0.015, 0), '#22262c', u[1]); gm(boxG(0.01, 0.018, 0.018, 0.336, -0.015, 0), '#ff3a3a', u[1]);
+        mesh(boxG(0.26, 0.075, 0.06, 0.33, 0.035, 0), GLD, u[2]); mesh(cz(0.088, 0.02, 0.08, -0.1, 0), GLD, u[2]); gm(boxG(0.24, 0.012, 0.062, 0.33, 0.01, 0), '#7fe8ff', u[2]); mesh(cx(0.035, 0.035, 0.03, 0.56, 0.04, 0), GLD, u[2]); },
+      (u) => { // 狙击枪
+        mesh(boxG(0.07, 0.13, 0.055, 0.06, -0.07, 0), '#30343a', u[0]); mesh(boxG(0.075, 0.025, 0.06, 0.06, -0.13, 0), '#e08a2a', u[0]); mesh(boxG(0.06, 0.1, 0.02, -0.12, -0.0, 0.035), '#30343a', u[0]);
+        mesh(cx(0.042, 0.042, 0.34, 0.13, 0.13, 0), '#14161a', u[1]); mesh(cx(0.055, 0.042, 0.06, 0.32, 0.13, 0), '#14161a', u[1]); gm(new THREE.CircleGeometry(0.05, 14).rotateY(Math.PI / 2).translate(0.352, 0.13, 0), '#7fd0ff', u[1]); mesh(cx(0.04, 0.04, 0.1, 0.71, 0.04, 0), '#1a1c20', u[1]);
+        for (const zz of [-1, 1]) mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.2, 6).rotateX(zz * 0.4).translate(0.52, -0.06, zz * 0.04), '#1a1c20', u[1]); mesh(boxG(0.07, 0.035, 0.04, 0.42, 0.0, 0), '#22262c', u[1]); gm(boxG(0.01, 0.018, 0.018, 0.456, 0.0, 0), '#ff3a3a', u[1]);
+        mesh(cx(0.047, 0.047, 0.36, 0.13, 0.13, 0), GLD, u[2]); mesh(boxG(0.42, 0.06, 0.06, 0.42, 0.04, 0), GLD, u[2]); gm(boxG(0.4, 0.012, 0.062, 0.42, 0.015, 0), '#7fe8ff', u[2]); gm(new THREE.RingGeometry(0.05, 0.065, 16).rotateY(Math.PI / 2).translate(0.355, 0.13, 0), '#ffe07a', u[2]); },
+      (u) => { // 弩
+        for (let q = 0; q < 4; q++) { mesh(cx(0.008, 0.008, 0.36, 0.08, -0.03 - q * 0.018, -0.055), '#6a4a2e', u[0]); mesh(boxG(0.04, 0.025, 0.004, -0.1, -0.03 - q * 0.018, -0.055), '#d8382c', u[0]); } mesh(boxG(0.3, 0.07, 0.02, 0.1, -0.06, -0.045), '#3a2c20', u[0]);
+        for (const zz of [-1, 1]) { mesh(cy(0.04, 0.02, 0.3, 0.05, zz * 0.24), '#24282e', u[1]); mesh(cy(0.045, 0.012, 0.3, 0.05, zz * 0.24), '#e08a2a', u[1]); } mesh(cx(0.03, 0.03, 0.16, 0.12, 0.11, 0), '#1a1c20', u[1]); gm(new THREE.CircleGeometry(0.03, 12).rotateY(Math.PI / 2).translate(0.201, 0.11, 0), '#7fd0ff', u[1]); mesh(boxG(0.06, 0.03, 0.035, 0.3, 0.0, 0), '#22262c', u[1]); gm(boxG(0.01, 0.016, 0.016, 0.332, 0.0, 0), '#ff3a3a', u[1]);
+        mesh(boxG(0.05, 0.035, 0.5, 0.3, 0.05, 0), GLD, u[2]); gm(boxG(0.012, 0.012, 0.42, 0.225, 0.05, 0), '#9ff0ff', u[2]); mesh(boxG(0.3, 0.03, 0.056, 0.15, 0.08, 0), GLD, u[2]); },
+      (u) => { // 喷火器
+        mesh(cx(0.06, 0.06, 0.24, 0.07, -0.06, 0.08), '#a8322a', u[0]); mesh(cx(0.062, 0.062, 0.03, 0.12, -0.06, 0.08), '#e08a2a', u[0]); mesh(new THREE.TorusGeometry(0.06, 0.012, 6, 12, Math.PI).translate(0.2, -0.0, 0.04), '#1a1c20', u[0]);
+        mesh(cx(0.045, 0.035, 0.18, 0.36, 0.04, 0), '#2a2d32', u[1]); for (let q = 0; q < 4; q++) mesh(cx(0.05, 0.05, 0.015, 0.3 + q * 0.04, 0.04, 0), '#0e0f12', u[1]); const pl = gm(new THREE.ConeGeometry(0.018, 0.07, 8).rotateZ(-Math.PI / 2).translate(0.49, -0.025, 0), '#5ab8ff', u[1]); pl.userData.pilot = 1; mesh(boxG(0.04, 0.03, 0.03, 0.44, -0.025, 0), '#22262c', u[1]);
+        for (const zz of [0, 0.08]) { mesh(cx(0.065, 0.065, 0.02, 0.0, -0.06, zz), GLD, u[2]); mesh(cx(0.065, 0.065, 0.02, 0.15, -0.06, zz), GLD, u[2]); } mesh(cx(0.05, 0.05, 0.06, 0.42, 0.04, 0), GLD, u[2]); gm(cx(0.052, 0.052, 0.015, 0.36, 0.04, 0), '#ffb030', u[2]); },
+      (u) => { // 榴弹发射器
+        const dr = grp(u[0], 0.0, 0.0, 0); mesh(cx(0.09, 0.09, 0.14, 0, 0.02, 0), '#30343a', dr); for (let q = 0; q < 6; q++) { const a = q / 6 * Math.PI * 2; mesh(cx(0.025, 0.025, 0.145, 0, 0.02 + Math.cos(a) * 0.055, Math.sin(a) * 0.055), '#c9a23a', dr); } mesh(cx(0.092, 0.092, 0.02, 0.06, 0.02, 0), '#e08a2a', dr);
+        mesh(boxG(0.03, 0.08, 0.03, 0.3, 0.13, 0), '#1a1c20', u[1]); mesh(boxG(0.012, 0.06, 0.05, 0.3, 0.16, 0), '#1a1c20', u[1]); gm(boxG(0.01, 0.012, 0.012, 0.31, 0.18, 0), '#7fe8ff', u[1]); mesh(cx(0.075, 0.065, 0.06, 0.47, 0.05, 0), '#1a1c20', u[1]); mesh(boxG(0.07, 0.035, 0.04, 0.33, -0.03, 0), '#22262c', u[1]); gm(boxG(0.01, 0.018, 0.018, 0.366, -0.03, 0), '#ff3a3a', u[1]);
+        for (const xx of [0.15, 0.27, 0.39]) mesh(cx(0.068, 0.068, 0.025, xx, 0.05, 0), GLD, u[2]); mesh(cx(0.095, 0.095, 0.03, -0.06, 0.02, 0), GLD, u[2]); gm(cx(0.069, 0.069, 0.008, 0.21, 0.05, 0), '#ffb030', u[2]); gm(cx(0.069, 0.069, 0.008, 0.33, 0.05, 0), '#ffb030', u[2]); },
+    ];
+    guns.forEach((q, k) => { if (!B[k]) return; const up = [grp(q), grp(q), grp(q)]; B[k](up);
+      const bm = new THREE.Mesh(new THREE.BoxGeometry(1, 0.014, 0.014).translate(0.5, 0, 0), beamM()); bm.position.set(MZ[k][0], MZ[k][1], 0); bm.visible = false; q.add(bm); q.userData.beam = bm; /* the laser sight (Lv2 red, Lv3 gold) */
+      const dot = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 6), new THREE.MeshBasicMaterial({ color: '#ff5050' })); dot.position.x = 1; bm.add(dot); bm.userData.dot = dot;
+      up.forEach(u => { u.visible = false; u.traverse(o => { if (o.isMesh) o.castShadow = false; }); }); q.userData.up = up; }); }
   const knife = grp(aim); for (const [geo, col] of [[boxG(0.075, 0.03, 0.03, -0.02, 0, 0), '#2a2420'], [boxG(0.02, 0.05, 0.05, 0.025, 0, 0), '#3a3a3a'], [boxG(0.15, 0.012, 0.035, 0.11, 0, 0), '#cfd4d8']]) mesh(geo, col, knife); knife.visible = false;
   const hammer = mk([[boxG(0.03, 0.32, 0.03, 0, 0.1, 0), '#8a6a44'], [boxG(0.12, 0.06, 0.06, 0.02, 0.26, 0), '#5a5f66']]);
   const medkit = mk([[boxG(0.14, 0.1, 0.2, 0, 0, 0), '#e8e2d6'], [boxG(0.145, 0.03, 0.08, 0, 0, 0), '#c83a32'], [boxG(0.145, 0.08, 0.03, 0, 0, 0), '#c83a32']]);
@@ -510,7 +553,8 @@ function drawPlayers(vl, dt) {
     m.torso.rotation.x = ride ? 0 : Math.sin(ph) * 0.05 * amp;
     m.torso.position.y = breath + (ride ? Math.abs(Math.sin(W.t * 13 + i)) * 0.008 * clamp(p._spd / 3, 0, 1) * (vk === 1 || vk === 3 ? 0.4 : 1) : Math.abs(Math.sin(ph)) * 0.012 * amp);
     m.head.rotation.z = (down ? 0.35 : 0) + (p.medT > 0 ? -0.35 : 0) - m.torso.rotation.z * 0.4;
-    m.head.rotation.y = moving ? 0 : Math.sin(W.t * 0.5 + i * 2) * 0.25 * (p._kick > 0.05 ? 0 : 1);
+    { const aiming = !!p.aimPt || W.t - (p._lastShot || -9) < 4 || !!(p.inp && p.inp.fire) || p.reloadT > 0; /* (round 39) no idle look-around while you aim: the head kept swaying off the target */
+      p._idleH = lerp(p._idleH || 0, moving || aiming || p._kick > 0.05 ? 0 : 1, Math.min(1, dt * 3)); m.head.rotation.y = Math.sin(W.t * 0.5 + i * 2) * 0.25 * p._idleH; }
     if (m.head.userData.tail) m.head.userData.tail.rotation.z = 0.25 + Math.sin(ph * 2) * 0.25 * amp + (moving ? 0.25 : 0);
     const flash = hurt > 0 ? hurt : 0; for (const mt of m.mats) mt.emissive.setRGB(flash * 0.7, flash * 0.08, flash * 0.05);
     // aim rig: pitch toward the target, recoil kick, shove thrust, run bob
@@ -525,7 +569,7 @@ function drawPlayers(vl, dt) {
     const bashing = p.melee === 1 && p.shield, kn = p.knT > 0 && !build && !med && !p.down ? clamp(1 - p.knT / (bashing ? 0.3 : 0.28), 0, 1) : -1;
     const fired0 = W.t - (p._lastShot || -9) < 1.4, busy = reload || med || thr || build || kn >= 0 || fired0 || !!(p.inp && p.inp.fire);
     p._grip = lerp(p._grip || 0, RP && !busy ? 1 : 0, Math.min(1, dt * 7)); const grip = RP ? p._grip : 0; // (round 27) riding and not shooting: hands on the bars
-    m.guns.forEach((gm, k) => gm.visible = !build && !med && !thr && kn < 0 && k === wi && grip < 0.5); { const ug = m.guns[wi] && m.guns[wi].userData.up, gl = wlvOf(wi); if (ug && m._gl !== wi * 10 + gl) { m._gl = wi * 10 + gl; ug.forEach((u, k) => u.visible = gl > k); } } /* (round 38j) the gun's upgrade parts */ { const ab = p.arm || 0; if (m._arm !== ab && m.ARMG) { m._arm = ab; m.ARMG.forEach((L, k) => { const on = !!(ab >> k & 1); for (const o of L) o.visible = on; }); m.ASET.forEach(o => { o.visible = ab === 63; }); const pk = m.ARMG[5][0]; if (pk && pk.userData.pack) pk.userData.pack.visible = !(ab & 32); if (m.head.userData.tail) m.head.userData.tail.visible = !(ab & 1); for (const o of m.head.children) if (!m.ARMG[0].includes(o) && !m.ASET.includes(o) && o !== m.head.userData.tail) o.visible = !(ab & 1); } /* a closed helmet hides the face and hair inside it */ } /* (round 38k) armour pieces */ m.knife.visible = kn >= 0 && !bashing; m.hammer.visible = build; m.medkit.visible = med; m.nade.visible = thr;
+    m.guns.forEach((gm, k) => gm.visible = !build && !med && !thr && kn < 0 && k === wi && grip < 0.5); { const ug = m.guns[wi] && m.guns[wi].userData.up, gl = wlvOf(wi); if (ug && m._gl !== wi * 10 + gl) { m._gl = wi * 10 + gl; ug.forEach((u, k) => u.visible = gl > k); } laserTick(p, m, wi, gl, grip); } /* (round 38j) the gun's upgrade parts */ { const ab = p.arm || 0; if (m._arm !== ab && m.ARMG) { m._arm = ab; m.ARMG.forEach((L, k) => { const on = !!(ab >> k & 1); for (const o of L) o.visible = on; }); m.ASET.forEach(o => { o.visible = ab === 63; }); const pk = m.ARMG[5][0]; if (pk && pk.userData.pack) pk.userData.pack.visible = !(ab & 32); if (m.head.userData.tail) m.head.userData.tail.visible = !(ab & 1); for (const o of m.head.children) if (!m.ARMG[0].includes(o) && !m.ASET.includes(o) && o !== m.head.userData.tail) o.visible = !(ab & 1); } /* a closed helmet hides the face and hair inside it */ } /* (round 38k) armour pieces */ m.knife.visible = kn >= 0 && !bashing; m.hammer.visible = build; m.medkit.visible = med; m.nade.visible = thr;
     // stance: shouldered up when shooting or standing, low ready (muzzle down, butt still in the shoulder) when on the move
     const S = STANCE[wi], fired = W.t - (p._lastShot || -9) < 1.4, plain = down || build || med || thr;
     p._rdy = lerp(p._rdy == null ? 1 : p._rdy, plain || !moving || fired || (p.inp && p.inp.fire) ? 1 : 0, Math.min(1, dt * 8));

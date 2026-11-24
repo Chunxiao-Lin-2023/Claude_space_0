@@ -577,8 +577,8 @@ function useTarget(p) {
   return best;
 }
 function bpRoll(p) { // (round 38j) which blueprint a lucky search turns up: a vehicle you don't have yet, an upgrade for one of your mechs, or for a gun (yours more likely)
-  const pend = b => (W.bps || []).filter(x => x === b).length, lock = VEH.filter(q => q && !W.vbp.includes(q.k)).map(q => q.k);
-  const mechs = [1, 2, 3, 4, 5, 6].filter(v => W.vbp.includes(VEH[v].k) && mlvOf(v) + pend('m' + v) < UPG_MAX), guns = WPN.map((w, k) => k).filter(k => wlvOf(k) + pend('g' + k) < UPG_MAX);
+  const sg = isSiege(), haveV = k => sg ? hasBP(k) : W.vbp.includes(k), pend = b => (W.bps || []).filter(x => x === b).length, lock = sg ? [] : VEH.filter(q => q && !W.vbp.includes(q.k)).map(q => q.k); W.bps = W.bps || [];
+  const mechs = [1, 2, 3, 4, 5, 6].filter(v => haveV(VEH[v].k) && mlvOf(v) + pend('m' + v) < UPG_MAX), guns = WPN.map((w, k) => k).filter(k => wlvOf(k) + pend('g' + k) < UPG_MAX);
   const arms = ARM.map((a, k) => k).filter(k => !armHas(p, k) && !pend('a' + k)); /* (round 38k) armour pieces the finder doesn't wear yet */
   const opts = []; if (lock.length) opts.push(['v', 0.35]); if (mechs.length) opts.push(['m', 0.25]); if (guns.length) opts.push(['g', 0.2]); if (arms.length) opts.push(['a', 0.2]); if (!opts.length) return '';
   let r = rand() * opts.reduce((a, o) => a + o[1], 0), t = opts[0][0]; for (const o of opts) { if (r < o[1]) { t = o[0]; break; } r -= o[1]; }
@@ -608,7 +608,7 @@ function completeUse(p, tgt) {
   if (S.vanish) setCell(i, 0, W.slab[i], null, 'loot'); else { W.srch.add(i); W.ver++; emit({ k: 'spot', i, v: 1 }); }
   taskAdd('search'); if (!inZone(x, y)) taskAdd('far');
   const got = [];
-  if (!isSiege() && W.vbp) { W.bpN = (W.bpN || 0) + 1; if (rand() < BAL.bpOdds || W.bpN >= BAL.bpPity) { const b = bpRoll(p); if (b) { W.bpN = 0; got.push(b); } } } /* (round 38j) now and then a blueprint */
+  if (upgOn() && (W.vbp || isSiege())) { W.bpN = (W.bpN || 0) + 1; if (rand() < BAL.bpOdds || W.bpN >= BAL.bpPity) { const b = bpRoll(p); if (b) { W.bpN = 0; got.push(b); } } } /* (round 38j) now and then a blueprint */
   for (const k in S.loot) { const [a, b] = S.loot[k]; const n = Math.round(rand(a, b) * m); if (n > 0) { W.res[k] += n; got.push('+' + n + ' ' + RES.find(r => r.k === k).name); } }
   if (S.ammo) { for (const q of activeP()) for (let wi = 1; wi < NW; wi++) if (q.owned[wi] || S.allAmmo) q.ammo[wi] += Math.round(WPN[wi].loot * S.ammo * m * (q.owned[wi] ? 1 : 0.5)); got.push(S.allAmmo ? '各种子弹' : '全队弹药'); }
   const bpk = siegeBlueprint(Object.keys(SPOTS).find(k => SPOTS[k] === S), !!S.bp); if (bpk) got.push(bpk);
@@ -907,10 +907,10 @@ function doAct(p, a, v) {
       break;
     case 'ready': p.ready = !!v; checkReady(); break;
     case 'craft': doCraft(p, v); break;
-    case 'build': doBuild(p, v.x, v.y, v.l, v.b, v.d); break;
+    case 'build': if (!RETIRED.includes(+v.b)) doBuild(p, v.x, v.y, v.l, v.b, v.d); break; /* (round 39) retired kinds can't be built */
     case 'demo': doDemolish(p, v.x, v.y, v.l); break;
     case 'crush': if (inMech(p) && typeof v === 'number' && v >= 0 && v < NC && MECH_CRUSH.has(W.blk[v]) && !(W.mine && W.mine.has(v)) && Math.hypot(cx_(v) + 0.5 - p.x, cy_(v) + 0.5 - p.y) < 2.6) { const r = B[W.blk[v]].res, g = GATHER[W.blk[v]]; if (p.veh === 3 && g) { mechScar(v, null, null, BAL.workerRegrow); const n = Math.max(1, Math.round(rand(g.n[0], g.n[1]) * BAL.workerGather)); W.res[g.res] += n; taskAdd('gather'); emit({ k: 'loot', p: p.i, x: cx_(v) + 0.5, y: cy_(v) + 0.5, z: cl_(v) * FH + 1, text: '+' + n + ' ' + RES.find(q => q.k === g.res).name }); setCell(v, 0, W.slab[v], null, 'mine'); } /* (round 36) 工蜂's passive: what it flattens is gathered (and so doesn't grow back) */ else { mechScar(v); setCell(v, 0, W.slab[v], null, 'brk'); if (r && rand() < 0.5) W.res[r] = (W.res[r] || 0) + 1; } emit({ k: 'sfx', n: 'bash', x: cx_(v) + 0.5, y: cy_(v) + 0.5 }); } break; // (round 34d) a mech flattens what is in its way
-    case 'bpinst': { const b = (W.bps || [])[v | 0]; if (!b || isSiege()) break; const t = b[0], k = +b.slice(1); if (t === 'a') { if (armHas(p, k)) { emit({ k: 'deny', p: p.i, why: '你已经穿着' + ARM[k].n + '了：让队友来装' }); break; } const c = armCost(); if (!affordable(W.res, c)) { emit({ k: 'deny', p: p.i, why: '材料不足' }); break; } for (const r in c) W.res[r] -= c[r]; W.bps.splice(v | 0, 1); p.arm = (p.arm || 0) | 1 << k; if (k === 5) { p.maxHp = pMaxHpOf(p); p.hp = Math.min(p.maxHp, p.hp + 40); } emit({ k: 'bpuse', p: p.i, t, v: k, full: armFull(p) ? 1 : 0 }); break; } /* (round 38k) armour: worn by whoever installs it */
+    case 'bpinst': { const b = (W.bps || [])[v | 0]; if (!b) break; const t = b[0], k = +b.slice(1); if (t === 'a') { if (armHas(p, k)) { emit({ k: 'deny', p: p.i, why: '你已经穿着' + ARM[k].n + '了：让队友来装' }); break; } const c = armCost(); if (!affordable(W.res, c)) { emit({ k: 'deny', p: p.i, why: '材料不足' }); break; } for (const r in c) W.res[r] -= c[r]; W.bps.splice(v | 0, 1); p.arm = (p.arm || 0) | 1 << k; if (k === 5) { p.maxHp = pMaxHpOf(p); p.hp = Math.min(p.maxHp, p.hp + 40); } emit({ k: 'bpuse', p: p.i, t, v: k, full: armFull(p) ? 1 : 0 }); break; } /* (round 38k) armour: worn by whoever installs it */
       const lv = t === 'm' ? mlvOf(k) : wlvOf(k), c = t === 'm' ? mlvCost(lv) : gunCost(lv); /* (round 38j) install a found upgrade blueprint with materials */
       if (lv >= UPG_MAX) { W.bps.splice(v | 0, 1); break; } if (!affordable(W.res, c)) { emit({ k: 'deny', p: p.i, why: '材料不足' }); break; } for (const r in c) W.res[r] -= c[r]; W.bps.splice(v | 0, 1);
       if (t === 'm') W.mlv[k] = lv + 1; else W.wlv[k] = lv + 1; emit({ k: 'bpuse', p: p.i, t, v: k, lv: lv + 1 }); } break;

@@ -114,6 +114,7 @@ function buildHudStatic() {
   ex.addEventListener('pointerdown', e => { e.stopPropagation(); toggleBuild(false); }); bb.appendChild(ex);
 }
 function uiBuildBar() {
+  if (W && W.p && W.p[ME] && !PAL.includes(W.p[ME].sel)) W.p[ME].sel = 1; /* (round 39) an old selection of a retired kind */
   if (!W) return; const me = W.p[ME];
   $('bbar').classList.toggle('hidden', !me.build); $('binfo').classList.toggle('hidden', !me.build);
   $('wbar').classList.toggle('hidden', !!me.build);
@@ -316,7 +317,7 @@ function renderCraft() {
   // (round 36f) cards carry only a name, what you have and the button; everything else (what it does, setting a default vehicle) is in the long-press card
   const T = UI.stips = {}, card = (k, own, name, em, btns, tip, cls) => { T[k] = tip; return `<div class="sc${own ? ' own' : ''}${cls ? ' ' + cls : ''}" data-k="${k}"><div class="sh"><b>${name}</b><em>${em}</em></div><div class="sb">${btns}</div></div>`; };
   if (tab === 'gun') {
-    if (bpOn()) { const me2 = W.p[ME], na = ARM.filter((a, k) => armHas(me2, k)).length, bl = bpList('a') + bpList('g') + (na ? `<div class="sres" data-k="arm"><b>战甲 ${na}/6</b><span>${ARM.map((a, k) => armHas(me2, k) ? a.n.replace('战甲', '') : '').filter(Boolean).join(' · ')}${na === 6 ? ' · 全套' : ''}</span></div>` : ''); if (na) T.arm = { t: '等身战甲', d: ARM.map((a, k) => (armHas(me2, k) ? '✓ ' : '· ') + a.n + '：' + a.d).join('<br>') + '<br>' + ARM_SET }; if (bl) h += `<div class="stop">${bl}</div>`; } /* (round 38k) armour + gun blueprints */ /* (round 38j) gun upgrade blueprints you found, ready to install */
+    if (upgOn()) { const me2 = W.p[ME], na = ARM.filter((a, k) => armHas(me2, k)).length, bl = bpList('a') + bpList('g') + (na ? `<div class="sres" data-k="arm"><b>战甲 ${na}/6</b><span>${ARM.map((a, k) => armHas(me2, k) ? a.n.replace('战甲', '') : '').filter(Boolean).join(' · ')}${na === 6 ? ' · 全套' : ''}</span></div>` : ''); if (na) T.arm = { t: '等身战甲', d: ARM.map((a, k) => (armHas(me2, k) ? '✓ ' : '· ') + a.n + '：' + a.d).join('<br>') + '<br>' + ARM_SET }; if (bl) h += `<div class="stop">${bl}</div>`; } /* (round 38k) armour + gun blueprints */ /* (round 38j) gun upgrade blueprints you found, ready to install */
     { const c = CRAFT.find(x => x.med); h += card('med', me.meds > 0, c.name, me.meds + ' / ' + BAL.medCap, shopBtn(c, '买'), { t: c.name, d: c.desc }, 'smed'); }
     h += `<div class="sgrid2">`;
     for (const c of CRAFT.filter(x => x.nade)) { const n = c.gt ? gCount(me, c.gt) : me.nades, cap = c.gt ? BAL.gnCap : BAL.nadeCap; h += card(c.id, n > 0, c.name.replace(' ×2', ''), n + ' / ' + cap, shopBtn(c, '买 ×2'), { t: c.name, d: c.desc }); }
@@ -339,11 +340,11 @@ function renderCraft() {
     if (me.vehs & 126) { const fx = CRAFT.find(c => c.mfix), bt = CRAFT.find(c => c.mbat), hs = [1, 2, 3, 4, 5, 6].filter(v => ownsVeh(me, v)), low = hs.some(v => mhpOf(me, v) < MECHS[v].hp * 0.5), bat = Math.floor(me.bat != null ? me.bat : BAL.mechBat);
       top += `<div class="sres" data-k="rmech"><b>机甲</b><span class="${bat < BAL.mechBat * 0.3 ? 'lo' : ''}">电 ${bat}/${BAL.mechBat}</span><span class="${low ? 'lo' : ''}">装甲 ${Math.round(Math.min(...hs.map(v => mhpOf(me, v) / MECHS[v].hp)) * 100)}%</span>${shopBtn(fx, '修装甲')}${shopBtn(bt, '充电')}</div>`;
       T.rmech = { t: '机甲维护', d: '装甲：' + hs.map(v => MECHS[v].name + ' ' + Math.round(mhpOf(me, v)) + '/' + MECHS[v].hp).join('，') + '。<br>不是机甲形态时装甲和电会慢慢恢复；这里马上修好 / 充满（要先变回载具）。' }; } // (round 34b)
-    if (bpOn()) top += bpList('m'); /* (round 38j) mech upgrade blueprints you found */
+    if (upgOn()) top += bpList('m'); /* (round 38j) mech upgrade blueprints you found */
     if (top) h += `<div class="stop">${top}</div>`;
     h += CRAFT.filter(c => c.cat === 'veh').map(c => { const v = c.veh, own = (me.vehs || 0) >> v & 1, def = own && me.veh === v, M = MECHS[v], lock = !hasBP(VEH[v].k), lv = mlvOf(v);
       const refit = '', unlock = '<span class="sfree">搜东西时找它的蓝图</span>'; /* (round 38j) */
-      return card('v' + v, own, c.name + (lv ? ' <small class="mlv">' + MUP[lv].n + '</small>' : ''), lock ? '未解锁' : def ? '默认 ✓' : own ? '已有' : '×' + VEH[v].spd, lock ? unlock : (own ? (def ? '<span class="sfree">T 上车</span>' : '<span class="sfree">长按设默认</span>') : shopBtn(c, '造')) + refit,
+      return card('v' + v, own, c.name + (lv ? ' <small class="mlv">' + mupName(v, lv) + '</small>' : ''), lock ? '未解锁' : def ? '默认 ✓' : own ? '已有' : '×' + VEH[v].spd, lock ? unlock : (own ? (def ? '<span class="sfree">T 上车</span>' : '<span class="sfree">长按设默认</span>') : shopBtn(c, '造')) + refit,
         { t: c.name + (M ? ' / ' + M.name : ''), d: c.desc + '<br>速度 ×' + VEH[v].spd + (M ? `<br><b>二阶段 · ${M.name}</b>（骑着按 X / 「变形」，1 秒）：${M.tag}` + (EVO[v] ? `<br><b>第二形态 · ${EVO[v].name}</b>（机甲杀敌攒满进化槽后按 X，持续 ${BAL.evoT} 秒）：${EVO[v].tag}` : '') : '') + (own ? '<br>默认载具：T（触屏点「载具」）就上这辆；Shift+T / 长按「载具」换车' : ''), v: own && !def ? v : null }); }).join('');
   }
   $('clist').innerHTML = h;
