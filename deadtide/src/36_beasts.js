@@ -176,3 +176,69 @@ function eliteStep(z, Z, dt) {
   }
   return false;
 }
+
+/* ================= (round 41) flyers that fight from range: 尸翼弓手 (arrows), 腐液水母 (slowing goo), 石像鬼 (a diving slam) ================= */
+// Each attack is telegraphed and has an answer: the archer's aim line locks before it looses (step off it / cover / a shield blocks it /
+// any hit while it aims spoils the shot); the jelly's glob lands on a marked ring (leave it / a hit while it swells bursts it on itself);
+// the gargoyle is stone (×0.3) while it circles, its dive lands on a marked ring, and after the slam it is stuck on the ground (×1.5).
+// kt: 0 circling (gargoyle: stone), 1 aiming / swelling / rising, 2 loosing / diving, 3 stuck on the ground.
+function flyMove(z, gx, gy, gz, spd, vzMax, dt, low) {
+  const dx = gx - z.x, dy = gy - z.y, d = Math.hypot(dx, dy); let mx = 0, my = 0; if (d > 0.05 && spd > 0) { const v = Math.min(spd, d / Math.max(dt, 1e-3)); mx = dx / d * v; my = dy / d * v; }
+  for (const o of W.zs) { if (o === z || o.hp <= 0 || !ZT[o.k].fly) continue; const ex = z.x - o.x, ey = z.y - o.y, e = Math.hypot(ex, ey); if (e < 0.7 && e > 1e-3 && Math.abs(o.z - z.z) < 0.8) { mx += ex / e * 1.6; my += ey / e * 1.6; } }
+  if (z.kt !== 1 && Math.hypot(mx, my) > 0.1) z.face += angDiff(z.face, Math.atan2(my, mx)) * Math.min(1, dt * 8);
+  z.kbx = (z.kbx || 0) * Math.max(0, 1 - dt * 5); z.kby = (z.kby || 0) * Math.max(0, 1 - dt * 5);
+  z.x = clamp(z.x + (mx + z.kbx) * dt, 1, MW - 1.01); z.y = clamp(z.y + (my + z.kby) * dt, 1, MH - 1.01);
+  z.z += clamp((gz - z.z) * (low ? 12 : 3), -vzMax, vzMax) * dt; z.z = Math.max(z.z, flyFloor(z.x, z.y) + (low ? 0 : 0.25));
+  z.L = clamp(Math.floor((z.z - 1.0) / FH), 0, ML - 1); z.moving = true;
+}
+function flyer2Step(z, Z, dt) {
+  const F = Z.fly; z.st = 'walk'; z.atk = 0;
+  z.dvCD = (z.dvCD == null ? 1.5 + rand() * F.cd : z.dvCD) - dt; if (z.fa == null) z.fa = rand() * Math.PI * 2;
+  let tp = null, td = 1e9; for (const p of W.p) { if (p.gone || p.dead) continue; const d = Math.hypot(p.x - z.x, p.y - z.y) * (zExposed(p) ? 1 : 1.6); if (d < td) { td = d; tp = p; } }
+  const cruise = () => Math.max(flyFloor(z.x, z.y), flyFloor(z.x + Math.cos(z.face) * 1.3, z.y + Math.sin(z.face) * 1.3)) + F.alt;
+  let gx = z.x, gy = z.y, gz = z.z, spd = z.spd, vzMax = 3.5, low = false; const A = z.at;
+  if (z.gst > 0) { z.gst -= dt; z.kt = z.gst > 0 ? 3 : 0; spd = 0; gz = flyFloor(z.x, z.y); low = true; if (z.gst <= 0) { z.dvCD = F.cd * (0.8 + rand() * 0.4); } flyMove(z, gx, gy, gz, 0, 3, dt, z.gst > 0); return; } // stuck after the slam: punish it
+  if (z.stun > 0) { z.at = null; z.kt = 0; spd = 0; gz = Math.max(flyFloor(z.x, z.y) + 0.6, z.z - 1.4); }
+  else if (z.conf > 0 || !tp) { z.at = null; z.kt = 0; if (z.wa == null || rand() < dt * 0.8) z.wa = rand() * Math.PI * 2; gx = z.x + Math.cos(z.wa) * 3; gy = z.y + Math.sin(z.wa) * 3; gz = cruise(); }
+  else if (A) {
+    A.t += dt; const hit = z.hp < A.hp - 0.5; // any damage while it winds up spoils the attack
+    if (A.k === 'bow') { z.kt = 1; spd = 0; gz = z.z; const P = W.p[A.p];
+      if (hit) { z.at = null; z.kt = 0; z.stun = 0.7; z.dvCD = F.cd * 0.7; emit({ k: 'zflinch', i: z.id, x: r2(z.x), y: r2(z.y), z: r2(z.z) }); }
+      else { if (!A.lock && P && !P.dead) { A.x = P.x; A.y = P.y; A.z = flyAimZ(P) - 0.25; } z.face += angDiff(z.face, Math.atan2(A.y - z.y, A.x - z.x)) * Math.min(1, dt * 12);
+        if (!A.lock && A.t >= BAL.bowLock) { A.lock = 1; emit({ k: 'zbowl', i: z.id, x: r2(A.x), y: r2(A.y), z: r2(A.z) }); }
+        if (A.t >= BAL.bowFire) { const sx = z.x, sy = z.y, sz = z.z + 0.15; let dx = A.x - sx, dy = A.y - sy, dz = A.z - sz; const n = Math.hypot(dx, dy, dz) || 1; dx /= n; dy /= n; dz /= n;
+          W.proj.push({ k: 'arrow', x: sx + dx * 0.4, y: sy + dy * 0.4, z: sz + dz * 0.4, vx: dx * BAL.arrowSpd, vy: dy * BAL.arrowSpd, vz: dz * BAL.arrowSpd, t: BAL.arrowRange / BAL.arrowSpd, dm: Z.dmg }); emit({ k: 'zloose', i: z.id, x: r2(sx), y: r2(sy), z: r2(sz) });
+          z.at = null; z.kt = 2; z.dvCD = F.cd * (0.8 + rand() * 0.4); z.fa += (rand() < 0.5 ? 1 : -1) * (0.6 + rand() * 0.6); } } } // then it slides round to a new spot
+    else if (A.k === 'goo') { z.kt = 1; spd = 0; gz = z.z;
+      if (hit) { const g0 = flyFloor(z.x, z.y); gooPuddle(z.x, z.y, g0); z.at = null; z.kt = 0; z.stun = 1.2; z.dvCD = F.cd; emit({ k: 'zgoox', i: z.id, x: r2(z.x), y: r2(z.y), z: r2(z.z), gz: r2(g0) }); } // burst on itself
+      else if (A.t >= BAL.gooWind) { const T = BAL.gooFly, sx = z.x, sy = z.y, sz = z.z - 0.3; W.proj.push({ k: 'goo', x: sx, y: sy, z: sz, vx: (A.x - sx) / T, vy: (A.y - sy) / T, vz: (A.gz + 0.1 - sz) / T + 5 * T, dm: Z.dmg }); emit({ k: 'sfx', n: 'spit', x: sx, y: sy });
+        z.at = null; z.kt = 0; z.dvCD = F.cd * (0.8 + rand() * 0.4); } }
+    else if (A.k === 'slam') {
+      if (A.t < BAL.slamRise) { z.kt = 1; spd = 0; gz = A.z0 + 1.4; vzMax = 6; }
+      else { z.kt = 2; const left = Math.max(0.05, BAL.slamHit - A.t), dd = Math.hypot(A.x - z.x, A.y - z.y); gx = A.x; gy = A.y; gz = A.gz; spd = dd / left + 1; vzMax = 40; low = true;
+        if (A.t >= BAL.slamHit) { z.x = A.x; z.y = A.y; z.z = A.gz; z.at = null; z.gst = BAL.slamStuck; z.kt = 3; let n = 0;
+          for (const p of W.p) { if (p.gone || p.dead || p.down) continue; const d = Math.hypot(p.x - z.x, p.y - z.y); if (d > BAL.slamR + (inMech(p) ? 0.5 : 0) || Math.abs(p.z - z.z) > 1.6) continue;
+            hurtPlayer(p, Z.dmg * W.D.dmg, z); mechCC(p, 'stg', 0.6); const u = (p.x - z.x) / (d || 1), v = (p.y - z.y) / (d || 1); knock(p, u * BAL.slamKB, v * BAL.slamKB); n++; }
+          emit({ k: 'zslamhit', i: z.id, x: r2(z.x), y: r2(z.y), z: r2(z.z), h: n }); noiseAt(z.x, z.y, 8, z.z); flyMove(z, z.x, z.y, z.z, 0, 0, dt, true); return; } } }
+  } else { // circle round the target; the archer stands off, the others stay closer
+    const R = F.orbit + (z.seed % 7) * 0.12, dir = z.seed % 2 ? 1 : -1, dist = Math.hypot(tp.x - z.x, tp.y - z.y); z.kt = 0;
+    if (dist < R + 3) z.fa += dir * z.spd / R * dt * 0.8; else z.fa = Math.atan2(z.y - tp.y, z.x - tp.x);
+    gx = tp.x + Math.cos(z.fa) * R; gy = tp.y + Math.sin(z.fa) * R; gz = Math.max(cruise(), flyFloor(tp.x, tp.y) + F.alt, inAirZ(tp) != null ? inAirZ(tp) + 0.4 : 0);
+    if (z.dvCD <= 0 && zExposed(tp) && dist < F.dive && zSeen(z) && W.phase !== 'day' && (F.goo || los(z.x, z.y, z.z, tp.x, tp.y, flyAimZ(tp)))) {
+      if (F.bow) { z.at = { k: 'bow', t: 0, p: tp.i, hp: z.hp, x: tp.x, y: tp.y, z: flyAimZ(tp) - 0.25 }; emit({ k: 'zbow', i: z.id, p: tp.i, t: BAL.bowFire }); }
+      else if (F.goo) { const lx = clamp(tp.x + (tp.vx || 0) * 1.1, 1, MW - 1), ly = clamp(tp.y + (tp.vy || 0) * 1.1, 1, MH - 1), g0 = inAirZ(tp) != null ? flyFloor(lx, ly) : tp.z; z.at = { k: 'goo', t: 0, hp: z.hp, x: lx, y: ly, gz: g0 }; emit({ k: 'zgoo', i: z.id, x: r2(lx), y: r2(ly), z: r2(g0), t: BAL.gooWind + BAL.gooFly }); }
+      else if (F.slam && inAirZ(tp) == null) { const lx = clamp(tp.x + (tp.vx || 0) * 0.3, 1, MW - 1), ly = clamp(tp.y + (tp.vy || 0) * 0.3, 1, MH - 1); z.at = { k: 'slam', t: 0, hp: z.hp, x: lx, y: ly, gz: tp.z, z0: z.z }; emit({ k: 'zslam', i: z.id, x: r2(lx), y: r2(ly), z: r2(tp.z), t: BAL.slamHit }); }
+      else z.dvCD = 0.5;
+    }
+  }
+  flyMove(z, gx, gy, gz, spd, vzMax, dt, low);
+}
+// a puddle of goo: slows whoever stands in it (on foot / on wheels ×gooSlow, a mech gets bogged down)
+function gooPuddle(x, y, z) { (W.goo = W.goo || []).push({ x: r2(x), y: r2(y), z: r2(z), r: BAL.gooR, t: BAL.gooT }); if (W.goo.length > 12) W.goo.shift(); emit({ k: 'goo', x: r2(x), y: r2(y), z: r2(z) }); }
+const inGoo = p => !!(W.goo && W.goo.length && !airborne(p) && W.goo.some(q => Math.abs(p.z - q.z) < 0.8 && Math.hypot(p.x - q.x, p.y - q.y) < q.r));
+function gooStep(dt) {
+  for (const p of W.p) if (p.gooT > 0) p.gooT = Math.max(0, p.gooT - dt);
+  if (!W.goo || !W.goo.length) return;
+  for (const q of W.goo) { q.t -= dt; for (const p of W.p) { if (p.gone || p.dead || airborne(p) || Math.abs(p.z - q.z) > 0.8 || Math.hypot(p.x - q.x, p.y - q.y) > q.r) continue; if (inMech(p)) mechCC(p, 'slw', 0.4, 0.45, true); else p.gooT = 0.35; } }
+  W.goo = W.goo.filter(q => q.t > 0);
+}

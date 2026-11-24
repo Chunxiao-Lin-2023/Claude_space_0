@@ -35,7 +35,7 @@ function stepZombies(dt) {
       z.burn -= dt; hurtZombie(z, BAL.burnDps * dt, W.p[z.burnBy] || null, 0, 0, true); if (z.hp <= 0) continue;
       if (rand() < dt * BAL.burnSpread) { const fx = Math.floor(z.x), fy = Math.floor(z.y); for (let gy = fy - 2; gy <= fy + 2; gy++) for (let gx = fx - 2; gx <= fx + 2; gx++) { const a = inMap(gx, gy) && grid.get(ci(gx, gy, z.L)); if (a) for (const o of a) if (o !== z && o.hp > 0 && !(o.burn > 0) && Math.hypot(o.x - z.x, o.y - z.y) < BAL.burnSpreadR) { o.burn = 2.5; o.burnBy = z.burnBy; } } }
     }
-    if (Z.fly) { if (Z.kaiju) wingStep(z, Z, dt); else flyerStep(z, Z, dt); continue; } // (round 35) birds / bats: their own flight (36_beasts); (round 36m) 翼龙兽 (40_modes)
+    if (Z.fly) { if (Z.kaiju) wingStep(z, Z, dt); else if (Z.fly.bow || Z.fly.goo || Z.fly.slam) flyer2Step(z, Z, dt); else flyerStep(z, Z, dt); continue; } /* (round 41) the ranged flyers */ // (round 35) birds / bats: their own flight (36_beasts); (round 36m) 翼龙兽 (40_modes)
     if (Z.elite && eliteStep(z, Z, dt)) continue; // (round 35) 能力者: a skill in progress
     if (z.sleep) { z.moving = false; z.st = 'walk'; continue; } // a sleeper in a building: still until something wakes it (41_siege)
     z.st = 'walk';

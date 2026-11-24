@@ -171,6 +171,8 @@ function buildScene() {
   OBJ.pl = [];
   // projectiles, particles, tracers
   OBJ.nade = inst(new THREE.IcosahedronGeometry(0.09, 0), lam('#3c4a32'), 40); OBJ.acid = inst(new THREE.IcosahedronGeometry(0.12, 0), new THREE.MeshBasicMaterial({ color: '#9dff3a' }), 60, false);
+  OBJ.arrow = inst(merge([new THREE.BoxGeometry(0.62, 0.025, 0.025), new THREE.ConeGeometry(0.035, 0.1, 4).rotateZ(-Math.PI / 2).translate(0.35, 0, 0), new THREE.BoxGeometry(0.1, 0.06, 0.005).translate(-0.27, 0, 0), new THREE.BoxGeometry(0.1, 0.005, 0.06).translate(-0.27, 0, 0)]), new THREE.MeshBasicMaterial({ color: '#f0e2c0' }), 40, false); /* (round 41) the archer's arrows */
+  OBJ.goo = inst(new THREE.IcosahedronGeometry(0.17, 1), new THREE.MeshBasicMaterial({ color: '#b46cff' }), 30, false); /* (round 41) the jelly's globs */
   OBJ.parts = inst(boxG(1, 1, 1), new THREE.MeshBasicMaterial({ color: '#ffffff' }), 900, false);
     OBJ.flashM = inst(new THREE.IcosahedronGeometry(0.13, 0), new THREE.MeshBasicMaterial({ color: '#ffd27a', transparent: true, opacity: 0.95 }), 8, false);
   OBJ.boom = inst(new THREE.IcosahedronGeometry(1, 1), new THREE.MeshBasicMaterial({ color: '#ffb050', transparent: true, opacity: 0.6, depthWrite: false }), 8, false);
@@ -353,8 +355,8 @@ function drawFx() {
   drawTracers();
   let f = 0; for (const fl of RND.flashes) { if (f >= 8) break; const s = (fl.big ? 1.6 : 1) * (1 - fl.t / fl.life); setInst(OBJ.flashM, f++, fl.x, fl.z, fl.y, 0, s, s, s); } OBJ.flashM.count = f; OBJ.flashM.instanceMatrix.needsUpdate = true;
   let b = 0; for (const bo of RND.booms) { if (b >= 8) break; const s = (bo.r || BAL.nadeR) * (0.3 + bo.t * 1.4); setInst(OBJ.boom, b++, bo.x, bo.z, bo.y, 0, s, s, s); } OBJ.boom.count = b; OBJ.boom.instanceMatrix.needsUpdate = true; OBJ.boom.material.opacity = RND.booms.length ? 0.55 * (1 - RND.booms[0].t / 0.6) : 0;
-  let ng = 0, na = 0; for (const p of W.proj) { if (p.k === 'gl') { setInst(OBJ.nade, ng++, p.x, p.z, p.y, W.t * 12, p.rk ? 0.9 : 1.3, p.rk ? 0.9 : 1.3, p.rk ? 0.9 : 1.3); if (p.rk) for (let k = 0; k < 2; k++) addP({ x: p.x - p.vx * 0.02 * k, y: p.y - p.vy * 0.02 * k, z: p.z, vx: -p.vx * 0.05, vy: -p.vy * 0.05, vz: 0.1, g: 0, col: k ? '#ffd060' : '#ff6a1a', s: 0.11, life: 0.18 }); /* (round 39c) rockets burn */ if (Math.random() < 0.5) addP({ x: p.x, y: p.y, z: p.z, vz: 0.2, g: -0.2, col: '#9a948a', s: 0.07, life: 0.4, smoke: 1 }); } else if (p.k === 'nade') setInst(OBJ.nade, ng++, p.x, p.z, p.y, W.t * 8, 1, 1, 1); else setInst(OBJ.acid, na++, p.x, p.z, p.y, 0, 1, 1, 1); }
-  OBJ.nade.count = ng; OBJ.acid.count = na; OBJ.nade.instanceMatrix.needsUpdate = OBJ.acid.instanceMatrix.needsUpdate = true;
+  let ng = 0, na = 0, nr = 0, nq = 0; for (const p of W.proj) { if (p.k === 'arrow') { setInst(OBJ.arrow, nr++, p.x, p.z, p.y, -Math.atan2(p.vy, p.vx), 1, 1, 1); if (Math.random() < 0.6) addP({ x: p.x, y: p.y, z: p.z, vz: 0, g: 0, col: '#ff6a5a', s: 0.05, life: 0.2 }); continue; } if (p.k === 'goo') { setInst(OBJ.goo, nq++, p.x, p.z, p.y, W.t * 5, 1, 0.85 + Math.sin(W.t * 20) * 0.12, 1); if (Math.random() < 0.5) addP({ x: p.x, y: p.y, z: p.z, vz: -0.5, g: 2, col: '#c58aff', s: 0.06, life: 0.4 }); continue; } /* (round 41) */ if (p.k === 'gl') { setInst(OBJ.nade, ng++, p.x, p.z, p.y, W.t * 12, p.rk ? 0.9 : 1.3, p.rk ? 0.9 : 1.3, p.rk ? 0.9 : 1.3); if (p.rk) for (let k = 0; k < 2; k++) addP({ x: p.x - p.vx * 0.02 * k, y: p.y - p.vy * 0.02 * k, z: p.z, vx: -p.vx * 0.05, vy: -p.vy * 0.05, vz: 0.1, g: 0, col: k ? '#ffd060' : '#ff6a1a', s: 0.11, life: 0.18 }); /* (round 39c) rockets burn */ if (Math.random() < 0.5) addP({ x: p.x, y: p.y, z: p.z, vz: 0.2, g: -0.2, col: '#9a948a', s: 0.07, life: 0.4, smoke: 1 }); } else if (p.k === 'nade') setInst(OBJ.nade, ng++, p.x, p.z, p.y, W.t * 8, 1, 1, 1); else setInst(OBJ.acid, na++, p.x, p.z, p.y, 0, 1, 1, 1); }
+  OBJ.nade.count = ng; OBJ.acid.count = na; OBJ.arrow.count = nr; OBJ.goo.count = nq; OBJ.nade.instanceMatrix.needsUpdate = OBJ.acid.instanceMatrix.needsUpdate = OBJ.arrow.instanceMatrix.needsUpdate = OBJ.goo.instanceMatrix.needsUpdate = true;
   // flashes + explosions light pool
   const srcs = RND.flashes.map(fl => [fl.x, fl.z, fl.y, (fl.big ? 6 : 4) * (1 - fl.t / fl.life), 5]).concat(RND.booms.map(bo => [bo.x, bo.z + 0.6, bo.y, 40 * (1 - bo.t / 0.6), 12])).sort((a, b) => b[3] - a[3]);
   OBJ.flash.forEach((L, k) => { const s = srcs[k]; if (s) { L.position.set(s[0], s[1], s[2]); L.intensity = s[3]; L.distance = s[4]; } else L.intensity = 0; });
@@ -526,7 +528,7 @@ function draw(dt) {
   if (key !== CUT_KEY) { CUT_KEY = key; rebuildCells(); }
   if (STATE.mode === 'play' && !W.demo) qualTick(dt);
   applyTime(darkness()); archFrame();
-  drawZombies(vl, dt); drawPlayers(vl, dt); fuseAnimPost(dt); drawFx(); drawGhost(me); drawPlan(); drawNadeMark(); drawTells(); drawMechLock(me, dt); fxTick(dt); drawDrones(dt); evoZoneTick(dt); drawClouds(); drawTrapAreas(vl);
+  drawZombies(vl, dt); drawPlayers(vl, dt); fuseAnimPost(dt); zTellTick(dt); /* (round 41) */ drawFx(); drawGhost(me); drawPlan(); drawNadeMark(); drawTells(); drawMechLock(me, dt); fxTick(dt); drawDrones(dt); evoZoneTick(dt); drawClouds(); drawTrapAreas(vl);
   OBJ.zone.visible = (!W.demo && W.phase === 'day' || !!(me && me.build)) && !modeDef().anyBuild;
   RENDER.render(SCN, CAMO);
   drawOverlay();
@@ -741,6 +743,19 @@ function fxEvent(e) {
     case 'craft': if (e.p === ME) { sfx('craft'); toast('制作完成：' + e.name); } break;
     case 'deny': if (e.p === ME && thr('deny', 0.3)) { sfx('deny'); toast(e.why, '#ff8a7a'); } break;
     case 'boom': RND.booms.push({ x: e.x, y: e.y, z: e.z, t: 0, r: e.r || (e.g ? BAL.blastR : BAL.nadeR) }); fxAdd({ kind: 'ring', x: e.x, y: e.y, z: Math.max(0, e.z - 0.1), s0: 0.3, s1: (e.r || BAL.nadeR) * 1.15, life: 0.32, col: e.g ? '#b8ff6a' : '#ffc070', op: 0.7 }); /* (round 36) a shock ring along the ground */ debrisFx(e.x, e.y, e.z, e.g ? '#6a8a2a' : '#3a3530', 12); if (e.g) { bloodFx(e.x, e.y, e.z, 24, true); addDecal(e.x, e.y, e.z - 0.5, 1.1, '#3c5a14'); } if (e.r === BAL.barrelR) for (let k = 0; k < 26; k++) addP({ x: e.x + frnd(-1, 1), y: e.y + frnd(-1, 1), z: e.z, vx: frnd(-3, 3), vy: frnd(-3, 3), vz: frnd(2, 6), g: 3, life: 0.9, s: 0.16, col: k % 3 ? '#ff8a2a' : '#ffd04a' }); sfx('boom', e.x, e.y); shake(e.x, e.y, 0.4); break;
+    case 'zbow': (RND.zbow = RND.zbow || {})[e.i] = { t0: W.t, dur: e.t, p: e.p, lock: null }; sfx('reload', W.p[e.p] ? W.p[e.p].x : 0, W.p[e.p] ? W.p[e.p].y : 0); if (e.p === ME && thr('bowTip', 30)) uiMsg('尸翼弓手在瞄你：红线锁定后闪一下就放箭——侧移躲开、躲到墙后、举盾，或者趁它瞄的时候打它一下就能打断', '#ff9a8a'); break; /* (round 41) */
+    case 'zbowl': { const B = RND.zbow && RND.zbow[e.i]; if (B) B.lock = [e.x, e.y, e.z]; sfx('click'); break; }
+    case 'zloose': if (RND.zbow) delete RND.zbow[e.i]; sfx('crossbow', e.x, e.y); for (let k = 0; k < 6; k++) addP({ x: e.x, y: e.y, z: e.z, vx: frnd(-1, 1), vy: frnd(-1, 1), vz: frnd(0, 1), g: 0, col: '#ffd0a0', s: 0.05, life: 0.25 }); break;
+    case 'zflinch': if (RND.zbow) delete RND.zbow[e.i]; zMarkDrop(e.i); sfx('clank', e.x, e.y); for (let k = 0; k < 10; k++) addP({ x: e.x, y: e.y, z: e.z, vx: frnd(-3, 3), vy: frnd(-3, 3), vz: frnd(0, 3), col: k % 2 ? '#ffffff' : '#ffd040', s: 0.07, life: 0.35 }); break;
+    case 'zgoo': zMark(e.i, e.x, e.y, e.z, BAL.gooR, e.t, '#b46cff'); sfx('acid', e.x, e.y); if (thr('gooTip', 30)) uiMsg('腐液水母鼓起来了：紫圈是它要吐的地方，粘液会让你走不动——走出圈，或者趁它鼓着打它，它会炸在自己下面', '#d0a0ff'); break;
+    case 'zgoox': zMarkDrop(e.i); sfx('acid', e.x, e.y); for (let k = 0; k < 20; k++) addP({ x: e.x, y: e.y, z: e.z, vx: frnd(-3, 3), vy: frnd(-3, 3), vz: frnd(-2, 2), g: 6, col: k % 2 ? '#b46cff' : '#e0c0ff', s: 0.09, life: 0.6, floor: e.gz }); break;
+    case 'goo': for (let k = 0; k < 14; k++) { const a = k / 14 * 6.283; addP({ x: e.x, y: e.y, z: e.z + 0.2, vx: Math.cos(a) * 3, vy: Math.sin(a) * 3, vz: frnd(1, 3), g: 9, col: k % 2 ? '#b46cff' : '#7a3ac8', s: 0.08, life: 0.5, floor: e.z }); } sfx('acid', e.x, e.y); break;
+    case 'zslam': zMark(e.i, e.x, e.y, e.z, BAL.slamR, e.t, '#ff4a2a'); sfx('screech', e.x, e.y); if (thr('slamTip', 30)) uiMsg('石像鬼要砸下来了：躲开红圈！它砸完会卡在地上一会儿，这时候打它伤害 ×1.5（平时是石头，只吃三成）', '#ffb08a'); break;
+    case 'zslamhit': zMarkDrop(e.i); shake(e.x, e.y, 0.6); sfx('smash', e.x, e.y); fxAdd({ kind: 'ring', x: e.x, y: e.y, z: e.z + 0.06, s0: 0.4, s1: BAL.slamR * 1.5, life: 0.45, col: '#d8c8b0', op: 0.85 }); fxAdd({ kind: 'disc', x: e.x, y: e.y, z: e.z + 0.05, s0: 0.3, s1: BAL.slamR, life: 0.3, col: '#fff0d0', op: 0.5 });
+      for (let k = 0; k < 26; k++) { const a = FXR() * 6.283, v = frnd(2, 6); addP({ x: e.x, y: e.y, z: e.z + 0.2, vx: Math.cos(a) * v, vy: Math.sin(a) * v, vz: frnd(1, 4), g: 12, col: k % 3 ? '#8a8478' : '#5a554c', s: 0.1, life: 0.7, floor: e.z }); } if (typeof addDecal === 'function') addDecal(e.x, e.y, e.z + 0.02, 0.9, '#2a2622'); break;
+    case 'zstone': sfx('clank', e.x, e.y); for (let k = 0; k < 5; k++) addP({ x: e.x, y: e.y, z: e.z, vx: frnd(-2, 2), vy: frnd(-2, 2), vz: frnd(0, 2), col: k % 2 ? '#d8d0c0' : '#ffffff', s: 0.05, life: 0.25 }); break;
+    case 'zblock': for (let k = 0; k < 8; k++) addP({ x: e.x, y: e.y, z: e.z, vx: frnd(-2.5, 2.5), vy: frnd(-2.5, 2.5), vz: frnd(0, 2.5), col: '#ffe8a0', s: 0.05, life: 0.3 }); break;
+    case 'arrowhit': for (let k = 0; k < 4; k++) addP({ x: e.x, y: e.y, z: e.z, vx: frnd(-1, 1), vy: frnd(-1, 1), vz: frnd(0, 1.5), col: '#e8dcc0', s: 0.04, life: 0.3 }); sfx('clink', e.x, e.y); break;
     case 'acid': for (let k = 0; k < 8; k++) addP({ x: e.x, y: e.y, z: e.z, vx: frnd(-2, 2), vy: frnd(-2, 2), vz: frnd(0, 2.5), col: k % 2 ? '#9dff3a' : '#5f9a20', s: 0.06, life: 0.5, floor: e.z - 0.3 }); sfx('acid', e.x, e.y); break;
     case 'rhit': if (thr('rhit', 0.3)) { sfx('rhit', W.radio.x, W.radio.y); for (let k = 0; k < 4; k++) addP({ x: W.radio.x + 0.5, y: W.radio.y + 0.5, z: 0.6, vx: frnd(-2, 2), vy: frnd(-2, 2), vz: frnd(1, 3), col: '#ffd76a', s: 0.05, life: 0.4 }); } break;
     case 'knife': { const q = W.p[e.p]; sfx(e.n ? 'stab' : 'slash', q.x, q.y); if (e.p !== ME) q.knT = 0.28; if (e.n) { bloodFx(e.x, e.y, e.z, e.b ? 14 : 8, e.g); if (e.b) RND.floats.push({ x: e.x, y: e.y, z: e.z + 0.5, text: '背刺 ×' + BAL.knifeBack, col: '#ff8a6a', t: 0 }); } break; }
@@ -787,3 +802,21 @@ function shotFx(o, wi, ends, E) {
   if (o === ME) { CAM.shake = Math.max(CAM.shake, WPN[wi].shake * 0.6); const kk = [0.06, 0.16, 0.05, 0.2][wi]; CAM.kx = (CAM.kx || 0) - Math.cos(p.aim) * kk; CAM.ky = (CAM.ky || 0) - Math.sin(p.aim) * kk; }
 }
 function shake(x, y, a) { const me = W.p[ME]; if (!me) return; const d = d2(x, y, me.x, me.y); CAM.shake = Math.max(CAM.shake, a * clamp(1 - d / 22, 0, 1)); }
+
+/* ---------- (round 41) the ranged flyers' tells: the archer's aim line (dim while it tracks, bright and blinking once locked) and the rings
+   where a glob / a slam will land (an inner disc fills up as it comes); both vanish the moment the attack is spoiled ---------- */
+function zMark(i, x, y, z, r, dur, col) { (RND.zmarks = RND.zmarks || []).push({ i, x, y, z, r, t0: W.t, dur, col }); }
+function zMarkDrop(i) { if (RND.zmarks) RND.zmarks = RND.zmarks.filter(m => m.i !== i); }
+function zTellTick(dt) {
+  if (RND.zbow) for (const id in RND.zbow) { const B = RND.zbow[id], z = W.zs.find(q => q.id === +id), P = W.p[B.p];
+    if (!z || z.hp <= 0 || W.t - B.t0 > B.dur + 0.05 || !P) { delete RND.zbow[id]; continue; }
+    const to = B.lock || [P.x, P.y, flyAimZ(P) - 0.25], k = (W.t - B.t0) / B.dur, bl = B.lock ? (Math.sin(W.t * 40) > 0 ? 1 : 0.4) : 0.5;
+    RND.tracers.push({ x: z.x, y: z.y, z: z.z + 0.15, x2: to[0], y2: to[1], z2: to[2], t: 0, life: 0.034, w: B.lock ? 0.05 + 0.03 * k : 0.018, col: B.lock ? [1, 0.25 * bl, 0.15 * bl] : [0.85, 0.25, 0.25] }); }
+  const M = RND.zmarks || [], pool = RND.zmarkM || (RND.zmarkM = []);
+  RND.zmarks = M.filter(m => W.t - m.t0 < m.dur + 0.05);
+  while (pool.length < Math.min(8, RND.zmarks.length)) { const mk = (geo, op) => { const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: op, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide })); m.renderOrder = 5; SCN.add(m); return m; };
+    pool.push({ ring: mk(new THREE.RingGeometry(0.86, 1, 40).rotateX(-Math.PI / 2), 0.8), disc: mk(new THREE.CircleGeometry(1, 32).rotateX(-Math.PI / 2), 0.3) }); }
+  pool.forEach((P, k) => { const m = RND.zmarks[k]; P.ring.visible = P.disc.visible = !!m; if (!m) return; const f = clamp((W.t - m.t0) / m.dur, 0, 1), pulse = 0.65 + 0.35 * Math.sin(W.t * (10 + f * 20));
+    P.ring.position.set(m.x, m.z + 0.07, m.y); P.ring.scale.setScalar(m.r); P.ring.material.color.set(m.col); P.ring.material.opacity = 0.85 * pulse;
+    P.disc.position.set(m.x, m.z + 0.06, m.y); P.disc.scale.setScalar(Math.max(0.05, m.r * f)); P.disc.material.color.set(m.col); P.disc.material.opacity = 0.18 + 0.22 * f; });
+}

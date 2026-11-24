@@ -403,7 +403,7 @@ function stepMove(p, dt) {
   }
   if (p.dash) { const D = p.dash, f = Math.min(dt, D.T - D.t) / D.T; moveEnt(p, D.dx * f, D.dy * f, 'p', true); D.t += dt; if (D.t >= D.T) p.dash = null; p.z = pZ(p); p.anim += dt * 8; return; }
   if (p.L > 0 && p.L > skyTop(p.x, p.y)) { p.L = skyTop(p.x, p.y); p.z = pZ(p); } // (round 31) knocked down mid-air, or a save made in flight: fall to what is below
-  const spd = BAL.pSpeed * (p.down ? 0.22 : 1) * (p.medT > 0 && !p.ride ? 0.45 : 1) * (p.build ? 0.9 : 1) * (inMud(p.x, p.y, p.L) && !(p.ride && VEH[p.veh] && VEH[p.veh].mud) ? MUD_SLOW : 1) * (p.ride && VEH[p.veh] ? (inMech(p) ? mechOf(p).spd * (p.spinT > 0 ? 1.7 : 1) * (W.fus && fusOf(p) ? (W.fus.same ? FUS.sameSpd : FUS.spd) : 1) : VEH[p.veh].spd) : 1) * (p.mtr > 0 ? 0 : 1) * ccSpeed(p) * (!p.ride && armHas(p, 4) ? 1.12 : 1); /* (round 38k/l) leg armour */ // (round 34b) standing still while it transforms; (round 38g) staggered / slowed / climbers on it
+  const spd = BAL.pSpeed * (p.down ? 0.22 : 1) * (p.medT > 0 && !p.ride ? 0.45 : 1) * (p.build ? 0.9 : 1) * (inMud(p.x, p.y, p.L) && !(p.ride && VEH[p.veh] && VEH[p.veh].mud) ? MUD_SLOW : 1) * (p.ride && VEH[p.veh] ? (inMech(p) ? mechOf(p).spd * (p.spinT > 0 ? 1.7 : 1) * (W.fus && fusOf(p) ? (W.fus.same ? FUS.sameSpd : FUS.spd) : 1) : VEH[p.veh].spd) : 1) * (p.mtr > 0 ? 0 : 1) * ccSpeed(p) * (!p.ride && armHas(p, 4) ? 1.12 : 1) * ((p.gooT > 0 || inGoo(p)) && !inMech(p) ? BAL.gooSlow : 1); /* (round 41) goo (a guest checks the puddles itself) */ /* (round 38k/l) leg armour */ // (round 34b) standing still while it transforms; (round 38g) staggered / slowed / climbers on it
   const tx = I.mx * k * spd, ty = I.my * k * spd, a = Math.min(1, dt * 14);
   p.vx = lerp(p.vx, tx, a); p.vy = lerp(p.vy, ty, a);
   p.kbx *= Math.max(0, 1 - dt * 6); p.kby *= Math.max(0, 1 - dt * 6);
@@ -834,6 +834,7 @@ function droneTick(p, dt) {
 function hurtZombie(z, dmg, p, kx, ky, quiet) {
   if (z.hp <= 0 || z.hidden) return;
   if (dmg > 0) { if (p && p.i != null && inMech(p)) dmg *= BAL.mechDmg * MUP[mlvOf(p.veh)].d * (W.fus && fusOf(p) ? (W.fus.same ? FUS.sameDm : FUS.dm) : 1); /* (round 40) fused ×1.2 / same kind ×1.35 */ else if (isBig(z)) dmg *= BAL.bigHp; } /* (round 38g) */
+  if (dmg > 0 && z.k === 'garg') { if (z.gst > 0) dmg *= BAL.gargOpen; else if (!z.at) { dmg *= BAL.gargStone; if (W.t - (z.clkT || 0) > 0.3) { z.clkT = W.t; emit({ k: 'zstone', x: r2(z.x), y: r2(z.y), z: r2(z.z + 0.5) }); } } } /* (round 41) a gargoyle is stone while it circles, soft while it is stuck after a slam */
   if (dmg > 0 && z.xpT > 0) dmg *= BAL.xposeMul; /* (round 36l) 破绽: an opening doubles the damage */ if (dmg > 0 && z.ks && z.kt === 1) z.ks.dm = (z.ks.dm || 0) + dmg; if (dmg > 0 && z.es) z.es.dm = (z.es.dm || 0) + dmg;
   if (dmg > 0 && W.wardens && W.wardens.length) { const w = shieldFor(z, p); if (w) { // (round 35) inside a 护盾者's bubble: the bubble takes it first
     const a = Math.min(w.sh, dmg); w.sh -= a; dmg -= a; if (kx || ky) { kx *= 0.3; ky *= 0.3; }
@@ -1162,7 +1163,11 @@ function startNight() {
   }
   if (blood) q.push({ t: dur * 0.55, k: 'boss', side: front[0] });
   // (round 35) flocks of crows from night 2 (bats too from night 4), one 能力者 elite from night 3 (one more every 3 nights, at most 4)
-  if (n >= 2) for (let f = 0, nf = Math.min(5, 1 + Math.floor((n - 2) / 2)); f < nf; f++) { const bat = n >= 4 && rand() < 0.45, k = bat ? 'bat' : 'crow', sz = bat ? 3 + Math.floor(rand() * 3) : 4 + Math.floor(rand() * 4), side = front[Math.floor(rand() * front.length)], E = W.edges[side] || [], at = E.length ? Math.floor(rand() * E.length) : -1, t0 = dur * (0.15 + rand() * 0.7), fk = W.gid = (W.gid || 0) + 1; for (let j = 0; j < sz; j++) q.push({ t: t0 + j * 0.25, k, side, at, f: 0, fk }); if (n >= 3 && !bat && rand() < 0.6) for (let j = 0, nv = n >= 7 ? 2 : 1; j < nv; j++) q.push({ t: t0 + 0.4 + j * 0.5, k: 'vult', side, at, f: 0, fk }); } /* (round 36l) 尸鹫 bombers ride with crow flocks from night 3 */
+  if (n >= 2) for (let f = 0, nf = Math.min(5, 1 + Math.floor((n - 2) / 2)); f < nf; f++) { const bat = n >= 4 && rand() < 0.45, k = bat ? 'bat' : 'crow', sz = bat ? 3 + Math.floor(rand() * 3) : 4 + Math.floor(rand() * 4), side = front[Math.floor(rand() * front.length)], E = W.edges[side] || [], at = E.length ? Math.floor(rand() * E.length) : -1, t0 = dur * (0.15 + rand() * 0.7), fk = W.gid = (W.gid || 0) + 1; for (let j = 0; j < sz; j++) q.push({ t: t0 + j * 0.25, k, side, at, f: 0, fk }); if (n >= 3 && !bat && rand() < 0.6) for (let j = 0, nv = n >= 7 ? 2 : 1; j < nv; j++) q.push({ t: t0 + 0.4 + j * 0.5, k: 'vult', side, at, f: 0, fk }); }
+  /* (round 41) the ranged flyers: archers ride with the flocks from night 3, jellies drift in from night 4, a gargoyle from night 5 (two from night 10) */
+  if (n >= 3) for (let f = 0, nf = Math.min(3, 1 + Math.floor((n - 3) / 3)); f < nf; f++) { const side = front[Math.floor(rand() * front.length)], E = W.edges[side] || [], at = E.length ? Math.floor(rand() * E.length) : -1, t0 = dur * (0.15 + rand() * 0.7), fk = W.gid = (W.gid || 0) + 1, na = n >= 6 ? 2 : 1; for (let j = 0; j < na; j++) q.push({ t: t0 + j * 0.6, k: 'archer', side, at, f: 0, fk }); }
+  if (n >= 4) for (let f = 0, nf = n >= 8 ? 2 : 1; f < nf; f++) { const side = front[Math.floor(rand() * front.length)], E = W.edges[side] || [], at = E.length ? Math.floor(rand() * E.length) : -1, t0 = dur * (0.2 + rand() * 0.65), fk = W.gid = (W.gid || 0) + 1; for (let j = 0; j < 2; j++) q.push({ t: t0 + j * 0.8, k: 'jelly', side, at, f: 0, fk }); }
+  if (n >= 5) for (let f = 0, nf = n >= 10 ? 2 : 1; f < nf; f++) q.push({ t: dur * (0.3 + rand() * 0.5), k: 'garg', side: front[f % front.length], f: 0, fk: W.gid = (W.gid || 0) + 1 }); /* (round 36l) 尸鹫 bombers ride with crow flocks from night 3 */
   const mx = W.p.some(q => !q.gone && q.vehs) ? 1 : 0; /* (round 38g) once someone has a vehicle (so a mech), one more 能力者 from night 6 */
   if (n >= 3) for (let e = 0, ne = Math.min(4 + mx, 1 + Math.floor((n - 3) / 3) + (n >= 6 ? mx : 0)); e < ne; e++) q.push({ t: dur * (0.25 + rand() * 0.55), k: ELITES[Math.floor(rand() * ELITES.length)], side: front[e % front.length] });
   if (KAIJU_ON && n >= 5 && n % 2 === 1) for (let k = 0; k < (n >= 11 ? 2 : 1); k++) q.push({ t: dur * (0.35 + k * 0.3), k: (n >= 7 ? ['kjaw', 'ktail', 'kdig', 'kwing'] : ['kjaw', 'ktail', 'kdig'])[Math.floor(rand() * (n >= 7 ? 4 : 3))], side: front[k % front.length], km: n >= 11 ? BAL.kaijuPair : 1 }); // (round 34) a kaiju every other night from night 5 (two from night 11)
@@ -1237,7 +1242,7 @@ function stepPhase(dt) {
 function floorUnder(x, y, z) { const cx = Math.floor(x), cy = Math.floor(y); for (let L = Math.min(ML - 1, Math.floor(z / FH)); L >= 0; L--) if (support(cx, cy, L) || solidFor(blkAt(cx, cy, L - 1), 'b')) return L * FH; return 0; }
 function stepProj(dt) {
   for (const b of W.proj) {
-    if (!b.rk) b.vz -= (b.k === 'acid' ? 10 : b.k === 'gl' ? 7 : 14) * dt; /* (round 39c) rockets fly straight */
+    if (!b.rk && b.k !== 'arrow') b.vz -= (b.k === 'acid' || b.k === 'goo' ? 10 : b.k === 'gl' ? 7 : 14) * dt; /* (round 39c) rockets fly straight; (round 41) so do arrows */
     if (b.k === 'gl') {
       b.t -= dt;
       const nx = b.x + b.vx * dt, ny = b.y + b.vy * dt, nz = b.z + b.vz * dt, cx = Math.floor(nx), cy = Math.floor(ny);
@@ -1257,10 +1262,13 @@ function stepProj(dt) {
     } else {
       b.x += b.vx * dt; b.y += b.vy * dt; b.z += b.vz * dt;
       const x = Math.floor(b.x), y = Math.floor(b.y), L = Math.floor(b.z / FH), blk = blkAt(x, y, L);
-      let hit = false;
-      if (solidFor(blk, 'b') || b.z <= floorUnder(b.x, b.y, b.z + 0.3) + 0.02) { if (inMap(x, y) && L >= 0 && L < ML) damageCell(ci(x, y, L), 9 * W.D.dmg); hit = true; }
-      for (const p of W.p) if ((standingP(p) || p.down) && d2(p.x, p.y, b.x, b.y) < p.r + 0.15 && b.z > p.z - 0.1 && b.z < p.z + p.h + 0.1) { hurtPlayer(p, 11 * W.D.dmg, b); mechCC(p, 'slw', 2, 0.4); /* (round 38g) acid gums up the joints */ hit = true; }
-      if (hit || b.z < -2) { b.dead = true; if (b.pool) acidPool(b.x, b.y); emit({ k: 'acid', x: r2(b.x), y: r2(b.y), z: r2(b.z) }); }
+      let hit = false; const arw = b.k === 'arrow', goo = b.k === 'goo'; if (arw) { b.t -= dt; if (b.t <= 0) hit = true; } /* (round 41) arrows (straight, from the 尸翼弓手) and goo globs (from the 腐液水母) */
+      if (solidFor(blk, 'b') || b.z <= floorUnder(b.x, b.y, b.z + 0.3) + 0.02) { if (inMap(x, y) && L >= 0 && L < ML && !arw && !goo) damageCell(ci(x, y, L), 9 * W.D.dmg); hit = true; }
+      for (const p of W.p) if (!hit && (standingP(p) || p.down) && d2(p.x, p.y, b.x, b.y) < p.r + (arw ? 0.1 : 0.15) + (inMech(p) ? 0.35 : 0) && b.z > p.z - 0.1 && b.z < p.z + (inMech(p) ? 3 : p.h) + 0.1) { hit = true;
+        if (arw && p.shield && p.melee === 1 && !p.down && !p.ride && Math.cos(angDiff(p.aim, Math.atan2(-b.vy, -b.vx))) > BAL.shieldCos) { emit({ k: 'sfx', n: 'clank', x: p.x, y: p.y }); emit({ k: 'zblock', x: r2(b.x), y: r2(b.y), z: r2(b.z) }); break; } /* a riot shield held up stops an arrow dead */
+        if (arw) hurtPlayer(p, (b.dm || 14) * W.D.dmg, b); else if (goo) { hurtPlayer(p, (b.dm || 6) * W.D.dmg, b); if (inMech(p)) mechCC(p, 'slw', 1.5, 0.45); else p.gooT = Math.max(p.gooT || 0, 1.5); }
+        else { hurtPlayer(p, 11 * W.D.dmg, b); mechCC(p, 'slw', 2, 0.4); } /* (round 38g) acid gums up the joints */ break; }
+      if (hit || b.z < -2) { b.dead = true; if (b.pool) acidPool(b.x, b.y); if (goo) gooPuddle(b.x, b.y, floorUnder(b.x, b.y, b.z + 0.3)); if (arw) emit({ k: 'arrowhit', x: r2(b.x), y: r2(b.y), z: r2(b.z) }); else if (!goo) emit({ k: 'acid', x: r2(b.x), y: r2(b.y), z: r2(b.z) }); }
     }
   }
   W.proj = W.proj.filter(b => !b.dead);
@@ -1307,7 +1315,7 @@ function barrelBoom(i, p) {
 function simStep(dt) {
   W.t += dt;
   for (const p of W.p) { if (p.gone) continue; if (p.i === ME) stepMove(p, dt); stepActions(p, dt); }
-  fuseStep(dt); /* (round 40) */
+  fuseStep(dt); /* (round 40) */ gooStep(dt); /* (round 41) */
   if (!W.over) {
     stepPhase(dt);
     updateFields(dt);

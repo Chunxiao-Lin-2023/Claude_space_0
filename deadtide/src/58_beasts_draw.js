@@ -4,6 +4,7 @@
 // a 唤尸者's summoning circle, and a 隐身者's shimmer while it is cloaked (then nothing else is drawn).
 const FLY = new Map(), ELX = new Map();
 function mkFlyer(k) {
+  if (k === 'archer' || k === 'jelly' || k === 'garg') return mkFlyer2(k); /* (round 41) */
   const ptero = k === 'kwing', bat = k === 'bat', vult = k === 'vult', g = new THREE.Group(), J = { k, wings: [] }; /* (round 36m) 翼龙兽: a pterosaur — long beak, a swept-back crest, membrane wings, a long tail with a vane */
   const body = lam(bat ? '#4a3838' : ptero ? '#6a4a5c' : vult ? '#4a3a2c' : '#1d1d24'), dark = lam(bat ? '#2c2222' : ptero ? '#2e1e28' : vult ? '#c9b89a' : '#0d0d12'), /* (round 36l) 尸鹫: brown with a pale ruff */ beakM = lam('#8a7a58'), memb = lam(bat ? '#5c4242' : ptero ? '#9a5868' : '#24242c', { side: THREE.DoubleSide });
   const eyeM = new THREE.MeshBasicMaterial({ color: bat || ptero ? '#ffb030' : '#ff3a2a' });
@@ -36,12 +37,66 @@ function mkFlyer(k) {
   }
   g.userData.J = J; return g;
 }
+// (round 41) the ranged flyers. Each gets J.tick(z, dt, kt, corpse) for its own animation on top of drawFlyer's flapping / pitching.
+function mkFlyer2(k) {
+  const g = new THREE.Group(), J = { k, wings: [] }, own = (c, o) => new THREE.MeshLambertMaterial(Object.assign({ color: c, flatShading: true }, o || {})), glow = c => new THREE.MeshBasicMaterial({ color: c });
+  const memWing = (par, s, col, span, bone) => { const mem = pts => { const sh = new THREE.Shape(); sh.moveTo(pts[0][0], pts[0][1]); for (const q of pts.slice(1)) sh.lineTo(q[0], q[1]); const geo = new THREE.ShapeGeometry(sh).rotateX(Math.PI / 2); if (s < 0) geo.scale(1, 1, -1); return geo; };
+    const W0 = kjGrp(par, 0, 0, s * 0.05), O = kjGrp(W0, 0, 0, s * span * 0.5);
+    kjPart(W0, mem([[0.07, 0], [0.05, span * 0.5], [-0.16, span * 0.46], [-0.18, 0]]), col); kjPart(O, mem([[0.05, 0], [0.14, span * 0.55], [-0.02, span * 0.34], [-0.14, span * 0.6], [-0.17, span * 0.18], [-0.16, 0]]), col);
+    kjPart(W0, boxG(0.025, 0.025, span * 0.5, 0.06, 0, s * span * 0.25), bone); kjPart(O, boxG(0.02, 0.02, span * 0.6, 0.07, 0, s * span * 0.3).rotateY(s * -0.3), bone);
+    for (let q = 0; q < 3; q++) kjPart(O, new THREE.ConeGeometry(0.012, 0.05, 4).rotateX(s * Math.PI / 2), bone, 0.14 - q * 0.15, 0, s * span * (0.55 - q * 0.12));
+    J.wings.push({ g: W0, o: O, s }); };
+  if (k === 'archer') { // a gaunt winged ghoul: pale skull, red eyes, leathery wings, a bone bow with a nocked arrow
+    const skin = own('#6b7a5e'), dk = own('#2e3428'), bone = own('#d8cfb4'), memb = own('#4a3a3a', { side: THREE.DoubleSide }), eyeM = glow('#ff3a2a');
+    const B = kjGrp(g, 0, 0.32, 0); J.body = B;
+    kjPart(B, kjBlob(0.09, 0.85, 1.6, 0.8, 3), skin, 0, 0, 0); for (let q = 0; q < 3; q++) kjPart(B, boxG(0.012, 0.012, 0.1), dk, 0.075, 0.05 - q * 0.04, 0); // ribs
+    kjPart(B, kjBlob(0.06, 1, 0.7, 1, 4), dk, 0, -0.13, 0); for (const s of [1, -1]) { kjPart(B, new THREE.CylinderGeometry(0.018, 0.012, 0.2, 5), skin, 0.02, -0.24, s * 0.04, 0, 0, s * 0.1); kjPart(B, new THREE.ConeGeometry(0.02, 0.05, 4), bone, 0.04, -0.35, s * 0.045, 0, 0, Math.PI); } // dangling legs, claws
+    const H = kjGrp(B, 0.02, 0.16, 0); J.head = H; kjPart(H, kjBlob(0.065, 1.1, 1, 0.9, 6), bone); kjPart(H, boxG(0.04, 0.025, 0.07), bone, 0.05, -0.04, 0); for (const s of [1, -1]) { kjPart(H, new THREE.IcosahedronGeometry(0.016, 0), eyeM, 0.055, 0.01, s * 0.028); kjPart(H, new THREE.ConeGeometry(0.012, 0.06, 4), dk, -0.02, 0.06, s * 0.035, s * 0.4, 0, -0.4); }
+    kjPart(H, new THREE.ConeGeometry(0.07, 0.1, 6, 1, true).rotateZ(0.3), own('#3a2e2a', { side: THREE.DoubleSide }), -0.02, 0.03, 0); // a ragged hood
+    const bow = kjGrp(B, 0.13, 0.02, 0); J.bow = bow; const bowM = own('#e8dcc0'); J.bowGlow = glow('#ff6a3a'); J.bowGlow.transparent = true; J.bowGlow.opacity = 0;
+    kjPart(bow, new THREE.TorusGeometry(0.17, 0.012, 4, 18, Math.PI * 0.9).rotateZ(-Math.PI * 0.45), bowM); kjPart(bow, new THREE.TorusGeometry(0.17, 0.03, 4, 18, Math.PI * 0.9).rotateZ(-Math.PI * 0.45), J.bowGlow);
+    const str = kjGrp(bow, 0, 0, 0); J.str = str; kjPart(str, boxG(0.004, 0.17, 0.004, 0, 0.085, 0).rotateZ(0.2), glow('#ffffff')); kjPart(str, boxG(0.004, 0.17, 0.004, 0, -0.085, 0).rotateZ(-0.2), glow('#ffffff'));
+    J.nock = kjPart(str, boxG(0.3, 0.012, 0.012, 0.15, 0, 0), bowM); kjPart(J.nock, new THREE.ConeGeometry(0.02, 0.06, 4).rotateZ(-Math.PI / 2), glow('#ff6a3a'), 0.32, 0, 0);
+    for (const s of [1, -1]) kjPart(B, new THREE.CylinderGeometry(0.014, 0.012, 0.16, 5), skin, 0.08, 0.04, s * 0.05, s * 0.9, 0, -1.2); // arms reaching to the bow
+    kjPart(B, new THREE.CylinderGeometry(0.03, 0.025, 0.18, 6), own('#5a3a24'), -0.07, 0.05, 0.03, 0.4, 0, 0.3); // a quiver
+    const WB = kjGrp(B, -0.04, 0.08, 0); for (const s of [1, -1]) memWing(WB, s, memb, 0.5, dk);
+    J.tick = (z, dt, kt, corpse) => { B.rotation.z = lerp(B.rotation.z, corpse ? 0 : kt === 1 ? 0.15 : 0.05, Math.min(1, dt * 8)); const draw = kt === 1 ? Math.min(1, (z._bt = (z._bt || 0) + dt) / 0.6) : (z._bt = 0, kt === 2 ? 0 : 0.15);
+      str.position.x = -draw * 0.12; J.nock.visible = kt !== 2; J.bowGlow.opacity = kt === 1 ? 0.25 + 0.5 * draw * (0.6 + 0.4 * Math.sin(W.t * 30)) : 0; };
+    return (g.userData.J = J, g); }
+  if (k === 'jelly') { // a floating jellyfish of rot: a see-through bell with a glowing core, a frilled rim and trailing tentacles
+    const bellM = own('#a868f0', { transparent: true, opacity: 0.55, emissive: '#3a1460' }), coreM = glow('#e0b0ff'), tent = own('#8a4ad0', { transparent: true, opacity: 0.8 });
+    const B = kjGrp(g, 0, 0.3, 0); J.body = B; J.bell = kjGrp(B, 0, 0, 0);
+    kjPart(J.bell, new THREE.SphereGeometry(0.2, 18, 10, 0, Math.PI * 2, 0, Math.PI * 0.55), bellM); kjPart(J.bell, new THREE.SphereGeometry(0.12, 14, 8, 0, Math.PI * 2, 0, Math.PI * 0.5), own('#7a3ab8', { transparent: true, opacity: 0.5 }), 0, -0.01, 0);
+    J.core = kjPart(J.bell, new THREE.IcosahedronGeometry(0.07, 1), coreM, 0, 0.06, 0); kjPart(J.bell, new THREE.TorusGeometry(0.19, 0.02, 5, 24).rotateX(Math.PI / 2), own('#c890ff', { transparent: true, opacity: 0.75 }), 0, -0.05, 0);
+    for (let q = 0; q < 10; q++) { const a = q / 10 * Math.PI * 2; kjPart(J.bell, boxG(0.05, 0.04, 0.012), bellM, Math.cos(a) * 0.19, -0.07, Math.sin(a) * 0.19, 0, -a, 0.4); }
+    J.tents = []; for (let q = 0; q < 8; q++) { const a = q / 8 * Math.PI * 2 + 0.2, r = q % 2 ? 0.08 : 0.14; let par = kjGrp(B, Math.cos(a) * r, -0.06, Math.sin(a) * r); const segs = [];
+      for (let s2 = 0; s2 < 4; s2++) { const n = kjGrp(par, 0, s2 ? -0.08 : 0, 0); kjPart(n, new THREE.CylinderGeometry(0.012 - s2 * 0.002, 0.01 - s2 * 0.002, 0.09, 5).translate(0, -0.045, 0), tent); segs.push(n); par = n; } J.tents.push({ segs, a, ph: q * 0.7 }); }
+    J.tick = (z, dt, kt, corpse) => { const sw = kt === 1 ? Math.min(1, (z._sw = (z._sw || 0) + dt) / 0.7) : (z._sw = 0, 0), pulse = Math.sin(W.t * (kt === 1 ? 16 : 3) + (z.seed || 0)); B.rotation.z = 0; B.rotation.y += dt * 0.6;
+      J.bell.scale.set(1 + sw * 0.4 + pulse * 0.05, 1 - pulse * 0.08 + sw * 0.25, 1 + sw * 0.4 + pulse * 0.05); J.core.scale.setScalar(1 + sw * 0.8 + 0.15 * Math.sin(W.t * 9)); coreM.color.set(sw > 0 ? (Math.sin(W.t * 30) > 0 ? '#ffffff' : '#ff9aff') : '#e0b0ff');
+      for (const T of J.tents) T.segs.forEach((n, i) => { n.rotation.x = Math.sin(W.t * 3 + T.ph + i * 0.8) * 0.25 * (corpse ? 0.2 : 1) - (kt === 1 ? 0.1 : 0); n.rotation.z = Math.cos(W.t * 2.4 + T.ph + i) * 0.2 - sw * 0.25 * Math.cos(T.a); }); };
+    return (g.userData.J = J, g); }
+  // garg: a hunched stone beast — horns, a snout, claws, heavy stone wings; grey and still-eyed while it circles, eyes ablaze when it attacks,
+  // glowing cracks while it is stuck after a slam
+  const stoneM = own('#8c877e'), dk = own('#55514b'), memb = own('#6e6a62', { side: THREE.DoubleSide }), eyeM = glow('#5a3a24'), crackM = new THREE.MeshBasicMaterial({ color: '#ff8a2a', transparent: true, opacity: 0 });
+  const B = kjGrp(g, 0, 0.3, 0); J.body = B; J.stoneM = stoneM; J.eyeM = eyeM; J.crackM = crackM;
+  kjPart(B, kjBlob(0.15, 1.3, 1, 0.95, 9), stoneM); kjPart(B, kjBlob(0.1, 1.1, 0.7, 0.9, 10), dk, -0.02, -0.08, 0);
+  for (const [x, y, z, r] of [[0.06, 0.08, 0.05, 0.3], [-0.04, 0.02, -0.06, -0.5], [0.1, -0.05, -0.02, 1.1], [-0.08, 0.1, 0.03, -0.9]]) kjPart(B, boxG(0.11, 0.008, 0.012), crackM, x, y, z, 0, r, 0.4); // cracks (lit when it is stuck)
+  const H = kjGrp(B, 0.17, 0.08, 0); J.head = H; kjPart(H, kjBlob(0.08, 1.15, 0.9, 1, 11), stoneM); kjPart(H, boxG(0.08, 0.05, 0.07), stoneM, 0.07, -0.025, 0);
+  for (const s of [1, -1]) { kjPart(H, new THREE.IcosahedronGeometry(0.018, 0), eyeM, 0.06, 0.02, s * 0.035); const hn = kjGrp(H, -0.02, 0.06, s * 0.04); hn.rotation.set(s * 0.5, 0, -0.6); for (let q = 0; q < 3; q++) kjPart(hn, new THREE.CylinderGeometry(0.018 - q * 0.005, 0.022 - q * 0.005, 0.05, 5), dk, -q * 0.02, q * 0.045, 0, 0, 0, -q * 0.35); }
+  for (const s of [1, -1]) for (let q = 0; q < 2; q++) { const lg = kjGrp(B, q ? -0.09 : 0.08, -0.12, s * 0.07); kjPart(lg, new THREE.CylinderGeometry(0.03, 0.02, 0.12, 6), stoneM, 0, -0.05, 0); for (let c = 0; c < 3; c++) kjPart(lg, new THREE.ConeGeometry(0.01, 0.05, 4).rotateZ(-Math.PI / 2 - 0.6), dk, 0.03, -0.12, (c - 1) * 0.015); }
+  const T = kjGrp(B, -0.16, 0, 0); J.tail = T; for (let q = 0; q < 4; q++) kjPart(T, new THREE.CylinderGeometry(0.025 - q * 0.005, 0.03 - q * 0.005, 0.09, 5).rotateZ(Math.PI / 2 + 0.2), stoneM, -q * 0.08, -q * 0.02, 0); kjPart(T, new THREE.ConeGeometry(0.03, 0.07, 3).rotateZ(Math.PI / 2), dk, -0.34, -0.09, 0);
+  const WB = kjGrp(B, -0.02, 0.1, 0); for (const s of [1, -1]) memWing(WB, s, memb, 0.62, dk);
+  J.tick = (z, dt, kt, corpse) => { const act = kt > 0 && !corpse; eyeM.color.set(kt === 3 ? '#ffb040' : act ? (Math.sin(W.t * 25) > 0 ? '#ffd060' : '#ff6a1a') : '#5a3a24');
+    stoneM.color.set(kt === 3 ? '#6e6258' : act ? '#7a7068' : '#a29c92'); crackM.opacity = kt === 3 ? 0.6 + 0.4 * Math.sin(W.t * 12) : 0;
+    if (kt === 3) for (const Wg of J.wings) { Wg.g.rotation.x = -Wg.s * -0.3; Wg.g.rotation.y = -Wg.s * 0.6; } };
+  return (g.userData.J = J, g);
+}
 let FLYSH = null;
 function drawFlyer(z, corpse, dt) {
   const key = (corpse ? 'c' : 'z') + (z.id != null ? z.id : z.seed) + z.k; let K = FLY.get(key);
   if (!K) { if (!FLYSH) FLYSH = new THREE.MeshBasicMaterial({ color: '#000000', transparent: true, opacity: 0.3, depthWrite: false });
     const g = mkFlyer(z.k), sh = new THREE.Mesh(new THREE.CircleGeometry(0.22, 12).rotateX(-Math.PI / 2), FLYSH.clone()); SCN.add(g); SCN.add(sh); K = { g, J: g.userData.J, sh }; FLY.set(key, K); }
-  K.seen = 1; const g = K.g, J = K.J, bat = z.k === 'bat', t = W.t, S = bat ? 1.55 : z.k === 'vult' ? 2.3 : z.k === 'kwing' ? 6.0 : 1.4; g.visible = K.sh.visible = true;
+  K.seen = 1; const g = K.g, J = K.J, bat = z.k === 'bat', t = W.t, S = bat ? 1.55 : z.k === 'vult' ? 2.3 : z.k === 'kwing' ? 6.0 : z.k === 'archer' ? 2.8 : z.k === 'jelly' ? 2.7 : z.k === 'garg' ? 3.3 : 1.4; g.visible = K.sh.visible = true;
   if (z._f == null) { z._f = z.face || 0; z._ph = (z.seed || 0) % 7; z._roll = 0; z._pz = z.z; }
   const kt = corpse ? 0 : z.kt || 0, f0 = z._f; z._f = angLerp(z._f, z.face || 0, Math.min(1, dt * 7));
   const turn = dt > 0 ? angDiff(f0, z._f) / dt : 0; z._roll = lerp(z._roll, clamp(-turn * 0.18, -0.7, 0.7), Math.min(1, dt * 5));
@@ -54,7 +109,7 @@ function drawFlyer(z, corpse, dt) {
   const pitch = corpse ? 0 : kt === 2 ? -0.55 : kt === 1 ? 0.35 : clamp(vz * 0.12, -0.4, 0.3);
   J.body.rotation.z = lerp(J.body.rotation.z, pitch, Math.min(1, dt * 8)); J.body.position.y = 0.25 + (corpse ? 0 : Math.sin(z._ph) * 0.025 * amp);
   if (J.head) J.head.rotation.z = kt === 1 ? -0.4 + Math.sin(t * 30) * 0.08 : 0; // crying out
-  if (J.tail) J.tail.rotation.z = kt === 2 ? 0.25 : Math.sin(z._ph * 0.5) * 0.08;
+  if (J.tail) J.tail.rotation.z = kt === 2 ? 0.25 : Math.sin(z._ph * 0.5) * 0.08; if (J.tick) J.tick(z, dt, kt, corpse); /* (round 41) */
   let zz = z.z; if (corpse) { const k = Math.min(1, z.t / 0.45); zz = lerp(z.fz != null ? z.fz : z.z, z.z, k * k); }
   g.position.set(z.x, zz, z.y); g.rotation.set(corpse ? Math.min(1.3, z.t * 3) : z._roll, -z._f, 0);
   g.scale.setScalar(S * (!corpse && z.hitT > 0 ? 1.12 : 1)); if (corpse && z.t > 7) g.visible = false;

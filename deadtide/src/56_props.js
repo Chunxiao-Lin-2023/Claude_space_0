@@ -124,6 +124,7 @@ function drawModeFx() {
     }
     if (O.phase === 'evac' && O.ev && nz < 8) setInst(Zr, nz++, O.ev.x + 0.5, gAt(O.ev.x, O.ev.y) * FH + 0.06, O.ev.y + 0.5, 0, EVAC_R, 1, EVAC_R, '#8fe39a');
   }
+  for (const q of W.goo || []) if (np < 16) setInst(Po, np++, q.x, q.z + 0.05, q.y, W.t * 0.3, q.r * Math.min(1, q.t * 1.5), 1, q.r * Math.min(1, q.t * 1.5), '#9a5cff'); /* (round 41) the jelly's goo */
   if (O && W.mode === 'boss' && O.pools) for (const q of O.pools) if (np < 16) setInst(Po, np++, q.x, gAt(Math.floor(q.x), Math.floor(q.y)) * FH + 0.05, q.y, 0, q.r * Math.min(1, q.t), 1, q.r * Math.min(1, q.t), '#7fd13a');
   B_.count = nb; Zr.count = nz; Po.count = np; Ch.count = nc;
   for (const m of [B_, Zr, Po, Ch]) { m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true; }
