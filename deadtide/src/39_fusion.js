@@ -37,8 +37,9 @@ function fuseStart(A, B) {
   const kb = A.veh, kp = B.veh, same = kb === kp, mx = (MECHS[kb].hp + MECHS[kp].hp) * FUS.hpMul * (same ? FUS.sameHp : 1);
   const F = W.fus = { a: A.i, b: B.i, kb, kp, d: A.i, g: B.i, same: same ? 1 : 0, max: Math.round(mx), hp: Math.round(Math.min(mx, (mhpOf(A) + mhpOf(B)) * FUS.hpMul * (same ? FUS.sameHp : 1))), cd: 0, t: W.t };
   for (const q of [A, B]) { if (q.ccLat) shakeOff(q, 99); ccClear(q); q.mfly = false; q.invT = Math.max(q.invT || 0, 1.2); }
+  const bx = r2(B.x), by = r2(B.y), bz = r2(B.z); /* (round 40c) where the partner leaps from, for the cut-in */
   B.x = A.x; B.y = A.y; B.z = A.z; B.L = A.L; B.zv = A.zv;
-  emit({ k: 'fuse', a: A.i, b: B.i, kb, kp, x: r2(A.x), y: r2(A.y), z: r2(A.z) });
+  emit({ k: 'fuse', a: A.i, b: B.i, kb, kp, x: r2(A.x), y: r2(A.y), z: r2(A.z), bx, by, bz });
   return F;
 }
 // split: each mech gets its share of what's left of the pooled hull; broken = both hulls at 0 (they fall back to vehicles)
@@ -46,7 +47,7 @@ function fuseSplit(F, why, broke) {
   if (!F || W.fus !== F) return; W.fus = null; const A = W.p[F.a], B = W.p[F.b], f = broke ? 0 : clamp(F.hp / F.max, 0, 1);
   for (const [q, k] of [[A, F.kb], [B, F.kp]]) { if (!q) continue; q.mh = q.mh || []; q.mh[k] = Math.round(MECHS[k].hp * f); q.mcd = Math.max(q.mcd || 0, 1); }
   if (B) { const a = (A ? A.aim : 0) + Math.PI / 2; for (const r of [1.6, 1.2, 0.8, 0]) { const x = B.x + Math.cos(a) * r, y = B.y + Math.sin(a) * r; if (r === 0 || (inMap(Math.floor(x), Math.floor(y)) && standable(Math.floor(x), Math.floor(y), B.L, 'p'))) { if (B.i === ME && NETROLE !== 'guest') { B.x = x; B.y = y; } else emit({ k: 'mmove', p: B.i, m: { dash: { t: 0, T: 0.25, dx: x - B.x, dy: y - B.y } } }); break; } } }
-  emit({ k: 'unfuse', a: F.a, b: F.b, why: why || '', br: broke ? 1 : 0, x: r2(A ? A.x : 0), y: r2(A ? A.y : 0), z: r2(A ? A.z : 0) });
+  emit({ k: 'unfuse', a: F.a, b: F.b, kb: F.kb, kp: F.kp, why: why || '', br: broke ? 1 : 0, x: r2(A ? A.x : 0), y: r2(A ? A.y : 0), z: r2(A ? A.z : 0) });
   if (broke) for (const q of [A, B]) if (q) mechEject(q, '合体机甲被打散了：两台机甲的装甲都要修');
 }
 function fuseSwap(p) { const F = fusOf(p); if (!F) return; const d = F.d; F.d = F.g; F.g = d; emit({ k: 'fswap', d: F.d, g: F.g }); }

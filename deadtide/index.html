@@ -166,6 +166,7 @@ body.touch.building #tctl .fight,body.touch:not(.building) #tctl .bld{display:no
 #tShove.xf{background:linear-gradient(to top,rgba(255,170,60,.38) var(--ev,0%),rgba(0,0,0,0) var(--ev,0%)),var(--tbg,rgba(20,20,26,.55))}
 #tShove.evo{border-color:#ffd24a;box-shadow:0 0 12px 3px rgba(255,200,60,.75);animation:evoP 1s ease-in-out infinite}@keyframes evoP{50%{box-shadow:0 0 20px 6px rgba(255,140,40,.9)}}
 .evoban{position:fixed;left:50%;top:22%;transform:translateX(-50%);font:700 26px/1.2 system-ui;color:#ffe08a;text-shadow:0 0 12px #ff7a20,0 2px 0 #000;pointer-events:none;z-index:40;animation:evoB 1.8s ease-out forwards}@keyframes evoB{0%{opacity:0;transform:translateX(-50%) scale(.6)}15%{opacity:1;transform:translateX(-50%) scale(1.1)}80%{opacity:1}100%{opacity:0;transform:translateX(-50%) scale(1)}}
+.fusban{position:fixed;left:50%;top:16%;transform:translateX(-50%);pointer-events:none;z-index:41;text-align:center;white-space:nowrap;animation:fusB 2.5s ease-out forwards}.fusban::before{content:'';position:absolute;left:-35%;right:-35%;top:52%;height:3px;background:linear-gradient(90deg,transparent,#ffd040 30%,#fff 50%,#ffd040 70%,transparent);box-shadow:0 0 12px #ff9a20;animation:fusL .45s ease-out both;z-index:-1}.fusban span{display:block}.fusban .f1{font:800 17px/1 system-ui;letter-spacing:.7em;padding-left:.7em;color:#fff;text-shadow:0 0 10px #ffb020,0 2px 0 #000;animation:fusN .4s .05s cubic-bezier(.2,1.5,.4,1) both}.fusban .f2{position:relative;overflow:hidden;margin-top:6px;padding:0 .2em;font:900 48px/1.15 system-ui;letter-spacing:.14em;background:linear-gradient(180deg,#fffbe0 0%,#ffd040 48%,#ff7a18 100%);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 10px rgba(255,150,30,.85)) drop-shadow(0 3px 0 #000);animation:fusN .5s cubic-bezier(.2,1.6,.4,1) both}.fusban .f2::after{content:'';position:absolute;top:0;bottom:0;width:22%;left:-30%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.95),transparent);transform:skewX(-20deg);animation:fusS .6s .3s ease-out both}.fusban .f3{margin-top:6px;font:700 15px/1 system-ui;letter-spacing:.35em;color:#dfe9ff;text-shadow:0 1px 0 #000,0 0 8px #3a6aff;animation:fusN .4s .2s ease-out both}@keyframes fusB{0%{opacity:0}6%{opacity:1}80%{opacity:1;transform:translateX(-50%) scale(1)}100%{opacity:0;transform:translateX(-50%) scale(1.06)}}@keyframes fusN{0%{opacity:0;transform:scale(2.6) skewX(-14deg)}100%{opacity:1;transform:none}}@keyframes fusS{0%{left:-30%}100%{left:115%}}@keyframes fusL{0%{transform:scaleX(0);opacity:1}100%{transform:scaleX(1);opacity:.85}}@media (max-width:600px){.fusban .f2{font-size:34px}}
 #bconf{position:fixed;z-index:8;display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:12px;background:rgba(14,16,20,.88);border:1px solid rgba(125,255,138,.55);box-shadow:0 6px 20px rgba(0,0,0,.45);font-size:13px;color:#e9e2d0;white-space:nowrap}
 #bconf.demo{border-color:rgba(255,110,90,.7)}#bconf button{min-height:40px;padding:6px 12px;font-size:14px}#bcOk{background:#2f7a3a;border-color:#7dff8a}#bconf.demo #bcOk{background:#8a2a22;border-color:#ff8a7a}
 #bconf #bcTxt{max-width:220px;overflow:hidden;text-overflow:ellipsis}
@@ -5148,7 +5149,7 @@ const ZT = {
   shade: { name: '隐身者', hp: 420, spd: 1.5, r: 0.35, h: 1.6, dmg: 12, bdmg: 10, cd: 0.9, sc: 1.55, look: 'walker', skin: '#50505e', elite: { k: 'cloak', cd: 6, col: '#c0c0e0', tip: '隐身摸到你身边偷袭，留意空气里的扭曲，附近炸一下就现形' } },
 };
 const ELITES = ['blinker', 'caller', 'warden', 'shade'];
-const BUILD_TAG = '第 40b 轮'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
+const BUILD_TAG = '第 40c 轮'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
 // aim assist (SET.assist): fire-button lock range (x weapon range), lock-on time before it fires, spread while auto-aimed, mouse/finger magnet
 const PORT = 1.25; // firing port: your own shots pass a wall / door you built if it is this close to you
 const ASSIST = [{ name: '关', range: 0, acq: 0, spread: 1, mag: 0 }, { name: '标准', range: 0.75, acq: 0.3, spread: 1.5, mag: 1 }, { name: '强', range: 1, acq: 0, spread: 1, mag: 1 }];
@@ -8242,8 +8243,9 @@ function fuseStart(A, B) {
   const kb = A.veh, kp = B.veh, same = kb === kp, mx = (MECHS[kb].hp + MECHS[kp].hp) * FUS.hpMul * (same ? FUS.sameHp : 1);
   const F = W.fus = { a: A.i, b: B.i, kb, kp, d: A.i, g: B.i, same: same ? 1 : 0, max: Math.round(mx), hp: Math.round(Math.min(mx, (mhpOf(A) + mhpOf(B)) * FUS.hpMul * (same ? FUS.sameHp : 1))), cd: 0, t: W.t };
   for (const q of [A, B]) { if (q.ccLat) shakeOff(q, 99); ccClear(q); q.mfly = false; q.invT = Math.max(q.invT || 0, 1.2); }
+  const bx = r2(B.x), by = r2(B.y), bz = r2(B.z); /* (round 40c) where the partner leaps from, for the cut-in */
   B.x = A.x; B.y = A.y; B.z = A.z; B.L = A.L; B.zv = A.zv;
-  emit({ k: 'fuse', a: A.i, b: B.i, kb, kp, x: r2(A.x), y: r2(A.y), z: r2(A.z) });
+  emit({ k: 'fuse', a: A.i, b: B.i, kb, kp, x: r2(A.x), y: r2(A.y), z: r2(A.z), bx, by, bz });
   return F;
 }
 // split: each mech gets its share of what's left of the pooled hull; broken = both hulls at 0 (they fall back to vehicles)
@@ -8251,7 +8253,7 @@ function fuseSplit(F, why, broke) {
   if (!F || W.fus !== F) return; W.fus = null; const A = W.p[F.a], B = W.p[F.b], f = broke ? 0 : clamp(F.hp / F.max, 0, 1);
   for (const [q, k] of [[A, F.kb], [B, F.kp]]) { if (!q) continue; q.mh = q.mh || []; q.mh[k] = Math.round(MECHS[k].hp * f); q.mcd = Math.max(q.mcd || 0, 1); }
   if (B) { const a = (A ? A.aim : 0) + Math.PI / 2; for (const r of [1.6, 1.2, 0.8, 0]) { const x = B.x + Math.cos(a) * r, y = B.y + Math.sin(a) * r; if (r === 0 || (inMap(Math.floor(x), Math.floor(y)) && standable(Math.floor(x), Math.floor(y), B.L, 'p'))) { if (B.i === ME && NETROLE !== 'guest') { B.x = x; B.y = y; } else emit({ k: 'mmove', p: B.i, m: { dash: { t: 0, T: 0.25, dx: x - B.x, dy: y - B.y } } }); break; } } }
-  emit({ k: 'unfuse', a: F.a, b: F.b, why: why || '', br: broke ? 1 : 0, x: r2(A ? A.x : 0), y: r2(A ? A.y : 0), z: r2(A ? A.z : 0) });
+  emit({ k: 'unfuse', a: F.a, b: F.b, kb: F.kb, kp: F.kp, why: why || '', br: broke ? 1 : 0, x: r2(A ? A.x : 0), y: r2(A ? A.y : 0), z: r2(A ? A.z : 0) });
   if (broke) for (const q of [A, B]) if (q) mechEject(q, '合体机甲被打散了：两台机甲的装甲都要修');
 }
 function fuseSwap(p) { const F = fusOf(p); if (!F) return; const d = F.d; F.d = F.g; F.g = d; emit({ k: 'fswap', d: F.d, g: F.g }); }
@@ -9474,7 +9476,7 @@ function draw(dt) {
   if (key !== CUT_KEY) { CUT_KEY = key; rebuildCells(); }
   if (STATE.mode === 'play' && !W.demo) qualTick(dt);
   applyTime(darkness()); archFrame();
-  drawZombies(vl, dt); drawPlayers(vl, dt); drawFx(); drawGhost(me); drawPlan(); drawNadeMark(); drawTells(); drawMechLock(me, dt); fxTick(dt); drawDrones(dt); evoZoneTick(dt); drawClouds(); drawTrapAreas(vl);
+  drawZombies(vl, dt); drawPlayers(vl, dt); fuseAnimPost(dt); drawFx(); drawGhost(me); drawPlan(); drawNadeMark(); drawTells(); drawMechLock(me, dt); fxTick(dt); drawDrones(dt); evoZoneTick(dt); drawClouds(); drawTrapAreas(vl);
   OBJ.zone.visible = (!W.demo && W.phase === 'day' || !!(me && me.build)) && !modeDef().anyBuild;
   RENDER.render(SCN, CAMO);
   drawOverlay();
@@ -9654,8 +9656,8 @@ function fxEvent(e) {
     case 'mmove': if (guest && e.p === ME) { const p = W.p[ME]; if (e.m.dash) p.dash = e.m.dash; if (e.m.jmp) p.jmp = e.m.jmp; } break; // (round 34) a mech dash / leap the host started for this screen's survivor
     case 'fusreq': { const a = W.p[e.o], b = W.p[e.to]; if (e.to === ME) { UI.fusAsk = performance.now(); toast((a ? a.name : '队友') + ' 想和你合体成「' + (FUS_NAME[fusKey(e.kb, e.kp)] || '合体机甲') + '」：8 秒内按 J（触屏点「合体」）同意', '#ffd040'); sfx('ready'); } else if (e.o === ME) toast('已经请求合体，等 ' + (b ? b.name : '队友') + ' 同意（8 秒）', '#ffd040'); break; } /* (round 40) */
     case 'fuse': { UI.fusAsk = 0; const nm = FUS_NAME[fusKey(e.kb, e.kp)] || '合体机甲'; toast('合体！「' + nm + '」：' + MECHS[e.kb].name + '做本体，' + MECHS[e.kp].name + '变成' + FUS_MOD[e.kp] + (e.a === ME ? ' —— 你是驾驶：移动 + ' + MECHS[e.kb].name + '的普攻' : e.b === ME ? ' —— 你是炮手：' + MECHS[e.kp].name + '的普攻（自己瞄）+ 合体技' : '') + '；K 换手，X 解除', '#ffd040');
-      sfx('xform', e.x, e.y); shake(e.x, e.y, 0.35); for (let k = 0; k < 40; k++) { const a = k / 40 * 6.283, r = 0.5 + Math.random() * 2; addP({ x: e.x + Math.cos(a) * r, y: e.y + Math.sin(a) * r, z: e.z + Math.random() * 3, vx: -Math.cos(a) * 3, vy: -Math.sin(a) * 3, vz: frnd(0.5, 2), col: k % 3 ? '#ffd040' : '#ffffff', s: 0.07, life: 0.6 }); } break; }
-    case 'unfuse': { if (e.a === ME || e.b === ME) toast((e.why || '合体解除') + (e.br ? '' : '：两台机甲各自分开'), e.br ? '#ff6a5a' : '#cfe0ff'); for (let k = 0; k < 24; k++) { const a = k / 24 * 6.283; addP({ x: e.x, y: e.y, z: e.z + 1.5, vx: Math.cos(a) * 4, vy: Math.sin(a) * 4, vz: frnd(0, 2), col: '#ffd040', s: 0.06, life: 0.5 }); } sfx('clank', e.x, e.y); break; }
+      fuseAnimStart(e); break; } /* (round 40c) the cut-in (57_mechupg.js) */
+    case 'unfuse': { if (e.a === ME || e.b === ME) toast((e.why || '合体解除') + (e.br ? '' : '：两台机甲各自分开'), e.br ? '#ff6a5a' : '#cfe0ff'); fuseAnimEnd(e); for (let k = 0; k < 24; k++) { const a = k / 24 * 6.283; addP({ x: e.x, y: e.y, z: e.z + 1.5, vx: Math.cos(a) * 4, vy: Math.sin(a) * 4, vz: frnd(0, 2), col: '#ffd040', s: 0.06, life: 0.5 }); } sfx('clank', e.x, e.y); break; }
     case 'fswap': { if (e.d === ME) toast('换手：你现在是驾驶（移动 + 本体普攻）', '#ffd040'); else if (e.g === ME) toast('换手：你现在是炮手（模块普攻 + 合体技）', '#ffd040'); sfx('thunk'); break; }
     case 'fskill': { toast('合体技 · ' + e.n + '！', '#ffd040'); shake(e.x, e.y, 0.3); for (let k = 0; k < 30; k++) { const a = k / 30 * 6.283; addP({ x: e.x, y: e.y, z: e.z + 0.5, vx: Math.cos(a) * 6, vy: Math.sin(a) * 6, vz: 0.5, col: k % 2 ? '#ffd040' : '#fff6c0', s: 0.08, life: 0.5 }); } break; }
     case 'mpunch': { let q = W.p[e.o]; if (!q) break; { const F = W.fus; if (F && (F.a === e.o || F.b === e.o)) { if (F.g === e.o) { RND.fgT = W.t; sfx('mswing', q.x, q.y); break; } q = W.p[F.a] || q; } } /* (round 40) the gunner's blow animates the module; the driver's the body */ q._mcombo = e.c != null ? e.c : q._mpT != null && q._mpT < 0.95 ? ((q._mcombo || 0) + 1) % 3 : 0; q._mpT = 0; q._mpS = e.s; if (e.a != null) { q._mA = e.a; q._mAT = 0.5; } { const M = MECHS[q.veh]; sfx(M && M.style === 'slim' ? 'mslash' : 'mswing', q.x, q.y); } break; } /* (round 36f) a sword cut sounds like one */ /* (round 35) e.a: the mech turns to the zombie it locked onto */ // (round 34b) a quick follow-up continues the combo
@@ -10556,7 +10558,7 @@ let DKN = 0;
 function drawPlayers(vl, dt) {
   DKN = darkness();
   while (OBJ.pl.length < W.p.length) OBJ.pl.push(mkPlayerModel(OBJ.pl.length));
-  OBJ.pl.forEach((m, i) => { const p = W.p[i]; m.g.visible = !!p && !p.gone && p.L <= vl && !(W.fus && W.fus.b === i && inMech(p)); }); /* (round 40) the module's pilot is drawn as part of the fused body */
+  OBJ.pl.forEach((m, i) => { const p = W.p[i]; m.g.visible = !!p && !p.gone && p.L <= vl && !(W.fus && W.fus.b === i && inMech(p) && !(RND.fusA && RND.fusA.b === i && RND.fusA.t < FUSA.hit)); }); /* (round 40) the module's pilot is drawn as part of the fused body; (round 40c) except while it flies in */
   W.p.forEach((p, i) => {
     const m = OBJ.pl[i]; if (!m.g.visible) return; if (m.evo) m.evo.visible = false; /* (round 37) the beast shows only while evoDraw says so */
     if (!m.veh) { m.veh = mkVehicles(); m.g.add(m.veh); }
@@ -11863,11 +11865,72 @@ function fuseModBuild(mm, kp) {
 function fuseDraw(p, m, dt) {
   const F = W.fus, mm = m.mech, J = mm && mm.userData.J; if (!J) return;
   const on = !!(F && F.a === p.i && J.k === F.kb), sc = on ? (F.same ? FUS.sameScale : FUS.scale) : 1, cur = mm.userData.fsc || 1;
-  const s2 = lerp(cur, sc, Math.min(1, dt * 4)); mm.userData.fsc = Math.abs(s2 - sc) < 0.005 ? sc : s2;
+  const A = on && RND.fusA && RND.fusA.a === p.i ? RND.fusA : null, U = !on && RND.fusU && RND.fusU.a === p.i && RND.fusU.t < FUSA.out ? RND.fusU : null;
+  if (A) { const k = clamp((A.t - FUSA.hit) / FUSA.asm, 0, 1); mm.userData.fsc = A.t < FUSA.hit ? 1 - 0.07 * Math.sin(A.t / FUSA.hit * Math.PI) : 1 + (sc - 1) * backOut(k, 2.4); } /* (round 40c) braces while the partner flies in, then pops up past its new size and settles */
+  else { const s2 = lerp(cur, sc, Math.min(1, dt * 4)); mm.userData.fsc = Math.abs(s2 - sc) < 0.005 ? sc : s2; }
   const mods = mm.userData.fmods || (mm.userData.fmods = {});
-  for (const k in mods) { const v = on && +k === F.kp; mods[k].visible = v; for (const o of mods[k].userData.ex) o.visible = v; }
+  for (const k in mods) { const v = (on && +k === F.kp) || (!!U && +k === U.kp); mods[k].visible = v; for (const o of mods[k].userData.ex) o.visible = v; }
+  if (U && mods[U.kp]) { const k = U.t / FUSA.out; fuseModScale(mods[U.kp], Math.max(0.001, (1 - k * k) * (1 + 0.3 * Math.sin(k * Math.PI))), k * k * 5); } /* (round 40c) on a split the parts spin and shrink back into the chest */
   if (!on) return; const md = mods[F.kp] || (mods[F.kp] = fuseModBuild(mm, F.kp)); /* (round 40b) it attaches itself: the chest, the helmet, the feet */
+  if (A) { const k = clamp((A.t - FUSA.hit) / FUSA.asm, 0, 1); fuseModScale(md, A.t < FUSA.hit ? 0.001 : Math.max(0.001, backOut(k, 2.2)), (1 - k) * (1 - k) * Math.PI * 2); } /* the parts burst out of the chest, spinning into place */
+  else if (md.scale.x !== 1) fuseModScale(md, 1, 0);
   const G = W.p[F.g], gT = W.t - (RND.fgT != null ? RND.fgT : -9); md.userData.tick(F, p, dt, G ? G.aim : p.aim, gT);
+}
+/* ================= (round 40c) the fusion cut-in: the partner leaps up spinning and streaks into the body; a flash, a light pillar and a
+   shock ring; the body pops up to its fused size while the module's parts burst out of its chest into place; the combo's name slams on screen.
+   A split plays it backwards: the parts spin back into the chest and the partner is thrown out to the side. Render only (the sim fuses at once). */
+const FUSA = { hit: 0.75, asm: 0.55, out: 0.3, pop: 0.4 };
+function backOut(k, s) { const u = k - 1; return 1 + (s + 1) * u * u * u + s * u * u; }
+function fuseModScale(g, s, ry) { g.scale.setScalar(s); g.rotation.y = ry; for (const o of g.userData.ex) o.scale.setScalar(s); }
+const fusRGB = c => { const q = new THREE.Color(c); return [q.r, q.g, q.b]; };
+function fuseAnimStart(e) {
+  RND.fusU = null; RND.fusA = { t: 0, t0: W.t, a: e.a, b: e.b, kb: e.kb, kp: e.kp, sx: e.bx != null ? e.bx : e.x, sy: e.by != null ? e.by : e.y, sz: e.bz != null ? e.bz : e.z, hit: 0 };
+  const ca = MECHS[e.kb].glow, cb = MECHS[e.kp].glow; sfx('xform', e.x, e.y); shake(e.x, e.y, 0.15);
+  fxAdd({ kind: 'ring', x: e.x, y: e.y, z: e.z + 0.08, s0: 3.6, s1: 0.7, life: FUSA.hit, col: '#ffd040', op: 0.85 }); /* closing in: the charge */
+  fxAdd({ kind: 'ring', x: e.x, y: e.y, z: e.z + 1.5, s0: 2.8, s1: 0.5, life: FUSA.hit, col: ca, op: 0.7 });
+  fxAdd({ kind: 'ring', x: RND.fusA.sx, y: RND.fusA.sy, z: RND.fusA.sz + 0.08, s0: 0.6, s1: 2.6, life: 0.4, col: cb, op: 0.8 }); /* the partner's take-off */
+  for (let k = 0; k < 16; k++) { const a = k / 16 * 6.283; addP({ x: RND.fusA.sx, y: RND.fusA.sy, z: RND.fusA.sz + 0.2, vx: Math.cos(a) * 4, vy: Math.sin(a) * 4, vz: frnd(0.5, 2), g: 4, col: cb, s: 0.08, life: 0.45 }); }
+}
+function fuseAnimEnd(e) {
+  RND.fusA = null; RND.fusU = { t: 0, t0: W.t, a: e.a, b: e.b, kp: e.kp, x: e.x, y: e.y, z: e.z };
+  const col = e.br ? '#ff5a3a' : '#ffd040'; shake(e.x, e.y, e.br ? 0.5 : 0.25);
+  fxAdd({ kind: 'ball', x: e.x, y: e.y, z: e.z + 1.4, s0: 0.3, s1: 1.6, life: 0.18, col: '#ffffff', op: 0.7 });
+  fxAdd({ kind: 'ring', x: e.x, y: e.y, z: e.z + 0.08, s0: 0.5, s1: 5, life: 0.45, col, op: 0.85 });
+}
+function fusBanner(kb, kp) {
+  const b = document.createElement('div'); b.className = 'fusban';
+  b.innerHTML = '<span class="f1">合 体</span><span class="f2">' + (FUS_NAME[fusKey(kb, kp)] || '合体机甲') + '</span><span class="f3">' + MECHS[kb].name + ' × ' + MECHS[kp].name + '</span>';
+  document.body.appendChild(b); setTimeout(() => b.remove(), 2600);
+}
+function fuseAnimPost(dt) { // after drawPlayers: fly the partner's model in (or out), fire the impact; also put back any model scale an animation left
+  const A = RND.fusA, U = RND.fusU;
+  OBJ.pl.forEach((m, i) => { if (m.g.scale.x !== 1 && !(A && A.b === i && A.t < FUSA.hit) && !(U && U.b === i && U.t < FUSA.pop)) m.g.scale.setScalar(1); });
+  if (A) { A.t = W.t - A.t0; /* on the game clock: a cut-in missed while drawing was off is simply over */ const ma = OBJ.pl[A.a], m = OBJ.pl[A.b];
+    if (!ma || !W.p[A.a]) { RND.fusA = null; return; } /* not on W.fus: a guest can get the event a moment before the snapshot */
+    const tx = ma.g.position.x, ty = ma.g.position.z, tz = ma.g.position.y, ca = MECHS[A.kb].glow, cb = MECHS[A.kp].glow;
+    if (A.t < FUSA.hit) { const u = A.t / FUSA.hit, e2 = u * u;
+      if (m && m.g.visible) { const x = lerp(A.sx, tx, e2), y = lerp(A.sy, ty, e2), z = lerp(A.sz, tz + 1.1, e2) + Math.sin(u * Math.PI) * 2.6;
+        m.g.position.set(x, z, y); m.g.scale.setScalar(lerp(1, 0.22, e2)); m.g.rotation.set(0, e2 * Math.PI * 5, Math.sin(u * Math.PI) * 0.5); /* leaps up, spins faster and faster, shrinks into a streak */
+        for (let k = 0; k < 4; k++) addP({ x: x + frnd(-0.3, 0.3), y: y + frnd(-0.3, 0.3), z: z + 0.4 + FXR() * 1.2 * (1 - e2 * 0.7), vx: 0, vy: 0, vz: frnd(-0.4, 0.4), g: 0, col: k % 2 ? cb : '#ffffff', s: 0.1, life: 0.45 });
+        if (A.px != null) RND.tracers.push({ x: A.px, y: A.py, z: A.pz, x2: x, y2: y, z2: z + 0.8, t: 0, life: 0.3, w: 0.2, col: fusRGB(cb) });
+        A.px = x; A.py = y; A.pz = z + 0.8; }
+      for (let k = 0; k < 3; k++) { const a = FXR() * 6.283, r = 2.6 - u * 1.2; addP({ x: tx + Math.cos(a) * r, y: ty + Math.sin(a) * r, z: tz + 0.2 + FXR() * 2.6, vx: -Math.cos(a) * 3 - Math.sin(a) * 2.5, vy: -Math.sin(a) * 3 + Math.cos(a) * 2.5, vz: 0.4, g: 0, col: k ? '#ffd040' : ca, s: 0.07, life: 0.55 }); } /* sparks spiralling into the body */
+    } else if (!A.hit) { A.hit = 1; const x = tx, y = ty, z = tz; if (m) m.g.scale.setScalar(1);
+      fxAdd({ kind: 'ball', x, y, z: z + 1.4, s0: 0.3, s1: 2.1, life: 0.18, col: '#ffffff', op: 0.9 }); /* a short white flash, not a dome over everything */
+      fxAdd({ kind: 'ball', x, y, z: z + 1.4, s0: 0.6, s1: 2.8, life: 0.3, col: '#ffd040', op: 0.25 });
+      fxAdd({ kind: 'pillar', x, y, z, s0: 0.85, s1: 0.06, sy: 11, life: 0.55, col: '#ffd040', op: 0.5 });
+      fxAdd({ kind: 'pillar', x, y, z, s0: 0.3, s1: 0.02, sy: 13, life: 0.45, col: '#ffffff', op: 0.75 });
+      fxAdd({ kind: 'ring', x, y, z: z + 0.08, s0: 0.6, s1: 9, life: 0.7, col: '#ffd040', op: 0.9 });
+      fxAdd({ kind: 'ring', x, y, z: z + 0.1, s0: 0.4, s1: 6, life: 0.5, col: cb, op: 0.85 });
+      fxAdd({ kind: 'ring', x, y, z: z + 1.5, s0: 0.5, s1: 4.4, life: 0.4, col: '#ffffff', op: 0.7 });
+      fxAdd({ kind: 'disc', x, y, z: z + 0.05, s0: 0.5, s1: 3.6, life: 0.5, col: '#fff0c0', op: 0.5 });
+      const cols = [ca, cb, '#ffd040', '#ffffff']; for (let k = 0; k < 80; k++) { const a = FXR() * 6.283, s2 = frnd(4, 11); addP({ x, y, z: z + 0.6 + FXR() * 1.6, vx: Math.cos(a) * s2, vy: Math.sin(a) * s2, vz: frnd(1, 6), g: 6, col: cols[k % 4], s: 0.12, life: 0.9 }); }
+      shake(x, y, 0.8); sfx('boom', x, y); sfx('clank', x, y); fusBanner(A.kb, A.kp); }
+    if (A.t > FUSA.hit + FUSA.asm + 0.1) RND.fusA = null; }
+  if (U) { U.t = W.t - U.t0; const m = OBJ.pl[U.b];
+    if (m && m.g.visible && U.t < FUSA.pop) { const k = U.t / FUSA.pop, qx = m.g.position.x, qy = m.g.position.z, qz = m.g.position.y; /* thrown out of the body to where the sim put it */
+      m.g.position.set(lerp(U.x, qx, k), lerp(U.z + 1.2, qz, k) + Math.sin(k * Math.PI) * 1.3, lerp(U.y, qy, k)); m.g.scale.setScalar(lerp(0.35, 1, Math.min(1.15, backOut(k, 1.8)))); m.g.rotation.y = (1 - k) * (1 - k) * -4; }
+    if (U.t > 0.6) RND.fusU = null; }
 }
 
 /* ---- 56_props.js ---- */
@@ -12155,7 +12218,7 @@ const FXM = { live: [], pool: {} };
 function fxMesh(kind) {
   const q = FXM.pool[kind] || (FXM.pool[kind] = []); let m = q.pop();
   if (!m) { const mat = new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 1, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
-    const geo = kind === 'arc' ? new THREE.RingGeometry(0.55, 1, 28, 1, -1.15, 2.3).rotateX(-Math.PI / 2) : kind === 'ring' ? new THREE.RingGeometry(0.82, 1, 40).rotateX(-Math.PI / 2) : kind === 'disc' ? new THREE.CircleGeometry(1, 24).rotateX(-Math.PI / 2) : new THREE.SphereGeometry(1, 10, 8);
+    const geo = kind === 'pillar' ? new THREE.CylinderGeometry(1, 1, 1, 24, 1, true).translate(0, 0.5, 0) /* (round 40c) a light column; sy = its height */ : kind === 'arc' ? new THREE.RingGeometry(0.55, 1, 28, 1, -1.15, 2.3).rotateX(-Math.PI / 2) : kind === 'ring' ? new THREE.RingGeometry(0.82, 1, 40).rotateX(-Math.PI / 2) : kind === 'disc' ? new THREE.CircleGeometry(1, 24).rotateX(-Math.PI / 2) : new THREE.SphereGeometry(1, 10, 8);
     m = new THREE.Mesh(geo, mat); m.renderOrder = 5; SCN.add(m); m.userData.kind = kind; }
   m.visible = true; return m;
 }

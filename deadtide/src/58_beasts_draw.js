@@ -149,7 +149,7 @@ const FXM = { live: [], pool: {} };
 function fxMesh(kind) {
   const q = FXM.pool[kind] || (FXM.pool[kind] = []); let m = q.pop();
   if (!m) { const mat = new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 1, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
-    const geo = kind === 'arc' ? new THREE.RingGeometry(0.55, 1, 28, 1, -1.15, 2.3).rotateX(-Math.PI / 2) : kind === 'ring' ? new THREE.RingGeometry(0.82, 1, 40).rotateX(-Math.PI / 2) : kind === 'disc' ? new THREE.CircleGeometry(1, 24).rotateX(-Math.PI / 2) : new THREE.SphereGeometry(1, 10, 8);
+    const geo = kind === 'pillar' ? new THREE.CylinderGeometry(1, 1, 1, 24, 1, true).translate(0, 0.5, 0) /* (round 40c) a light column; sy = its height */ : kind === 'arc' ? new THREE.RingGeometry(0.55, 1, 28, 1, -1.15, 2.3).rotateX(-Math.PI / 2) : kind === 'ring' ? new THREE.RingGeometry(0.82, 1, 40).rotateX(-Math.PI / 2) : kind === 'disc' ? new THREE.CircleGeometry(1, 24).rotateX(-Math.PI / 2) : new THREE.SphereGeometry(1, 10, 8);
     m = new THREE.Mesh(geo, mat); m.renderOrder = 5; SCN.add(m); m.userData.kind = kind; }
   m.visible = true; return m;
 }

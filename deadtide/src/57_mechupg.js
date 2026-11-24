@@ -248,9 +248,70 @@ function fuseModBuild(mm, kp) {
 function fuseDraw(p, m, dt) {
   const F = W.fus, mm = m.mech, J = mm && mm.userData.J; if (!J) return;
   const on = !!(F && F.a === p.i && J.k === F.kb), sc = on ? (F.same ? FUS.sameScale : FUS.scale) : 1, cur = mm.userData.fsc || 1;
-  const s2 = lerp(cur, sc, Math.min(1, dt * 4)); mm.userData.fsc = Math.abs(s2 - sc) < 0.005 ? sc : s2;
+  const A = on && RND.fusA && RND.fusA.a === p.i ? RND.fusA : null, U = !on && RND.fusU && RND.fusU.a === p.i && RND.fusU.t < FUSA.out ? RND.fusU : null;
+  if (A) { const k = clamp((A.t - FUSA.hit) / FUSA.asm, 0, 1); mm.userData.fsc = A.t < FUSA.hit ? 1 - 0.07 * Math.sin(A.t / FUSA.hit * Math.PI) : 1 + (sc - 1) * backOut(k, 2.4); } /* (round 40c) braces while the partner flies in, then pops up past its new size and settles */
+  else { const s2 = lerp(cur, sc, Math.min(1, dt * 4)); mm.userData.fsc = Math.abs(s2 - sc) < 0.005 ? sc : s2; }
   const mods = mm.userData.fmods || (mm.userData.fmods = {});
-  for (const k in mods) { const v = on && +k === F.kp; mods[k].visible = v; for (const o of mods[k].userData.ex) o.visible = v; }
+  for (const k in mods) { const v = (on && +k === F.kp) || (!!U && +k === U.kp); mods[k].visible = v; for (const o of mods[k].userData.ex) o.visible = v; }
+  if (U && mods[U.kp]) { const k = U.t / FUSA.out; fuseModScale(mods[U.kp], Math.max(0.001, (1 - k * k) * (1 + 0.3 * Math.sin(k * Math.PI))), k * k * 5); } /* (round 40c) on a split the parts spin and shrink back into the chest */
   if (!on) return; const md = mods[F.kp] || (mods[F.kp] = fuseModBuild(mm, F.kp)); /* (round 40b) it attaches itself: the chest, the helmet, the feet */
+  if (A) { const k = clamp((A.t - FUSA.hit) / FUSA.asm, 0, 1); fuseModScale(md, A.t < FUSA.hit ? 0.001 : Math.max(0.001, backOut(k, 2.2)), (1 - k) * (1 - k) * Math.PI * 2); } /* the parts burst out of the chest, spinning into place */
+  else if (md.scale.x !== 1) fuseModScale(md, 1, 0);
   const G = W.p[F.g], gT = W.t - (RND.fgT != null ? RND.fgT : -9); md.userData.tick(F, p, dt, G ? G.aim : p.aim, gT);
+}
+/* ================= (round 40c) the fusion cut-in: the partner leaps up spinning and streaks into the body; a flash, a light pillar and a
+   shock ring; the body pops up to its fused size while the module's parts burst out of its chest into place; the combo's name slams on screen.
+   A split plays it backwards: the parts spin back into the chest and the partner is thrown out to the side. Render only (the sim fuses at once). */
+const FUSA = { hit: 0.75, asm: 0.55, out: 0.3, pop: 0.4 };
+function backOut(k, s) { const u = k - 1; return 1 + (s + 1) * u * u * u + s * u * u; }
+function fuseModScale(g, s, ry) { g.scale.setScalar(s); g.rotation.y = ry; for (const o of g.userData.ex) o.scale.setScalar(s); }
+const fusRGB = c => { const q = new THREE.Color(c); return [q.r, q.g, q.b]; };
+function fuseAnimStart(e) {
+  RND.fusU = null; RND.fusA = { t: 0, t0: W.t, a: e.a, b: e.b, kb: e.kb, kp: e.kp, sx: e.bx != null ? e.bx : e.x, sy: e.by != null ? e.by : e.y, sz: e.bz != null ? e.bz : e.z, hit: 0 };
+  const ca = MECHS[e.kb].glow, cb = MECHS[e.kp].glow; sfx('xform', e.x, e.y); shake(e.x, e.y, 0.15);
+  fxAdd({ kind: 'ring', x: e.x, y: e.y, z: e.z + 0.08, s0: 3.6, s1: 0.7, life: FUSA.hit, col: '#ffd040', op: 0.85 }); /* closing in: the charge */
+  fxAdd({ kind: 'ring', x: e.x, y: e.y, z: e.z + 1.5, s0: 2.8, s1: 0.5, life: FUSA.hit, col: ca, op: 0.7 });
+  fxAdd({ kind: 'ring', x: RND.fusA.sx, y: RND.fusA.sy, z: RND.fusA.sz + 0.08, s0: 0.6, s1: 2.6, life: 0.4, col: cb, op: 0.8 }); /* the partner's take-off */
+  for (let k = 0; k < 16; k++) { const a = k / 16 * 6.283; addP({ x: RND.fusA.sx, y: RND.fusA.sy, z: RND.fusA.sz + 0.2, vx: Math.cos(a) * 4, vy: Math.sin(a) * 4, vz: frnd(0.5, 2), g: 4, col: cb, s: 0.08, life: 0.45 }); }
+}
+function fuseAnimEnd(e) {
+  RND.fusA = null; RND.fusU = { t: 0, t0: W.t, a: e.a, b: e.b, kp: e.kp, x: e.x, y: e.y, z: e.z };
+  const col = e.br ? '#ff5a3a' : '#ffd040'; shake(e.x, e.y, e.br ? 0.5 : 0.25);
+  fxAdd({ kind: 'ball', x: e.x, y: e.y, z: e.z + 1.4, s0: 0.3, s1: 1.6, life: 0.18, col: '#ffffff', op: 0.7 });
+  fxAdd({ kind: 'ring', x: e.x, y: e.y, z: e.z + 0.08, s0: 0.5, s1: 5, life: 0.45, col, op: 0.85 });
+}
+function fusBanner(kb, kp) {
+  const b = document.createElement('div'); b.className = 'fusban';
+  b.innerHTML = '<span class="f1">合 体</span><span class="f2">' + (FUS_NAME[fusKey(kb, kp)] || '合体机甲') + '</span><span class="f3">' + MECHS[kb].name + ' × ' + MECHS[kp].name + '</span>';
+  document.body.appendChild(b); setTimeout(() => b.remove(), 2600);
+}
+function fuseAnimPost(dt) { // after drawPlayers: fly the partner's model in (or out), fire the impact; also put back any model scale an animation left
+  const A = RND.fusA, U = RND.fusU;
+  OBJ.pl.forEach((m, i) => { if (m.g.scale.x !== 1 && !(A && A.b === i && A.t < FUSA.hit) && !(U && U.b === i && U.t < FUSA.pop)) m.g.scale.setScalar(1); });
+  if (A) { A.t = W.t - A.t0; /* on the game clock: a cut-in missed while drawing was off is simply over */ const ma = OBJ.pl[A.a], m = OBJ.pl[A.b];
+    if (!ma || !W.p[A.a]) { RND.fusA = null; return; } /* not on W.fus: a guest can get the event a moment before the snapshot */
+    const tx = ma.g.position.x, ty = ma.g.position.z, tz = ma.g.position.y, ca = MECHS[A.kb].glow, cb = MECHS[A.kp].glow;
+    if (A.t < FUSA.hit) { const u = A.t / FUSA.hit, e2 = u * u;
+      if (m && m.g.visible) { const x = lerp(A.sx, tx, e2), y = lerp(A.sy, ty, e2), z = lerp(A.sz, tz + 1.1, e2) + Math.sin(u * Math.PI) * 2.6;
+        m.g.position.set(x, z, y); m.g.scale.setScalar(lerp(1, 0.22, e2)); m.g.rotation.set(0, e2 * Math.PI * 5, Math.sin(u * Math.PI) * 0.5); /* leaps up, spins faster and faster, shrinks into a streak */
+        for (let k = 0; k < 4; k++) addP({ x: x + frnd(-0.3, 0.3), y: y + frnd(-0.3, 0.3), z: z + 0.4 + FXR() * 1.2 * (1 - e2 * 0.7), vx: 0, vy: 0, vz: frnd(-0.4, 0.4), g: 0, col: k % 2 ? cb : '#ffffff', s: 0.1, life: 0.45 });
+        if (A.px != null) RND.tracers.push({ x: A.px, y: A.py, z: A.pz, x2: x, y2: y, z2: z + 0.8, t: 0, life: 0.3, w: 0.2, col: fusRGB(cb) });
+        A.px = x; A.py = y; A.pz = z + 0.8; }
+      for (let k = 0; k < 3; k++) { const a = FXR() * 6.283, r = 2.6 - u * 1.2; addP({ x: tx + Math.cos(a) * r, y: ty + Math.sin(a) * r, z: tz + 0.2 + FXR() * 2.6, vx: -Math.cos(a) * 3 - Math.sin(a) * 2.5, vy: -Math.sin(a) * 3 + Math.cos(a) * 2.5, vz: 0.4, g: 0, col: k ? '#ffd040' : ca, s: 0.07, life: 0.55 }); } /* sparks spiralling into the body */
+    } else if (!A.hit) { A.hit = 1; const x = tx, y = ty, z = tz; if (m) m.g.scale.setScalar(1);
+      fxAdd({ kind: 'ball', x, y, z: z + 1.4, s0: 0.3, s1: 2.1, life: 0.18, col: '#ffffff', op: 0.9 }); /* a short white flash, not a dome over everything */
+      fxAdd({ kind: 'ball', x, y, z: z + 1.4, s0: 0.6, s1: 2.8, life: 0.3, col: '#ffd040', op: 0.25 });
+      fxAdd({ kind: 'pillar', x, y, z, s0: 0.85, s1: 0.06, sy: 11, life: 0.55, col: '#ffd040', op: 0.5 });
+      fxAdd({ kind: 'pillar', x, y, z, s0: 0.3, s1: 0.02, sy: 13, life: 0.45, col: '#ffffff', op: 0.75 });
+      fxAdd({ kind: 'ring', x, y, z: z + 0.08, s0: 0.6, s1: 9, life: 0.7, col: '#ffd040', op: 0.9 });
+      fxAdd({ kind: 'ring', x, y, z: z + 0.1, s0: 0.4, s1: 6, life: 0.5, col: cb, op: 0.85 });
+      fxAdd({ kind: 'ring', x, y, z: z + 1.5, s0: 0.5, s1: 4.4, life: 0.4, col: '#ffffff', op: 0.7 });
+      fxAdd({ kind: 'disc', x, y, z: z + 0.05, s0: 0.5, s1: 3.6, life: 0.5, col: '#fff0c0', op: 0.5 });
+      const cols = [ca, cb, '#ffd040', '#ffffff']; for (let k = 0; k < 80; k++) { const a = FXR() * 6.283, s2 = frnd(4, 11); addP({ x, y, z: z + 0.6 + FXR() * 1.6, vx: Math.cos(a) * s2, vy: Math.sin(a) * s2, vz: frnd(1, 6), g: 6, col: cols[k % 4], s: 0.12, life: 0.9 }); }
+      shake(x, y, 0.8); sfx('boom', x, y); sfx('clank', x, y); fusBanner(A.kb, A.kp); }
+    if (A.t > FUSA.hit + FUSA.asm + 0.1) RND.fusA = null; }
+  if (U) { U.t = W.t - U.t0; const m = OBJ.pl[U.b];
+    if (m && m.g.visible && U.t < FUSA.pop) { const k = U.t / FUSA.pop, qx = m.g.position.x, qy = m.g.position.z, qz = m.g.position.y; /* thrown out of the body to where the sim put it */
+      m.g.position.set(lerp(U.x, qx, k), lerp(U.z + 1.2, qz, k) + Math.sin(k * Math.PI) * 1.3, lerp(U.y, qy, k)); m.g.scale.setScalar(lerp(0.35, 1, Math.min(1.15, backOut(k, 1.8)))); m.g.rotation.y = (1 - k) * (1 - k) * -4; }
+    if (U.t > 0.6) RND.fusU = null; }
 }

@@ -501,7 +501,7 @@ let DKN = 0;
 function drawPlayers(vl, dt) {
   DKN = darkness();
   while (OBJ.pl.length < W.p.length) OBJ.pl.push(mkPlayerModel(OBJ.pl.length));
-  OBJ.pl.forEach((m, i) => { const p = W.p[i]; m.g.visible = !!p && !p.gone && p.L <= vl && !(W.fus && W.fus.b === i && inMech(p)); }); /* (round 40) the module's pilot is drawn as part of the fused body */
+  OBJ.pl.forEach((m, i) => { const p = W.p[i]; m.g.visible = !!p && !p.gone && p.L <= vl && !(W.fus && W.fus.b === i && inMech(p) && !(RND.fusA && RND.fusA.b === i && RND.fusA.t < FUSA.hit)); }); /* (round 40) the module's pilot is drawn as part of the fused body; (round 40c) except while it flies in */
   W.p.forEach((p, i) => {
     const m = OBJ.pl[i]; if (!m.g.visible) return; if (m.evo) m.evo.visible = false; /* (round 37) the beast shows only while evoDraw says so */
     if (!m.veh) { m.veh = mkVehicles(); m.g.add(m.veh); }
