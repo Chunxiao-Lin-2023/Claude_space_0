@@ -159,7 +159,7 @@ function mechGun(p, M) {
   const r = mgunRay(sx0, sy0, sz, dx, dy, dz, M.range);
   if (r.z) hurtZombie(r.z, M.dmg * (1 + 0.12 * W.upg), p, dx * 0.25, dy * 0.25);
   noiseAt(p.x, p.y, 9, p.z);
-  emit({ k: 'gshot', o: p.i, mg: 1, a: r2(a), x: r2(sx0), y: r2(sy0), z: r2(sz), e: [r2(sx0 + dx * r.d), r2(sy0 + dy * r.d), r2(sz + dz * r.d)], h: r.z ? 1 : 0 });
+  emit({ k: 'gshot', o: p.i, mg: 1, fm: FUS_ALT ? 1 : 0, a: r2(a), x: r2(sx0), y: r2(sy0), z: r2(sz), e: [r2(sx0 + dx * r.d), r2(sy0 + dy * r.d), r2(sz + dz * r.d)], h: r.z ? 1 : 0 });
 }
 const J_MECHS_S = p => (MECH_DIM[(MECHS[p.veh] || {}).style] || {}).s || 1;
 // where drone k of a 浮游炮 swarm hovers at time t (host and screens work it out the same way)
@@ -194,11 +194,11 @@ function mechPunch(p) {
   // (round 35) turn to the target (and step in if it is just out of reach) so the blow / shot goes where the zombie is
   const fistN = false, /* (round 36n) 铁卫's third blow is a pound now, not the fist cannon */ T = mechLock(p, M, fistN ? 7 : 0), ranged = mechRanged(M) || fistN; let a = p.aim; // the fist cannon reaches 7
   if (T) { a = Math.atan2(T.y - p.y, T.x - p.x); const d = Math.hypot(T.x - p.x, T.y - p.y), want = M.reach * 0.75;
-    if (!ranged && d > want + 0.2 && !airborne(p) && fusRole(p) !== 'g') { const st = Math.min(d - want, 2.2); mechMove(p, { dash: { dx: Math.cos(a) * st, dy: Math.sin(a) * st, t: 0, T: 0.12 } }); } }
+    if (!ranged && d > want + 0.2 && !airborne(p) && fusRole(p) !== 'g' && !FUS_ALT) { const st = Math.min(d - want, 2.2); mechMove(p, { dash: { dx: Math.cos(a) * st, dy: Math.sin(a) * st, t: 0, T: 0.12 } }); } }
   p.mAim = a; p.mTgt = T ? T.id : -1;
-  emit({ k: 'mpunch', o: p.i, s: p.mside, c: p.mcmb, a: r2(a) });
+  emit({ k: 'mpunch', o: p.i, s: p.mside, c: p.mcmb, a: r2(a), fm: FUS_ALT ? 1 : 0 }); /* (round 40d) fm: the capsule module's blow, not the body's */
   if (M.atk === 'rocket' || M.atk === 'cannon' || M.atk === 'parcel') return mechShoot(p, M.atk === 'heavy' ? 'fist' : M.atk, T, a);
-  (W.dly = W.dly || []).push({ t: 0.13, punch: p.i, c: p.mcmb, a }); // the blow lands when the swing does (after the wind-up)
+  (W.dly = W.dly || []).push({ t: 0.13, punch: p.i, c: p.mcmb, a, fm: FUS_ALT ? 1 : 0 }); // the blow lands when the swing does (after the wind-up)
 }
 // a melee blow lands: every style hits the ground in front of the mech (zombie height), some in a sector, some round a point
 function mechPunchHit(p, cmb, aa) {
@@ -315,7 +315,7 @@ function stepDelayed(dt) {
   for (const q of W.dly) { q.t -= dt;
     if (q.thr != null) { const z = W.zs.find(z => z.id === q.thr); if (z && z.hp > 0) { const f = clamp(1 - q.t / q.T, 0, 1), gz = surfZ(q.x, q.y, q.L); z.x = lerp(q.x0, q.x, f); z.y = lerp(q.y0, q.y, f); z.z = lerp(q.z0, gz, f) + Math.sin(f * Math.PI) * 3; z.stun = Math.max(z.stun || 0, 0.3);
       if (q.t <= 0) { z.L = q.L; z.z = gz; const o = W.p[q.o]; hurtZombie(z, 200 * mechMul(), o, 0, 0); for (const y of W.zs) { if (y === z || y.hp <= 0 || y.hidden) continue; const d = Math.hypot(y.x - q.x, y.y - q.y); if (d < 2) { hurtZombie(y, 100, o, (y.x - q.x) / (d || 1) * 5, (y.y - q.y) / (d || 1) * 5); y.stun = Math.max(y.stun || 0, 0.8); } } emit({ k: 'slam', x: r2(q.x), y: r2(q.y), z: r2(gz), r: 2 }); emit({ k: 'sfx', n: 'smash', x: q.x, y: q.y }); } } else q.t = 0; continue; } // (round 34b) a thrown zombie flies, then smashes down
-    if (q.t > 0) continue; if (q.punch != null) { if (W.p[q.punch]) mechPunchHit(W.p[q.punch], q.c, q.a); continue; } const o = W.p[q.o];
+    if (q.t > 0) continue; if (q.punch != null) { if (W.p[q.punch]) { FUS_ALT = !!(q.fm && W.fus && W.fus.v && W.fus.a === q.punch); mechPunchHit(W.p[q.punch], q.c, q.a); FUS_ALT = false; } continue; } const o = W.p[q.o];
     if (q.stomp) { if (o) { evoRound(o, q.x, q.y, q.R, q.dmg, q.kb || 8, q.st || 1, q.psn, q.psnM, q.ring); if (q.moon) { const gz = surfZ(q.x, q.y, q.L); emit({ k: 'moonfx', x: r2(q.x), y: r2(q.y), z: r2(gz), r: q.R }); if (q.zone) { (W.evz = W.evz || []).push({ k: 'moon', x: q.x, y: q.y, z: gz, r: q.R, t: q.zone, o: q.o, m: q.dmg / 320 }); (W.cz = W.cz || []).push({ k: 5, x: r2(q.x), y: r2(q.y), z: r2(gz), r: q.R, t: q.zone }); emit({ k: 'ezone', zk: 'moon', x: r2(q.x), y: r2(q.y), z: r2(gz), r: q.R, t: q.zone }); } } } continue; } if (q.claw) { if (o && inMech(o)) evoClaw(o, q.a, q.dmg); continue; } if (q.ears) { if (o && inMech(o)) evoEars(o, q.a, q.dmg, q.big); continue; } if (q.earspin) { if (o && inMech(o)) evoEarSpin(o, q.dmg); continue; } /* (round 38d) 玉兔 */ /* (round 37) beast blows */
     if (q.launch) { if (o && inMech(o)) { const ft = q.ft * frnd(0.85, 1.1), sd = rand() < 0.5 ? -1 : 1, ca2 = Math.cos(o.aim), sa2 = Math.sin(o.aim); emit({ k: 'mrkt', o: q.o, kd: 'bigparcel', x: r2(o.x - ca2 * 0.5 * q.s2 - sa2 * sd * 0.3), y: r2(o.y - sa2 * 0.5 * q.s2 + ca2 * sd * 0.3), z: r2(pZ(o) + 2.4 * q.s2), e: [r2(q.x), r2(q.y), r2(q.zz)], t: r2(ft) }); W.dly.push({ t: ft, box: 1, big: 1, x: q.x, y: q.y, zz: q.zz, R: 1.5, dmg: BAL.rainDmg * mechMul(), o: q.o }); } continue; } /* (round 36n) one parcel of the 快递雨 torrent leaves the rack */
     if (q.fistZ != null) { const z = W.zs.find(z => z.id === q.fistZ); if (z && z.hp > 0) { const big = ZT[z.k].boss || ZT[z.k].kaiju; hurtZombie(z, 140 * mechMul(), o, q.dx * (big ? 2 : 9), q.dy * (big ? 2 : 9)); z.stun = Math.max(z.stun || 0, big ? 0.2 : 1); emit({ k: 'mhit', o: q.o, h: 1, x: r2(z.x), y: r2(z.y), z: r2(z.z + 0.8), r: 1 }); } continue; }
@@ -539,7 +539,7 @@ function stepActions(p, dt) {
   }
   if (p.down) { p.downT -= dt; if (p.downT <= 0) { p.down = false; p.dead = true; p.reloadT = 0; p.medT = 0; p.ride = false; p.downT = W.phase === 'night' ? BAL.respawnNight : BAL.respawnDay; emit({ k: 'dead', p: p.i, t: p.lives > 0 ? Math.round(p.downT) : -1, n: p.lives || 0 }); checkLose(); return; } }
   const wi = p.down ? 0 : p.wpn, w = WPN[wi];
-  p.gcd = (p.gcd || 0) - dt; if (I.fire && vehGun(p) && vehGun(p) !== 'busy') (vehGun(p) === 'cannon' ? tankFire(p) : vehGun(p) === 'mech' ? mechPunch(p) : gyroFire(p)); // (round 30 / 31) the aircraft's chin gun or the tank's cannon fires instead of your gun
+  p.gcd = (p.gcd || 0) - dt; if (I.fire && vehGun(p) && vehGun(p) !== 'busy') (vehGun(p) === 'cannon' ? tankFire(p) : vehGun(p) === 'mech' ? mechPunch(p) : gyroFire(p)); if (W.fus && W.fus.v && W.fus.a === p.i) fuseAI(p, dt, !!I.fire); /* (round 40d) the capsule module fights on its own */ // (round 30 / 31) the aircraft's chin gun or the tank's cannon fires instead of your gun
   if (I.fire && !p.build && !vehGun(p) && p.fireCD <= 0 && p.cdW[wi] <= 0 && p.reloadT <= 0 && p.medT <= 0) {
     if (p.mag[wi] > 0) fireWeapon(p, wi);
     else if (w.inf || p.ammo[wi] > 0) startReload(p);
@@ -609,6 +609,7 @@ function completeUse(p, tgt) {
   if (S.vanish) setCell(i, 0, W.slab[i], null, 'loot'); else { W.srch.add(i); W.ver++; emit({ k: 'spot', i, v: 1 }); }
   taskAdd('search'); if (!inZone(x, y)) taskAdd('far');
   const got = [];
+  if (activeP().some(q => q.vehs & 126)) { W.capN = (W.capN || 0) + 1; if (capN() < BAL.capMax && (rand() < BAL.capOdds || W.capN >= BAL.capPity)) { W.capN = 0; const v = 1 + Math.floor(rand() * 6); (W.bps = W.bps || []).push('c' + v); emit({ k: 'bpget', t: 'c', v, p: p.i }); got.push(MECHS[v].name + '合体胶囊'); } } /* (round 40d) a fusion capsule now and then, once anyone has a mech */
   if (upgOn() && (W.vbp || isSiege())) { W.bpN = (W.bpN || 0) + 1; if (rand() < BAL.bpOdds || W.bpN >= BAL.bpPity) { const b = bpRoll(p); if (b) { W.bpN = 0; got.push(b); } } } /* (round 38j) now and then a blueprint */
   for (const k in S.loot) { const [a, b] = S.loot[k]; const n = Math.round(rand(a, b) * m); if (n > 0) { W.res[k] += n; got.push('+' + n + ' ' + RES.find(r => r.k === k).name); } }
   if (S.ammo) { for (const q of activeP()) for (let wi = 1; wi < NW; wi++) if (q.owned[wi] || S.allAmmo) q.ammo[wi] += Math.round(WPN[wi].loot * S.ammo * m * (q.owned[wi] ? 1 : 0.5)); got.push(S.allAmmo ? '各种子弹' : '全队弹药'); }
@@ -943,7 +944,7 @@ function doAct(p, a, v) {
       p.fireCD = Math.max(p.fireCD, 0.2); emit({ k: 'sfx', n: 'swap', x: p.x, y: p.y, o: p.i }); } break;
     case 'knife': if (p.melee === 1 && p.shield) bash(p, v); else knife(p, typeof v === 'number' ? v : -1); break;
     case 'melee': p.melee = v === 1 && p.shield ? 1 : 0; break;
-    case 'nade': if (inMech(p)) { const fr = fusRole(p); if (fr === 'g') fuseSkill(p, v); else if (fr === 'd') emit({ k: 'deny', p: p.i, why: '合体中大招归炮手放：按 K 换手' }); else mechSkill(p, v); } else throwNade(p, v); break;
+    case 'nade': if (inMech(p)) { const fr = fusRole(p); if (fr === 'g' || (fr === 'd' && W.fus.v)) fuseSkill(p, v); /* (round 40d) alone, you fire the combined skill yourself */ else if (fr === 'd') emit({ k: 'deny', p: p.i, why: '合体中大招归炮手放：按 K 换手' }); else mechSkill(p, v); } else throwNade(p, v); break;
     case 'fuse': fuseAct(p); break; /* (round 40) */
     case 'fswap': fuseSwap(p); break; // (round 34) in a mech the grenade key is its skill
     case 'med':
@@ -956,7 +957,7 @@ function doAct(p, a, v) {
     case 'build': if (!RETIRED.includes(+v.b)) doBuild(p, v.x, v.y, v.l, v.b, v.d); break; /* (round 39) retired kinds can't be built */
     case 'demo': doDemolish(p, v.x, v.y, v.l); break;
     case 'crush': if (inMech(p) && typeof v === 'number' && v >= 0 && v < NC && MECH_CRUSH.has(W.blk[v]) && !(W.mine && W.mine.has(v)) && Math.hypot(cx_(v) + 0.5 - p.x, cy_(v) + 0.5 - p.y) < 2.6) { const r = B[W.blk[v]].res, g = GATHER[W.blk[v]]; if (p.veh === 3 && g) { mechScar(v, null, null, BAL.workerRegrow); const n = Math.max(1, Math.round(rand(g.n[0], g.n[1]) * BAL.workerGather)); W.res[g.res] += n; taskAdd('gather'); emit({ k: 'loot', p: p.i, x: cx_(v) + 0.5, y: cy_(v) + 0.5, z: cl_(v) * FH + 1, text: '+' + n + ' ' + RES.find(q => q.k === g.res).name }); setCell(v, 0, W.slab[v], null, 'mine'); } /* (round 36) 工蜂's passive: what it flattens is gathered (and so doesn't grow back) */ else { mechScar(v); setCell(v, 0, W.slab[v], null, 'brk'); if (r && rand() < 0.5) W.res[r] = (W.res[r] || 0) + 1; } emit({ k: 'sfx', n: 'bash', x: cx_(v) + 0.5, y: cy_(v) + 0.5 }); } break; // (round 34d) a mech flattens what is in its way
-    case 'bpinst': { const b = (W.bps || [])[v | 0]; if (!b) break; const t = b[0], k = +b.slice(1); if (t === 'a') { if (armHas(p, k)) { emit({ k: 'deny', p: p.i, why: '你已经穿着' + ARM[k].n + '了：让队友来装' }); break; } const c = armCost(); if (!affordable(W.res, c)) { emit({ k: 'deny', p: p.i, why: '材料不足' }); break; } for (const r in c) W.res[r] -= c[r]; W.bps.splice(v | 0, 1); p.arm = (p.arm || 0) | 1 << k; if (k === 5) { p.maxHp = pMaxHpOf(p); p.hp = Math.min(p.maxHp, p.hp + 40); } emit({ k: 'bpuse', p: p.i, t, v: k, full: armFull(p) ? 1 : 0 }); break; } /* (round 38k) armour: worn by whoever installs it */
+    case 'bpinst': { const b = (W.bps || [])[v | 0]; if (!b) break; const t = b[0], k = +b.slice(1); if (t === 'c') { W.bps.splice(v | 0, 1); W.bps.unshift(b); break; } /* (round 40d) a capsule: use this one next */ if (t === 'a') { if (armHas(p, k)) { emit({ k: 'deny', p: p.i, why: '你已经穿着' + ARM[k].n + '了：让队友来装' }); break; } const c = armCost(); if (!affordable(W.res, c)) { emit({ k: 'deny', p: p.i, why: '材料不足' }); break; } for (const r in c) W.res[r] -= c[r]; W.bps.splice(v | 0, 1); p.arm = (p.arm || 0) | 1 << k; if (k === 5) { p.maxHp = pMaxHpOf(p); p.hp = Math.min(p.maxHp, p.hp + 40); } emit({ k: 'bpuse', p: p.i, t, v: k, full: armFull(p) ? 1 : 0 }); break; } /* (round 38k) armour: worn by whoever installs it */
       const lv = t === 'm' ? mlvOf(k) : wlvOf(k), c = t === 'm' ? mlvCost(lv) : gunCost(lv); /* (round 38j) install a found upgrade blueprint with materials */
       if (lv >= UPG_MAX) { W.bps.splice(v | 0, 1); break; } if (!affordable(W.res, c)) { emit({ k: 'deny', p: p.i, why: '材料不足' }); break; } for (const r in c) W.res[r] -= c[r]; W.bps.splice(v | 0, 1);
       if (t === 'm') W.mlv[k] = lv + 1; else W.wlv[k] = lv + 1; emit({ k: 'bpuse', p: p.i, t, v: k, lv: lv + 1 }); } break;

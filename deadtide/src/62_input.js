@@ -435,7 +435,7 @@ function wpickDo(k) { toggleWpick(false); if (!inGame()) return; sfx('click'); i
 function wpickHover(x, y) { let best = null, bd = 1e9; for (const o of UI.wpOpts || []) { if (Math.abs(o.x - x) > o.w / 2 + 3 || Math.abs(o.y - y) > o.h / 2 + 3) continue; const d = Math.hypot(o.x - x, o.y - y); if (d < bd) { bd = d; best = o; } } for (const o of UI.wpOpts || []) o.b.classList.toggle('hi', o === best); UI.wpHi = best; }
 WK.addEventListener('pointerdown', e => {
   e.preventDefault(); e.stopPropagation(); audioInit(); if (!inGame()) return;
-  { const me = W.p[ME]; if (inMech(me) && W.p.filter(q => !q.gone).length > 1) { act(fusOf(me) ? 'fswap' : 'fuse'); return; } } /* (round 40) */
+  { const me = W.p[ME], F = fusOf(me); if (inMech(me) && (W.p.filter(q => !q.gone).length > 1 || capN() || (F && F.v))) { act(F && !F.v ? 'fswap' : 'fuse'); return; } } /* (round 40) ; (round 40d) alone: a capsule, or split it */
   const was = !$('wpick').classList.contains('hidden'); if (was) { toggleWpick(false); return; }
   UI.wk = { id: e.pointerId, x: e.clientX, y: e.clientY, open: false, tm: setTimeout(() => { if (UI.wk && !UI.wk.open) { UI.wk.open = true; toggleWpick(true); } }, 380) };
   WK.classList.add('on'); try { WK.setPointerCapture(e.pointerId); } catch (_) { }

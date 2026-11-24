@@ -257,7 +257,7 @@ function fuseDraw(p, m, dt) {
   if (!on) return; const md = mods[F.kp] || (mods[F.kp] = fuseModBuild(mm, F.kp)); /* (round 40b) it attaches itself: the chest, the helmet, the feet */
   if (A) { const k = clamp((A.t - FUSA.hit) / FUSA.asm, 0, 1); fuseModScale(md, A.t < FUSA.hit ? 0.001 : Math.max(0.001, backOut(k, 2.2)), (1 - k) * (1 - k) * Math.PI * 2); } /* the parts burst out of the chest, spinning into place */
   else if (md.scale.x !== 1) fuseModScale(md, 1, 0);
-  const G = W.p[F.g], gT = W.t - (RND.fgT != null ? RND.fgT : -9); md.userData.tick(F, p, dt, G ? G.aim : p.aim, gT);
+  const G = W.p[F.g], gT = W.t - (RND.fgT != null ? RND.fgT : -9); md.userData.tick(F, p, dt, G ? G.aim : F.v ? F.ga : p.aim, gT); /* (round 40d) a capsule module aims where it last attacked */
 }
 /* ================= (round 40c) the fusion cut-in: the partner leaps up spinning and streaks into the body; a flash, a light pillar and a
    shock ring; the body pops up to its fused size while the module's parts burst out of its chest into place; the combo's name slams on screen.
@@ -271,6 +271,7 @@ function fuseAnimStart(e) {
   const ca = MECHS[e.kb].glow, cb = MECHS[e.kp].glow; sfx('xform', e.x, e.y); shake(e.x, e.y, 0.15);
   fxAdd({ kind: 'ring', x: e.x, y: e.y, z: e.z + 0.08, s0: 3.6, s1: 0.7, life: FUSA.hit, col: '#ffd040', op: 0.85 }); /* closing in: the charge */
   fxAdd({ kind: 'ring', x: e.x, y: e.y, z: e.z + 1.5, s0: 2.8, s1: 0.5, life: FUSA.hit, col: ca, op: 0.7 });
+  if (e.v) { fuseVModel(e.kp); fxAdd({ kind: 'ball', x: RND.fusA.sx, y: RND.fusA.sy, z: RND.fusA.sz, s0: 0.3, s1: 1.8, life: 0.3, col: cb, op: 0.9 }); sfx('plane', e.x, e.y); return; } /* (round 40d) a capsule: a flash high up, then the pod comes down */
   fxAdd({ kind: 'ring', x: RND.fusA.sx, y: RND.fusA.sy, z: RND.fusA.sz + 0.08, s0: 0.6, s1: 2.6, life: 0.4, col: cb, op: 0.8 }); /* the partner's take-off */
   for (let k = 0; k < 16; k++) { const a = k / 16 * 6.283; addP({ x: RND.fusA.sx, y: RND.fusA.sy, z: RND.fusA.sz + 0.2, vx: Math.cos(a) * 4, vy: Math.sin(a) * 4, vz: frnd(0.5, 2), g: 4, col: cb, s: 0.08, life: 0.45 }); }
 }
@@ -279,6 +280,12 @@ function fuseAnimEnd(e) {
   const col = e.br ? '#ff5a3a' : '#ffd040'; shake(e.x, e.y, e.br ? 0.5 : 0.25);
   fxAdd({ kind: 'ball', x: e.x, y: e.y, z: e.z + 1.4, s0: 0.3, s1: 1.6, life: 0.18, col: '#ffffff', op: 0.7 });
   fxAdd({ kind: 'ring', x: e.x, y: e.y, z: e.z + 0.08, s0: 0.5, s1: 5, life: 0.45, col, op: 0.85 });
+  if (e.b < 0 && MECHS[e.kp]) for (let k = 0; k < 36; k++) { const a = FXR() * 6.283, r = FXR() * 0.8; addP({ x: e.x + Math.cos(a) * r, y: e.y + Math.sin(a) * r, z: e.z + 0.6 + FXR() * 2, vx: Math.cos(a) * 1.2, vy: Math.sin(a) * 1.2, vz: frnd(1.5, 4), g: -1, col: k % 3 ? MECHS[e.kp].glow : '#ffffff', s: 0.09, life: 0.9 }); } /* (round 40d) the capsule mech fades away in sparks */
+}
+// (round 40d) the capsule's mech for the cut-in: a model of that kind in a glowing pod, kept and reused
+function fuseVModel(k) {
+  let V = RND.fusVM; if (!V) { const g = new THREE.Group(), pod = new THREE.Mesh(new THREE.CapsuleGeometry(0.95, 1.6, 6, 16), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending, depthWrite: false })); pod.position.y = 1.55; g.add(pod); const rim = new THREE.Mesh(new THREE.TorusGeometry(1.0, 0.06, 6, 28), new THREE.MeshBasicMaterial({ color: '#ffd040' })); rim.rotation.x = Math.PI / 2; rim.position.y = 1.55; g.add(rim); SCN.add(g); V = RND.fusVM = { g, pod, rim, k: 0, mech: null }; }
+  if (V.k !== k) { if (V.mech) V.g.remove(V.mech); V.mech = mkMech(k); V.g.add(V.mech); V.k = k; } V.pod.material.color.set(MECHS[k].glow); V.g.visible = true; return V;
 }
 function fusBanner(kb, kp) {
   const b = document.createElement('div'); b.className = 'fusban';
@@ -288,11 +295,13 @@ function fusBanner(kb, kp) {
 function fuseAnimPost(dt) { // after drawPlayers: fly the partner's model in (or out), fire the impact; also put back any model scale an animation left
   const A = RND.fusA, U = RND.fusU;
   OBJ.pl.forEach((m, i) => { if (m.g.scale.x !== 1 && !(A && A.b === i && A.t < FUSA.hit) && !(U && U.b === i && U.t < FUSA.pop)) m.g.scale.setScalar(1); });
-  if (A) { A.t = W.t - A.t0; /* on the game clock: a cut-in missed while drawing was off is simply over */ const ma = OBJ.pl[A.a], m = OBJ.pl[A.b];
-    if (!ma || !W.p[A.a]) { RND.fusA = null; return; } /* not on W.fus: a guest can get the event a moment before the snapshot */
+  if (!A && RND.fusVM && RND.fusVM.g.visible) RND.fusVM.g.visible = false;
+  if (A) { A.t = W.t - A.t0; /* on the game clock: a cut-in missed while drawing was off is simply over */ const ma = OBJ.pl[A.a]; let m = OBJ.pl[A.b];
+    if (!ma || !W.p[A.a]) { RND.fusA = null; if (RND.fusVM) RND.fusVM.g.visible = false; return; } /* not on W.fus: a guest can get the event a moment before the snapshot */
     const tx = ma.g.position.x, ty = ma.g.position.z, tz = ma.g.position.y, ca = MECHS[A.kb].glow, cb = MECHS[A.kp].glow;
+    if (A.b < 0) { const V = RND.fusVM; m = V && A.t < FUSA.hit ? V : null; if (V) { V.g.visible = A.t < FUSA.hit; V.rim.rotation.z = A.t * 9; V.pod.material.opacity = 0.25 + 0.2 * Math.sin(A.t * 30); } } /* (round 40d) the capsule pod stands in for a partner */
     if (A.t < FUSA.hit) { const u = A.t / FUSA.hit, e2 = u * u;
-      if (m && m.g.visible) { const x = lerp(A.sx, tx, e2), y = lerp(A.sy, ty, e2), z = lerp(A.sz, tz + 1.1, e2) + Math.sin(u * Math.PI) * 2.6;
+      if (m && m.g.visible) { const x = lerp(A.sx, tx, e2), y = lerp(A.sy, ty, e2), z = lerp(A.sz, tz + 1.1, e2) + Math.sin(u * Math.PI) * (A.b < 0 ? 0 : 2.6); /* a capsule falls straight in, speeding up */
         m.g.position.set(x, z, y); m.g.scale.setScalar(lerp(1, 0.22, e2)); m.g.rotation.set(0, e2 * Math.PI * 5, Math.sin(u * Math.PI) * 0.5); /* leaps up, spins faster and faster, shrinks into a streak */
         for (let k = 0; k < 4; k++) addP({ x: x + frnd(-0.3, 0.3), y: y + frnd(-0.3, 0.3), z: z + 0.4 + FXR() * 1.2 * (1 - e2 * 0.7), vx: 0, vy: 0, vz: frnd(-0.4, 0.4), g: 0, col: k % 2 ? cb : '#ffffff', s: 0.1, life: 0.45 });
         if (A.px != null) RND.tracers.push({ x: A.px, y: A.py, z: A.pz, x2: x, y2: y, z2: z + 0.8, t: 0, life: 0.3, w: 0.2, col: fusRGB(cb) });

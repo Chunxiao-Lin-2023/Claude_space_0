@@ -86,7 +86,7 @@ Object.assign(MODES.siege, {
   hud() {
     const O = W.obj, c = O.occ.filter(q => q.c).length;
     if (W.phase === 'night') { const L = BAL.nightMin(W.night); return { t: '第 ' + W.night + ' 夜 · 天亮还有 ' + fmtT(L - W.nightT), s: '躲进清理过的楼，封门封窗、埋雷、架机枪塔，撑到天亮', p: W.nightT / L }; }
-    return { t: '尸占区 已清 ' + c + '/' + O.occ.length + ' · 蓝图 ' + O.bp.length + '/' + BP_LIST.length + ' · 第 ' + (W.night + 1) + '/' + SIEGE.nights + ' 夜', s: c < O.occ.length ? '红色是丧尸占着的楼：清掉里面的尸群，拿图纸箱，就地搭据点' : '全城都清过了：搜物资、加固据点', p: c / Math.max(1, O.occ.length) };
+    return { t: '尸占区 已清 ' + c + '/' + O.occ.length + ' · 蓝图 ' + BP_LIST.filter(k => O.bp.includes(k)).length + '/' + BP_LIST.length + '（商店 → 蓝图 看全部）' + ' · 第 ' + (W.night + 1) + '/' + SIEGE.nights + ' 夜', s: c < O.occ.length ? '红色是丧尸占着的楼：清掉里面的尸群，拿图纸箱，就地搭据点' : '全城都清过了：搜物资、加固据点', p: c / Math.max(1, O.occ.length) };
   },
   marks() {
     const me = W.p[ME], O = W.obj; let near = -1, nd = 1e9;

@@ -395,6 +395,7 @@ body:not(.touch) #hTL .items{flex-wrap:wrap;gap:1px 10px}body:not(.touch):not([d
 .shop .sc{grid-template-areas:"h b"}.shop .sc.smed{grid-column:1/-1;border-color:#5a8a5a;background:rgba(80,140,80,.12)}
 .sgrid2{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.sgrid2 .sc{grid-template-columns:1fr;grid-template-areas:"h" "b";gap:4px}.sgrid2 .sc .sh{justify-content:space-between}.sgrid2 .sbtn{min-width:0!important;width:100%}
 .stop{grid-column:1/-1;display:flex;flex-direction:column;gap:5px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+.bpbook{display:flex;flex-direction:column;gap:10px;grid-column:1/-1;width:100%}.bptot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px;padding:6px 8px;background:rgba(127,208,255,.08);border-left:3px solid #7fd0ff;border-radius:4px}.bptot b{font-size:15px}.bptot>span{display:flex;gap:4px}.bph{display:flex;align-items:baseline;gap:8px;border-bottom:1px solid rgba(255,255,255,.12);padding-bottom:2px}.bph b{font-size:14px}.bph em{font-style:normal;color:#ffd48a;font-size:13px}.bpf{font-size:11.5px;color:#9aa3ad;margin:3px 0}.bpg{display:flex;flex-direction:column;gap:3px;margin-top:3px}.bpg:not(:has(.bprow)){flex-direction:row;flex-wrap:wrap}.bprow{display:flex;flex-wrap:wrap;align-items:center;gap:4px}.bprow>b{min-width:3.6em;font-size:12.5px;color:#e8dcc6}.bpc{display:inline-block;font-size:12px;padding:2px 7px;border-radius:3px;background:rgba(255,255,255,.05);color:#7f8690;border:1px solid rgba(255,255,255,.08)}.bpc i{font-style:normal;opacity:.7;margin-left:4px;font-size:11px}.bpc.ok{background:rgba(90,200,120,.16);color:#c4f5d2;border-color:rgba(90,200,120,.35)}.bpc.pd{background:rgba(255,200,80,.16);color:#ffe2a0;border-color:rgba(255,200,80,.4)}
 .sres{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:5px 8px;border-left:3px solid var(--amber);background:rgba(255,190,90,.07);border-radius:4px;font-size:13px}.sres b{font-size:14px;min-width:3.5em}.sres span{white-space:nowrap;color:#e8dcc6}.sres span.lo{color:#ff8a7a;font-weight:700}.sres .sbtn{min-width:0!important;min-height:30px;margin-left:auto}.sres .sbtn+.sbtn{margin-left:0}
 .stip{position:absolute;left:12px;right:12px;z-index:6;background:#211d19;border:1px solid var(--amber);border-radius:8px;padding:10px 12px;box-shadow:0 8px 24px rgba(0,0,0,.6);font-size:13px;line-height:1.5;display:flex;flex-direction:column;gap:6px}.stip>b{font-size:15px;color:var(--amber)}.stip i{font-style:normal;font-size:11px;color:#9a8e7c;text-align:right}.stip .sbtn{align-self:flex-start}
 @media (max-width:600px){.sgrid2{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -722,13 +723,14 @@ body:not(.touch) #hTL .items{flex-wrap:wrap;gap:1px 10px}body:not(.touch):not([d
       <details><summary>丧尸</summary>游荡者、疾跑者、攀爬者（翻墙）、喷吐者（吐酸）、重锤（拆墙）、巨尸（血月），还有成群的尸犬、贴地的爬行尸、死了会炸开（连墙一起炸）的爆尸、会尖叫让周围丧尸发狂并引来更多丧尸的尖叫者、正面打不动的防暴尸（绕到侧面后面，或者用狙击枪、弩、火、炸药）。</details>
       <details><summary>武器和装备</summary>每把枪有自己的用处（切枪时会提示一句）：<b>手枪</b>子弹无限、准，伤害最低；<b>霰弹枪</b>近身清群；<b>步枪</b>持续火力；<b>狙击枪</b>打精英，穿 5 只；<b>弩</b>几乎没声音、钉住丧尸；<b>喷火器</b>堵门，火会传；<b>榴弹发射器</b>炸一片。<br><b>快捷武器</b>：在「装备」（电脑按 <kbd>I</kbd>，触屏拖武器键选「装备…」）里选 4 把放进快捷栏，电脑 <kbd>1</kbd>–<kbd>4</kbd> 切换、<kbd>Z</kbd> 切回上一把。<br><b>近战</b>：刀或<b>防暴盾</b>（商店 → 武器 里买，二选一，<kbd>X</kbd> / 触屏在「刀 / 盾」键上滑一下切换）。盾推：把前面一片丧尸（最多 8 只）推开约 3 格、晕 1 秒；拿着盾时正面挨打少受一半。<br><b>手雷</b>：电脑按住 <kbd>G</kbd> 会在光标处显示落点圈（爆炸范围），松开扔；触屏点一下自动扔向射程内最大的尸堆，拖动手雷键放落点圈，松手扔。</details>
       <details><summary>商店</summary>在任何建筑里（或营地）按 <kbd>C</kbd> / 点「商店」。分四栏：<b>武器 · 弹药</b>（一把枪和它的子弹在同一张卡上）、<b>道具</b>（四种手雷、医疗包）；放置类道具不在商店，见下面「道具」、<b>载具</b>、<b>强化</b>。材料全队共用，买到的东西归你。</details>
-      <details><summary>道具（建造）</summary>按 <kbd>B</kbd> / 点「道具」拿出道具栏：<b>墙、地板、梯子、门、掩体（木板路障 / 射击栅栏）、陷阱（铁丝网 / 地雷）、炮塔（机枪 / 霰弹 / 狙击）、跳板</b>，同类的合在一格——<b>再点一次同一格（或点上面的小条）换材料</b>，比如木墙 → 砖墙 → 钢墙。放下去不分朝向：梯子会自己贴到能爬上去的那面墙。指哪放哪，按住拖动放一排；放一个扣一份材料，右键 / 「拆除」拆掉退一半。墙、地板、梯子、门只能在营地周围的黄框里放（尸城求生哪都能放）；<b>掩体、陷阱、地雷、机枪塔、探照灯、跳板哪都能放</b>（尸城求生里有些要先找到蓝图）。方块要有支撑，断了会连锁坍塌。楼上最外圈的墙是半人高的矮墙，能探身往下打。<br><b>跳板</b>：踩上去把你朝走的方向弹出约 5 格，前面有矮楼顶（最多高 2 层）就弹上去，用一次就没——被围住时的逃生道具。</details>
+      <details><summary>道具（建造）</summary>按 <kbd>B</kbd> / 点「道具」拿出道具栏：<b>墙、地板、梯子、门、掩体（木板路障 / 射击栅栏）、陷阱（铁丝网 / 地雷）、炮塔（机枪 / 霰弹 / 狙击）、跳板</b>，同类的合在一格——<b>再点一次同一格（或点上面的小条）换材料</b>，比如木墙 → 砖墙 → 钢墙。放下去不分朝向：梯子会自己贴到能爬上去的那面墙。指哪放哪，按住拖动放一排；放一个扣一份材料，右键 / 「拆除」拆掉退一半。墙、地板、梯子、门只能在营地周围的黄框里放（尸城求生哪都能放）；<b>掩体、陷阱、地雷、机枪塔、探照灯、跳板哪都能放</b>（尸城求生里掩体、陷阱、炮塔要先找到蓝图；墙、地板、门、梯子都不用）。方块要有支撑，断了会连锁坍塌。楼上最外圈的墙是半人高的矮墙，能探身往下打。<br><b>跳板</b>：踩上去把你朝走的方向弹出约 5 格，前面有矮楼顶（最多高 2 层）就弹上去，用一次就没——被围住时的逃生道具。</details>
       <details><summary>载具</summary><b>自行车</b>快 70%，没有发动机（攻楼时不会吵醒楼里的丧尸，别的车会），泥地不减速；骑着开枪射速不降、伤害 +15%，骑起来时 40% 的攻击能闪开；<b>摩托车</b>快 90%，后座带一个队友；<b>货运三轮</b>坐在车上就能搜东西（够得更远、时间减半、材料 +50%）；<b>装甲车</b>车里的人（含后座）受到的伤害只剩 30%，3 秒没挨打每秒回 4 血，撞丧尸 70 伤害并撞倒，后座带一个队友、从射击孔开枪射速不降；<b>旋翼机</b>会飞，越过屋顶和尸群（丧尸咬不到，喷吐者还能打到），只能在地面或楼顶起飞（头顶不能有屋顶），一箱油飞 60 秒，没满随时能加（商店「载具」栏一键加满，或在有屋顶的房间里按 <kbd>F</kbd>），飞着用机头下的机枪打（机上自己的子弹，商店「武器 · 弹药」里买，最多存 500 发），手里的枪不能用，手雷能扔；后座能带一个队友（上去后旋翼空转约 1 秒，队友这时按 <kbd>T</kbd> 上来），后座的人能开枪；再按 <kbd>T</kbd> 降落，没油会自己降落；<b>坦克</b>自带炮塔，开火打炮弹（打到哪炸到哪，120 伤害、半径 2.3，1.6 秒一发；炮弹在商店「武器 · 弹药」栏买，车里最多 200 发），受到的伤害只剩 20%，撞开丧尸，但慢、太大进不了楼（有屋顶的地方开不进去）。<b>变形成机甲</b>：骑车时按 <kbd>X</kbd>（触屏：骑车时「刀」键变成「变形」），1 秒后载具站起来变成机甲，再按变回。每种载具一台：自行车→疾风（最快，机枪不用换弹、浮游炮放 10 台悬浮机枪）、摩托→赤刃（臂刃下劈、冲斩）、三轮→工蜂（一次扔 3 个快递、快递雨倾泻 36 个，能搜刮）、装甲车→铁卫（左拳 / 右拳 / 双拳捶地，掀地把周围 7 格的丧尸掀飞，最耐打）、旋翼机→苍隼（火箭弹，技能键起飞 / 降落一直飞，飞着一次齐射 3 发）、坦克→重炮（手臂炮、齐射用炮弹）。机甲会把路上的石头、灌木、栅栏踩平。开火 = 出拳，手雷键 = 技能；装甲打光或电用完会变回载具，装甲和电下车后慢慢恢复，商店「载具」栏能马上修好 / 充满；屋顶下站不起来。在商店「载具」栏或「装备」里选一辆当默认：<kbd>T</kbd> / 点「载具」就上这辆，再按下车；<kbd>Shift</kbd>+<kbd>T</kbd> / 长按「载具」换车。车上也能开枪，只是射速慢（司机 40%、后座 70%；自行车 80%），准度不变。<br><b>怪兽</b>：第 5 夜起隔夜出现（第 11 夜起两只），血很厚，每种有自己的大招，放之前地上会有红色范围提示、身上发光——<b>裂颚兽</b>喷酸（扇形）、<b>钢尾兽</b>甩尾（一圈）或低头冲锋（一条线）、<b>掘地兽</b>钻地从你脚下冒出来还带爬行尸。蓄力时用震地、爆破手雷等把它震晕能打断。</details>
       <details><summary>白天和永久任务</summary>出门砍树（木材）、采石（砖石），搜汽车、补给箱和废墟瓦砾（钢材、零件、弹药），离家越远收获越多；回来盖楼；在任何建筑里（或营地工作台）都能造枪、买弹药（按 C / 点「商店」）。河上只有两座桥，丧尸也只能从桥上过河。每 5 夜一次血月。<br>右上角「任务」小条点开是永久任务（击杀、搜索、建造、砍树采石、手雷击杀、整夜无人倒下……），每完成一档拿一个永久提升：生命上限、背包（弹药上限）、医疗包上限、手雷上限、复活次数。</details>
       <details><summary>飞行丧尸和能力者</summary>第 2 夜起有<b>尸鸦</b>群：飞过墙和屋顶在头顶盘旋，尖叫一声后朝地上红圈俯冲（走开就扑空），有时会沿一条红线低空扫过来（往旁边躲）；第 3 夜起混着大个的<b>尸鹫</b>，在高处往你要走到的地方丢酸液（红圈，别停在里面）；第 4 夜起有<b>尸蝠</b>，咬到可能扒在你身上吸血，用刀把它打下来。躲进有屋顶的楼里它们就够不着。第 3 夜起每晚有<b>能力者</b>（头顶有名字），每个都有破解办法，破解后它会露出<b>破绽</b>（黄色标签，几秒内受到双倍伤害）：<b>闪影者</b>瞬移到你身后（紫光），出现后有一拍才砍——这时打它就能反击，或者马上走开让它砍空；<b>唤尸者</b>会躲着你、从地下叫丧尸，追上去打，叫的时候打够伤害就打断，它死了叫出来的也跟着倒；<b>护盾者</b>给周围丧尸套护盾，站进护盾里打才打得动，但它会把里面的人震出去（红圈），震之前狠打它能连护盾一起打碎，爆破弹也能；<b>隐身者</b>摸过来时地上有淡淡的红点，偷袭前会闪一下——转身面对它（或打它）就能反击，背对就挨刀。打死能力者掉零件、钢材和特殊手雷。</details>
-      <details><summary>蓝图与改装</summary>新开一局时在「模式 / 地图」里选 <b>2 种开局载具</b>（默认自行车 + 货运三轮），其它载具要找到它的<b>蓝图</b>才能造（尸城求生照旧用它自己的载具 / 建筑蓝图，但机甲、枪械、战甲图纸一样会搜到）。搜箱子 / 车 / 柜子时偶尔会翻出蓝图（大约二十个里有一张）：<b>载具蓝图</b>找到就解锁；<b>机甲强化图纸</b>和<b>枪械改装图纸</b>要在商店里花钢材和零件装上，每种最多 3 级，每一级都能在模型上看到变化，每台机甲各有一套：疾风 护甲套件 → 双联机枪 + 推进器 → 极速尾翼；赤刃 大铠 → 燃烧的妖刀 + 旗指物 → 新月前立 + 鬼火；工蜂 安全帽 → 快递无人机 → 蜂后翅膀；铁卫 塔盾 → 液压重拳 → 金角；苍隼 流线座舱 → 腰挂导弹 → 光翼 + 尾羽；重炮 反应装甲 → 主炮 → 雷达。第 1 级更耐打，第 2 级更痛，第 3 级两样都再加。枪：1 级扩容弹匣（弹匣 ×1.4，枪身变橄榄绿）→ 2 级双持（左手再拿一把，一次 2 发、每发 ×0.6，枪身变蓝、青色弹道）→ 3 级进化成终极形态（金色，弹匣 ×1.7，双持每发 ×0.55）：手枪 = 两台悬浮无人机跟着你打，你停手时它们自己打附近的丧尸；霰弹枪 = 右肩霰弹炮；步枪 = 肩扛重机枪；狙击枪 = 电磁轨道炮（一条线全打穿、无视防暴盾）；弩 = 分裂弩箭（飞出 3.5 格后散成 5 支）；喷火器 = 长龙火鞭（13 格长的火线，甩动瞄准就能横扫，扫过的地面烧一会儿）；榴弹发射器 = 背部火箭巢（每次再打 2 枚火箭）。<br><b>等身战甲</b>：图纸里还有六件战甲（头盔、胸甲、肩甲、护臂、腿甲、动力背包），谁在商店里「穿上」就归谁（自己已有的留给队友），每件花钢材 18、零件 14：头盔视野 +3 格、受伤 −5%，胸甲受伤 −20%，肩甲被击退减半、受伤 −8%，护臂换弹快 25%、射速 +10%，腿甲步行快 12%，动力背包生命上限 +40、4 秒没挨打就每秒回 3 血；穿齐六件受伤再 −10%、怪兽和能力者打你再 −15%（全套合计约少挨 37% 的伤害，打怪兽约少 47%），战甲上的光纹全亮。穿了哪件，人物身上就多哪件。另外，弹匣打空会自动换弹。</details>
+      <details><summary>蓝图与改装</summary>商店里的<b>「蓝图」</b>页列出这个模式的全部蓝图：绿色 ✓ 是已经有了，黄色 ◆ 是找到了还没装，灰色是还没找到；最上面是总进度。新开一局时在「模式 / 地图」里选 <b>2 种开局载具</b>（默认自行车 + 货运三轮），其它载具要找到它的<b>蓝图</b>才能造（尸城求生照旧用它自己的载具 / 建筑蓝图，但机甲、枪械、战甲图纸一样会搜到）。搜箱子 / 车 / 柜子时偶尔会翻出蓝图（大约二十个里有一张）：<b>载具蓝图</b>找到就解锁；<b>机甲强化图纸</b>和<b>枪械改装图纸</b>要在商店里花钢材和零件装上，每种最多 3 级，每一级都能在模型上看到变化，每台机甲各有一套：疾风 护甲套件 → 双联机枪 + 推进器 → 极速尾翼；赤刃 大铠 → 燃烧的妖刀 + 旗指物 → 新月前立 + 鬼火；工蜂 安全帽 → 快递无人机 → 蜂后翅膀；铁卫 塔盾 → 液压重拳 → 金角；苍隼 流线座舱 → 腰挂导弹 → 光翼 + 尾羽；重炮 反应装甲 → 主炮 → 雷达。第 1 级更耐打，第 2 级更痛，第 3 级两样都再加。枪：1 级扩容弹匣（弹匣 ×1.4，枪身变橄榄绿）→ 2 级双持（左手再拿一把，一次 2 发、每发 ×0.6，枪身变蓝、青色弹道）→ 3 级进化成终极形态（金色，弹匣 ×1.7，双持每发 ×0.55）：手枪 = 两台悬浮无人机跟着你打，你停手时它们自己打附近的丧尸；霰弹枪 = 右肩霰弹炮；步枪 = 肩扛重机枪；狙击枪 = 电磁轨道炮（一条线全打穿、无视防暴盾）；弩 = 分裂弩箭（飞出 3.5 格后散成 5 支）；喷火器 = 长龙火鞭（13 格长的火线，甩动瞄准就能横扫，扫过的地面烧一会儿）；榴弹发射器 = 背部火箭巢（每次再打 2 枚火箭）。<br><b>等身战甲</b>：图纸里还有六件战甲（头盔、胸甲、肩甲、护臂、腿甲、动力背包），谁在商店里「穿上」就归谁（自己已有的留给队友），每件花钢材 18、零件 14：头盔视野 +3 格、受伤 −5%，胸甲受伤 −20%，肩甲被击退减半、受伤 −8%，护臂换弹快 25%、射速 +10%，腿甲步行快 12%，动力背包生命上限 +40、4 秒没挨打就每秒回 3 血；穿齐六件受伤再 −10%、怪兽和能力者打你再 −15%（全套合计约少挨 37% 的伤害，打怪兽约少 47%），战甲上的光纹全亮。穿了哪件，人物身上就多哪件。另外，弹匣打空会自动换弹。</details>
       <details><summary>机甲被控制</summary>机甲打得更狠、更扛打，但大块头和特殊丧尸会想办法困住它（只对机甲 / 神兽有效，步行不受影响），每种都有预警、也都有办法：<b>硬直</b>（重锤震地 / 冲撞、怪兽甩尾 / 冲锋 / 扑击 / 巨石 / 钻出、翼龙俯冲；0.6–1 秒不能动也不能出招）——看到地上的红圈和冲撞预警就走开；<b>减速</b>（喷吐者酸液、裂颚兽酸息、毒液尸王的毒池）——离开酸液；<b>破甲</b>（防暴尸、钢尾兽甩尾；6 秒内机甲挨打 +25%）——先打掉它；<b>扒住</b>（攀爬者跳到机甲上，最多 3 只，每只慢 15% 还一直挠装甲）——普攻甩掉一只，放技能 / 变形 / 进化全部甩掉。同一种控制 5 秒内再中只有一半时间；进化成神兽的瞬间解除所有控制。被控制时机甲头顶会写出来。<br>步行和开车：丧尸要贴着你一小会儿（约 0.45 秒）才咬得到，从旁边擦过、开着车冲过去都不会挨咬。</details>
       <details><summary>双人合体</summary>两个人都在机甲形态、离得够近（4.5 格内）时，一个人按 <b>J</b>（触屏点「合体」）请求，另一个人 8 秒内也按 J（「同意」）就合体：先请求的那台做本体（变大 ×1.3，同种 ×1.5），另一台变成挂在本体上的模块——疾风变成绕着转的悬浮炮台，赤刃拆成红甲 + 背后的浮空大刀，工蜂趴在背上变成背包发射器，铁卫变成重甲 + 塔盾，苍隼变成背后的机翼，重炮变成两门肩炮。21 种组合各有名字（比如铁卫 + 赤刃 =「镇魂武士」、苍隼 + 重炮 =「空中炮艇」）。<br><b>驾驶</b>：移动 + 本体的普攻；<b>炮手</b>：模块的普攻（自己瞄）+ 合体技（两台机甲的大招一起放；苍隼带人飞不起来，改成一轮火箭弹幕）。按 <b>K</b>（触屏点「换手」）两人交换驾驶和炮手。两台的装甲合成一条（总量 ×0.9，同种 ×1.035），挨打再 ×0.8，打丧尸伤害 ×1.2（同种 ×1.35），驾驶员和炮手都不会受伤；按 <b>X</b> 或再按 J 解除，各自按剩下的比例分回装甲；合体装甲被打穿就散开，两台都要修。任何一台没电也会解除。</details>
+      <details><summary>合体胶囊（一个人也能合体）</summary>搜东西时偶尔能捡到<b>合体胶囊</b>（大约每 30 次一个，有人有机甲时才掉，最多带 4 个），每个装着一台机甲。在机甲形态、旁边没有能合体的队友时按 <b>J</b>（触屏点武器键「合体 · 胶囊」）：那台机甲装在胶囊里从天而降，砸进你的机体变成模块，合体 45 秒。合体装甲 = (你现在的装甲 + 胶囊机甲满装甲) × 0.9，伤害 ×1.2，名字、模块外观和双人合体一样。你负责移动和本体普攻；模块自己找射程内最近的丧尸打，你按住开火时它跟着打你瞄的地方；<b>G</b> 放合体技（两台的技能一起）。时间到、没电、装甲打穿或按 X / J 就解除。商店 → 载具 里能看到身上的胶囊，点「先用这个」换下一个要用的。</details>
       <details><summary>第二形态</summary>有了载具以后，不管步行、开车还是机甲，杀丧尸都会攒<b>进化槽</b>（一只 4%，大块头 / 能力者 15%，怪兽 40%），最多能存到 500%（每 100% 能变 22 秒，打怪兽时小怪清完了也能撑住；变回来剩下的还留着），满 100% 后在机甲形态<b>长按 X</b>（触屏长按变形键，满了会发光）进化成神兽（点一下 X 还是变回载具），期间再杀敌能多撑一会，装甲回 30%（30 秒内一次），进化瞬间把身边的丧尸震开。神兽形态点 X 变回机甲，<b>长按 X</b> 直接变回载具。<br><b>青蛇</b>（自行车）最快、35% 闪避，只用尾巴：两下甩尾横扫一圈、第三下尾巴砸地，都能打晕，技能毒雾；<b>赤龙</b>（摩托）按住喷火，技能龙腾冲 10 格；<b>玉兔</b>（三轮）最耐打，两只长耳朵像鞭子一样往前抽、第三下转一圈，技能月落砸出大坑；<b>玄龟</b>（装甲车）最硬、身边队友减伤 40%，缩壳往前冲撞，技能旋甲刀枪不入；<b>火凤</b>（旋翼机）一直飞，扇翅从翅尖射出火羽，技能涅槃回装甲还给队友回血；<b>铁熊</b>（坦克）左右掌举高拍下 + 双掌砸地，杀敌回装甲，技能熊吼震住一片并狂暴。</details>
       <details><summary>怪兽</summary>第 5 夜起隔夜来一只（第 11 夜起两只，每只血少一些）。每个大招都有红色预警，放完会露出<b>破绽</b>（双倍伤害）：喷完酸会喘气、甩尾后站不稳、冲锋撞到结实的墙会晕 3 秒、钻地冒出来会卡住、扑击落地会僵住；预警时打出足够伤害（或用机甲重击 / 爆炸晕住）能直接<b>打断</b>。裂颚兽会远距离<b>扑过来</b>（落点有红圈），钢尾兽会<b>扔巨石</b>（能砸墙），掘地兽会放一排<b>地刺</b>（红线）。怪兽能撞烂木墙木门，砖墙以上的楼里它进不来，但会用远程招数打你。血少于一半会<b>暴怒</b>：吼一声把人震开，技能更快。第 7 夜起还可能来会飞的<b>翼龙兽</b>：在高空盘旋（枪、火箭、旋翼机打得到），沿红线<b>俯冲</b>后会落地僵住（这时近身打），往你要去的地方<b>洒酸</b>（落在屋顶上会腐蚀屋顶），人聚在它下面时会<b>扇风</b>把人吹开；预警时打出足够伤害能把它<b>打下来</b>，在地上躺 3 秒。</details>
       <details><summary>视野和复活</summary>只看得到你和队友视野里的丧尸（画面和地图都是）：步行 18 格，越高看得越远，夜里看得近；装甲车只有 13 格，旋翼机在天上 26 格。丧尸在你们的视野外不会扑、冲、吐、叫或放技能。血少于 30% 屏幕四周会泛红、有心跳声。队友死了，你在任何建筑里或营地按交互键就能让他在你身边复活。</details>
@@ -5073,7 +5075,8 @@ const mlvCost = lv => ({ steel: 20 * (lv + 1), parts: 15 * (lv + 1) });
 const mupName = (v, lv) => lv && typeof MUPG_NAME !== 'undefined' && MUPG_NAME[v] ? MUPG_NAME[v][lv - 1] : MUP[lv].n; /* (round 39) each mech's own level names */
 const bpLabel = b => b[0] === 'm' ? MECHS[+b.slice(1)].name + ' · ' + mupName(+b.slice(1), Math.min(UPG_MAX, mlvOf(+b.slice(1)) + 1)) : WPN[+b.slice(1)].name + ' · ' + gunUpName(+b.slice(1), Math.min(UPG_MAX, wlvOf(+b.slice(1)) + 1));
 const isBig = z => { const T = ZT[z.k]; return !!(T && T.kaiju); }; /* (round 38g) the tough ones — (round 38h) just the 怪兽 now */
-const mechOf = p => { const F = p && W && W.fus && (W.fus.a === p.i || W.fus.b === p.i) ? W.fus : null; if (F) return MECHS[F.d === p.i ? F.kb : F.kp]; /* (round 40) fused: the driver fights with the body's attack, the gunner with the module's */ return (p && p.evoOn && EVO[p.veh]) || MECHS[p && p.veh] || MECHS[4]; }; /* (round 37) in beast form its EVO entry stands in for the mech */
+let FUS_ALT = false; /* (round 40d) true while a capsule fusion's module attacks: the driver fights with the module's mech for that one blow */
+const mechOf = p => { const F = p && W && W.fus && (W.fus.a === p.i || W.fus.b === p.i) ? W.fus : null; if (F && FUS_ALT && F.v) return MECHS[F.kp]; if (F) return MECHS[F.d === p.i ? F.kb : F.kp]; /* (round 40) fused: the driver fights with the body's attack, the gunner with the module's */ return (p && p.evoOn && EVO[p.veh]) || MECHS[p && p.veh] || MECHS[4]; }; /* (round 37) in beast form its EVO entry stands in for the mech */
 const mhpOf = (p, v) => { v = v || p.veh; const M = MECHS[v]; if (!M) return 0; const h = p.mh && p.mh[v]; return h == null ? M.hp : h; };
 const PILLION = 0.38;                                   // how far behind the driver the back-seat rider sits
 // (round 24) grenade types: 0 frag (p.nades), 1–3 in p.gn[t - 1]
@@ -5086,8 +5089,8 @@ const GREN = [
 const gCount = (p, t) => t ? ((p.gn || [])[t - 1] || 0) : p.nades;
 const gCap = t => t ? BAL.gnCap : BAL.nadeCap;
 // blueprints (尸城求生): what you can build / make from the start, and what has to be found first
-const BP_BASE = [1, 4, 6, 7, 53, 56]; /* (round 39) sandbags retired */
-const BP_LIST = [2, 3, 5, 8, 9, 51, 52, 57, 59, 'bike', 'moto', 'cargo', 'armor', 'gyro', 'tank'];
+const BP_BASE = [1, 2, 3, 4, 5, 6, 7, 53, 56]; /* (round 39) sandbags retired; (round 40e) every wall / floor / door is free: brick + steel walls and steel floor moved here */
+const BP_LIST = [8, 9, 51, 52, 57, 59, 'bike', 'moto', 'cargo', 'armor', 'gyro', 'tank'];
 const bpName = k => typeof k === 'number' ? B[k].name : (VEH.find(v => v && v.k === k) || { name: k }).name;
 const SLAB_BRIDGE = 11; // slab id for the pre-built bridges (not buildable)
 defB(11, { key: 'bridge', slab: 1, nat: 1, col: '#7e5a36' });
@@ -5147,7 +5150,7 @@ const ZT = {
   shade: { name: '隐身者', hp: 420, spd: 1.5, r: 0.35, h: 1.6, dmg: 12, bdmg: 10, cd: 0.9, sc: 1.55, look: 'walker', skin: '#50505e', elite: { k: 'cloak', cd: 6, col: '#c0c0e0', tip: '隐身摸到你身边偷袭，留意空气里的扭曲，附近炸一下就现形' } },
 };
 const ELITES = ['blinker', 'caller', 'warden', 'shade'];
-const BUILD_TAG = '第 40c 轮'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
+const BUILD_TAG = '第 40d 轮'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
 // aim assist (SET.assist): fire-button lock range (x weapon range), lock-on time before it fires, spread while auto-aimed, mouse/finger magnet
 const PORT = 1.25; // firing port: your own shots pass a wall / door you built if it is this close to you
 const ASSIST = [{ name: '关', range: 0, acq: 0, spread: 1, mag: 0 }, { name: '标准', range: 0.75, acq: 0.3, spread: 1.5, mag: 1 }, { name: '强', range: 1, acq: 0, spread: 1, mag: 1 }];
@@ -5286,7 +5289,7 @@ const BAL = {
   smokeR: 3.8, smokeT: 10, smokeConf: 1.2,                      // smoke: zombies in the cloud lose you, wander and don't bite (and for 1.2 s after leaving)
   blastR: 4.4, blastDmg: 70, blastKB: 24, blastStun: 1.6,       // blast: little damage, throws everything out of the way (clears a path)
   tankDmg: 120, tankR: 2.3, tankRate: 1.45, /* (round 36b) 1.6 → 1.45 */ tankRange: 20, tankCap: 200, tankStart: 100, // (round 31) tank cannon: a shell that bursts where it hits
-  mechBat: 120, mechLow: 20, mechPass: 0.1, evoPass: 0.05, biteWU: 0.45, biteDrive: 2.2, bpOdds: 0.035, bpPity: 32, /* (round 38j) a search finds a blueprint 3.5% of the time, at the latest every 32 searches (≈ one in 20) */ mechDmg: 1.5, mechTough: 1.5, bigHp: 1.25, /* (round 38g) mechs / beasts hit 1.5× harder and lose hull 1.5× slower; (round 38h) only 怪兽 get more hp (1.5 → 1.25, and 尸王 / 巨尸 / 能力者 back to 1): the control skills carry the difficulty now. Everything that isn't a mech does ×bigHp to a 怪兽, so on foot nothing changes */ /* (round 38g) on foot / in a vehicle a zombie must hold on 0.45 s before the first bite; a vehicle moving faster than 2.2 isn't bitten */ /* (round 38f) in beast form only half as much gets through to the pilot */ mechRegen: 0.015, batRegen: 0.4, xformT: 1.0, // (round 34b) mech energy (s), low warning, share of a hit the pilot still feels, hull / energy coming back while not a mech (/s), transform time
+  mechBat: 120, mechLow: 20, mechPass: 0.1, evoPass: 0.05, biteWU: 0.45, biteDrive: 2.2, bpOdds: 0.035, bpPity: 32, capOdds: 0.03, capPity: 45, capMax: 4, capT: 45, /* (round 40d) fusion capsules: 3% of searches (at the latest every 45th) while someone has a mech, hold 4, a fusion lasts 45 s */ /* (round 38j) a search finds a blueprint 3.5% of the time, at the latest every 32 searches (≈ one in 20) */ mechDmg: 1.5, mechTough: 1.5, bigHp: 1.25, /* (round 38g) mechs / beasts hit 1.5× harder and lose hull 1.5× slower; (round 38h) only 怪兽 get more hp (1.5 → 1.25, and 尸王 / 巨尸 / 能力者 back to 1): the control skills carry the difficulty now. Everything that isn't a mech does ×bigHp to a 怪兽, so on foot nothing changes */ /* (round 38g) on foot / in a vehicle a zombie must hold on 0.45 s before the first bite; a vehicle moving faster than 2.2 isn't bitten */ /* (round 38f) in beast form only half as much gets through to the pilot */ mechRegen: 0.015, batRegen: 0.4, xformT: 1.0, // (round 34b) mech energy (s), low warning, share of a hit the pilot still feels, hull / energy coming back while not a mech (/s), transform time
   gyroDmg: 12, gyroRate: 0.11, /* (round 36b) 0.12 → 0.11 */ gyroSpread: 0.06, gyroRange: 22, gyroCap: 500, gyroStart: 250, // (round 30) gyrocopter chin gun: its own ammo, bought in the shop
   flyHover: 2.2, flyClimb: 0.8, flyDrop: 0.6, fuelLow: 10, refuelT: 4, // (round 29) gyrocopter: cruise 2.2 floors over whatever is below, climb / descend rate (of the take-off curve per second), warn at 10 s of fuel, 4 s to refuel indoors
   zSlope: 0.45, zSlopeC: 0.7, // (round 36) zombie speed going UP a hill slope (climbers barely mind)
@@ -6438,7 +6441,7 @@ function mechGun(p, M) {
   const r = mgunRay(sx0, sy0, sz, dx, dy, dz, M.range);
   if (r.z) hurtZombie(r.z, M.dmg * (1 + 0.12 * W.upg), p, dx * 0.25, dy * 0.25);
   noiseAt(p.x, p.y, 9, p.z);
-  emit({ k: 'gshot', o: p.i, mg: 1, a: r2(a), x: r2(sx0), y: r2(sy0), z: r2(sz), e: [r2(sx0 + dx * r.d), r2(sy0 + dy * r.d), r2(sz + dz * r.d)], h: r.z ? 1 : 0 });
+  emit({ k: 'gshot', o: p.i, mg: 1, fm: FUS_ALT ? 1 : 0, a: r2(a), x: r2(sx0), y: r2(sy0), z: r2(sz), e: [r2(sx0 + dx * r.d), r2(sy0 + dy * r.d), r2(sz + dz * r.d)], h: r.z ? 1 : 0 });
 }
 const J_MECHS_S = p => (MECH_DIM[(MECHS[p.veh] || {}).style] || {}).s || 1;
 // where drone k of a 浮游炮 swarm hovers at time t (host and screens work it out the same way)
@@ -6473,11 +6476,11 @@ function mechPunch(p) {
   // (round 35) turn to the target (and step in if it is just out of reach) so the blow / shot goes where the zombie is
   const fistN = false, /* (round 36n) 铁卫's third blow is a pound now, not the fist cannon */ T = mechLock(p, M, fistN ? 7 : 0), ranged = mechRanged(M) || fistN; let a = p.aim; // the fist cannon reaches 7
   if (T) { a = Math.atan2(T.y - p.y, T.x - p.x); const d = Math.hypot(T.x - p.x, T.y - p.y), want = M.reach * 0.75;
-    if (!ranged && d > want + 0.2 && !airborne(p) && fusRole(p) !== 'g') { const st = Math.min(d - want, 2.2); mechMove(p, { dash: { dx: Math.cos(a) * st, dy: Math.sin(a) * st, t: 0, T: 0.12 } }); } }
+    if (!ranged && d > want + 0.2 && !airborne(p) && fusRole(p) !== 'g' && !FUS_ALT) { const st = Math.min(d - want, 2.2); mechMove(p, { dash: { dx: Math.cos(a) * st, dy: Math.sin(a) * st, t: 0, T: 0.12 } }); } }
   p.mAim = a; p.mTgt = T ? T.id : -1;
-  emit({ k: 'mpunch', o: p.i, s: p.mside, c: p.mcmb, a: r2(a) });
+  emit({ k: 'mpunch', o: p.i, s: p.mside, c: p.mcmb, a: r2(a), fm: FUS_ALT ? 1 : 0 }); /* (round 40d) fm: the capsule module's blow, not the body's */
   if (M.atk === 'rocket' || M.atk === 'cannon' || M.atk === 'parcel') return mechShoot(p, M.atk === 'heavy' ? 'fist' : M.atk, T, a);
-  (W.dly = W.dly || []).push({ t: 0.13, punch: p.i, c: p.mcmb, a }); // the blow lands when the swing does (after the wind-up)
+  (W.dly = W.dly || []).push({ t: 0.13, punch: p.i, c: p.mcmb, a, fm: FUS_ALT ? 1 : 0 }); // the blow lands when the swing does (after the wind-up)
 }
 // a melee blow lands: every style hits the ground in front of the mech (zombie height), some in a sector, some round a point
 function mechPunchHit(p, cmb, aa) {
@@ -6594,7 +6597,7 @@ function stepDelayed(dt) {
   for (const q of W.dly) { q.t -= dt;
     if (q.thr != null) { const z = W.zs.find(z => z.id === q.thr); if (z && z.hp > 0) { const f = clamp(1 - q.t / q.T, 0, 1), gz = surfZ(q.x, q.y, q.L); z.x = lerp(q.x0, q.x, f); z.y = lerp(q.y0, q.y, f); z.z = lerp(q.z0, gz, f) + Math.sin(f * Math.PI) * 3; z.stun = Math.max(z.stun || 0, 0.3);
       if (q.t <= 0) { z.L = q.L; z.z = gz; const o = W.p[q.o]; hurtZombie(z, 200 * mechMul(), o, 0, 0); for (const y of W.zs) { if (y === z || y.hp <= 0 || y.hidden) continue; const d = Math.hypot(y.x - q.x, y.y - q.y); if (d < 2) { hurtZombie(y, 100, o, (y.x - q.x) / (d || 1) * 5, (y.y - q.y) / (d || 1) * 5); y.stun = Math.max(y.stun || 0, 0.8); } } emit({ k: 'slam', x: r2(q.x), y: r2(q.y), z: r2(gz), r: 2 }); emit({ k: 'sfx', n: 'smash', x: q.x, y: q.y }); } } else q.t = 0; continue; } // (round 34b) a thrown zombie flies, then smashes down
-    if (q.t > 0) continue; if (q.punch != null) { if (W.p[q.punch]) mechPunchHit(W.p[q.punch], q.c, q.a); continue; } const o = W.p[q.o];
+    if (q.t > 0) continue; if (q.punch != null) { if (W.p[q.punch]) { FUS_ALT = !!(q.fm && W.fus && W.fus.v && W.fus.a === q.punch); mechPunchHit(W.p[q.punch], q.c, q.a); FUS_ALT = false; } continue; } const o = W.p[q.o];
     if (q.stomp) { if (o) { evoRound(o, q.x, q.y, q.R, q.dmg, q.kb || 8, q.st || 1, q.psn, q.psnM, q.ring); if (q.moon) { const gz = surfZ(q.x, q.y, q.L); emit({ k: 'moonfx', x: r2(q.x), y: r2(q.y), z: r2(gz), r: q.R }); if (q.zone) { (W.evz = W.evz || []).push({ k: 'moon', x: q.x, y: q.y, z: gz, r: q.R, t: q.zone, o: q.o, m: q.dmg / 320 }); (W.cz = W.cz || []).push({ k: 5, x: r2(q.x), y: r2(q.y), z: r2(gz), r: q.R, t: q.zone }); emit({ k: 'ezone', zk: 'moon', x: r2(q.x), y: r2(q.y), z: r2(gz), r: q.R, t: q.zone }); } } } continue; } if (q.claw) { if (o && inMech(o)) evoClaw(o, q.a, q.dmg); continue; } if (q.ears) { if (o && inMech(o)) evoEars(o, q.a, q.dmg, q.big); continue; } if (q.earspin) { if (o && inMech(o)) evoEarSpin(o, q.dmg); continue; } /* (round 38d) 玉兔 */ /* (round 37) beast blows */
     if (q.launch) { if (o && inMech(o)) { const ft = q.ft * frnd(0.85, 1.1), sd = rand() < 0.5 ? -1 : 1, ca2 = Math.cos(o.aim), sa2 = Math.sin(o.aim); emit({ k: 'mrkt', o: q.o, kd: 'bigparcel', x: r2(o.x - ca2 * 0.5 * q.s2 - sa2 * sd * 0.3), y: r2(o.y - sa2 * 0.5 * q.s2 + ca2 * sd * 0.3), z: r2(pZ(o) + 2.4 * q.s2), e: [r2(q.x), r2(q.y), r2(q.zz)], t: r2(ft) }); W.dly.push({ t: ft, box: 1, big: 1, x: q.x, y: q.y, zz: q.zz, R: 1.5, dmg: BAL.rainDmg * mechMul(), o: q.o }); } continue; } /* (round 36n) one parcel of the 快递雨 torrent leaves the rack */
     if (q.fistZ != null) { const z = W.zs.find(z => z.id === q.fistZ); if (z && z.hp > 0) { const big = ZT[z.k].boss || ZT[z.k].kaiju; hurtZombie(z, 140 * mechMul(), o, q.dx * (big ? 2 : 9), q.dy * (big ? 2 : 9)); z.stun = Math.max(z.stun || 0, big ? 0.2 : 1); emit({ k: 'mhit', o: q.o, h: 1, x: r2(z.x), y: r2(z.y), z: r2(z.z + 0.8), r: 1 }); } continue; }
@@ -6818,7 +6821,7 @@ function stepActions(p, dt) {
   }
   if (p.down) { p.downT -= dt; if (p.downT <= 0) { p.down = false; p.dead = true; p.reloadT = 0; p.medT = 0; p.ride = false; p.downT = W.phase === 'night' ? BAL.respawnNight : BAL.respawnDay; emit({ k: 'dead', p: p.i, t: p.lives > 0 ? Math.round(p.downT) : -1, n: p.lives || 0 }); checkLose(); return; } }
   const wi = p.down ? 0 : p.wpn, w = WPN[wi];
-  p.gcd = (p.gcd || 0) - dt; if (I.fire && vehGun(p) && vehGun(p) !== 'busy') (vehGun(p) === 'cannon' ? tankFire(p) : vehGun(p) === 'mech' ? mechPunch(p) : gyroFire(p)); // (round 30 / 31) the aircraft's chin gun or the tank's cannon fires instead of your gun
+  p.gcd = (p.gcd || 0) - dt; if (I.fire && vehGun(p) && vehGun(p) !== 'busy') (vehGun(p) === 'cannon' ? tankFire(p) : vehGun(p) === 'mech' ? mechPunch(p) : gyroFire(p)); if (W.fus && W.fus.v && W.fus.a === p.i) fuseAI(p, dt, !!I.fire); /* (round 40d) the capsule module fights on its own */ // (round 30 / 31) the aircraft's chin gun or the tank's cannon fires instead of your gun
   if (I.fire && !p.build && !vehGun(p) && p.fireCD <= 0 && p.cdW[wi] <= 0 && p.reloadT <= 0 && p.medT <= 0) {
     if (p.mag[wi] > 0) fireWeapon(p, wi);
     else if (w.inf || p.ammo[wi] > 0) startReload(p);
@@ -6888,6 +6891,7 @@ function completeUse(p, tgt) {
   if (S.vanish) setCell(i, 0, W.slab[i], null, 'loot'); else { W.srch.add(i); W.ver++; emit({ k: 'spot', i, v: 1 }); }
   taskAdd('search'); if (!inZone(x, y)) taskAdd('far');
   const got = [];
+  if (activeP().some(q => q.vehs & 126)) { W.capN = (W.capN || 0) + 1; if (capN() < BAL.capMax && (rand() < BAL.capOdds || W.capN >= BAL.capPity)) { W.capN = 0; const v = 1 + Math.floor(rand() * 6); (W.bps = W.bps || []).push('c' + v); emit({ k: 'bpget', t: 'c', v, p: p.i }); got.push(MECHS[v].name + '合体胶囊'); } } /* (round 40d) a fusion capsule now and then, once anyone has a mech */
   if (upgOn() && (W.vbp || isSiege())) { W.bpN = (W.bpN || 0) + 1; if (rand() < BAL.bpOdds || W.bpN >= BAL.bpPity) { const b = bpRoll(p); if (b) { W.bpN = 0; got.push(b); } } } /* (round 38j) now and then a blueprint */
   for (const k in S.loot) { const [a, b] = S.loot[k]; const n = Math.round(rand(a, b) * m); if (n > 0) { W.res[k] += n; got.push('+' + n + ' ' + RES.find(r => r.k === k).name); } }
   if (S.ammo) { for (const q of activeP()) for (let wi = 1; wi < NW; wi++) if (q.owned[wi] || S.allAmmo) q.ammo[wi] += Math.round(WPN[wi].loot * S.ammo * m * (q.owned[wi] ? 1 : 0.5)); got.push(S.allAmmo ? '各种子弹' : '全队弹药'); }
@@ -7222,7 +7226,7 @@ function doAct(p, a, v) {
       p.fireCD = Math.max(p.fireCD, 0.2); emit({ k: 'sfx', n: 'swap', x: p.x, y: p.y, o: p.i }); } break;
     case 'knife': if (p.melee === 1 && p.shield) bash(p, v); else knife(p, typeof v === 'number' ? v : -1); break;
     case 'melee': p.melee = v === 1 && p.shield ? 1 : 0; break;
-    case 'nade': if (inMech(p)) { const fr = fusRole(p); if (fr === 'g') fuseSkill(p, v); else if (fr === 'd') emit({ k: 'deny', p: p.i, why: '合体中大招归炮手放：按 K 换手' }); else mechSkill(p, v); } else throwNade(p, v); break;
+    case 'nade': if (inMech(p)) { const fr = fusRole(p); if (fr === 'g' || (fr === 'd' && W.fus.v)) fuseSkill(p, v); /* (round 40d) alone, you fire the combined skill yourself */ else if (fr === 'd') emit({ k: 'deny', p: p.i, why: '合体中大招归炮手放：按 K 换手' }); else mechSkill(p, v); } else throwNade(p, v); break;
     case 'fuse': fuseAct(p); break; /* (round 40) */
     case 'fswap': fuseSwap(p); break; // (round 34) in a mech the grenade key is its skill
     case 'med':
@@ -7235,7 +7239,7 @@ function doAct(p, a, v) {
     case 'build': if (!RETIRED.includes(+v.b)) doBuild(p, v.x, v.y, v.l, v.b, v.d); break; /* (round 39) retired kinds can't be built */
     case 'demo': doDemolish(p, v.x, v.y, v.l); break;
     case 'crush': if (inMech(p) && typeof v === 'number' && v >= 0 && v < NC && MECH_CRUSH.has(W.blk[v]) && !(W.mine && W.mine.has(v)) && Math.hypot(cx_(v) + 0.5 - p.x, cy_(v) + 0.5 - p.y) < 2.6) { const r = B[W.blk[v]].res, g = GATHER[W.blk[v]]; if (p.veh === 3 && g) { mechScar(v, null, null, BAL.workerRegrow); const n = Math.max(1, Math.round(rand(g.n[0], g.n[1]) * BAL.workerGather)); W.res[g.res] += n; taskAdd('gather'); emit({ k: 'loot', p: p.i, x: cx_(v) + 0.5, y: cy_(v) + 0.5, z: cl_(v) * FH + 1, text: '+' + n + ' ' + RES.find(q => q.k === g.res).name }); setCell(v, 0, W.slab[v], null, 'mine'); } /* (round 36) 工蜂's passive: what it flattens is gathered (and so doesn't grow back) */ else { mechScar(v); setCell(v, 0, W.slab[v], null, 'brk'); if (r && rand() < 0.5) W.res[r] = (W.res[r] || 0) + 1; } emit({ k: 'sfx', n: 'bash', x: cx_(v) + 0.5, y: cy_(v) + 0.5 }); } break; // (round 34d) a mech flattens what is in its way
-    case 'bpinst': { const b = (W.bps || [])[v | 0]; if (!b) break; const t = b[0], k = +b.slice(1); if (t === 'a') { if (armHas(p, k)) { emit({ k: 'deny', p: p.i, why: '你已经穿着' + ARM[k].n + '了：让队友来装' }); break; } const c = armCost(); if (!affordable(W.res, c)) { emit({ k: 'deny', p: p.i, why: '材料不足' }); break; } for (const r in c) W.res[r] -= c[r]; W.bps.splice(v | 0, 1); p.arm = (p.arm || 0) | 1 << k; if (k === 5) { p.maxHp = pMaxHpOf(p); p.hp = Math.min(p.maxHp, p.hp + 40); } emit({ k: 'bpuse', p: p.i, t, v: k, full: armFull(p) ? 1 : 0 }); break; } /* (round 38k) armour: worn by whoever installs it */
+    case 'bpinst': { const b = (W.bps || [])[v | 0]; if (!b) break; const t = b[0], k = +b.slice(1); if (t === 'c') { W.bps.splice(v | 0, 1); W.bps.unshift(b); break; } /* (round 40d) a capsule: use this one next */ if (t === 'a') { if (armHas(p, k)) { emit({ k: 'deny', p: p.i, why: '你已经穿着' + ARM[k].n + '了：让队友来装' }); break; } const c = armCost(); if (!affordable(W.res, c)) { emit({ k: 'deny', p: p.i, why: '材料不足' }); break; } for (const r in c) W.res[r] -= c[r]; W.bps.splice(v | 0, 1); p.arm = (p.arm || 0) | 1 << k; if (k === 5) { p.maxHp = pMaxHpOf(p); p.hp = Math.min(p.maxHp, p.hp + 40); } emit({ k: 'bpuse', p: p.i, t, v: k, full: armFull(p) ? 1 : 0 }); break; } /* (round 38k) armour: worn by whoever installs it */
       const lv = t === 'm' ? mlvOf(k) : wlvOf(k), c = t === 'm' ? mlvCost(lv) : gunCost(lv); /* (round 38j) install a found upgrade blueprint with materials */
       if (lv >= UPG_MAX) { W.bps.splice(v | 0, 1); break; } if (!affordable(W.res, c)) { emit({ k: 'deny', p: p.i, why: '材料不足' }); break; } for (const r in c) W.res[r] -= c[r]; W.bps.splice(v | 0, 1);
       if (t === 'm') W.mlv[k] = lv + 1; else W.wlv[k] = lv + 1; emit({ k: 'bpuse', p: p.i, t, v: k, lv: lv + 1 }); } break;
@@ -8231,8 +8235,9 @@ function fuseDeny(p, q) {
 const fuseMateNear = p => { let best = null, bd = 99; for (const q of W.p) { if (q === p || q.gone || q.dead || q.down || !inMech(q)) continue; const d = Math.hypot(q.x - p.x, q.y - p.y); if (d < bd) { bd = d; best = q; } } return best; };
 // J / 合体: split if fused; else ask, or agree to the partner's ask
 function fuseAct(p) {
-  const F = fusOf(p); if (F) { fuseSplit(F, (p.name || '队友') + ' 解除了合体'); return; }
-  const q = fuseMateNear(p), why = fuseDeny(p, q); if (why) { emit({ k: 'deny', p: p.i, why }); return; }
+  const F = fusOf(p); if (F) { fuseSplit(F, F.v ? '你解除了合体' : (p.name || '队友') + ' 解除了合体'); return; }
+  const q = fuseMateNear(p); if (!(q && Math.hypot(q.x - p.x, q.y - p.y) <= FUS.range) && capN()) { fuseCapsule(p); return; } /* (round 40d) no partner close by: use a capsule */
+  const why = fuseDeny(p, q); if (why) { emit({ k: 'deny', p: p.i, why }); return; }
   const R = W.fusReq;
   if (R && R.from === q.i && R.to === p.i && W.t - R.t < FUS.ask) { W.fusReq = null; fuseStart(q, p); return; } // they asked first: their mech is the body
   W.fusReq = { from: p.i, to: q.i, t: W.t }; emit({ k: 'fusreq', o: p.i, to: q.i, kb: p.veh, kp: q.veh });
@@ -8254,7 +8259,7 @@ function fuseSplit(F, why, broke) {
   emit({ k: 'unfuse', a: F.a, b: F.b, kb: F.kb, kp: F.kp, why: why || '', br: broke ? 1 : 0, x: r2(A ? A.x : 0), y: r2(A ? A.y : 0), z: r2(A ? A.z : 0) });
   if (broke) for (const q of [A, B]) if (q) mechEject(q, '合体机甲被打散了：两台机甲的装甲都要修');
 }
-function fuseSwap(p) { const F = fusOf(p); if (!F) return; const d = F.d; F.d = F.g; F.g = d; emit({ k: 'fswap', d: F.d, g: F.g }); }
+function fuseSwap(p) { const F = fusOf(p); if (!F) return; if (F.v) { emit({ k: 'deny', p: p.i, why: '胶囊合体只有你一个人：移动和本体普攻归你，模块自己找目标，G 放合体技' }); return; } const d = F.d; F.d = F.g; F.g = d; emit({ k: 'fswap', d: F.d, g: F.g }); }
 // a hit on either of them lands on the pooled hull
 function fuseHurt(p, dmg) {
   const F = fusOf(p), M = MECHS[F.kb]; F.hp = Math.max(0, F.hp - dmg * M.armor * FUS.armor / BAL.mechTough / MUP[mlvOf(F.kb)].t * (p.ccBrk > 0 ? 1.25 : 1)); emit({ k: 'phurt', p: F.a, d: 0 });
@@ -8284,13 +8289,45 @@ function fuseSkill(G, v) {
 // host, every step: keep the gunner inside the body, run the cooldown, drain both batteries, split when one gives out
 function fuseStep(dt) {
   const R = W.fusReq; if (R && W.t - R.t > FUS.ask) W.fusReq = null;
-  const F = W.fus; if (!F) return; const D = W.p[F.d], G = W.p[F.g];
+  const F = W.fus; if (!F) return;
+  if (F.v) { const D = W.p[F.a]; /* (round 40d) a capsule fusion: one pilot, a timer */
+    if (!D || D.gone || D.dead || D.down || !inMech(D)) { fuseSplit(F, '合体解除了'); return; }
+    if (F.cd > 0) { F.cd = Math.max(0, F.cd - dt); D.mcd = F.cd; }
+    F.left -= dt; if ((D.bat || 0) < 1) { fuseSplit(F, '机甲没电了，合体解除'); return; } if (F.left <= 0) fuseSplit(F, '胶囊能量用完了，合体解除'); return; } const D = W.p[F.d], G = W.p[F.g];
   if (!D || !G || D.gone || G.gone || D.dead || G.dead || D.down || G.down || !inMech(D) || !inMech(G)) { fuseSplit(F, '合体解除了'); return; }
   if (F.cd > 0) { F.cd = Math.max(0, F.cd - dt); G.mcd = D.mcd = F.cd; }
   if ((D.bat || 0) < 1 || (G.bat || 0) < 1) { fuseSplit(F, '机甲没电了，合体解除'); return; }
   if (G.i === ME && NETROLE !== 'guest') fuseSnap(G); // a guest gunner snaps on its own screen (stepMove)
 }
 function fuseSnap(G) { const F = fusOf(G), D = F && W.p[F.d]; if (!D || D === G) return; G.x = D.x; G.y = D.y; G.z = D.z; G.L = D.L; G.zv = D.zv; G.vx = D.vx || 0; G.vy = D.vy || 0; }
+
+/* ================= (round 40d) fusion capsules: fuse on your own ================= */
+// Found while searching ('c' + mech kind in W.bps). With no partner close by, J in mech form uses the first one: that mech drops out of the
+// sky into yours as the module (same pooled hull / ×1.2 damage / names as a co-op fusion) for BAL.capT seconds. You drive and fight with the
+// body; the module fights on its own (fuseAI: the nearest zombie it can reach, or what you aim at while you hold fire); G is the combined skill.
+const capNext = () => { const b = (W && W.bps || []).find(b => b[0] === 'c'); return b ? +b.slice(1) : 0; };
+const capN = () => (W && W.bps || []).filter(b => b[0] === 'c').length;
+function fuseCapsule(p) {
+  const why = !inMech(p) || p.mtr > 0 ? '先变成机甲才能用合体胶囊' : p.evoOn ? '神兽形态不能合体' : p.mfly ? '先落地再合体' : W.fus ? '现在不能合体' : mhpOf(p) < MECHS[p.veh].hp * 0.15 ? '装甲太破了，修一修再合体' : '';
+  if (why) { emit({ k: 'deny', p: p.i, why }); return null; }
+  const ix = W.bps.findIndex(b => b[0] === 'c'), kp = +W.bps[ix].slice(1), kb = p.veh, same = kb === kp, m = FUS.hpMul * (same ? FUS.sameHp : 1), mx = (MECHS[kb].hp + MECHS[kp].hp) * m; W.bps.splice(ix, 1);
+  const F = W.fus = { a: p.i, b: -1, kb, kp, d: p.i, g: -1, same: same ? 1 : 0, max: Math.round(mx), hp: Math.round(Math.min(mx, (mhpOf(p) + MECHS[kp].hp) * m)), cd: 0, t: W.t, v: 1, left: BAL.capT, vg: 0.9, ga: p.aim };
+  if (p.ccLat) shakeOff(p, 99); ccClear(p); p.invT = Math.max(p.invT || 0, 1.2);
+  const a = p.aim + 2.2; /* it comes down behind you, from high up */
+  emit({ k: 'fuse', a: p.i, b: -1, kb, kp, v: 1, x: r2(p.x), y: r2(p.y), z: r2(p.z), bx: r2(p.x + Math.cos(a) * 3.5), by: r2(p.y + Math.sin(a) * 3.5), bz: r2(p.z + 9) });
+  return F;
+}
+// the module's own attack, on its own cooldown: the driver's blow is made with the module's mech for this one call (FUS_ALT)
+function fuseAI(p, dt, fire) {
+  const F = W.fus; F.vg = (F.vg || 0) - dt; if (F.vg > 0 || !inMech(p) || p.mtr > 0 || p.ccStg > 0) return;
+  const M = MECHS[F.kp], rg = mechRanged(M) ? (M.range || 16) : M.reach + 1.2; let z = null;
+  if (!fire) { let bd = rg; for (const q of W.zs) { if (!(q.hp > 0) || q.hidden || q.sleep || q.ck || q.ckF || !zSeen(q) || Math.abs(q.z - p.z) > 3) continue; const d = Math.hypot(q.x - p.x, q.y - p.y); if (d < bd + q.r && (M.atk === 'parcel' || los(p.x, p.y, p.z + 1.6, q.x, q.y, q.z + q.h * 0.5))) { bd = d; z = q; } } if (!z) return; }
+  const keep = { gcd: p.gcd, aim: p.aim, aimPt: p.aimPt, mcmb: p.mcmb, mlastT: p.mlastT, mside: p.mside, mAim: p.mAim, mTgt: p.mTgt };
+  p.gcd = 0; p.mcmb = F.vc; p.mlastT = F.vl; if (z) { p.aim = Math.atan2(z.y - p.y, z.x - p.x); p.aimPt = { x: z.x, y: z.y, z: z.z, zb: z }; }
+  FUS_ALT = true; try { mechPunch(p); } finally { FUS_ALT = false; }
+  F.vc = p.mcmb; F.vl = p.mlastT; F.ga = p.mAim != null ? p.mAim : p.aim; F.vg = M.rate * (fire ? 1 : 1.2);
+  Object.assign(p, keep);
+}
 
 /* ---- 40_modes.js ---- */
 /* ================= game modes: objectives on top of the day / night survival loop =================
@@ -8834,7 +8871,7 @@ Object.assign(MODES.siege, {
   hud() {
     const O = W.obj, c = O.occ.filter(q => q.c).length;
     if (W.phase === 'night') { const L = BAL.nightMin(W.night); return { t: '第 ' + W.night + ' 夜 · 天亮还有 ' + fmtT(L - W.nightT), s: '躲进清理过的楼，封门封窗、埋雷、架机枪塔，撑到天亮', p: W.nightT / L }; }
-    return { t: '尸占区 已清 ' + c + '/' + O.occ.length + ' · 蓝图 ' + O.bp.length + '/' + BP_LIST.length + ' · 第 ' + (W.night + 1) + '/' + SIEGE.nights + ' 夜', s: c < O.occ.length ? '红色是丧尸占着的楼：清掉里面的尸群，拿图纸箱，就地搭据点' : '全城都清过了：搜物资、加固据点', p: c / Math.max(1, O.occ.length) };
+    return { t: '尸占区 已清 ' + c + '/' + O.occ.length + ' · 蓝图 ' + BP_LIST.filter(k => O.bp.includes(k)).length + '/' + BP_LIST.length + '（商店 → 蓝图 看全部）' + ' · 第 ' + (W.night + 1) + '/' + SIEGE.nights + ' 夜', s: c < O.occ.length ? '红色是丧尸占着的楼：清掉里面的尸群，拿图纸箱，就地搭据点' : '全城都清过了：搜物资、加固据点', p: c / Math.max(1, O.occ.length) };
   },
   marks() {
     const me = W.p[ME], O = W.obj; let near = -1, nd = 1e9;
@@ -9599,7 +9636,7 @@ function fxEvent(e) {
   switch (e.k) {
     case 'shot': if (guest && e.o === ME && wlvOf(e.w) < 2 && !e.dr) break; shotFx(e.o, e.w, e.e, e); break; /* (round 39c) upgraded guns aren't predicted on a guest: draw the host's shot */
     case 'cshot': { RND.tracers.push({ x: e.x, y: e.y, z: e.z, x2: e.e[0], y2: e.e[1], z2: e.e[2], t: 0, life: 0.12, w: 0.09, col: [1, 0.7, 0.35] }); RND.flashes.push({ x: e.x, y: e.y, z: e.z, t: 0, life: 0.08 }); sfx('cannon', e.x, e.y); const q = W.p[e.o]; if (q) q._crec = 1; for (let k = 0; k < 6; k++) addP({ x: e.x, y: e.y, z: e.z, vx: frnd(-0.6, 0.6), vy: frnd(-0.6, 0.6), vz: frnd(0.2, 0.8), g: -0.3, col: '#8d8a84', s: 0.1, life: 0.8, smoke: 1 }); break; } // (round 31) tank cannon
-    case 'gshot': if (e.mg) { const q = W.p[e.o]; if (q) { q._mgT = W.t; q._mA = e.a; q._mAT = 0.3; } } /* (round 36n) 疾风's machine gun */ RND.tracers.push({ x: e.x, y: e.y, z: e.z, x2: e.e[0], y2: e.e[1], z2: e.e[2], t: 0, life: 0.07, w: e.mg ? 0.025 : 0.03, col: e.mg ? [1, 0.9, 0.55] : [1, 0.8, 0.4] }); RND.flashes.push({ x: e.x, y: e.y, z: e.z, t: 0, life: 0.04 }); if (thr('gyro', 0.1)) sfx('gyro', e.x, e.y); if (e.h) addP({ x: e.e[0], y: e.e[1], z: e.e[2], vx: frnd(-1, 1), vy: frnd(-1, 1), vz: 1, col: '#7a1010', s: 0.06, life: 0.4 }); break; // (round 30) gyrocopter chin gun
+    case 'gshot': if (e.fm) RND.fgT = W.t; /* (round 40d) the capsule's 疾风 module fired */ else if (e.mg) { const q = W.p[e.o]; if (q) { q._mgT = W.t; q._mA = e.a; q._mAT = 0.3; } } /* (round 36n) 疾风's machine gun */ RND.tracers.push({ x: e.x, y: e.y, z: e.z, x2: e.e[0], y2: e.e[1], z2: e.e[2], t: 0, life: 0.07, w: e.mg ? 0.025 : 0.03, col: e.mg ? [1, 0.9, 0.55] : [1, 0.8, 0.4] }); RND.flashes.push({ x: e.x, y: e.y, z: e.z, t: 0, life: 0.04 }); if (thr('gyro', 0.1)) sfx('gyro', e.x, e.y); if (e.h) addP({ x: e.e[0], y: e.e[1], z: e.e[2], vx: frnd(-1, 1), vy: frnd(-1, 1), vz: 1, col: '#7a1010', s: 0.06, life: 0.4 }); break; // (round 30) gyrocopter chin gun
     case 'tshot': { if (e.i != null) (RND.taim = RND.taim || {})[e.i] = Math.atan2(e.ty - e.y, e.tx - e.x);
       const a = Math.atan2(e.ty - e.y, e.tx - e.x), d = Math.hypot(e.tx - e.x, e.ty - e.y);
       if (e.w === 'shot') { for (let k = 0; k < 6; k++) { const q = a + (k / 5 - 0.5) * 0.8, L = Math.min(5, d + 0.6); RND.tracers.push({ x: e.x, y: e.y, z: e.z, x2: e.x + Math.cos(q) * L, y2: e.y + Math.sin(q) * L, z2: e.tz, t: 0, life: 0.07, w: 0.03, col: [1, 0.75, 0.4] }); } sfx('shotgun', e.x, e.y); }
@@ -9653,18 +9690,18 @@ function fxEvent(e) {
     case 'xform': { const q = W.p[e.o]; if (!q) break; q._xfT = 0; q._xfTo = e.to; q._xfS = -1; sfx('xform', q.x, q.y); shake(q.x, q.y, 0.12); break; } // (round 34b) start the 1 s transformation on every screen
     case 'mmove': if (guest && e.p === ME) { const p = W.p[ME]; if (e.m.dash) p.dash = e.m.dash; if (e.m.jmp) p.jmp = e.m.jmp; } break; // (round 34) a mech dash / leap the host started for this screen's survivor
     case 'fusreq': { const a = W.p[e.o], b = W.p[e.to]; if (e.to === ME) { UI.fusAsk = performance.now(); toast((a ? a.name : '队友') + ' 想和你合体成「' + (FUS_NAME[fusKey(e.kb, e.kp)] || '合体机甲') + '」：8 秒内按 J（触屏点「合体」）同意', '#ffd040'); sfx('ready'); } else if (e.o === ME) toast('已经请求合体，等 ' + (b ? b.name : '队友') + ' 同意（8 秒）', '#ffd040'); break; } /* (round 40) */
-    case 'fuse': { UI.fusAsk = 0; const nm = FUS_NAME[fusKey(e.kb, e.kp)] || '合体机甲'; toast('合体！「' + nm + '」：' + MECHS[e.kb].name + '做本体，' + MECHS[e.kp].name + '变成' + FUS_MOD[e.kp] + (e.a === ME ? ' —— 你是驾驶：移动 + ' + MECHS[e.kb].name + '的普攻' : e.b === ME ? ' —— 你是炮手：' + MECHS[e.kp].name + '的普攻（自己瞄）+ 合体技' : '') + '；K 换手，X 解除', '#ffd040');
+    case 'fuse': { UI.fusAsk = 0; const nm = FUS_NAME[fusKey(e.kb, e.kp)] || '合体机甲'; if (e.v) { if (e.a === ME) toast('合体胶囊！' + MECHS[e.kp].name + '从天而降，变成' + FUS_MOD[e.kp] + '：「' + nm + '」—— 你移动 + ' + MECHS[e.kb].name + '的普攻，模块自己找目标（按住开火就打你瞄的地方），G 合体技，' + BAL.capT + ' 秒；X / J 提前解除', '#ffd040'); fuseAnimStart(e); break; } toast('合体！「' + nm + '」：' + MECHS[e.kb].name + '做本体，' + MECHS[e.kp].name + '变成' + FUS_MOD[e.kp] + (e.a === ME ? ' —— 你是驾驶：移动 + ' + MECHS[e.kb].name + '的普攻' : e.b === ME ? ' —— 你是炮手：' + MECHS[e.kp].name + '的普攻（自己瞄）+ 合体技' : '') + '；K 换手，X 解除', '#ffd040');
       fuseAnimStart(e); break; } /* (round 40c) the cut-in (57_mechupg.js) */
     case 'unfuse': { if (e.a === ME || e.b === ME) toast((e.why || '合体解除') + (e.br ? '' : '：两台机甲各自分开'), e.br ? '#ff6a5a' : '#cfe0ff'); fuseAnimEnd(e); for (let k = 0; k < 24; k++) { const a = k / 24 * 6.283; addP({ x: e.x, y: e.y, z: e.z + 1.5, vx: Math.cos(a) * 4, vy: Math.sin(a) * 4, vz: frnd(0, 2), col: '#ffd040', s: 0.06, life: 0.5 }); } sfx('clank', e.x, e.y); break; }
     case 'fswap': { if (e.d === ME) toast('换手：你现在是驾驶（移动 + 本体普攻）', '#ffd040'); else if (e.g === ME) toast('换手：你现在是炮手（模块普攻 + 合体技）', '#ffd040'); sfx('thunk'); break; }
     case 'fskill': { toast('合体技 · ' + e.n + '！', '#ffd040'); shake(e.x, e.y, 0.3); for (let k = 0; k < 30; k++) { const a = k / 30 * 6.283; addP({ x: e.x, y: e.y, z: e.z + 0.5, vx: Math.cos(a) * 6, vy: Math.sin(a) * 6, vz: 0.5, col: k % 2 ? '#ffd040' : '#fff6c0', s: 0.08, life: 0.5 }); } break; }
-    case 'mpunch': { let q = W.p[e.o]; if (!q) break; { const F = W.fus; if (F && (F.a === e.o || F.b === e.o)) { if (F.g === e.o) { RND.fgT = W.t; sfx('mswing', q.x, q.y); break; } q = W.p[F.a] || q; } } /* (round 40) the gunner's blow animates the module; the driver's the body */ q._mcombo = e.c != null ? e.c : q._mpT != null && q._mpT < 0.95 ? ((q._mcombo || 0) + 1) % 3 : 0; q._mpT = 0; q._mpS = e.s; if (e.a != null) { q._mA = e.a; q._mAT = 0.5; } { const M = MECHS[q.veh]; sfx(M && M.style === 'slim' ? 'mslash' : 'mswing', q.x, q.y); } break; } /* (round 36f) a sword cut sounds like one */ /* (round 35) e.a: the mech turns to the zombie it locked onto */ // (round 34b) a quick follow-up continues the combo
+    case 'mpunch': { let q = W.p[e.o]; if (!q) break; { const F = W.fus; if (F && (F.a === e.o || F.b === e.o)) { if (F.g === e.o || e.fm) { RND.fgT = W.t; sfx('mswing', q.x, q.y); break; } q = W.p[F.a] || q; } } /* (round 40) the gunner's blow animates the module; the driver's the body */ q._mcombo = e.c != null ? e.c : q._mpT != null && q._mpT < 0.95 ? ((q._mcombo || 0) + 1) % 3 : 0; q._mpT = 0; q._mpS = e.s; if (e.a != null) { q._mA = e.a; q._mAT = 0.5; } { const M = MECHS[q.veh]; sfx(M && M.style === 'slim' ? 'mslash' : 'mswing', q.x, q.y); } break; } /* (round 36f) a sword cut sounds like one */ /* (round 35) e.a: the mech turns to the zombie it locked onto */ // (round 34b) a quick follow-up continues the combo
     case 'mrkt': (RND.mrk = RND.mrk || []).push({ x: e.x, y: e.y, z: e.z, e: e.e, T: Math.max(0.05, e.t), t: 0, kd: e.kd }); mechShotFx(e); if (0) for (let k = 0; k < 2; k++) RND.mrk.push({ x: e.x + frnd(-0.15, 0.15), y: e.y + frnd(-0.15, 0.15), z: e.z + frnd(0, 0.2), e: [e.e[0] + frnd(-0.8, 0.8), e.e[1] + frnd(-0.8, 0.8), e.e[2]], T: Math.max(0.05, e.t * frnd(0.85, 1.15)), t: 0, kd: 'parcel', sm: 0.65, fake: 1 }); /* (round 35) a little spray of parcels, not one */ { const q = W.p[e.o]; if (q) { q._mrec = 1; } sfx(e.kd === 'cannon' ? 'cannon' : e.kd === 'parcel' || e.kd === 'bigparcel' ? 'parcel' : 'launcher', e.x, e.y); RND.flashes.push({ x: e.x, y: e.y, z: e.z, t: 0, life: 0.06 }); } break; // (round 34d) rockets / shells / the fist cannon in flight
     case 'mhit': { const q = W.p[e.o]; if (!q) break; mechHitFx(e, q); /* (round 36) */ if (thr('mclang', 0.07)) sfx('mclang', e.x, e.y); if (e.box) { debrisFx(e.x, e.y, e.z + 0.1, '#b8893a', e.box > 1 ? 16 : 8); debrisFx(e.x, e.y, e.z + 0.1, '#e8d9a8', e.box > 1 ? 6 : 3); sfx('smash', e.x, e.y); if (e.box > 1) shake(e.x, e.y, 0.15); } if (e.g) { debrisFx(e.x, e.y, e.z, '#8a7e6a', 8); for (let k = 0; k < 14; k++) { const a = k / 14 * Math.PI * 2, r = (e.r || 1) * 0.5; addP({ x: e.x + Math.cos(a) * r, y: e.y + Math.sin(a) * r, z: e.z + 0.05, vx: Math.cos(a) * 3.5 * (e.r || 1), vy: Math.sin(a) * 3.5 * (e.r || 1), vz: 0.3, g: -0.2, col: '#a89878', s: 0.1, life: 0.45, smoke: 1 }); } } if (e.h) { q._mhs = 0.07; sfx('smash', e.x, e.y); shake(e.x, e.y, 0.18); for (let k = 0; k < 12; k++) addP({ x: e.x, y: e.y, z: e.z, vx: frnd(-3, 3), vy: frnd(-3, 3), vz: frnd(0.5, 3), col: k % 3 ? '#ffd27a' : '#7a1010', s: 0.07, life: 0.35 }); RND.flashes.push({ x: e.x, y: e.y, z: e.z, t: 0, life: 0.06 }); } break; }
     case 'evo': evoEvent(e); break; case 'ezone': evoZone(e); break; /* (round 38c) */ case 'evoready': if (e.p === ME) { toast(e.m === 0 ? '进化槽满了：变成机甲后长按 X 就能进化（继续打丧尸还能多存）' : '进化槽满了：长按 X（触屏长按变形键）变成' + e.n + '；点一下 X 还是变回载具。继续攒能存更多时间', '#ffd24a'); sfx('ready'); } break; case 'efe': evoFeathers(e); break; case 'moonfx': evoMoonFx(e); break;
     case 'ebr': { const q = W.p[e.o]; if (q) { q._brT = W.t; q._mA = e.a; q._mAT = 0.3; } if (thr('ebr', 0.25)) sfx('flamer', q ? q.x : 0, q ? q.y : 0); break; } /* (round 37) beast events */
     case 'drones': droneEvent(e); break; case 'dsh': droneShots(e); break; /* (round 36n) 浮游炮 */
-    case 'bpget': { const who = e.p === ME ? '' : (W.p[e.p] ? W.p[e.p].name + ' ' : ''); toast(who + (e.t === 'v' ? '找到蓝图：' + bpName(e.v) + '（商店里能造了）' : e.t === 'a' ? '找到图纸：' + ARM[e.v].n + '（商店 → 武器 · 道具 里穿上）' : e.t === 'm' ? '找到图纸：' + MECHS[e.v].name + '强化（商店 → 载具 里装上）' : '找到图纸：' + WPN[e.v].name + '改装（商店 → 武器 里装上）'), '#7fd0ff'); sfx('ready'); } break; /* (round 38j) */
+    case 'bpget': { const who = e.p === ME ? '' : (W.p[e.p] ? W.p[e.p].name + ' ' : ''); toast(who + (e.t === 'v' ? '找到蓝图：' + bpName(e.v) + '（商店里能造了）' : e.t === 'c' ? '捡到「' + MECHS[e.v].name + '合体胶囊」！在机甲里按 J（触屏点武器键）召唤它合体 ' + BAL.capT + ' 秒' : e.t === 'a' ? '找到图纸：' + ARM[e.v].n + '（商店 → 武器 · 道具 里穿上）' : e.t === 'm' ? '找到图纸：' + MECHS[e.v].name + '强化（商店 → 载具 里装上）' : '找到图纸：' + WPN[e.v].name + '改装（商店 → 武器 里装上）'), '#7fd0ff'); sfx('ready'); } break; /* (round 38j) */
     case 'bpuse': { const who = e.p === ME ? '' : (W.p[e.p] ? W.p[e.p].name + ' ' : ''); toast(who + (e.t === 'a' ? '穿上了' + ARM[e.v].n + '（' + ARM[e.v].d + '）' + (e.full ? ' —— 全套战甲！' + ARM_SET : '') : e.t === 'm' ? MECHS[e.v].name + ' 装上了「' + mupName(e.v, e.lv) + '」' : WPN[e.v].name + (e.lv >= 3 ? ' 进化成了「' + GEVO[e.v] + '」—— ' + GEVO_D[e.v] : e.lv === 2 ? ' 升级「双持」：左手再拿一把' : ' 装上了「' + GUP[e.lv].n + '」')), '#7fd0ff'); sfx('thunk'); } break;
     case 'mcc': { const q = W.p[e.p], L = { stg: ['硬直！', '#ffb04a', '机甲被震住了：看到地上的红圈 / 冲撞预警就提前走开'], slw: ['减速', '#a6e06a', '酸液让机甲变慢了：离开酸液，或者等它过去'], brk: ['破甲', '#ff6a5a', '防暴尸撬开了装甲：6 秒内机甲挨打 +25%，先把它打掉'], lat: ['被扒住', '#e0a0ff', '攀爬者扒在机甲上（越多越慢）：普攻甩掉一只，放技能 / 变形 / 进化全部甩掉'], off: ['甩掉了' + (e.n > 1 ? ' ×' + e.n : ''), '#d8fff0'] }[e.c]; /* (round 38g) */
       if (L) { RND.floats.push({ x: e.x, y: e.y, z: e.z + 3.2, text: L[0], col: L[1], t: 0 }); if (e.p === ME && L[2]) { UI.ccTip = UI.ccTip || {}; if (!UI.ccTip[e.c]) { UI.ccTip[e.c] = 1; toast(L[2], L[1]); } } if (e.c === 'stg' && q) { sfx('mclang', e.x, e.y); if (e.p === ME) shake(e.x, e.y, 0.35); } } } break;
@@ -11872,7 +11909,7 @@ function fuseDraw(p, m, dt) {
   if (!on) return; const md = mods[F.kp] || (mods[F.kp] = fuseModBuild(mm, F.kp)); /* (round 40b) it attaches itself: the chest, the helmet, the feet */
   if (A) { const k = clamp((A.t - FUSA.hit) / FUSA.asm, 0, 1); fuseModScale(md, A.t < FUSA.hit ? 0.001 : Math.max(0.001, backOut(k, 2.2)), (1 - k) * (1 - k) * Math.PI * 2); } /* the parts burst out of the chest, spinning into place */
   else if (md.scale.x !== 1) fuseModScale(md, 1, 0);
-  const G = W.p[F.g], gT = W.t - (RND.fgT != null ? RND.fgT : -9); md.userData.tick(F, p, dt, G ? G.aim : p.aim, gT);
+  const G = W.p[F.g], gT = W.t - (RND.fgT != null ? RND.fgT : -9); md.userData.tick(F, p, dt, G ? G.aim : F.v ? F.ga : p.aim, gT); /* (round 40d) a capsule module aims where it last attacked */
 }
 /* ================= (round 40c) the fusion cut-in: the partner leaps up spinning and streaks into the body; a flash, a light pillar and a
    shock ring; the body pops up to its fused size while the module's parts burst out of its chest into place; the combo's name slams on screen.
@@ -11886,6 +11923,7 @@ function fuseAnimStart(e) {
   const ca = MECHS[e.kb].glow, cb = MECHS[e.kp].glow; sfx('xform', e.x, e.y); shake(e.x, e.y, 0.15);
   fxAdd({ kind: 'ring', x: e.x, y: e.y, z: e.z + 0.08, s0: 3.6, s1: 0.7, life: FUSA.hit, col: '#ffd040', op: 0.85 }); /* closing in: the charge */
   fxAdd({ kind: 'ring', x: e.x, y: e.y, z: e.z + 1.5, s0: 2.8, s1: 0.5, life: FUSA.hit, col: ca, op: 0.7 });
+  if (e.v) { fuseVModel(e.kp); fxAdd({ kind: 'ball', x: RND.fusA.sx, y: RND.fusA.sy, z: RND.fusA.sz, s0: 0.3, s1: 1.8, life: 0.3, col: cb, op: 0.9 }); sfx('plane', e.x, e.y); return; } /* (round 40d) a capsule: a flash high up, then the pod comes down */
   fxAdd({ kind: 'ring', x: RND.fusA.sx, y: RND.fusA.sy, z: RND.fusA.sz + 0.08, s0: 0.6, s1: 2.6, life: 0.4, col: cb, op: 0.8 }); /* the partner's take-off */
   for (let k = 0; k < 16; k++) { const a = k / 16 * 6.283; addP({ x: RND.fusA.sx, y: RND.fusA.sy, z: RND.fusA.sz + 0.2, vx: Math.cos(a) * 4, vy: Math.sin(a) * 4, vz: frnd(0.5, 2), g: 4, col: cb, s: 0.08, life: 0.45 }); }
 }
@@ -11894,6 +11932,12 @@ function fuseAnimEnd(e) {
   const col = e.br ? '#ff5a3a' : '#ffd040'; shake(e.x, e.y, e.br ? 0.5 : 0.25);
   fxAdd({ kind: 'ball', x: e.x, y: e.y, z: e.z + 1.4, s0: 0.3, s1: 1.6, life: 0.18, col: '#ffffff', op: 0.7 });
   fxAdd({ kind: 'ring', x: e.x, y: e.y, z: e.z + 0.08, s0: 0.5, s1: 5, life: 0.45, col, op: 0.85 });
+  if (e.b < 0 && MECHS[e.kp]) for (let k = 0; k < 36; k++) { const a = FXR() * 6.283, r = FXR() * 0.8; addP({ x: e.x + Math.cos(a) * r, y: e.y + Math.sin(a) * r, z: e.z + 0.6 + FXR() * 2, vx: Math.cos(a) * 1.2, vy: Math.sin(a) * 1.2, vz: frnd(1.5, 4), g: -1, col: k % 3 ? MECHS[e.kp].glow : '#ffffff', s: 0.09, life: 0.9 }); } /* (round 40d) the capsule mech fades away in sparks */
+}
+// (round 40d) the capsule's mech for the cut-in: a model of that kind in a glowing pod, kept and reused
+function fuseVModel(k) {
+  let V = RND.fusVM; if (!V) { const g = new THREE.Group(), pod = new THREE.Mesh(new THREE.CapsuleGeometry(0.95, 1.6, 6, 16), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending, depthWrite: false })); pod.position.y = 1.55; g.add(pod); const rim = new THREE.Mesh(new THREE.TorusGeometry(1.0, 0.06, 6, 28), new THREE.MeshBasicMaterial({ color: '#ffd040' })); rim.rotation.x = Math.PI / 2; rim.position.y = 1.55; g.add(rim); SCN.add(g); V = RND.fusVM = { g, pod, rim, k: 0, mech: null }; }
+  if (V.k !== k) { if (V.mech) V.g.remove(V.mech); V.mech = mkMech(k); V.g.add(V.mech); V.k = k; } V.pod.material.color.set(MECHS[k].glow); V.g.visible = true; return V;
 }
 function fusBanner(kb, kp) {
   const b = document.createElement('div'); b.className = 'fusban';
@@ -11903,11 +11947,13 @@ function fusBanner(kb, kp) {
 function fuseAnimPost(dt) { // after drawPlayers: fly the partner's model in (or out), fire the impact; also put back any model scale an animation left
   const A = RND.fusA, U = RND.fusU;
   OBJ.pl.forEach((m, i) => { if (m.g.scale.x !== 1 && !(A && A.b === i && A.t < FUSA.hit) && !(U && U.b === i && U.t < FUSA.pop)) m.g.scale.setScalar(1); });
-  if (A) { A.t = W.t - A.t0; /* on the game clock: a cut-in missed while drawing was off is simply over */ const ma = OBJ.pl[A.a], m = OBJ.pl[A.b];
-    if (!ma || !W.p[A.a]) { RND.fusA = null; return; } /* not on W.fus: a guest can get the event a moment before the snapshot */
+  if (!A && RND.fusVM && RND.fusVM.g.visible) RND.fusVM.g.visible = false;
+  if (A) { A.t = W.t - A.t0; /* on the game clock: a cut-in missed while drawing was off is simply over */ const ma = OBJ.pl[A.a]; let m = OBJ.pl[A.b];
+    if (!ma || !W.p[A.a]) { RND.fusA = null; if (RND.fusVM) RND.fusVM.g.visible = false; return; } /* not on W.fus: a guest can get the event a moment before the snapshot */
     const tx = ma.g.position.x, ty = ma.g.position.z, tz = ma.g.position.y, ca = MECHS[A.kb].glow, cb = MECHS[A.kp].glow;
+    if (A.b < 0) { const V = RND.fusVM; m = V && A.t < FUSA.hit ? V : null; if (V) { V.g.visible = A.t < FUSA.hit; V.rim.rotation.z = A.t * 9; V.pod.material.opacity = 0.25 + 0.2 * Math.sin(A.t * 30); } } /* (round 40d) the capsule pod stands in for a partner */
     if (A.t < FUSA.hit) { const u = A.t / FUSA.hit, e2 = u * u;
-      if (m && m.g.visible) { const x = lerp(A.sx, tx, e2), y = lerp(A.sy, ty, e2), z = lerp(A.sz, tz + 1.1, e2) + Math.sin(u * Math.PI) * 2.6;
+      if (m && m.g.visible) { const x = lerp(A.sx, tx, e2), y = lerp(A.sy, ty, e2), z = lerp(A.sz, tz + 1.1, e2) + Math.sin(u * Math.PI) * (A.b < 0 ? 0 : 2.6); /* a capsule falls straight in, speeding up */
         m.g.position.set(x, z, y); m.g.scale.setScalar(lerp(1, 0.22, e2)); m.g.rotation.set(0, e2 * Math.PI * 5, Math.sin(u * Math.PI) * 0.5); /* leaps up, spins faster and faster, shrinks into a streak */
         for (let k = 0; k < 4; k++) addP({ x: x + frnd(-0.3, 0.3), y: y + frnd(-0.3, 0.3), z: z + 0.4 + FXR() * 1.2 * (1 - e2 * 0.7), vx: 0, vy: 0, vz: frnd(-0.4, 0.4), g: 0, col: k % 2 ? cb : '#ffffff', s: 0.1, life: 0.45 });
         if (A.px != null) RND.tracers.push({ x: A.px, y: A.py, z: A.pz, x2: x, y2: y, z2: z + 0.8, t: 0, life: 0.3, w: 0.2, col: fusRGB(cb) });
@@ -13717,7 +13763,7 @@ function wpickDo(k) { toggleWpick(false); if (!inGame()) return; sfx('click'); i
 function wpickHover(x, y) { let best = null, bd = 1e9; for (const o of UI.wpOpts || []) { if (Math.abs(o.x - x) > o.w / 2 + 3 || Math.abs(o.y - y) > o.h / 2 + 3) continue; const d = Math.hypot(o.x - x, o.y - y); if (d < bd) { bd = d; best = o; } } for (const o of UI.wpOpts || []) o.b.classList.toggle('hi', o === best); UI.wpHi = best; }
 WK.addEventListener('pointerdown', e => {
   e.preventDefault(); e.stopPropagation(); audioInit(); if (!inGame()) return;
-  { const me = W.p[ME]; if (inMech(me) && W.p.filter(q => !q.gone).length > 1) { act(fusOf(me) ? 'fswap' : 'fuse'); return; } } /* (round 40) */
+  { const me = W.p[ME], F = fusOf(me); if (inMech(me) && (W.p.filter(q => !q.gone).length > 1 || capN() || (F && F.v))) { act(F && !F.v ? 'fswap' : 'fuse'); return; } } /* (round 40) ; (round 40d) alone: a capsule, or split it */
   const was = !$('wpick').classList.contains('hidden'); if (was) { toggleWpick(false); return; }
   UI.wk = { id: e.pointerId, x: e.clientX, y: e.clientY, open: false, tm: setTimeout(() => { if (UI.wk && !UI.wk.open) { UI.wk.open = true; toggleWpick(true); } }, 380) };
   WK.classList.add('on'); try { WK.setPointerCapture(e.pointerId); } catch (_) { }
@@ -14016,7 +14062,7 @@ function makeSnap() {
   const z = []; for (const q of W.zs) z.push(q.id, ZI.indexOf(q.k), Math.round(q.x * 100), Math.round(q.y * 100), q.L, Math.round(q.z * 100), Math.round(q.face * 100), Math.ceil(q.hp / q.max * 100), (q.climbing ? 1 : 0) | (q.atk > 0 ? 2 : 0) | (q.hitT > 0 ? 4 : 0) | (q.moving ? 8 : 0) | (q.burn > 0 ? 16 : 0) | (q.scr > 0 ? 32 : 0) | (q.rage > 0 ? 64 : 0) | (q.hidden ? 128 : 0) | (q.sleep ? 256 : 0) | ((q.aw || 0) > 0.15 ? 512 : 0) | ((q.tl || 0) << 10) | ((q.kt || 0) << 12) | (q.kc ? 16384 : 0) | (q.sh > 0 ? 32768 : 0) | (q.ck ? 65536 : 0)); // (round 35) bit 15: a 护盾者's bubble is up, bit 16: cloaked; kt also carries a flyer's dive / an elite's skill // tl (round 23): brute tells, 2 bits; kt / kc (round 34): kaiju skill state
   const pr = []; for (const b of W.proj) pr.push(b.k === 'nade' ? (b.gt ? 2 + b.gt : 0) : b.k === 'gl' ? (b.rk ? 9 : 2) : 1, r2(b.x), r2(b.y), r2(b.z), r2(b.vx), r2(b.vy), r2(b.vz));
   const d = []; for (const i of W.dirty) d.push(i, Math.round(W.bhp[i]), Math.round(W.shp[i])); W.dirty.clear();
-  return { t: 's', T: r2(W.t), ph: W.phase, cl: Math.round(W.clock * 10) / 10, dl: W.dayLen, n: W.night, nt: Math.round(W.nightT), tk: NET.tkv === W.tkv && (NET.tkN = (NET.tkN || 0) + 1) % 12 ? 0 : (NET.tkv = W.tkv, W.tasks.map(t => [t.k, t.need, t.got, t.done, t.txt, t.rt])), res: RES.map(r => W.res[r.k]), u: W.upg, k: W.kills, p: W.p.map(P), z, pr, d, sl: W.spawnQ.length, cz: (W.cz || []).map(c => [c.k, c.x, c.y, c.z, c.r, r2(c.t)]), ob: NET.obv === W.obv ? 0 : (NET.obv = W.obv, W.obj), pk: W.perk || 0, fu: W.fus ? [W.fus.a, W.fus.b, W.fus.kb, W.fus.kp, W.fus.d, Math.round(W.fus.hp), W.fus.max, r2(W.fus.cd), W.fus.same] : 0, /* (round 40) */ bp: [W.vbp ? vbpMask() : -1, (W.mlv || []).join(''), (W.wlv || []).join(''), (W.bps || []).join(',')] }; /* (round 38i) blueprints */ // (round 32) permanent upgrades (the caps read them)
+  return { t: 's', T: r2(W.t), ph: W.phase, cl: Math.round(W.clock * 10) / 10, dl: W.dayLen, n: W.night, nt: Math.round(W.nightT), tk: NET.tkv === W.tkv && (NET.tkN = (NET.tkN || 0) + 1) % 12 ? 0 : (NET.tkv = W.tkv, W.tasks.map(t => [t.k, t.need, t.got, t.done, t.txt, t.rt])), res: RES.map(r => W.res[r.k]), u: W.upg, k: W.kills, p: W.p.map(P), z, pr, d, sl: W.spawnQ.length, cz: (W.cz || []).map(c => [c.k, c.x, c.y, c.z, c.r, r2(c.t)]), ob: NET.obv === W.obv ? 0 : (NET.obv = W.obv, W.obj), pk: W.perk || 0, fu: W.fus ? [W.fus.a, W.fus.b, W.fus.kb, W.fus.kp, W.fus.d, Math.round(W.fus.hp), W.fus.max, r2(W.fus.cd), W.fus.same, W.fus.v ? 1 : 0, Math.round(W.fus.left || 0), r2(W.fus.ga || 0)] : 0, /* (round 40) ; (round 40d) capsule flag, time left, the module's aim */ bp: [W.vbp ? vbpMask() : -1, (W.mlv || []).join(''), (W.wlv || []).join(''), (W.bps || []).join(',')] }; /* (round 38i) blueprints */ // (round 32) permanent upgrades (the caps read them)
 }
 function hostNetTick(dt) {
   if (!NET.gctl || !NET.gctl.open) return;
@@ -14066,7 +14112,7 @@ function applySnap(s) {
   if (s.pk) W.perk = s.pk;
   if (s.tk) { W.tasks = s.tk.map(a => ({ k: a[0], need: a[1], got: a[2], done: a[3], txt: a[4], rt: a[5] })); W.tkv++; }
   RES.forEach((r, i) => W.res[r.k] = s.res[i]); W.spawnLeft = s.sl;
-  W.fus = s.fu ? { a: s.fu[0], b: s.fu[1], kb: s.fu[2], kp: s.fu[3], d: s.fu[4], g: s.fu[4] === s.fu[0] ? s.fu[1] : s.fu[0], hp: s.fu[5], max: s.fu[6], cd: s.fu[7], same: s.fu[8] } : null; /* (round 40) */
+  W.fus = s.fu ? { a: s.fu[0], b: s.fu[1], kb: s.fu[2], kp: s.fu[3], d: s.fu[4], g: s.fu[9] ? -1 : s.fu[4] === s.fu[0] ? s.fu[1] : s.fu[0], hp: s.fu[5], max: s.fu[6], cd: s.fu[7], same: s.fu[8], v: s.fu[9] || 0, left: s.fu[10] || 0, ga: s.fu[11] || 0 } : null; /* (round 40) */
   if (s.bp) { W.vbp = s.bp[0] < 0 ? null : VEH.filter((q, i) => q && s.bp[0] >> i & 1).map(q => q.k); W.mlv = String(s.bp[1] || '').split('').map(Number); W.wlv = String(s.bp[2] || '').split('').map(Number); W.bps = s.bp[3] ? s.bp[3].split(',') : []; } /* (round 38i/j) */
   s.p.forEach((a, i) => {
     const p = W.p[i]; if (!p) return;
@@ -14201,7 +14247,9 @@ function uiKeys(me) {
     if (me.vehs || me.pass >= 0 || pil) rows.push(['T', me.ride || me.pass >= 0 ? '下车' : pil ? '坐后座' : '上' + (VEH[me.veh] ? VEH[me.veh].name : '车'), me.ride || me.pass >= 0 || pil ? 1 : 0]);
     if (me.vehs & (me.vehs - 1)) rows.push(['⇧T', '换一辆车']);
     if (me.ride && MECHS[me.veh]) { const E = EVO[me.veh], rdy = E && (me.evo || 0) >= 100 && !me.evoOn; rows.unshift(['X', me.mform !== 1 ? '变成' + MECHS[me.veh].name : me.evoOn ? '变回' + MECHS[me.veh].name + '（长按回载具）' : rdy ? '变回载具 · 长按进化 ' + E.name : '变回载具', rdy ? 2 : 0]); /* (round 38j) */ } /* (round 37) */
-    if (inMech(me) && W.p.filter(q => !q.gone).length > 1) { const F = fusOf(me); if (F) { rows.unshift(['K', '换手（现在是' + (fusRole(me) === 'd' ? '驾驶' : '炮手') + '）', 1]); rows.unshift(['X / J', '解除合体']); } else rows.unshift(['J', UI.fusAsk && performance.now() - UI.fusAsk < 8000 ? '同意合体' : '请求合体', UI.fusAsk && performance.now() - UI.fusAsk < 8000 ? 1 : 0]); } /* (round 40) */
+    if (inMech(me)) { const F = fusOf(me), many = W.p.filter(q => !q.gone).length > 1, cn = capN(), ask = UI.fusAsk && performance.now() - UI.fusAsk < 8000; /* (round 40) ; (round 40d) capsules */
+      if (F) { if (F.v) rows.unshift(['G', '合体技' + (F.cd > 0 ? '（' + Math.ceil(F.cd) + 's）' : ''), F.cd > 0 ? 0 : 1]); else rows.unshift(['K', '换手（现在是' + (fusRole(me) === 'd' ? '驾驶' : '炮手') + '）', 1]); rows.unshift(['X / J', '解除合体']); }
+      else if (many || cn) rows.unshift(['J', ask ? '同意合体' : cn && !many ? '合体胶囊：' + MECHS[capNext()].name + (cn > 1 ? '（共 ' + cn + ' 个）' : '') : cn ? '请求合体 · 没人在旁边就用胶囊' : '请求合体', ask || (cn && !many) ? 1 : 0]); }
     if (W.phase === 'day') rows.push(['N', me.ready ? '取消准备' : '准备入夜', me.ready ? 1 : 0]);
   }
   rows.push(['M', '大地图（也可按 Tab）'], ['Q E', '转镜头'], ['Esc', '菜单']);
@@ -14300,7 +14348,7 @@ function hudTick(dt) {
   $('wRl').style.width = (rl * 100) + '%';
   if (inMech(me)) { $('iNadeL').textContent = mechOf(me).sn; $('iNade').textContent = (me.mcd || 0) > 0 ? Math.ceil(me.mcd) + 's' : '✓'; } else { $('iNadeL').textContent = GREN[me.gt || 0].sn; $('iNade').textContent = gCount(me, me.gt || 0); } // (round 34) in a mech the grenade key is its skill $('iMed').textContent = me.meds; $('iKill').textContent = me.kills; $('iLife').textContent = me.lives != null ? me.lives : '-';
   { const mw = $('iMechW'), sh = me.ride && MECHS[me.veh]; mw.classList.toggle('hidden', !sh); if (sh) { const M = MECHS[me.veh], im = inMech(me), h = mhpOf(me); const E = EVO[me.veh], ev = Math.floor(me.evo || 0), evs = !E ? '' : me.evoOn ? ' · ' + E.name + ' ' + Math.ceil(ev / 100 * BAL.evoT) + 's' : ' · 进化 ' + (ev >= 100 ? '满（X）' + (ev > 100 ? ' 可变 ' + Math.floor(ev / 100 * BAL.evoT) + 's' : '') : ev + '%'); /* (round 38i) banked time */ /* (round 37) */ $('iMech').textContent = (INP.touch ? '装甲 ' + Math.round(h) + ' · 电 ' + Math.floor(me.bat != null ? me.bat : BAL.mechBat) + (me.mtr > 0 ? ' · 变形中' : '') : M.name + (me.mtr > 0 ? ' · 变形中' : im ? '' : '（X / 变形）') + ' · 装甲 ' + Math.round(h) + '/' + M.hp + ' · 电 ' + Math.floor(me.bat != null ? me.bat : BAL.mechBat) + 's' + (im ? ' · ' + M.sn + ((me.mcd || 0) > 0 ? ' ' + Math.ceil(me.mcd) + 's' : ' 好了') : '')) + evs; /* (round 36b) on touch the skill cooldown lives on the skill key; the line is just hull and energy */ mw.classList.toggle('low', (me.bat || 0) < BAL.mechLow || h < M.hp * 0.25);
-    { const F = fusOf(me); if (F) { const ro = fusRole(me); $('iMech').textContent = '「' + fusName(F) + '」' + (ro === 'd' ? '驾驶' : '炮手') + ' · 合体装甲 ' + Math.round(F.hp) + '/' + F.max + ' · 电 ' + Math.floor(me.bat || 0) + (INP.touch ? '' : ' · 合体技 ' + (F.cd > 0 ? Math.ceil(F.cd) + 's' : '好了') + (ro === 'd' ? '（炮手放）' : '（G）')); mw.classList.toggle('low', F.hp < F.max * 0.25 || (me.bat || 0) < BAL.mechLow); } } /* (round 40) fused */ } } // (round 34b) mech line whenever you drive
+    { const F = fusOf(me); if (F) { const ro = fusRole(me); $('iMech').textContent = '「' + fusName(F) + '」' + (F.v ? '胶囊合体 · 剩 ' + Math.max(0, Math.ceil(F.left)) + ' 秒' : ro === 'd' ? '驾驶' : '炮手') + ' · 合体装甲 ' + Math.round(F.hp) + '/' + F.max + ' · 电 ' + Math.floor(me.bat || 0) + (INP.touch ? '' : ' · 合体技 ' + (F.cd > 0 ? Math.ceil(F.cd) + 's' : '好了') + (ro === 'd' && !F.v ? '（炮手放）' : '（G）')); mw.classList.toggle('low', F.hp < F.max * 0.25 || (me.bat || 0) < BAL.mechLow || (F.v && F.left < 8)); } } /* (round 40) fused */ } } // (round 34b) mech line whenever you drive
   { const dv = String(me.ride ? me.veh : 0); if (document.body.dataset.veh !== dv) document.body.dataset.veh = dv; const im = inMech(me) || me.mtr > 0; if (document.body.classList.contains('inmech') !== im) document.body.classList.toggle('inmech', im); } // (round 36b) phones show only the info for what you're riding
   { const sw = $('iShlW'), ht = ownsVeh(me, 6); sw.classList.toggle('hidden', !ht); if (ht) $('iShl').textContent = me.shl || 0; } // (round 31) tank shells
   { const fw = $('iFuelW'), has = ownsVeh(me, 5); fw.classList.toggle('hidden', !has); if (has) { const f = Math.ceil(me.fuel || 0); $('iFuel').textContent = f + ' 秒 · 弹 ' + (me.gam || 0); fw.style.color = f < BAL.fuelLow ? '#ff7a6a' : airborne(me) ? '#9fe0ff' : ''; } } // (round 29) gyrocopter fuel
@@ -14376,7 +14424,7 @@ function hudTick(dt) {
     md.firstElementChild.textContent = me.down ? '自救' : '医疗'; $('tMedN').textContent = '×' + me.meds;
     $('tWpn').firstElementChild.textContent = w.sn || w.name; $('tWpn').lastElementChild.textContent = w.inf ? '∞' : me.mag[wi] + '/' + me.ammo[wi];
     $('tWpn').classList.toggle('dim', me.down || me.owned.filter(Boolean).length < 2);
-    if (inMech(me) && W.p.filter(q => !q.gone).length > 1) { const F = fusOf(me), ask = UI.fusAsk && performance.now() - UI.fusAsk < 8000; $('tWpn').firstElementChild.textContent = F ? '换手' : ask ? '同意' : '合体'; $('tWpn').lastElementChild.textContent = F ? (fusRole(me) === 'd' ? '驾驶' : '炮手') : ask ? '合体' : ''; $('tWpn').classList.toggle('dim', false); $('tWpn').classList.toggle('hot', !!ask); } /* (round 40) in a mech the weapon key asks / agrees to fuse, then swaps roles */
+    if (inMech(me) && (W.p.filter(q => !q.gone).length > 1 || capN() || (fusOf(me) && fusOf(me).v))) { const F = fusOf(me), ask = UI.fusAsk && performance.now() - UI.fusAsk < 8000, solo = W.p.filter(q => !q.gone).length < 2; $('tWpn').firstElementChild.textContent = F ? (F.v ? '解除' : '换手') : ask ? '同意' : '合体'; $('tWpn').lastElementChild.textContent = F ? (F.v ? '胶囊' : fusRole(me) === 'd' ? '驾驶' : '炮手') : ask ? '合体' : solo ? '胶囊×' + capN() : ''; /* (round 40d) */ $('tWpn').classList.toggle('dim', false); $('tWpn').classList.toggle('hot', !!ask); } /* (round 40) in a mech the weapon key asks / agrees to fuse, then swaps roles */
     const gt = me.gt || 0, im = inMech(me), gc = im ? ((me.mcd || 0) > 0 ? Math.ceil(me.mcd) : '✓') : gCount(me, gt), tn = $('tNade'), lb = im ? mechOf(me).sn : GREN[gt].sn; $('tNadeN').textContent = gc; tn.classList.toggle('empty', im ? (me.mcd || 0) > 0 : !gc); if (tn.firstChild.nodeValue !== lb) tn.firstChild.nodeValue = lb; // (round 24) shows the picked grenade type
     const sv = $('tShove'), svm = me.ride && MECHS[me.veh] ? (me.mform === 1 ? (me.evoOn ? 'r' : (me.evo || 0) >= 100 && EVO[me.veh] ? 'e' : 'b') : 'x') : String(me.melee === 1 && me.shield ? 1 : 0); if (sv.dataset.m !== svm) { sv.dataset.m = svm; sv.textContent = svm === 'x' ? '变形' : svm === 'b' ? '变回' : svm === 'e' ? '变回 · 长按进化' : svm === 'r' ? '复原' : svm === '1' ? '盾' : '刀'; } sv.classList.toggle('evo', svm === 'e'); sv.style.setProperty('--ev', me.ride && me.mform === 1 && !me.evoOn ? Math.min(100, me.evo || 0) + '%' : '0%'); /* (round 37) tap = 进化 / 复原, hold = back to the vehicle; the button fills up with the meter */ sv.classList.toggle('sw', !!me.shield && !me.ride); sv.classList.toggle('xf', !!me.ride); // (round 34b) driving: the melee key transforms
     $('tFire').style.setProperty('--rl', rl);
@@ -14404,7 +14452,7 @@ function openCraft() {
 function closeCraft() { $('craft').classList.add('hidden'); $('stip').classList.add('hidden'); }
 document.addEventListener('pointerdown', e => { const b = document.getElementById('stip'); if (b && !b.classList.contains('hidden') && !b.contains(e.target)) b.classList.add('hidden'); }, true); // (round 36f) the detail card closes on any tap outside it
 // (round 22) the shop: tabs by kind; a gun and its ammo share one card; vehicles have their own tab
-const SHOP_TABS = [['gun', '武器 · 道具'], ['veh', '载具']]; // (round 36f) weapons and grenades share one tab (medkit first); the 强化 tab is gone
+const SHOP_TABS = [['gun', '武器 · 道具'], ['veh', '载具'], ['bp', '蓝图']]; /* (round 40e) 蓝图: what you have found and what is still out there */ // (round 36f) weapons and grenades share one tab (medkit first); the 强化 tab is gone
 function shopBuy(c) {
   const me = W.p[ME], why = craftBlocked(me, c);
   if (why) { toast(why, '#ff8a7a'); sfx('deny'); return; }
@@ -14434,6 +14482,34 @@ function shopBtn(c, label) {
   const me = W.p[ME], why = craftBlocked(me, c), hard = why && why !== '材料不足';
   return `<button class="sbtn${why ? ' no' : ''}" data-c="${c.id}" ${hard ? 'disabled' : ''}><b>${label || c.name}</b><span>${hard ? why : (Object.keys(c.cost).length ? costText(c.cost) : '免费') + (why ? ' · 不够' : '')}</span></button>`;
 }
+// (round 40e) the blueprint book: every blueprint in this mode, grouped, each found (✓) / found but not installed (待装) / not found yet
+function bpProgress() {
+  const me = W.p[ME], sg = isSiege(), up = upgOn(), pend = b => (W.bps || []).filter(x => x === b).length, sec = [];
+  const chip = (name, st, sub) => `<span class="bpc ${st}">${st === 'ok' ? '✓ ' : st === 'pd' ? '◆ ' : ''}${name}${sub ? '<i>' + sub + '</i>' : ''}</span>`;
+  const add = (title, from, chips, n, tot, note) => sec.push({ title, from, chips, n, tot, note });
+  // buildings + vehicles: 尸城求生 has its own list; elsewhere only vehicles need one
+  if (sg) { const got = W.obj && W.obj.bp || [];
+    add('建造', '开局自带 ' + BP_BASE.length + ' 种；其余在图纸箱必掉，其它箱子偶尔掉', BP_BASE.map(k => chip(bpName(k), 'ok', '自带')).join('') + BP_LIST.filter(k => typeof k === 'number').map(k => chip(bpName(k), got.includes(k) ? 'ok' : 'no')).join(''), BP_LIST.filter(k => typeof k === 'number' && got.includes(k)).length, BP_LIST.filter(k => typeof k === 'number').length);
+    add('载具（能变机甲）', '同上', BP_LIST.filter(k => typeof k === 'string').map(k => chip(bpName(k), got.includes(k) ? 'ok' : 'no')).join(''), BP_LIST.filter(k => typeof k === 'string' && got.includes(k)).length, BP_LIST.filter(k => typeof k === 'string').length); }
+  else { const ks = VEH.filter(v => v).map(v => v.k), has = k => !W.vbp || W.vbp.includes(k);
+    add('载具（能变机甲）', '开局选 2 种；其余搜东西时偶尔掉（这个模式造建筑不要蓝图）', ks.map(k => chip(bpName(k), has(k) ? 'ok' : 'no')).join(''), ks.filter(has).length, ks.length); }
+  if (up) {
+    const lvChips = (n, cur, pk, nm) => [1, 2, 3].map(lv => chip('Lv' + lv + ' ' + nm(lv), lv <= cur ? 'ok' : lv <= cur + pend(pk) ? 'pd' : 'no')).join('');
+    const mk = [1, 2, 3, 4, 5, 6], mg = mk.map(v => `<div class="bprow"><b>${MECHS[v].name}</b>${lvChips(v, mlvOf(v), 'm' + v, lv => mupName(v, lv))}</div>`).join('');
+    add('机甲强化', '搜东西时约 3.5% 出一张图纸（强化 / 改装 / 战甲 / 载具里随机），找到后在 商店 → 载具 用材料装上', mg, mk.reduce((a, v) => a + Math.min(3, mlvOf(v) + pend('m' + v)), 0), 18);
+    const gk = WPN.map((w, k) => k), gg = gk.map(k => `<div class="bprow"><b>${WPN[k].name}</b>${lvChips(k, wlvOf(k), 'g' + k, lv => gunUpName(k, lv))}</div>`).join('');
+    add('枪械改装', '同上，在 商店 → 武器 里装上', gg, gk.reduce((a, k) => a + Math.min(3, wlvOf(k) + pend('g' + k)), 0), gk.length * 3);
+    add('等身战甲（你自己）', '同上，每人各穿各的，在 商店 → 武器 里穿上', ARM.map((a, k) => chip(a.n, armHas(me, k) ? 'ok' : pend('a' + k) ? 'pd' : 'no')).join(''), ARM.filter((a, k) => armHas(me, k) || pend('a' + k)).length, ARM.length);
+  } else add('强化图纸', '', '', 0, 0, '这个模式关掉了强化图纸（模式选择里能打开）');
+  const cn = capN(), cc = [1, 2, 3, 4, 5, 6].map(v => pend('c' + v)).map((n, i) => n ? chip(MECHS[i + 1].name + ' ×' + n, 'ok') : '').join('');
+  add('合体胶囊（用掉就没了）', '有人有机甲后，搜东西时约 3% 出一个，最多带 ' + BAL.capMax + ' 个；在机甲里按 J 用', cc || '<span class="bpc no">身上没有</span>', cn, BAL.capMax, '');
+  const N = sec.reduce((a, q) => a + (q.title.startsWith('合体胶囊') ? 0 : q.n), 0), T = sec.reduce((a, q) => a + (q.title.startsWith('合体胶囊') ? 0 : q.tot), 0);
+  return `<div class="bpbook"><div class="bptot"><b>蓝图收集 ${N} / ${T}</b><span><span class="bpc ok">✓ 有了</span><span class="bpc pd">◆ 找到了还没装</span><span class="bpc no">没找到</span></span></div>`
+    + sec.map(q => `<div class="bpsec"><div class="bph"><b>${q.title}</b>${q.tot ? `<em>${q.n} / ${q.tot}</em>` : ''}</div>${q.from ? `<div class="bpf">${q.from}</div>` : ''}${q.note ? `<div class="bpf">${q.note}</div>` : ''}<div class="bpg">${q.chips}</div></div>`).join('') + '</div>';
+}
+function capList() { // (round 40d) the fusion capsules you carry; J uses the first, a button moves another to the front
+  return (W.bps || []).map((b, k) => [b, k]).filter(([b]) => b[0] === 'c').map(([b, k], i) => { const n = +b.slice(1);
+    return `<div class="sres bpr"><b>胶囊</b><span>${MECHS[n].name}合体胶囊（在机甲里按 J：它从天而降变成${FUS_MOD[n]}，和你合体 ${BAL.capT} 秒）${i ? '' : ' · 下一个用它'}</span>${i ? `<button class="sbtn" data-bi="${k}"><b>先用这个</b><span>免费</span></button>` : ''}</div>`; }).join(''); }
 function bpList(t) { // (round 38j) found upgrade blueprints of one kind ('m' mech / 'g' gun), each with an install button
   if (t === 'a') { const me = W.p[ME]; return (W.bps || []).map((b, k) => [b, k]).filter(([b]) => b[0] === 'a').map(([b, k]) => { const n = +b.slice(1), c = armCost(), has = armHas(me, n), ok = !has && affordable(W.res, c); /* (round 38k) armour: worn by whoever installs it */
     return `<div class="sres bpr"><b>图纸</b><span>${ARM[n].n}（${ARM[n].d}）${has ? ' · 你已穿着，留给队友' : ''}</span><button class="sbtn${ok ? '' : ' no'}" data-bi="${k}" ${has ? 'disabled' : ''}><b>${has ? '已有' : '穿上'}</b><span>${has ? '' : costText(c)}</span></button></div>`; }).join(''); }
@@ -14448,7 +14524,8 @@ function renderCraft() {
   let h = ''; // (round 36f) the 常买 strip is gone: medkit and grenades head the weapons tab, fuel / ammo / upkeep head the vehicle tab, your own guns come first
   // (round 36f) cards carry only a name, what you have and the button; everything else (what it does, setting a default vehicle) is in the long-press card
   const T = UI.stips = {}, card = (k, own, name, em, btns, tip, cls) => { T[k] = tip; return `<div class="sc${own ? ' own' : ''}${cls ? ' ' + cls : ''}" data-k="${k}"><div class="sh"><b>${name}</b><em>${em}</em></div><div class="sb">${btns}</div></div>`; };
-  if (tab === 'gun') {
+  if (tab === 'bp') h = bpProgress(); /* (round 40e) */
+  else if (tab === 'gun') {
     if (upgOn()) { const me2 = W.p[ME], na = ARM.filter((a, k) => armHas(me2, k)).length, bl = bpList('a') + bpList('g') + (na ? `<div class="sres" data-k="arm"><b>战甲 ${na}/6</b><span>${ARM.map((a, k) => armHas(me2, k) ? a.n.replace('战甲', '') : '').filter(Boolean).join(' · ')}${na === 6 ? ' · 全套' : ''}</span></div>` : ''); if (na) T.arm = { t: '等身战甲', d: ARM.map((a, k) => (armHas(me2, k) ? '✓ ' : '· ') + a.n + '：' + a.d).join('<br>') + '<br>' + ARM_SET }; if (bl) h += `<div class="stop">${bl}</div>`; } /* (round 38k) armour + gun blueprints */ /* (round 38j) gun upgrade blueprints you found, ready to install */
     { const c = CRAFT.find(x => x.med); h += card('med', me.meds > 0, c.name, me.meds + ' / ' + BAL.medCap, shopBtn(c, '买'), { t: c.name, d: c.desc }, 'smed'); }
     h += `<div class="sgrid2">`;
@@ -14472,7 +14549,7 @@ function renderCraft() {
     if (me.vehs & 126) { const fx = CRAFT.find(c => c.mfix), bt = CRAFT.find(c => c.mbat), hs = [1, 2, 3, 4, 5, 6].filter(v => ownsVeh(me, v)), low = hs.some(v => mhpOf(me, v) < MECHS[v].hp * 0.5), bat = Math.floor(me.bat != null ? me.bat : BAL.mechBat);
       top += `<div class="sres" data-k="rmech"><b>机甲</b><span class="${bat < BAL.mechBat * 0.3 ? 'lo' : ''}">电 ${bat}/${BAL.mechBat}</span><span class="${low ? 'lo' : ''}">装甲 ${Math.round(Math.min(...hs.map(v => mhpOf(me, v) / MECHS[v].hp)) * 100)}%</span>${shopBtn(fx, '修装甲')}${shopBtn(bt, '充电')}</div>`;
       T.rmech = { t: '机甲维护', d: '装甲：' + hs.map(v => MECHS[v].name + ' ' + Math.round(mhpOf(me, v)) + '/' + MECHS[v].hp).join('，') + '。<br>不是机甲形态时装甲和电会慢慢恢复；这里马上修好 / 充满（要先变回载具）。' }; } // (round 34b)
-    if (upgOn()) top += bpList('m'); /* (round 38j) mech upgrade blueprints you found */
+    if (upgOn()) top += bpList('m'); /* (round 38j) mech upgrade blueprints you found */ top += capList(); /* (round 40d) */
     if (top) h += `<div class="stop">${top}</div>`;
     h += CRAFT.filter(c => c.cat === 'veh').map(c => { const v = c.veh, own = (me.vehs || 0) >> v & 1, def = own && me.veh === v, M = MECHS[v], lock = !hasBP(VEH[v].k), lv = mlvOf(v);
       const refit = '', unlock = '<span class="sfree">搜东西时找它的蓝图</span>'; /* (round 38j) */
@@ -14481,7 +14558,7 @@ function renderCraft() {
   }
   $('clist').innerHTML = h;
   $('clist').querySelectorAll('button[data-c]').forEach(b => b.addEventListener('click', () => shopBuy(CRAFT.find(c => c.id === b.dataset.c))));
-  $('clist').querySelectorAll('button[data-bi]').forEach(b => b.addEventListener('click', () => { const k = +b.dataset.bi, bp = W.bps[k]; if (!bp) return; const t = bp[0], n = +bp.slice(1), c = t === 'a' ? armCost() : t === 'm' ? mlvCost(mlvOf(n)) : gunCost(wlvOf(n)); if (!affordable(W.res, c)) { toast('材料不足', '#ff8a7a'); sfx('deny'); return; } act('bpinst', k); sfx('click'); setTimeout(() => { if (!$('craft').classList.contains('hidden')) renderCraft(); }, NETROLE === 'guest' ? 300 : 0); })); /* (round 38j) */
+  $('clist').querySelectorAll('button[data-bi]').forEach(b => b.addEventListener('click', () => { const k = +b.dataset.bi, bp = W.bps[k]; if (!bp) return; const t = bp[0], n = +bp.slice(1), c = t === 'c' ? {} : t === 'a' ? armCost() : t === 'm' ? mlvCost(mlvOf(n)) : gunCost(wlvOf(n)); if (!affordable(W.res, c)) { toast('材料不足', '#ff8a7a'); sfx('deny'); return; } act('bpinst', k); sfx('click'); setTimeout(() => { if (!$('craft').classList.contains('hidden')) renderCraft(); }, NETROLE === 'guest' ? 300 : 0); })); /* (round 38j) */
   $('clist').querySelectorAll('button[data-g]').forEach(b => b.addEventListener('click', () => { closeCraft(); selItem(+b.dataset.g); }));
   $('clist').querySelectorAll('button.mel').forEach(b => b.addEventListener('click', () => { switchMelee(+b.dataset.m); setTimeout(renderCraft, NETROLE === 'guest' ? 250 : 0); }));
   shopTipWire();

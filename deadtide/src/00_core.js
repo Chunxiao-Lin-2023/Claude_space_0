@@ -186,7 +186,8 @@ const mlvCost = lv => ({ steel: 20 * (lv + 1), parts: 15 * (lv + 1) });
 const mupName = (v, lv) => lv && typeof MUPG_NAME !== 'undefined' && MUPG_NAME[v] ? MUPG_NAME[v][lv - 1] : MUP[lv].n; /* (round 39) each mech's own level names */
 const bpLabel = b => b[0] === 'm' ? MECHS[+b.slice(1)].name + ' · ' + mupName(+b.slice(1), Math.min(UPG_MAX, mlvOf(+b.slice(1)) + 1)) : WPN[+b.slice(1)].name + ' · ' + gunUpName(+b.slice(1), Math.min(UPG_MAX, wlvOf(+b.slice(1)) + 1));
 const isBig = z => { const T = ZT[z.k]; return !!(T && T.kaiju); }; /* (round 38g) the tough ones — (round 38h) just the 怪兽 now */
-const mechOf = p => { const F = p && W && W.fus && (W.fus.a === p.i || W.fus.b === p.i) ? W.fus : null; if (F) return MECHS[F.d === p.i ? F.kb : F.kp]; /* (round 40) fused: the driver fights with the body's attack, the gunner with the module's */ return (p && p.evoOn && EVO[p.veh]) || MECHS[p && p.veh] || MECHS[4]; }; /* (round 37) in beast form its EVO entry stands in for the mech */
+let FUS_ALT = false; /* (round 40d) true while a capsule fusion's module attacks: the driver fights with the module's mech for that one blow */
+const mechOf = p => { const F = p && W && W.fus && (W.fus.a === p.i || W.fus.b === p.i) ? W.fus : null; if (F && FUS_ALT && F.v) return MECHS[F.kp]; if (F) return MECHS[F.d === p.i ? F.kb : F.kp]; /* (round 40) fused: the driver fights with the body's attack, the gunner with the module's */ return (p && p.evoOn && EVO[p.veh]) || MECHS[p && p.veh] || MECHS[4]; }; /* (round 37) in beast form its EVO entry stands in for the mech */
 const mhpOf = (p, v) => { v = v || p.veh; const M = MECHS[v]; if (!M) return 0; const h = p.mh && p.mh[v]; return h == null ? M.hp : h; };
 const PILLION = 0.38;                                   // how far behind the driver the back-seat rider sits
 // (round 24) grenade types: 0 frag (p.nades), 1–3 in p.gn[t - 1]
@@ -199,8 +200,8 @@ const GREN = [
 const gCount = (p, t) => t ? ((p.gn || [])[t - 1] || 0) : p.nades;
 const gCap = t => t ? BAL.gnCap : BAL.nadeCap;
 // blueprints (尸城求生): what you can build / make from the start, and what has to be found first
-const BP_BASE = [1, 4, 6, 7, 53, 56]; /* (round 39) sandbags retired */
-const BP_LIST = [2, 3, 5, 8, 9, 51, 52, 57, 59, 'bike', 'moto', 'cargo', 'armor', 'gyro', 'tank'];
+const BP_BASE = [1, 2, 3, 4, 5, 6, 7, 53, 56]; /* (round 39) sandbags retired; (round 40e) every wall / floor / door is free: brick + steel walls and steel floor moved here */
+const BP_LIST = [8, 9, 51, 52, 57, 59, 'bike', 'moto', 'cargo', 'armor', 'gyro', 'tank'];
 const bpName = k => typeof k === 'number' ? B[k].name : (VEH.find(v => v && v.k === k) || { name: k }).name;
 const SLAB_BRIDGE = 11; // slab id for the pre-built bridges (not buildable)
 defB(11, { key: 'bridge', slab: 1, nat: 1, col: '#7e5a36' });
@@ -260,7 +261,7 @@ const ZT = {
   shade: { name: '隐身者', hp: 420, spd: 1.5, r: 0.35, h: 1.6, dmg: 12, bdmg: 10, cd: 0.9, sc: 1.55, look: 'walker', skin: '#50505e', elite: { k: 'cloak', cd: 6, col: '#c0c0e0', tip: '隐身摸到你身边偷袭，留意空气里的扭曲，附近炸一下就现形' } },
 };
 const ELITES = ['blinker', 'caller', 'warden', 'shade'];
-const BUILD_TAG = '第 40c 轮'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
+const BUILD_TAG = '第 40d 轮'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
 // aim assist (SET.assist): fire-button lock range (x weapon range), lock-on time before it fires, spread while auto-aimed, mouse/finger magnet
 const PORT = 1.25; // firing port: your own shots pass a wall / door you built if it is this close to you
 const ASSIST = [{ name: '关', range: 0, acq: 0, spread: 1, mag: 0 }, { name: '标准', range: 0.75, acq: 0.3, spread: 1.5, mag: 1 }, { name: '强', range: 1, acq: 0, spread: 1, mag: 1 }];
@@ -399,7 +400,7 @@ const BAL = {
   smokeR: 3.8, smokeT: 10, smokeConf: 1.2,                      // smoke: zombies in the cloud lose you, wander and don't bite (and for 1.2 s after leaving)
   blastR: 4.4, blastDmg: 70, blastKB: 24, blastStun: 1.6,       // blast: little damage, throws everything out of the way (clears a path)
   tankDmg: 120, tankR: 2.3, tankRate: 1.45, /* (round 36b) 1.6 → 1.45 */ tankRange: 20, tankCap: 200, tankStart: 100, // (round 31) tank cannon: a shell that bursts where it hits
-  mechBat: 120, mechLow: 20, mechPass: 0.1, evoPass: 0.05, biteWU: 0.45, biteDrive: 2.2, bpOdds: 0.035, bpPity: 32, /* (round 38j) a search finds a blueprint 3.5% of the time, at the latest every 32 searches (≈ one in 20) */ mechDmg: 1.5, mechTough: 1.5, bigHp: 1.25, /* (round 38g) mechs / beasts hit 1.5× harder and lose hull 1.5× slower; (round 38h) only 怪兽 get more hp (1.5 → 1.25, and 尸王 / 巨尸 / 能力者 back to 1): the control skills carry the difficulty now. Everything that isn't a mech does ×bigHp to a 怪兽, so on foot nothing changes */ /* (round 38g) on foot / in a vehicle a zombie must hold on 0.45 s before the first bite; a vehicle moving faster than 2.2 isn't bitten */ /* (round 38f) in beast form only half as much gets through to the pilot */ mechRegen: 0.015, batRegen: 0.4, xformT: 1.0, // (round 34b) mech energy (s), low warning, share of a hit the pilot still feels, hull / energy coming back while not a mech (/s), transform time
+  mechBat: 120, mechLow: 20, mechPass: 0.1, evoPass: 0.05, biteWU: 0.45, biteDrive: 2.2, bpOdds: 0.035, bpPity: 32, capOdds: 0.03, capPity: 45, capMax: 4, capT: 45, /* (round 40d) fusion capsules: 3% of searches (at the latest every 45th) while someone has a mech, hold 4, a fusion lasts 45 s */ /* (round 38j) a search finds a blueprint 3.5% of the time, at the latest every 32 searches (≈ one in 20) */ mechDmg: 1.5, mechTough: 1.5, bigHp: 1.25, /* (round 38g) mechs / beasts hit 1.5× harder and lose hull 1.5× slower; (round 38h) only 怪兽 get more hp (1.5 → 1.25, and 尸王 / 巨尸 / 能力者 back to 1): the control skills carry the difficulty now. Everything that isn't a mech does ×bigHp to a 怪兽, so on foot nothing changes */ /* (round 38g) on foot / in a vehicle a zombie must hold on 0.45 s before the first bite; a vehicle moving faster than 2.2 isn't bitten */ /* (round 38f) in beast form only half as much gets through to the pilot */ mechRegen: 0.015, batRegen: 0.4, xformT: 1.0, // (round 34b) mech energy (s), low warning, share of a hit the pilot still feels, hull / energy coming back while not a mech (/s), transform time
   gyroDmg: 12, gyroRate: 0.11, /* (round 36b) 0.12 → 0.11 */ gyroSpread: 0.06, gyroRange: 22, gyroCap: 500, gyroStart: 250, // (round 30) gyrocopter chin gun: its own ammo, bought in the shop
   flyHover: 2.2, flyClimb: 0.8, flyDrop: 0.6, fuelLow: 10, refuelT: 4, // (round 29) gyrocopter: cruise 2.2 floors over whatever is below, climb / descend rate (of the take-off curve per second), warn at 10 s of fuel, 4 s to refuel indoors
   zSlope: 0.45, zSlopeC: 0.7, // (round 36) zombie speed going UP a hill slope (climbers barely mind)

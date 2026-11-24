@@ -27,8 +27,9 @@ function fuseDeny(p, q) {
 const fuseMateNear = p => { let best = null, bd = 99; for (const q of W.p) { if (q === p || q.gone || q.dead || q.down || !inMech(q)) continue; const d = Math.hypot(q.x - p.x, q.y - p.y); if (d < bd) { bd = d; best = q; } } return best; };
 // J / 合体: split if fused; else ask, or agree to the partner's ask
 function fuseAct(p) {
-  const F = fusOf(p); if (F) { fuseSplit(F, (p.name || '队友') + ' 解除了合体'); return; }
-  const q = fuseMateNear(p), why = fuseDeny(p, q); if (why) { emit({ k: 'deny', p: p.i, why }); return; }
+  const F = fusOf(p); if (F) { fuseSplit(F, F.v ? '你解除了合体' : (p.name || '队友') + ' 解除了合体'); return; }
+  const q = fuseMateNear(p); if (!(q && Math.hypot(q.x - p.x, q.y - p.y) <= FUS.range) && capN()) { fuseCapsule(p); return; } /* (round 40d) no partner close by: use a capsule */
+  const why = fuseDeny(p, q); if (why) { emit({ k: 'deny', p: p.i, why }); return; }
   const R = W.fusReq;
   if (R && R.from === q.i && R.to === p.i && W.t - R.t < FUS.ask) { W.fusReq = null; fuseStart(q, p); return; } // they asked first: their mech is the body
   W.fusReq = { from: p.i, to: q.i, t: W.t }; emit({ k: 'fusreq', o: p.i, to: q.i, kb: p.veh, kp: q.veh });
@@ -50,7 +51,7 @@ function fuseSplit(F, why, broke) {
   emit({ k: 'unfuse', a: F.a, b: F.b, kb: F.kb, kp: F.kp, why: why || '', br: broke ? 1 : 0, x: r2(A ? A.x : 0), y: r2(A ? A.y : 0), z: r2(A ? A.z : 0) });
   if (broke) for (const q of [A, B]) if (q) mechEject(q, '合体机甲被打散了：两台机甲的装甲都要修');
 }
-function fuseSwap(p) { const F = fusOf(p); if (!F) return; const d = F.d; F.d = F.g; F.g = d; emit({ k: 'fswap', d: F.d, g: F.g }); }
+function fuseSwap(p) { const F = fusOf(p); if (!F) return; if (F.v) { emit({ k: 'deny', p: p.i, why: '胶囊合体只有你一个人：移动和本体普攻归你，模块自己找目标，G 放合体技' }); return; } const d = F.d; F.d = F.g; F.g = d; emit({ k: 'fswap', d: F.d, g: F.g }); }
 // a hit on either of them lands on the pooled hull
 function fuseHurt(p, dmg) {
   const F = fusOf(p), M = MECHS[F.kb]; F.hp = Math.max(0, F.hp - dmg * M.armor * FUS.armor / BAL.mechTough / MUP[mlvOf(F.kb)].t * (p.ccBrk > 0 ? 1.25 : 1)); emit({ k: 'phurt', p: F.a, d: 0 });
@@ -80,10 +81,42 @@ function fuseSkill(G, v) {
 // host, every step: keep the gunner inside the body, run the cooldown, drain both batteries, split when one gives out
 function fuseStep(dt) {
   const R = W.fusReq; if (R && W.t - R.t > FUS.ask) W.fusReq = null;
-  const F = W.fus; if (!F) return; const D = W.p[F.d], G = W.p[F.g];
+  const F = W.fus; if (!F) return;
+  if (F.v) { const D = W.p[F.a]; /* (round 40d) a capsule fusion: one pilot, a timer */
+    if (!D || D.gone || D.dead || D.down || !inMech(D)) { fuseSplit(F, '合体解除了'); return; }
+    if (F.cd > 0) { F.cd = Math.max(0, F.cd - dt); D.mcd = F.cd; }
+    F.left -= dt; if ((D.bat || 0) < 1) { fuseSplit(F, '机甲没电了，合体解除'); return; } if (F.left <= 0) fuseSplit(F, '胶囊能量用完了，合体解除'); return; } const D = W.p[F.d], G = W.p[F.g];
   if (!D || !G || D.gone || G.gone || D.dead || G.dead || D.down || G.down || !inMech(D) || !inMech(G)) { fuseSplit(F, '合体解除了'); return; }
   if (F.cd > 0) { F.cd = Math.max(0, F.cd - dt); G.mcd = D.mcd = F.cd; }
   if ((D.bat || 0) < 1 || (G.bat || 0) < 1) { fuseSplit(F, '机甲没电了，合体解除'); return; }
   if (G.i === ME && NETROLE !== 'guest') fuseSnap(G); // a guest gunner snaps on its own screen (stepMove)
 }
 function fuseSnap(G) { const F = fusOf(G), D = F && W.p[F.d]; if (!D || D === G) return; G.x = D.x; G.y = D.y; G.z = D.z; G.L = D.L; G.zv = D.zv; G.vx = D.vx || 0; G.vy = D.vy || 0; }
+
+/* ================= (round 40d) fusion capsules: fuse on your own ================= */
+// Found while searching ('c' + mech kind in W.bps). With no partner close by, J in mech form uses the first one: that mech drops out of the
+// sky into yours as the module (same pooled hull / ×1.2 damage / names as a co-op fusion) for BAL.capT seconds. You drive and fight with the
+// body; the module fights on its own (fuseAI: the nearest zombie it can reach, or what you aim at while you hold fire); G is the combined skill.
+const capNext = () => { const b = (W && W.bps || []).find(b => b[0] === 'c'); return b ? +b.slice(1) : 0; };
+const capN = () => (W && W.bps || []).filter(b => b[0] === 'c').length;
+function fuseCapsule(p) {
+  const why = !inMech(p) || p.mtr > 0 ? '先变成机甲才能用合体胶囊' : p.evoOn ? '神兽形态不能合体' : p.mfly ? '先落地再合体' : W.fus ? '现在不能合体' : mhpOf(p) < MECHS[p.veh].hp * 0.15 ? '装甲太破了，修一修再合体' : '';
+  if (why) { emit({ k: 'deny', p: p.i, why }); return null; }
+  const ix = W.bps.findIndex(b => b[0] === 'c'), kp = +W.bps[ix].slice(1), kb = p.veh, same = kb === kp, m = FUS.hpMul * (same ? FUS.sameHp : 1), mx = (MECHS[kb].hp + MECHS[kp].hp) * m; W.bps.splice(ix, 1);
+  const F = W.fus = { a: p.i, b: -1, kb, kp, d: p.i, g: -1, same: same ? 1 : 0, max: Math.round(mx), hp: Math.round(Math.min(mx, (mhpOf(p) + MECHS[kp].hp) * m)), cd: 0, t: W.t, v: 1, left: BAL.capT, vg: 0.9, ga: p.aim };
+  if (p.ccLat) shakeOff(p, 99); ccClear(p); p.invT = Math.max(p.invT || 0, 1.2);
+  const a = p.aim + 2.2; /* it comes down behind you, from high up */
+  emit({ k: 'fuse', a: p.i, b: -1, kb, kp, v: 1, x: r2(p.x), y: r2(p.y), z: r2(p.z), bx: r2(p.x + Math.cos(a) * 3.5), by: r2(p.y + Math.sin(a) * 3.5), bz: r2(p.z + 9) });
+  return F;
+}
+// the module's own attack, on its own cooldown: the driver's blow is made with the module's mech for this one call (FUS_ALT)
+function fuseAI(p, dt, fire) {
+  const F = W.fus; F.vg = (F.vg || 0) - dt; if (F.vg > 0 || !inMech(p) || p.mtr > 0 || p.ccStg > 0) return;
+  const M = MECHS[F.kp], rg = mechRanged(M) ? (M.range || 16) : M.reach + 1.2; let z = null;
+  if (!fire) { let bd = rg; for (const q of W.zs) { if (!(q.hp > 0) || q.hidden || q.sleep || q.ck || q.ckF || !zSeen(q) || Math.abs(q.z - p.z) > 3) continue; const d = Math.hypot(q.x - p.x, q.y - p.y); if (d < bd + q.r && (M.atk === 'parcel' || los(p.x, p.y, p.z + 1.6, q.x, q.y, q.z + q.h * 0.5))) { bd = d; z = q; } } if (!z) return; }
+  const keep = { gcd: p.gcd, aim: p.aim, aimPt: p.aimPt, mcmb: p.mcmb, mlastT: p.mlastT, mside: p.mside, mAim: p.mAim, mTgt: p.mTgt };
+  p.gcd = 0; p.mcmb = F.vc; p.mlastT = F.vl; if (z) { p.aim = Math.atan2(z.y - p.y, z.x - p.x); p.aimPt = { x: z.x, y: z.y, z: z.z, zb: z }; }
+  FUS_ALT = true; try { mechPunch(p); } finally { FUS_ALT = false; }
+  F.vc = p.mcmb; F.vl = p.mlastT; F.ga = p.mAim != null ? p.mAim : p.aim; F.vg = M.rate * (fire ? 1 : 1.2);
+  Object.assign(p, keep);
+}

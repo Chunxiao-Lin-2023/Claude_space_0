@@ -72,7 +72,9 @@ function uiKeys(me) {
     if (me.vehs || me.pass >= 0 || pil) rows.push(['T', me.ride || me.pass >= 0 ? '下车' : pil ? '坐后座' : '上' + (VEH[me.veh] ? VEH[me.veh].name : '车'), me.ride || me.pass >= 0 || pil ? 1 : 0]);
     if (me.vehs & (me.vehs - 1)) rows.push(['⇧T', '换一辆车']);
     if (me.ride && MECHS[me.veh]) { const E = EVO[me.veh], rdy = E && (me.evo || 0) >= 100 && !me.evoOn; rows.unshift(['X', me.mform !== 1 ? '变成' + MECHS[me.veh].name : me.evoOn ? '变回' + MECHS[me.veh].name + '（长按回载具）' : rdy ? '变回载具 · 长按进化 ' + E.name : '变回载具', rdy ? 2 : 0]); /* (round 38j) */ } /* (round 37) */
-    if (inMech(me) && W.p.filter(q => !q.gone).length > 1) { const F = fusOf(me); if (F) { rows.unshift(['K', '换手（现在是' + (fusRole(me) === 'd' ? '驾驶' : '炮手') + '）', 1]); rows.unshift(['X / J', '解除合体']); } else rows.unshift(['J', UI.fusAsk && performance.now() - UI.fusAsk < 8000 ? '同意合体' : '请求合体', UI.fusAsk && performance.now() - UI.fusAsk < 8000 ? 1 : 0]); } /* (round 40) */
+    if (inMech(me)) { const F = fusOf(me), many = W.p.filter(q => !q.gone).length > 1, cn = capN(), ask = UI.fusAsk && performance.now() - UI.fusAsk < 8000; /* (round 40) ; (round 40d) capsules */
+      if (F) { if (F.v) rows.unshift(['G', '合体技' + (F.cd > 0 ? '（' + Math.ceil(F.cd) + 's）' : ''), F.cd > 0 ? 0 : 1]); else rows.unshift(['K', '换手（现在是' + (fusRole(me) === 'd' ? '驾驶' : '炮手') + '）', 1]); rows.unshift(['X / J', '解除合体']); }
+      else if (many || cn) rows.unshift(['J', ask ? '同意合体' : cn && !many ? '合体胶囊：' + MECHS[capNext()].name + (cn > 1 ? '（共 ' + cn + ' 个）' : '') : cn ? '请求合体 · 没人在旁边就用胶囊' : '请求合体', ask || (cn && !many) ? 1 : 0]); }
     if (W.phase === 'day') rows.push(['N', me.ready ? '取消准备' : '准备入夜', me.ready ? 1 : 0]);
   }
   rows.push(['M', '大地图（也可按 Tab）'], ['Q E', '转镜头'], ['Esc', '菜单']);
@@ -171,7 +173,7 @@ function hudTick(dt) {
   $('wRl').style.width = (rl * 100) + '%';
   if (inMech(me)) { $('iNadeL').textContent = mechOf(me).sn; $('iNade').textContent = (me.mcd || 0) > 0 ? Math.ceil(me.mcd) + 's' : '✓'; } else { $('iNadeL').textContent = GREN[me.gt || 0].sn; $('iNade').textContent = gCount(me, me.gt || 0); } // (round 34) in a mech the grenade key is its skill $('iMed').textContent = me.meds; $('iKill').textContent = me.kills; $('iLife').textContent = me.lives != null ? me.lives : '-';
   { const mw = $('iMechW'), sh = me.ride && MECHS[me.veh]; mw.classList.toggle('hidden', !sh); if (sh) { const M = MECHS[me.veh], im = inMech(me), h = mhpOf(me); const E = EVO[me.veh], ev = Math.floor(me.evo || 0), evs = !E ? '' : me.evoOn ? ' · ' + E.name + ' ' + Math.ceil(ev / 100 * BAL.evoT) + 's' : ' · 进化 ' + (ev >= 100 ? '满（X）' + (ev > 100 ? ' 可变 ' + Math.floor(ev / 100 * BAL.evoT) + 's' : '') : ev + '%'); /* (round 38i) banked time */ /* (round 37) */ $('iMech').textContent = (INP.touch ? '装甲 ' + Math.round(h) + ' · 电 ' + Math.floor(me.bat != null ? me.bat : BAL.mechBat) + (me.mtr > 0 ? ' · 变形中' : '') : M.name + (me.mtr > 0 ? ' · 变形中' : im ? '' : '（X / 变形）') + ' · 装甲 ' + Math.round(h) + '/' + M.hp + ' · 电 ' + Math.floor(me.bat != null ? me.bat : BAL.mechBat) + 's' + (im ? ' · ' + M.sn + ((me.mcd || 0) > 0 ? ' ' + Math.ceil(me.mcd) + 's' : ' 好了') : '')) + evs; /* (round 36b) on touch the skill cooldown lives on the skill key; the line is just hull and energy */ mw.classList.toggle('low', (me.bat || 0) < BAL.mechLow || h < M.hp * 0.25);
-    { const F = fusOf(me); if (F) { const ro = fusRole(me); $('iMech').textContent = '「' + fusName(F) + '」' + (ro === 'd' ? '驾驶' : '炮手') + ' · 合体装甲 ' + Math.round(F.hp) + '/' + F.max + ' · 电 ' + Math.floor(me.bat || 0) + (INP.touch ? '' : ' · 合体技 ' + (F.cd > 0 ? Math.ceil(F.cd) + 's' : '好了') + (ro === 'd' ? '（炮手放）' : '（G）')); mw.classList.toggle('low', F.hp < F.max * 0.25 || (me.bat || 0) < BAL.mechLow); } } /* (round 40) fused */ } } // (round 34b) mech line whenever you drive
+    { const F = fusOf(me); if (F) { const ro = fusRole(me); $('iMech').textContent = '「' + fusName(F) + '」' + (F.v ? '胶囊合体 · 剩 ' + Math.max(0, Math.ceil(F.left)) + ' 秒' : ro === 'd' ? '驾驶' : '炮手') + ' · 合体装甲 ' + Math.round(F.hp) + '/' + F.max + ' · 电 ' + Math.floor(me.bat || 0) + (INP.touch ? '' : ' · 合体技 ' + (F.cd > 0 ? Math.ceil(F.cd) + 's' : '好了') + (ro === 'd' && !F.v ? '（炮手放）' : '（G）')); mw.classList.toggle('low', F.hp < F.max * 0.25 || (me.bat || 0) < BAL.mechLow || (F.v && F.left < 8)); } } /* (round 40) fused */ } } // (round 34b) mech line whenever you drive
   { const dv = String(me.ride ? me.veh : 0); if (document.body.dataset.veh !== dv) document.body.dataset.veh = dv; const im = inMech(me) || me.mtr > 0; if (document.body.classList.contains('inmech') !== im) document.body.classList.toggle('inmech', im); } // (round 36b) phones show only the info for what you're riding
   { const sw = $('iShlW'), ht = ownsVeh(me, 6); sw.classList.toggle('hidden', !ht); if (ht) $('iShl').textContent = me.shl || 0; } // (round 31) tank shells
   { const fw = $('iFuelW'), has = ownsVeh(me, 5); fw.classList.toggle('hidden', !has); if (has) { const f = Math.ceil(me.fuel || 0); $('iFuel').textContent = f + ' 秒 · 弹 ' + (me.gam || 0); fw.style.color = f < BAL.fuelLow ? '#ff7a6a' : airborne(me) ? '#9fe0ff' : ''; } } // (round 29) gyrocopter fuel
@@ -247,7 +249,7 @@ function hudTick(dt) {
     md.firstElementChild.textContent = me.down ? '自救' : '医疗'; $('tMedN').textContent = '×' + me.meds;
     $('tWpn').firstElementChild.textContent = w.sn || w.name; $('tWpn').lastElementChild.textContent = w.inf ? '∞' : me.mag[wi] + '/' + me.ammo[wi];
     $('tWpn').classList.toggle('dim', me.down || me.owned.filter(Boolean).length < 2);
-    if (inMech(me) && W.p.filter(q => !q.gone).length > 1) { const F = fusOf(me), ask = UI.fusAsk && performance.now() - UI.fusAsk < 8000; $('tWpn').firstElementChild.textContent = F ? '换手' : ask ? '同意' : '合体'; $('tWpn').lastElementChild.textContent = F ? (fusRole(me) === 'd' ? '驾驶' : '炮手') : ask ? '合体' : ''; $('tWpn').classList.toggle('dim', false); $('tWpn').classList.toggle('hot', !!ask); } /* (round 40) in a mech the weapon key asks / agrees to fuse, then swaps roles */
+    if (inMech(me) && (W.p.filter(q => !q.gone).length > 1 || capN() || (fusOf(me) && fusOf(me).v))) { const F = fusOf(me), ask = UI.fusAsk && performance.now() - UI.fusAsk < 8000, solo = W.p.filter(q => !q.gone).length < 2; $('tWpn').firstElementChild.textContent = F ? (F.v ? '解除' : '换手') : ask ? '同意' : '合体'; $('tWpn').lastElementChild.textContent = F ? (F.v ? '胶囊' : fusRole(me) === 'd' ? '驾驶' : '炮手') : ask ? '合体' : solo ? '胶囊×' + capN() : ''; /* (round 40d) */ $('tWpn').classList.toggle('dim', false); $('tWpn').classList.toggle('hot', !!ask); } /* (round 40) in a mech the weapon key asks / agrees to fuse, then swaps roles */
     const gt = me.gt || 0, im = inMech(me), gc = im ? ((me.mcd || 0) > 0 ? Math.ceil(me.mcd) : '✓') : gCount(me, gt), tn = $('tNade'), lb = im ? mechOf(me).sn : GREN[gt].sn; $('tNadeN').textContent = gc; tn.classList.toggle('empty', im ? (me.mcd || 0) > 0 : !gc); if (tn.firstChild.nodeValue !== lb) tn.firstChild.nodeValue = lb; // (round 24) shows the picked grenade type
     const sv = $('tShove'), svm = me.ride && MECHS[me.veh] ? (me.mform === 1 ? (me.evoOn ? 'r' : (me.evo || 0) >= 100 && EVO[me.veh] ? 'e' : 'b') : 'x') : String(me.melee === 1 && me.shield ? 1 : 0); if (sv.dataset.m !== svm) { sv.dataset.m = svm; sv.textContent = svm === 'x' ? '变形' : svm === 'b' ? '变回' : svm === 'e' ? '变回 · 长按进化' : svm === 'r' ? '复原' : svm === '1' ? '盾' : '刀'; } sv.classList.toggle('evo', svm === 'e'); sv.style.setProperty('--ev', me.ride && me.mform === 1 && !me.evoOn ? Math.min(100, me.evo || 0) + '%' : '0%'); /* (round 37) tap = 进化 / 复原, hold = back to the vehicle; the button fills up with the meter */ sv.classList.toggle('sw', !!me.shield && !me.ride); sv.classList.toggle('xf', !!me.ride); // (round 34b) driving: the melee key transforms
     $('tFire').style.setProperty('--rl', rl);
@@ -275,7 +277,7 @@ function openCraft() {
 function closeCraft() { $('craft').classList.add('hidden'); $('stip').classList.add('hidden'); }
 document.addEventListener('pointerdown', e => { const b = document.getElementById('stip'); if (b && !b.classList.contains('hidden') && !b.contains(e.target)) b.classList.add('hidden'); }, true); // (round 36f) the detail card closes on any tap outside it
 // (round 22) the shop: tabs by kind; a gun and its ammo share one card; vehicles have their own tab
-const SHOP_TABS = [['gun', '武器 · 道具'], ['veh', '载具']]; // (round 36f) weapons and grenades share one tab (medkit first); the 强化 tab is gone
+const SHOP_TABS = [['gun', '武器 · 道具'], ['veh', '载具'], ['bp', '蓝图']]; /* (round 40e) 蓝图: what you have found and what is still out there */ // (round 36f) weapons and grenades share one tab (medkit first); the 强化 tab is gone
 function shopBuy(c) {
   const me = W.p[ME], why = craftBlocked(me, c);
   if (why) { toast(why, '#ff8a7a'); sfx('deny'); return; }
@@ -305,6 +307,34 @@ function shopBtn(c, label) {
   const me = W.p[ME], why = craftBlocked(me, c), hard = why && why !== '材料不足';
   return `<button class="sbtn${why ? ' no' : ''}" data-c="${c.id}" ${hard ? 'disabled' : ''}><b>${label || c.name}</b><span>${hard ? why : (Object.keys(c.cost).length ? costText(c.cost) : '免费') + (why ? ' · 不够' : '')}</span></button>`;
 }
+// (round 40e) the blueprint book: every blueprint in this mode, grouped, each found (✓) / found but not installed (待装) / not found yet
+function bpProgress() {
+  const me = W.p[ME], sg = isSiege(), up = upgOn(), pend = b => (W.bps || []).filter(x => x === b).length, sec = [];
+  const chip = (name, st, sub) => `<span class="bpc ${st}">${st === 'ok' ? '✓ ' : st === 'pd' ? '◆ ' : ''}${name}${sub ? '<i>' + sub + '</i>' : ''}</span>`;
+  const add = (title, from, chips, n, tot, note) => sec.push({ title, from, chips, n, tot, note });
+  // buildings + vehicles: 尸城求生 has its own list; elsewhere only vehicles need one
+  if (sg) { const got = W.obj && W.obj.bp || [];
+    add('建造', '开局自带 ' + BP_BASE.length + ' 种；其余在图纸箱必掉，其它箱子偶尔掉', BP_BASE.map(k => chip(bpName(k), 'ok', '自带')).join('') + BP_LIST.filter(k => typeof k === 'number').map(k => chip(bpName(k), got.includes(k) ? 'ok' : 'no')).join(''), BP_LIST.filter(k => typeof k === 'number' && got.includes(k)).length, BP_LIST.filter(k => typeof k === 'number').length);
+    add('载具（能变机甲）', '同上', BP_LIST.filter(k => typeof k === 'string').map(k => chip(bpName(k), got.includes(k) ? 'ok' : 'no')).join(''), BP_LIST.filter(k => typeof k === 'string' && got.includes(k)).length, BP_LIST.filter(k => typeof k === 'string').length); }
+  else { const ks = VEH.filter(v => v).map(v => v.k), has = k => !W.vbp || W.vbp.includes(k);
+    add('载具（能变机甲）', '开局选 2 种；其余搜东西时偶尔掉（这个模式造建筑不要蓝图）', ks.map(k => chip(bpName(k), has(k) ? 'ok' : 'no')).join(''), ks.filter(has).length, ks.length); }
+  if (up) {
+    const lvChips = (n, cur, pk, nm) => [1, 2, 3].map(lv => chip('Lv' + lv + ' ' + nm(lv), lv <= cur ? 'ok' : lv <= cur + pend(pk) ? 'pd' : 'no')).join('');
+    const mk = [1, 2, 3, 4, 5, 6], mg = mk.map(v => `<div class="bprow"><b>${MECHS[v].name}</b>${lvChips(v, mlvOf(v), 'm' + v, lv => mupName(v, lv))}</div>`).join('');
+    add('机甲强化', '搜东西时约 3.5% 出一张图纸（强化 / 改装 / 战甲 / 载具里随机），找到后在 商店 → 载具 用材料装上', mg, mk.reduce((a, v) => a + Math.min(3, mlvOf(v) + pend('m' + v)), 0), 18);
+    const gk = WPN.map((w, k) => k), gg = gk.map(k => `<div class="bprow"><b>${WPN[k].name}</b>${lvChips(k, wlvOf(k), 'g' + k, lv => gunUpName(k, lv))}</div>`).join('');
+    add('枪械改装', '同上，在 商店 → 武器 里装上', gg, gk.reduce((a, k) => a + Math.min(3, wlvOf(k) + pend('g' + k)), 0), gk.length * 3);
+    add('等身战甲（你自己）', '同上，每人各穿各的，在 商店 → 武器 里穿上', ARM.map((a, k) => chip(a.n, armHas(me, k) ? 'ok' : pend('a' + k) ? 'pd' : 'no')).join(''), ARM.filter((a, k) => armHas(me, k) || pend('a' + k)).length, ARM.length);
+  } else add('强化图纸', '', '', 0, 0, '这个模式关掉了强化图纸（模式选择里能打开）');
+  const cn = capN(), cc = [1, 2, 3, 4, 5, 6].map(v => pend('c' + v)).map((n, i) => n ? chip(MECHS[i + 1].name + ' ×' + n, 'ok') : '').join('');
+  add('合体胶囊（用掉就没了）', '有人有机甲后，搜东西时约 3% 出一个，最多带 ' + BAL.capMax + ' 个；在机甲里按 J 用', cc || '<span class="bpc no">身上没有</span>', cn, BAL.capMax, '');
+  const N = sec.reduce((a, q) => a + (q.title.startsWith('合体胶囊') ? 0 : q.n), 0), T = sec.reduce((a, q) => a + (q.title.startsWith('合体胶囊') ? 0 : q.tot), 0);
+  return `<div class="bpbook"><div class="bptot"><b>蓝图收集 ${N} / ${T}</b><span><span class="bpc ok">✓ 有了</span><span class="bpc pd">◆ 找到了还没装</span><span class="bpc no">没找到</span></span></div>`
+    + sec.map(q => `<div class="bpsec"><div class="bph"><b>${q.title}</b>${q.tot ? `<em>${q.n} / ${q.tot}</em>` : ''}</div>${q.from ? `<div class="bpf">${q.from}</div>` : ''}${q.note ? `<div class="bpf">${q.note}</div>` : ''}<div class="bpg">${q.chips}</div></div>`).join('') + '</div>';
+}
+function capList() { // (round 40d) the fusion capsules you carry; J uses the first, a button moves another to the front
+  return (W.bps || []).map((b, k) => [b, k]).filter(([b]) => b[0] === 'c').map(([b, k], i) => { const n = +b.slice(1);
+    return `<div class="sres bpr"><b>胶囊</b><span>${MECHS[n].name}合体胶囊（在机甲里按 J：它从天而降变成${FUS_MOD[n]}，和你合体 ${BAL.capT} 秒）${i ? '' : ' · 下一个用它'}</span>${i ? `<button class="sbtn" data-bi="${k}"><b>先用这个</b><span>免费</span></button>` : ''}</div>`; }).join(''); }
 function bpList(t) { // (round 38j) found upgrade blueprints of one kind ('m' mech / 'g' gun), each with an install button
   if (t === 'a') { const me = W.p[ME]; return (W.bps || []).map((b, k) => [b, k]).filter(([b]) => b[0] === 'a').map(([b, k]) => { const n = +b.slice(1), c = armCost(), has = armHas(me, n), ok = !has && affordable(W.res, c); /* (round 38k) armour: worn by whoever installs it */
     return `<div class="sres bpr"><b>图纸</b><span>${ARM[n].n}（${ARM[n].d}）${has ? ' · 你已穿着，留给队友' : ''}</span><button class="sbtn${ok ? '' : ' no'}" data-bi="${k}" ${has ? 'disabled' : ''}><b>${has ? '已有' : '穿上'}</b><span>${has ? '' : costText(c)}</span></button></div>`; }).join(''); }
@@ -319,7 +349,8 @@ function renderCraft() {
   let h = ''; // (round 36f) the 常买 strip is gone: medkit and grenades head the weapons tab, fuel / ammo / upkeep head the vehicle tab, your own guns come first
   // (round 36f) cards carry only a name, what you have and the button; everything else (what it does, setting a default vehicle) is in the long-press card
   const T = UI.stips = {}, card = (k, own, name, em, btns, tip, cls) => { T[k] = tip; return `<div class="sc${own ? ' own' : ''}${cls ? ' ' + cls : ''}" data-k="${k}"><div class="sh"><b>${name}</b><em>${em}</em></div><div class="sb">${btns}</div></div>`; };
-  if (tab === 'gun') {
+  if (tab === 'bp') h = bpProgress(); /* (round 40e) */
+  else if (tab === 'gun') {
     if (upgOn()) { const me2 = W.p[ME], na = ARM.filter((a, k) => armHas(me2, k)).length, bl = bpList('a') + bpList('g') + (na ? `<div class="sres" data-k="arm"><b>战甲 ${na}/6</b><span>${ARM.map((a, k) => armHas(me2, k) ? a.n.replace('战甲', '') : '').filter(Boolean).join(' · ')}${na === 6 ? ' · 全套' : ''}</span></div>` : ''); if (na) T.arm = { t: '等身战甲', d: ARM.map((a, k) => (armHas(me2, k) ? '✓ ' : '· ') + a.n + '：' + a.d).join('<br>') + '<br>' + ARM_SET }; if (bl) h += `<div class="stop">${bl}</div>`; } /* (round 38k) armour + gun blueprints */ /* (round 38j) gun upgrade blueprints you found, ready to install */
     { const c = CRAFT.find(x => x.med); h += card('med', me.meds > 0, c.name, me.meds + ' / ' + BAL.medCap, shopBtn(c, '买'), { t: c.name, d: c.desc }, 'smed'); }
     h += `<div class="sgrid2">`;
@@ -343,7 +374,7 @@ function renderCraft() {
     if (me.vehs & 126) { const fx = CRAFT.find(c => c.mfix), bt = CRAFT.find(c => c.mbat), hs = [1, 2, 3, 4, 5, 6].filter(v => ownsVeh(me, v)), low = hs.some(v => mhpOf(me, v) < MECHS[v].hp * 0.5), bat = Math.floor(me.bat != null ? me.bat : BAL.mechBat);
       top += `<div class="sres" data-k="rmech"><b>机甲</b><span class="${bat < BAL.mechBat * 0.3 ? 'lo' : ''}">电 ${bat}/${BAL.mechBat}</span><span class="${low ? 'lo' : ''}">装甲 ${Math.round(Math.min(...hs.map(v => mhpOf(me, v) / MECHS[v].hp)) * 100)}%</span>${shopBtn(fx, '修装甲')}${shopBtn(bt, '充电')}</div>`;
       T.rmech = { t: '机甲维护', d: '装甲：' + hs.map(v => MECHS[v].name + ' ' + Math.round(mhpOf(me, v)) + '/' + MECHS[v].hp).join('，') + '。<br>不是机甲形态时装甲和电会慢慢恢复；这里马上修好 / 充满（要先变回载具）。' }; } // (round 34b)
-    if (upgOn()) top += bpList('m'); /* (round 38j) mech upgrade blueprints you found */
+    if (upgOn()) top += bpList('m'); /* (round 38j) mech upgrade blueprints you found */ top += capList(); /* (round 40d) */
     if (top) h += `<div class="stop">${top}</div>`;
     h += CRAFT.filter(c => c.cat === 'veh').map(c => { const v = c.veh, own = (me.vehs || 0) >> v & 1, def = own && me.veh === v, M = MECHS[v], lock = !hasBP(VEH[v].k), lv = mlvOf(v);
       const refit = '', unlock = '<span class="sfree">搜东西时找它的蓝图</span>'; /* (round 38j) */
@@ -352,7 +383,7 @@ function renderCraft() {
   }
   $('clist').innerHTML = h;
   $('clist').querySelectorAll('button[data-c]').forEach(b => b.addEventListener('click', () => shopBuy(CRAFT.find(c => c.id === b.dataset.c))));
-  $('clist').querySelectorAll('button[data-bi]').forEach(b => b.addEventListener('click', () => { const k = +b.dataset.bi, bp = W.bps[k]; if (!bp) return; const t = bp[0], n = +bp.slice(1), c = t === 'a' ? armCost() : t === 'm' ? mlvCost(mlvOf(n)) : gunCost(wlvOf(n)); if (!affordable(W.res, c)) { toast('材料不足', '#ff8a7a'); sfx('deny'); return; } act('bpinst', k); sfx('click'); setTimeout(() => { if (!$('craft').classList.contains('hidden')) renderCraft(); }, NETROLE === 'guest' ? 300 : 0); })); /* (round 38j) */
+  $('clist').querySelectorAll('button[data-bi]').forEach(b => b.addEventListener('click', () => { const k = +b.dataset.bi, bp = W.bps[k]; if (!bp) return; const t = bp[0], n = +bp.slice(1), c = t === 'c' ? {} : t === 'a' ? armCost() : t === 'm' ? mlvCost(mlvOf(n)) : gunCost(wlvOf(n)); if (!affordable(W.res, c)) { toast('材料不足', '#ff8a7a'); sfx('deny'); return; } act('bpinst', k); sfx('click'); setTimeout(() => { if (!$('craft').classList.contains('hidden')) renderCraft(); }, NETROLE === 'guest' ? 300 : 0); })); /* (round 38j) */
   $('clist').querySelectorAll('button[data-g]').forEach(b => b.addEventListener('click', () => { closeCraft(); selItem(+b.dataset.g); }));
   $('clist').querySelectorAll('button.mel').forEach(b => b.addEventListener('click', () => { switchMelee(+b.dataset.m); setTimeout(renderCraft, NETROLE === 'guest' ? 250 : 0); }));
   shopTipWire();
