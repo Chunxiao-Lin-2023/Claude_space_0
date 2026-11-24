@@ -11,7 +11,7 @@ const { chromium } = require('playwright'); const OUT = process.env.OUT || '/tmp
   let s = await p.evaluate(() => ({ lv: [1, 2, 3, 4, 5, 6, 7].map(n => BAL.nightLv(n)), cnt: [1, 2, 3, 4, 5].map(n => BAL.nightSpawn(BAL.lvN(n))), hp: [1, 2, 3, 4].map(n => +BAL.hpMul(BAL.lvN(n)).toFixed(3)) }));
   check('night level goes up every night (round 34b); count / health climb with it', s.lv.join() === '1,2,3,4,5,6,7' && s.cnt.every((c, i) => !i || c > s.cnt[i - 1]) && s.hp.every((h, i) => !i || h > s.hp[i - 1]), JSON.stringify(s));
   // tank
-  const spots = await p.evaluate(() => { window.__dbg.god = true; W.phase = 'day'; W.clock = 999; W.zs.length = 0; W.spawnQ = []; const me = W.p[0]; for (const k in W.res) W.res[k] = 999;
+  const spots = await p.evaluate(() => { window.__dbg.god = true; W.phase = 'day'; W.clock = 999; W.zs.length = 0; W.spawnQ = []; const me = W.p[0]; for (const k in W.res) W.res[k] = 999; W.vbp = VEH.filter(Boolean).map(v => v.k); /* (round 38i) */
     let room = null; for (let r = 2; r < 60 && !room; r++) for (let dy = -r; dy <= r && !room; dy++) for (let dx = -r; dx <= r; dx++) { const x = W.radio.x + dx, y = W.radio.y + dy; if (!inMap(x, y)) continue; if (skyTop(x, y) >= 1 && !W.blk[ci(x, y, 0)] && support(x, y, 0) && !W.blk[ci(x, y, 1)]) { room = { x, y, L: 0 }; break; } }
     const x = W.radio.x + 20, y = W.radio.y + 20, L = gAt(x, y); for (let dy = -8; dy <= 8; dy++) for (let dx = -8; dx <= 8; dx++) for (let l = L; l < L + 4; l++) { W.blk[ci(x + dx, y + dy, l)] = 0; if (l > L) W.slab[ci(x + dx, y + dy, l)] = 0; } W.ver++;
     return { room, open: { x, y, L } }; });

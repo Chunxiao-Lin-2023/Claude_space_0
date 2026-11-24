@@ -13,7 +13,7 @@ function act(a, v) {
     netSendCtl({ t: 'act', a, v });
     if (a === 'wpn') { me.wpn = v; me.wpnLock = performance.now() + 700; sfx('swap'); }
     if (a === 'mode') me.build = !!v;
-    if (a === 'reload' && me.mag[me.wpn] < WPN[me.wpn].mag) { sfx('reload'); me.reloadVis = WPN[me.wpn].reload; }
+    if (a === 'reload' && me.mag[me.wpn] < magCap(me.wpn)) { sfx('reload'); me.reloadVis = WPN[me.wpn].reload; }
   } else doAct(me, a, v);
 }
 function toggleBuild(v) {
@@ -50,7 +50,7 @@ function rideKey(pick) {
     if (near && !vehSeats(near)) toast(near.name + ' 骑的' + VEH[near.veh].name + '没有后座（摩托车、装甲车才能带人）');
   }
   if (pick && own.length) { const j = own.indexOf(me.veh), v = own[(j + 1) % own.length]; act('ride', v); toast('载具：' + VEH[v].name + ' · ' + VEH[v].tag); return; }
-  if (own.length || me.pass >= 0 || pillionFor(me)) act('ride'); else toast('还没有载具：在「商店 → 载具」里造（尸城求生要先找到蓝图），或者走到队友的摩托 / 装甲车边按 T 坐后座');
+  if (own.length || me.pass >= 0 || pillionFor(me)) act('ride'); else toast('还没有载具：在「商店 → 载具」里造（没解锁的要先用蓝图解锁），或者走到队友的摩托 / 装甲车边按 T 坐后座');
 }
 function cycleWpn(d) { const me = W.p[ME]; let w = me.wpn; for (let k = 0; k < NW; k++) { w = (w + d + NW) % NW; if (me.owned[w]) break; } if (w !== me.wpn) act('wpn', w); }
 // (round 24) pick the grenade type (touch: the ring over the grenade key; PC: 5–8, Shift+G, or the wheel while holding G)
@@ -406,7 +406,7 @@ bindBtn('tReload', () => inGame() && (W.p[ME].build ? rotStairs() : act('reload'
 const WK = document.getElementById('tWpn');
 function wpickItems(me) {
   const q = quickList(me), out = q.concat(WPN.map((w, k) => k).filter(k => me.owned[k] && !q.includes(k))).map(k => ({ k, t: WPN[k].sn || WPN[k].name, s: WPN[k].inf ? '∞' : String(me.mag[k] + me.ammo[k]), sel: k === me.wpn, q: q.includes(k) }));
-  const w = WPN[me.wpn]; if (me.mag[me.wpn] < w.mag && (w.inf || me.ammo[me.wpn] > 0)) out.push({ k: 'rl', t: '换弹', s: '' });
+  const w = WPN[me.wpn]; if (me.mag[me.wpn] < magCap(me.wpn) && (w.inf || me.ammo[me.wpn] > 0)) out.push({ k: 'rl', t: '换弹', s: '' });
   out.push({ k: 'kit', t: '装备', s: '' }); return out;
 }
 // (round 24) grenade types for the same kind of ring over the grenade key

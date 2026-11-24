@@ -15,7 +15,7 @@ function newWorld(seed, names, diff, mode) {
     seed, t: 0, G: m.G, tt: m.tt, blk: m.blk, bhp: m.bhp, slab: m.slab, shp: m.shp, bdir: m.bdir, stab: new Int8Array(NC), srch: new Set(),
     radio: { x: m.radio.x, y: m.radio.y }, bench: m.bench, tasks: [], tkv: 0, clean: true,
     p: names.map((n, i) => mkPlayer(i, n)), zs: [], proj: [], zid: 1, gid: 0,
-    phase: 'day', clock: BAL.dayLen[0], dayLen: BAL.dayLen[0], night: 0, res: Object.assign({}, BAL.startRes), upg: BAL.upgStart, kills: 0,
+    phase: 'day', clock: BAL.dayLen[0], dayLen: BAL.dayLen[0], night: 0, res: Object.assign({}, BAL.startRes), upg: BAL.upgStart, kills: 0, vbp: (typeof SET !== 'undefined' && Array.isArray(SET.vstart) && SET.vstart.length === 2 && SET.vstart.every(k => VKEY(k) > 0) ? SET.vstart : VSTART).slice(), bpPts: 0, bpN: 0, mlv: [0, 0, 0, 0, 0, 0, 0], gmag: 0, grof: 0, /* (round 38i) */
     spawnQ: [], nightT: 0, strayT: 8, diff, D: BAL.diff[diff] || BAL.diff.normal, rng: mulberry(seed ^ 0x9e3779b9), seq: 0,
     dirty: new Set(), endless: false, over: null, stats: { built: 0, lost: 0 }, navDirty: true, ver: 1,
     ff: { rw: new Float32Array(NC), rc: new Float32Array(NC), pw: new Float32Array(NC), pc: new Float32Array(NC), rT: 0, pT: 0 },
@@ -542,6 +542,7 @@ function stepActions(p, dt) {
     else if (w.inf || p.ammo[wi] > 0) startReload(p);
     else if (p.emptyT <= 0) { p.emptyT = 0.5; emit({ k: 'sfx', n: 'empty', x: p.x, y: p.y, o: p.i }); }
   }
+  if (!p.dead && p.reloadT <= 0 && p.medT <= 0 && p.mag[wi] <= 0 && w.mag && (w.inf || p.ammo[wi] > 0) && !(p.ride && vehGun(p))) startReload(p); /* (round 38i) an empty magazine reloads by itself, no need to pull the trigger again */
   const tgt = I.use ? useTarget(p) : null;
   if (tgt) {
     const key = tgt.k + tgt.i;
@@ -594,6 +595,7 @@ function completeUse(p, tgt) {
   if (S.vanish) setCell(i, 0, W.slab[i], null, 'loot'); else { W.srch.add(i); W.ver++; emit({ k: 'spot', i, v: 1 }); }
   taskAdd('search'); if (!inZone(x, y)) taskAdd('far');
   const got = [];
+  if (!isSiege() && W.vbp) { W.bpN = (W.bpN || 0) + 1; if (W.bpN >= BAL.bpEvery) { W.bpN = 0; W.bpPts = (W.bpPts || 0) + 1; got.push('蓝图 ×1'); emit({ k: 'bpget', n: W.bpPts }); } } /* (round 38i) */
   for (const k in S.loot) { const [a, b] = S.loot[k]; const n = Math.round(rand(a, b) * m); if (n > 0) { W.res[k] += n; got.push('+' + n + ' ' + RES.find(r => r.k === k).name); } }
   if (S.ammo) { for (const q of activeP()) for (let wi = 1; wi < NW; wi++) if (q.owned[wi] || S.allAmmo) q.ammo[wi] += Math.round(WPN[wi].loot * S.ammo * m * (q.owned[wi] ? 1 : 0.5)); got.push(S.allAmmo ? '各种子弹' : '全队弹药'); }
   const bpk = siegeBlueprint(Object.keys(SPOTS).find(k => SPOTS[k] === S), !!S.bp); if (bpk) got.push(bpk);
@@ -704,11 +706,11 @@ function restockSpots(initial) {
 }
 function startReload(p) {
   const wi = p.down ? 0 : p.wpn, w = WPN[wi];
-  if (p.reloadT > 0 || p.mag[wi] >= w.mag || (!w.inf && p.ammo[wi] <= 0)) return;
+  if (p.reloadT > 0 || p.mag[wi] >= magCap(wi) || (!w.inf && p.ammo[wi] <= 0)) return;
   p.reloadT = w.reload; p.reloadW = wi; emit({ k: 'sfx', n: 'reload', x: p.x, y: p.y, o: p.i });
 }
 function finishReload(p) { reloadInto(p, p.reloadW); }
-function reloadInto(p, wi) { const w = WPN[wi], need = w.mag - p.mag[wi], take = w.inf ? need : Math.min(need, p.ammo[wi]); p.mag[wi] += take; if (!w.inf) p.ammo[wi] -= take; }
+function reloadInto(p, wi) { const w = WPN[wi], need = magCap(wi) - p.mag[wi], take = w.inf ? need : Math.min(need, p.ammo[wi]); p.mag[wi] += take; if (!w.inf) p.ammo[wi] -= take; }
 // aim direction from the shoulder to the aim point (or level along the facing)
 function aimDir(p) {
   const [sx, sy, sz] = shoulder(p);
@@ -719,7 +721,7 @@ function aimDir(p) {
   const L = Math.hypot(dx, dy, dz); return [dx / L, dy / L, dz / L];
 }
 function fireWeapon(p, wi) {
-  const w = WPN[wi], rk = rideK(p); if (p.cdW) p.cdW[wi] = w.rate * rk.rate; else p.fireCD = w.rate * rk.rate; p.mag[wi]--;
+  const w = WPN[wi], rk = rideK(p); if (p.cdW) p.cdW[wi] = w.rate * rk.rate * rofMul(); else p.fireCD = w.rate * rk.rate * rofMul(); /* (round 38i) 快速击发 */ p.mag[wi]--;
   noiseAt(p.x, p.y, SIEGE.gunNoise[w.k] || SIEGE.noiseR, p.z);
   const [sx, sy, sz] = shoulder(p), [ax, ay, az] = aimDir(p);
   const yaw = Math.atan2(ay, ax), pitch = Math.asin(clamp(az, -1, 1));
@@ -774,7 +776,7 @@ function fireWeapon(p, wi) {
 }
 function hurtZombie(z, dmg, p, kx, ky, quiet) {
   if (z.hp <= 0 || z.hidden) return;
-  if (dmg > 0) { if (p && p.i != null && inMech(p)) dmg *= BAL.mechDmg; else if (isBig(z)) dmg *= BAL.bigHp; } /* (round 38g) */
+  if (dmg > 0) { if (p && p.i != null && inMech(p)) dmg *= BAL.mechDmg * (1 + BAL.mlvDmg * mlvOf(p.veh)); else if (isBig(z)) dmg *= BAL.bigHp; } /* (round 38g) */
   if (dmg > 0 && z.xpT > 0) dmg *= BAL.xposeMul; /* (round 36l) 破绽: an opening doubles the damage */ if (dmg > 0 && z.ks && z.kt === 1) z.ks.dm = (z.ks.dm || 0) + dmg; if (dmg > 0 && z.es) z.es.dm = (z.es.dm || 0) + dmg;
   if (dmg > 0 && W.wardens && W.wardens.length) { const w = shieldFor(z, p); if (w) { // (round 35) inside a 护盾者's bubble: the bubble takes it first
     const a = Math.min(w.sh, dmg); w.sh -= a; dmg -= a; if (kx || ky) { kx *= 0.3; ky *= 0.3; }
@@ -789,7 +791,7 @@ function hurtZombie(z, dmg, p, kx, ky, quiet) {
 }
 let KSRC = '';
 function killZombie(z, p) {
-  z.hp = 0; W.kills++; if (p) p.kills++; if (z.mins && z.mins.length) for (const o of W.zs) if (o.hp > 0 && z.mins.includes(o.id)) { o.mins = null; killZombie(o, null); } /* (round 36l) the ones a 唤尸者 raised drop with it */ if (p && inMech(p)) { p.bat = Math.min(BAL.mechBat, (p.bat || 0) + 1.5); evoGainKill(p, z); } // (round 36) a mech recharges a little on every kill
+  z.hp = 0; W.kills++; if (p) p.kills++; if (z.mins && z.mins.length) for (const o of W.zs) if (o.hp > 0 && z.mins.includes(o.id)) { o.mins = null; killZombie(o, null); } /* (round 36l) the ones a 唤尸者 raised drop with it */ if (p && inMech(p)) p.bat = Math.min(BAL.mechBat, (p.bat || 0) + 1.5); if (p) evoGainKill(p, z); /* (round 38i) any kill feeds the 进化 meter */ // (round 36) a mech recharges a little on every kill
   taskAdd('kill'); if (ZT[z.k].boss || ZT[z.k].elite || z.k === 'brute' || z.k === 'armored') taskAdd('elite'); if (KSRC === 'nade') taskAdd('nade'); // (round 32) permanent task counters
   if (ZT[z.k].blast) zBlast(z.x, z.y, z.z + 0.5);
   emit({ k: 'zdie', x: r2(z.x), y: r2(z.y), z: r2(z.z), t: z.k, f: r2(z.face), id: z.id, gz: ZT[z.k].fly ? r2(skyTop(z.x, z.y) * FH) : undefined }); // (round 35) gz: where a shot bird lands
@@ -805,7 +807,7 @@ function hurtPlayer(p, dmg, src) {
   if (p.evoOn && inMech(p)) { if (p.spinT > 0) return; if (p.veh === 1 && rand() < 0.35) { emit({ k: 'dodge', p: p.i, x: r2(p.x), y: r2(p.y), z: r2(p.z) }); return; } } /* (round 37) 玄龟 spinning: untouchable; 青蛇: slips away */
   for (const q of W.p) if (q !== p && q.evoOn && q.veh === 4 && inMech(q) && !q.gone && !q.dead && Math.hypot(q.x - p.x, q.y - p.y) < BAL.evoAura) { dmg *= BAL.evoAuraMul; break; } /* (round 37) 玄甲 aura */
   if (inMech(p)) { // (round 34b) the hull takes the hit (by how armoured that mech is); a little still gets through to you; at zero it falls back into a vehicle
-    const M = mechOf(p); p.mh = p.mh || []; p.mh[p.veh] = Math.max(0, mhpOf(p) - dmg * M.armor / BAL.mechTough * (p.ccBrk > 0 ? 1.25 : 1)); emit({ k: 'phurt', p: p.i, d: 0 });
+    const M = mechOf(p); p.mh = p.mh || []; p.mh[p.veh] = Math.max(0, mhpOf(p) - dmg * M.armor / BAL.mechTough / (1 + BAL.mlvTough * mlvOf(p.veh)) * (p.ccBrk > 0 ? 1.25 : 1)); emit({ k: 'phurt', p: p.i, d: 0 });
     if (p.mh[p.veh] <= 0) mechEject(p, M.name + '的装甲被打穿了，变回载具：装甲会慢慢恢复，商店里能马上修好');
     dmg *= p.evoOn ? BAL.evoPass : BAL.mechPass; if (dmg < 0.5) return;
   }
@@ -873,11 +875,11 @@ function doAct(p, a, v) {
       if (p.veh && !p.ride && VEH[p.veh].outdoor && skyTop(p.x, p.y) > p.L) { emit({ k: 'deny', p: p.i, why: VEH[p.veh].name + '太大，只能在室外开' }); break; }
       if (p.veh) { p.land = false; p.ride = !p.ride; p.mform = 0; p.mtr = 0; if (p.ride) p.build = false; else for (const q of W.p) if (q.pass === p.i) q.pass = -1; emit({ k: 'sfx', n: 'swap', x: p.x, y: p.y, o: p.i }); }
     } break;
-    case 'reload': if (!p.down) startReload(p); else if (p.mag[0] < WPN[0].mag) { p.reloadT = WPN[0].reload; p.reloadW = 0; } break;
+    case 'reload': if (!p.down) startReload(p); else if (p.mag[0] < magCap(0)) { p.reloadT = WPN[0].reload; p.reloadW = 0; } break;
     case 'wpn': if (!p.down && v >= 0 && v < NW && p.owned[v] && p.wpn !== v) {
       if (!p.rlBg) p.rlBg = WPN.map(() => 0); const o = p.wpn, ow = WPN[o];
       if (p.reloadT > 0 && p.reloadW === o) p.rlBg[o] = p.reloadT;                                    // the reload you started carries on in the holster
-      else if (p.mag[o] < ow.mag && (ow.inf || p.ammo[o] > 0)) p.rlBg[o] = ow.reload;               // (round 33) any gun that isn't full reloads itself in the holster while you use the other
+      else if (p.mag[o] < magCap(o) && (ow.inf || p.ammo[o] > 0)) p.rlBg[o] = ow.reload;               // (round 33) any gun that isn't full reloads itself in the holster while you use the other
       p.wpn = v; p.reloadT = 0; if (p.rlBg[v] > 0) { p.reloadT = p.rlBg[v]; p.reloadW = v; p.rlBg[v] = 0; } // back to a gun that was reloading: pick up where it was
       else if (p.mag[v] === 0) startReload(p);                                                       // (round 33) drew an empty gun: it starts reloading at once
       p.fireCD = Math.max(p.fireCD, 0.2); emit({ k: 'sfx', n: 'swap', x: p.x, y: p.y, o: p.i }); } break;
@@ -894,6 +896,9 @@ function doAct(p, a, v) {
     case 'build': doBuild(p, v.x, v.y, v.l, v.b, v.d); break;
     case 'demo': doDemolish(p, v.x, v.y, v.l); break;
     case 'crush': if (inMech(p) && typeof v === 'number' && v >= 0 && v < NC && MECH_CRUSH.has(W.blk[v]) && !(W.mine && W.mine.has(v)) && Math.hypot(cx_(v) + 0.5 - p.x, cy_(v) + 0.5 - p.y) < 2.6) { const r = B[W.blk[v]].res, g = GATHER[W.blk[v]]; if (p.veh === 3 && g) { mechScar(v, null, null, BAL.workerRegrow); const n = Math.max(1, Math.round(rand(g.n[0], g.n[1]) * BAL.workerGather)); W.res[g.res] += n; taskAdd('gather'); emit({ k: 'loot', p: p.i, x: cx_(v) + 0.5, y: cy_(v) + 0.5, z: cl_(v) * FH + 1, text: '+' + n + ' ' + RES.find(q => q.k === g.res).name }); setCell(v, 0, W.slab[v], null, 'mine'); } /* (round 36) 工蜂's passive: what it flattens is gathered (and so doesn't grow back) */ else { mechScar(v); setCell(v, 0, W.slab[v], null, 'brk'); if (r && rand() < 0.5) W.res[r] = (W.res[r] || 0) + 1; } emit({ k: 'sfx', n: 'bash', x: cx_(v) + 0.5, y: cy_(v) + 0.5 }); } break; // (round 34d) a mech flattens what is in its way
+    case 'bpveh': { const k = VKEY(v) > 0 ? v : null; if (k && !isSiege() && W.vbp && !W.vbp.includes(k) && (W.bpPts || 0) > 0) { W.vbp.push(k); W.bpPts--; emit({ k: 'bpuse', p: p.i, v: k }); } } break; /* (round 38i) a blueprint unlocks a vehicle */
+    case 'gun': { const k = v === 'rof' ? 'grof' : 'gmag', lv = W[k] || 0; if ((v === 'rof' || v === 'mag') && !isSiege() && W.vbp && lv < BAL.gunMax && (W.bpPts || 0) > 0 && affordable(W.res, gunCost(lv))) { const c = gunCost(lv); for (const r in c) W.res[r] -= c[r]; W.bpPts--; W[k] = lv + 1; emit({ k: 'bpuse', p: p.i, g: v, lv: lv + 1 }); } } break; /* (round 38i) a blueprint + materials refit every gun: bigger magazines / faster fire */
+    case 'mlv': { const vv = +v, lv = mlvOf(vv); if (vv >= 1 && vv <= NVEH && W.mlv && hasBP(VEH[vv].k) && lv < BAL.mlvMax && (W.bpPts || 0) > 0 && affordable(W.res, mlvCost(lv))) { const c = mlvCost(lv); for (const r in c) W.res[r] -= c[r]; W.bpPts--; W.mlv[vv] = lv + 1; emit({ k: 'bpuse', p: p.i, m: vv, lv: lv + 1 }); } } break; /* (round 38i) a blueprint + materials refit a mech */
     case 'xform': { if (p.mtr > 0) break; if (v === 'veh') { if (p.mform === 1) { devolve(p); startXform(p, 0); } break; } /* (round 37) hold X: straight back to the vehicle */
       if (p.evoOn) { devolve(p); break; } if (p.mform === 1 && (p.evo || 0) >= 100 && EVO[p.veh]) { evolve(p); break; } /* tap X: a full meter evolves the mech; in beast form it turns back */
       const to = p.mform === 1 ? 0 : 1, why = xformDeny(p, to); if (why) emit({ k: 'deny', p: p.i, why }); else startXform(p, to); } break; // (round 34b)
@@ -972,7 +977,7 @@ function nearBench(p) { return !p.down && p.L === gAt(W.bench.x, W.bench.y) && d
 function teamShare() {
   const ps = W.p.filter(p => !p.gone); if (ps.length < 2) return; let vehs = 0, sh = 0; const own = WPN.map(() => 0);
   for (const p of ps) { vehs |= p.vehs || 0; if (p.shield) sh = 1; p.owned.forEach((o, k) => { if (o) own[k] = 1; }); }
-  for (const p of ps) { p.vehs = vehs; if (sh) p.shield = 1; own.forEach((o, k) => { if (o && !p.owned[k]) { p.owned[k] = 1; p.mag[k] = p.mag[k] || WPN[k].mag; if (!WPN[k].inf) p.ammo[k] = Math.max(p.ammo[k] || 0, WPN[k].loot * 2 || 10); } }); if (!p.veh && vehs) p.veh = [4, 2, 3, 1, 5, 6].find(k => vehs >> k & 1) || 0; }
+  for (const p of ps) { p.vehs = vehs; if (sh) p.shield = 1; own.forEach((o, k) => { if (o && !p.owned[k]) { p.owned[k] = 1; p.mag[k] = p.mag[k] || magCap(k); if (!WPN[k].inf) p.ammo[k] = Math.max(p.ammo[k] || 0, WPN[k].loot * 2 || 10); } }); if (!p.veh && vehs) p.veh = [4, 2, 3, 1, 5, 6].find(k => vehs >> k & 1) || 0; }
 }
 function canCraft(p) { return !p.down && !p.dead && (nearBench(p) || houseInterior(Math.floor(p.x), Math.floor(p.y)) || inCamp(p)); }
 const inCamp = p => Math.abs(p.x - W.radio.x - 0.5) <= 6.5 && Math.abs(p.y - W.radio.y - 0.5) <= 5.5;
@@ -1002,7 +1007,7 @@ function craftBlocked(p, c) {
 function doCraft(p, id) {
   const c = CRAFT.find(c => c.id === id); if (!c || !canCraft(p) || craftBlocked(p, c)) return;
   for (const k in c.cost) W.res[k] -= c.cost[k];
-  if (c.wpn) { p.owned[c.wpn] = 1; p.mag[c.wpn] = WPN[c.wpn].mag; p.ammo[c.wpn] += WPN[c.wpn].loot * 2 || 10; p.wpn = c.wpn; }
+  if (c.wpn) { p.owned[c.wpn] = 1; p.mag[c.wpn] = magCap(c.wpn); p.ammo[c.wpn] += WPN[c.wpn].loot * 2 || 10; p.wpn = c.wpn; }
   if (c.ammo) p.ammo[c.ammo[0]] += c.ammo[1];
   if (c.nade) { const t = c.gt || 0; if (t) { p.gn = p.gn || [0, 0, 0]; p.gn[t - 1] = Math.min(BAL.gnCap, p.gn[t - 1] + c.nade); } else p.nades = Math.min(BAL.nadeCap, p.nades + c.nade); }
   if (c.med) p.meds = Math.min(BAL.medCap, p.meds + 1);

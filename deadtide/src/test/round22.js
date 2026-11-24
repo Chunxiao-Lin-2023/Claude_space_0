@@ -12,7 +12,7 @@ const UA = 'Mozilla/5.0 (iPad; CPU OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (
     await p.goto('http://localhost:8766/test.html'); await p.waitForFunction(() => window.__ready);
     await p.evaluate(() => (SET.mode = 'classic', SET.map = 'town', SET.quick = [], $('soloBtn').click())); await p.waitForFunction(() => W && W.t > 0.5);
     const simWait = s => p.evaluate(s => new Promise(r => { const t0 = W.t; const f = () => W.t - t0 >= s ? r() : setTimeout(f, 20); f(); }), s);
-    await p.evaluate(() => { window.__dbg.skipDraw = true; const me = W.p[0]; me.x = W.radio.x + 0.5; me.y = W.radio.y + 2.5; me.L = gAt(W.radio.x, W.radio.y + 2); for (const k in W.res) W.res[k] = 999; });
+    await p.evaluate(() => { window.__dbg.skipDraw = true; const me = W.p[0]; me.x = W.radio.x + 0.5; me.y = W.radio.y + 2.5; me.L = gAt(W.radio.x, W.radio.y + 2); for (const k in W.res) W.res[k] = 999; W.vbp = VEH.filter(Boolean).map(v => v.k); /* (round 38i) every vehicle unlocked for this test */ });
     // shop
     let s = await p.evaluate(() => { openCraft(); const tabs = [...document.querySelectorAll('#ctabs button')].map(b => b.textContent), cards = document.querySelectorAll('#clist .sc').length;
       const shot = ([...document.querySelectorAll('#clist .sc')].find(e => /^霰弹枪/.test(e.querySelector('b').textContent)) || {}).textContent || ''; /* (round 36d) cards are sorted (your guns first) */ [...document.querySelectorAll('#clist button[data-c="rifle"]')][0].click(); return { tabs, cards, shot, rifle: W.p[0].owned[2] }; });

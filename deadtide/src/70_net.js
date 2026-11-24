@@ -90,7 +90,7 @@ function makeSnap() {
   const z = []; for (const q of W.zs) z.push(q.id, ZI.indexOf(q.k), Math.round(q.x * 100), Math.round(q.y * 100), q.L, Math.round(q.z * 100), Math.round(q.face * 100), Math.ceil(q.hp / q.max * 100), (q.climbing ? 1 : 0) | (q.atk > 0 ? 2 : 0) | (q.hitT > 0 ? 4 : 0) | (q.moving ? 8 : 0) | (q.burn > 0 ? 16 : 0) | (q.scr > 0 ? 32 : 0) | (q.rage > 0 ? 64 : 0) | (q.hidden ? 128 : 0) | (q.sleep ? 256 : 0) | ((q.aw || 0) > 0.15 ? 512 : 0) | ((q.tl || 0) << 10) | ((q.kt || 0) << 12) | (q.kc ? 16384 : 0) | (q.sh > 0 ? 32768 : 0) | (q.ck ? 65536 : 0)); // (round 35) bit 15: a 护盾者's bubble is up, bit 16: cloaked; kt also carries a flyer's dive / an elite's skill // tl (round 23): brute tells, 2 bits; kt / kc (round 34): kaiju skill state
   const pr = []; for (const b of W.proj) pr.push(b.k === 'nade' ? (b.gt ? 2 + b.gt : 0) : b.k === 'gl' ? 2 : 1, r2(b.x), r2(b.y), r2(b.z), r2(b.vx), r2(b.vy), r2(b.vz));
   const d = []; for (const i of W.dirty) d.push(i, Math.round(W.bhp[i]), Math.round(W.shp[i])); W.dirty.clear();
-  return { t: 's', T: r2(W.t), ph: W.phase, cl: Math.round(W.clock * 10) / 10, dl: W.dayLen, n: W.night, nt: Math.round(W.nightT), tk: NET.tkv === W.tkv && (NET.tkN = (NET.tkN || 0) + 1) % 12 ? 0 : (NET.tkv = W.tkv, W.tasks.map(t => [t.k, t.need, t.got, t.done, t.txt, t.rt])), res: RES.map(r => W.res[r.k]), u: W.upg, k: W.kills, p: W.p.map(P), z, pr, d, sl: W.spawnQ.length, cz: (W.cz || []).map(c => [c.k, c.x, c.y, c.z, c.r, r2(c.t)]), ob: NET.obv === W.obv ? 0 : (NET.obv = W.obv, W.obj), pk: W.perk || 0 }; // (round 32) permanent upgrades (the caps read them)
+  return { t: 's', T: r2(W.t), ph: W.phase, cl: Math.round(W.clock * 10) / 10, dl: W.dayLen, n: W.night, nt: Math.round(W.nightT), tk: NET.tkv === W.tkv && (NET.tkN = (NET.tkN || 0) + 1) % 12 ? 0 : (NET.tkv = W.tkv, W.tasks.map(t => [t.k, t.need, t.got, t.done, t.txt, t.rt])), res: RES.map(r => W.res[r.k]), u: W.upg, k: W.kills, p: W.p.map(P), z, pr, d, sl: W.spawnQ.length, cz: (W.cz || []).map(c => [c.k, c.x, c.y, c.z, c.r, r2(c.t)]), ob: NET.obv === W.obv ? 0 : (NET.obv = W.obv, W.obj), pk: W.perk || 0, bp: [W.bpPts || 0, W.bpN || 0, W.vbp ? vbpMask() : -1, (W.mlv || []).join(''), W.gmag || 0, W.grof || 0] }; /* (round 38i) blueprints */ // (round 32) permanent upgrades (the caps read them)
 }
 function hostNetTick(dt) {
   if (!NET.gctl || !NET.gctl.open) return;
@@ -140,6 +140,7 @@ function applySnap(s) {
   if (s.pk) W.perk = s.pk;
   if (s.tk) { W.tasks = s.tk.map(a => ({ k: a[0], need: a[1], got: a[2], done: a[3], txt: a[4], rt: a[5] })); W.tkv++; }
   RES.forEach((r, i) => W.res[r.k] = s.res[i]); W.spawnLeft = s.sl;
+  if (s.bp) { W.bpPts = s.bp[0]; W.bpN = s.bp[1]; W.vbp = s.bp[2] < 0 ? null : VEH.filter((q, i) => q && s.bp[2] >> i & 1).map(q => q.k); W.mlv = String(s.bp[3] || '').split('').map(Number); W.gmag = s.bp[4] || 0; W.grof = s.bp[5] || 0; } /* (round 38i) */
   s.p.forEach((a, i) => {
     const p = W.p[i]; if (!p) return;
     const [x, y, L, vx, vy, aim, hp, fl, downT, wpn, mag, ammo, owned, nades, meds, useT, medT, reloadT, kills, anim, sel, ap, vehs, shield, melee, gn, lives, fuel, fz, gam, shl, mc] = a;

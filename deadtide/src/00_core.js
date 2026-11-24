@@ -158,6 +158,16 @@ const EVO = [null,
   { k: 'bear', evo: 1, name: '铁熊', from: '重炮', hp: 2000, armor: 0.45, /* (round 38f) 0.55 → 0.45 */ spd: 1.3, dmg: 135, rate: 0.6, reach: 3.4, arc: 1.5, atk: 'claw', skill: 'roar', sn: '熊吼', cd: 11, col: ['#7a5232', '#3a2616', '#d8d0c0'], glow: '#ff8a3a', noise: 9,
     tag: '每杀一只回 1.5% 装甲。普攻「熊掌」：左右掌轮流举高拍下去（前方半径 1.9，135），第三下人立双掌砸地（半径 2.6，×1.5）。技能「熊吼」：一吼震住 9 格内的丧尸 3.5 秒（4 格内再受 120），之后 12 秒狂暴：伤害 +40%、出手更快，冷却 11 秒' },
 ];
+/* (round 38i) vehicle blueprints outside 尸城求生: a new run starts with two vehicles of your choice; every BAL.bpEvery searches give a blueprint, spent in the shop on a locked vehicle or on refitting a mech */
+const VKEY = k => VEH.findIndex(v => v && v.k === k);
+const VSTART = ['bike', 'cargo'];
+const bpOn = () => !!(W && W.vbp) && !(typeof isSiege === 'function' && isSiege());
+const vbpMask = () => W && W.vbp ? W.vbp.reduce((m, k) => m | 1 << VKEY(k), 0) : 126;
+const mlvOf = v => ((W && W.mlv) || [])[v] || 0;
+const magCap = wi => Math.max(1, Math.round(WPN[wi].mag * (1 + BAL.gmagStep * ((W && W.gmag) || 0)))); /* (round 38i) 扩容弹匣 refit: +20% a level */
+const rofMul = () => 1 / (1 + BAL.grofStep * ((W && W.grof) || 0)); /* (round 38i) 快速击发 refit: +10% fire rate a level */
+const gunCost = lv => ({ steel: 10 * (lv + 1), parts: 12 * (lv + 1) });
+const mlvCost = lv => ({ steel: 15 * (lv + 1), parts: 10 * (lv + 1) });
 const isBig = z => { const T = ZT[z.k]; return !!(T && T.kaiju); }; /* (round 38g) the tough ones — (round 38h) just the 怪兽 now */
 const mechOf = p => (p && p.evoOn && EVO[p.veh]) || MECHS[p && p.veh] || MECHS[4]; /* (round 37) in beast form its EVO entry stands in for the mech */
 const mhpOf = (p, v) => { v = v || p.veh; const M = MECHS[v]; if (!M) return 0; const h = p.mh && p.mh[v]; return h == null ? M.hp : h; };
@@ -233,7 +243,7 @@ const ZT = {
   shade: { name: '隐身者', hp: 420, spd: 1.5, r: 0.35, h: 1.6, dmg: 12, bdmg: 10, cd: 0.9, sc: 1.55, look: 'walker', skin: '#50505e', elite: { k: 'cloak', cd: 6, col: '#c0c0e0', tip: '隐身摸到你身边偷袭，留意空气里的扭曲，附近炸一下就现形' } },
 };
 const ELITES = ['blinker', 'caller', 'warden', 'shade'];
-const BUILD_TAG = '第 38 轮之八'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
+const BUILD_TAG = '第 38 轮之九'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
 // aim assist (SET.assist): fire-button lock range (x weapon range), lock-on time before it fires, spread while auto-aimed, mouse/finger magnet
 const PORT = 1.25; // firing port: your own shots pass a wall / door you built if it is this close to you
 const ASSIST = [{ name: '关', range: 0, acq: 0, spread: 1, mag: 0 }, { name: '标准', range: 0.75, acq: 0.3, spread: 1.5, mag: 1 }, { name: '强', range: 1, acq: 0, spread: 1, mag: 1 }];
@@ -348,7 +358,7 @@ const CRAFT = [
 /* ---------- balance ---------- */
 const BAL = {
   nights: 15,
-  evoT: 22, evoKill: 4, evoBig: 15, evoBurst: 3.5, evoAura: 5, evoAuraMul: 0.6, /* (round 37) 进化 meter: 100 = full; 22 s in beast form; kills fill it */
+  evoCap: 200, evoT: 22, evoKill: 4, /* (round 38i) the meter banks up to 200 (= 2 × 22 s) and fills from kills on foot / in a vehicle too */ evoBig: 15, evoBurst: 3.5, evoAura: 5, evoAuraMul: 0.6, /* (round 37) 进化 meter: 100 = full; 22 s in beast form; kills fill it */
   flyRk: 3, flyRkMul: 1.3, /* (round 36n) 苍隼 in the air: three rockets a shot, ×1.3 each */ rainN: 36, rainT: 2.0, rainR: 4.5, rainDmg: 55, /* (round 36n) 工蜂 快递雨 */
   mgSpread: 0.03, droneN: 10, droneT: 10, droneDmg: 7, droneRate: 0.3, droneRange: 12, quakeR: 7, quakeDmg: 260, /* (round 36n) 疾风 machine gun + 浮游炮; 铁卫 掀地 */
   upgStart: 3, upgMax: 6, mechUpg: 0.12, /* (round 36n) mechs gain +12% for each 弹头 level earned above the start (they used to gain nothing) */         // (round 36f) 强化弹头 (+12% team damage a level) starts at 3 (was 0, bought up to 5 in the shop); the 击杀精英 task's three tiers push it to 6
@@ -372,7 +382,7 @@ const BAL = {
   smokeR: 3.8, smokeT: 10, smokeConf: 1.2,                      // smoke: zombies in the cloud lose you, wander and don't bite (and for 1.2 s after leaving)
   blastR: 4.4, blastDmg: 70, blastKB: 24, blastStun: 1.6,       // blast: little damage, throws everything out of the way (clears a path)
   tankDmg: 120, tankR: 2.3, tankRate: 1.45, /* (round 36b) 1.6 → 1.45 */ tankRange: 20, tankCap: 200, tankStart: 100, // (round 31) tank cannon: a shell that bursts where it hits
-  mechBat: 120, mechLow: 20, mechPass: 0.1, evoPass: 0.05, biteWU: 0.45, biteDrive: 2.2, mechDmg: 1.5, mechTough: 1.5, bigHp: 1.25, /* (round 38g) mechs / beasts hit 1.5× harder and lose hull 1.5× slower; (round 38h) only 怪兽 get more hp (1.5 → 1.25, and 尸王 / 巨尸 / 能力者 back to 1): the control skills carry the difficulty now. Everything that isn't a mech does ×bigHp to a 怪兽, so on foot nothing changes */ /* (round 38g) on foot / in a vehicle a zombie must hold on 0.45 s before the first bite; a vehicle moving faster than 2.2 isn't bitten */ /* (round 38f) in beast form only half as much gets through to the pilot */ mechRegen: 0.015, batRegen: 0.4, xformT: 1.0, // (round 34b) mech energy (s), low warning, share of a hit the pilot still feels, hull / energy coming back while not a mech (/s), transform time
+  mechBat: 120, mechLow: 20, mechPass: 0.1, evoPass: 0.05, biteWU: 0.45, biteDrive: 2.2, bpEvery: 20, mlvMax: 5, mlvDmg: 0.1, mlvTough: 0.1, gunMax: 5, gmagStep: 0.2, grofStep: 0.1, /* (round 38i) every 20 searches a blueprint: unlock a vehicle or refit a mech (+10% damage, +10% toughness a level) */ mechDmg: 1.5, mechTough: 1.5, bigHp: 1.25, /* (round 38g) mechs / beasts hit 1.5× harder and lose hull 1.5× slower; (round 38h) only 怪兽 get more hp (1.5 → 1.25, and 尸王 / 巨尸 / 能力者 back to 1): the control skills carry the difficulty now. Everything that isn't a mech does ×bigHp to a 怪兽, so on foot nothing changes */ /* (round 38g) on foot / in a vehicle a zombie must hold on 0.45 s before the first bite; a vehicle moving faster than 2.2 isn't bitten */ /* (round 38f) in beast form only half as much gets through to the pilot */ mechRegen: 0.015, batRegen: 0.4, xformT: 1.0, // (round 34b) mech energy (s), low warning, share of a hit the pilot still feels, hull / energy coming back while not a mech (/s), transform time
   gyroDmg: 12, gyroRate: 0.11, /* (round 36b) 0.12 → 0.11 */ gyroSpread: 0.06, gyroRange: 22, gyroCap: 500, gyroStart: 250, // (round 30) gyrocopter chin gun: its own ammo, bought in the shop
   flyHover: 2.2, flyClimb: 0.8, flyDrop: 0.6, fuelLow: 10, refuelT: 4, // (round 29) gyrocopter: cruise 2.2 floors over whatever is below, climb / descend rate (of the take-off curve per second), warn at 10 s of fuel, 4 s to refuel indoors
   zSlope: 0.45, zSlopeC: 0.7, // (round 36) zombie speed going UP a hill slope (climbers barely mind)

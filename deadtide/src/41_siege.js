@@ -18,7 +18,7 @@ MODES.siege = { name: '尸城求生', icon: '🏚', map: 'town', timed: 1, anyBu
 // round 19: the new mode becomes everyone's default once (a later pick on the title screen sticks)
 if (!SET.m19) { SET.mode = 'siege'; SET.map = 'town'; SET.m19 = 1; saveSet(); }
 const isSiege = () => !!(W && W.mode === 'siege');
-const hasBP = k => !isSiege() || BP_BASE.includes(k) || (W.obj && W.obj.bp && W.obj.bp.includes(k));
+const hasBP = k => isSiege() ? BP_BASE.includes(k) || !!(W.obj && W.obj.bp && W.obj.bp.includes(k)) : typeof k !== 'string' || !W.vbp || W.vbp.includes(k); /* (round 38i) outside 尸城求生 only vehicles need one (an old save without W.vbp has them all) */
 // a zombie put straight onto a cell (during world setup the edge spawn lists don't exist yet)
 function putZombie(k, x, y, L) { const keep = W.edges; W.edges = { 0: [[x, y, L]] }; const z = spawnZombie(k, 0); W.edges = keep; z.x = x + 0.3 + rand() * 0.4; z.y = y + 0.3 + rand() * 0.4; z.L = L; z.z = surfZ(z.x, z.y, L); return z; }
 const sleeperKind = () => { const r = rand(); return r < 0.12 ? 'crawler' : r < 0.2 ? 'runner' : r < 0.26 ? 'bloater' : r < 0.31 ? 'spitter' : r < 0.35 ? 'armored' : r < 0.38 ? 'screamer' : r < 0.4 ? 'brute' : r < 0.44 ? 'climber' : 'walker'; };
