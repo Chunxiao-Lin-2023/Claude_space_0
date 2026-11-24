@@ -109,7 +109,7 @@ function drawFlyer(z, corpse, dt) {
   const pitch = corpse ? 0 : kt === 2 ? -0.55 : kt === 1 ? 0.35 : clamp(vz * 0.12, -0.4, 0.3);
   J.body.rotation.z = lerp(J.body.rotation.z, pitch, Math.min(1, dt * 8)); J.body.position.y = 0.25 + (corpse ? 0 : Math.sin(z._ph) * 0.025 * amp);
   if (J.head) J.head.rotation.z = kt === 1 ? -0.4 + Math.sin(t * 30) * 0.08 : 0; // crying out
-  if (J.tail) J.tail.rotation.z = kt === 2 ? 0.25 : Math.sin(z._ph * 0.5) * 0.08; if (J.tick) J.tick(z, dt, kt, corpse); /* (round 41) */
+  if (J.tail) J.tail.rotation.z = kt === 2 ? 0.25 : Math.sin(z._ph * 0.5) * 0.08; if (J.tick) J.tick(z, dt, kt, corpse); /* (round 41) */ if (kt === 2 && !corpse && (z.k === 'crow' || z.k === 'bat' || z.k === 'vult') && Math.random() < 0.8) addP({ x: z.x + frnd(-0.1, 0.1), y: z.y + frnd(-0.1, 0.1), z: z.z + 0.2, vz: 0, g: 0, col: z.k === 'bat' ? '#c06aff' : '#ff5a3a', s: 0.05, life: 0.3 }); /* (round 42) a streak behind a diving bird */
   let zz = z.z; if (corpse) { const k = Math.min(1, z.t / 0.45); zz = lerp(z.fz != null ? z.fz : z.z, z.z, k * k); }
   g.position.set(z.x, zz, z.y); g.rotation.set(corpse ? Math.min(1.3, z.t * 3) : z._roll, -z._f, 0);
   g.scale.setScalar(S * (!corpse && z.hitT > 0 ? 1.12 : 1)); if (corpse && z.t > 7) g.visible = false;
@@ -203,9 +203,10 @@ function mprjFree(r) { if (!r.m) return; r.m.visible = false; (MPRJ[r.kd] || (MP
 const FXM = { live: [], pool: {} };
 function fxMesh(kind) {
   const q = FXM.pool[kind] || (FXM.pool[kind] = []); let m = q.pop();
-  if (!m) { const mat = new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 1, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
-    const geo = kind === 'pillar' ? new THREE.CylinderGeometry(1, 1, 1, 24, 1, true).translate(0, 0.5, 0) /* (round 40c) a light column; sy = its height */ : kind === 'arc' ? new THREE.RingGeometry(0.55, 1, 28, 1, -1.15, 2.3).rotateX(-Math.PI / 2) : kind === 'ring' ? new THREE.RingGeometry(0.82, 1, 40).rotateX(-Math.PI / 2) : kind === 'disc' ? new THREE.CircleGeometry(1, 24).rotateX(-Math.PI / 2) : new THREE.SphereGeometry(1, 10, 8);
-    m = new THREE.Mesh(geo, mat); m.renderOrder = 5; SCN.add(m); m.userData.kind = kind; }
+  if (!m) { const mat = new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 1, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, vertexColors: !!FXGEO[kind] }); /* (round 42) the soft gradient shapes */
+    const geo = FXGEO[kind] ? FXGEO[kind]() : kind === 'pillar' ? new THREE.CylinderGeometry(1, 1, 1, 24, 1, true).translate(0, 0.5, 0) /* (round 40c) a light column; sy = its height */ : kind === 'arc' ? new THREE.RingGeometry(0.55, 1, 28, 1, -1.15, 2.3).rotateX(-Math.PI / 2) : kind === 'ring' ? new THREE.RingGeometry(0.82, 1, 40).rotateX(-Math.PI / 2) : kind === 'disc' ? new THREE.CircleGeometry(1, 24).rotateX(-Math.PI / 2) : new THREE.SphereGeometry(1, 10, 8);
+    if (kind === 'claw') { mat.depthTest = false; } /* (round 42) the claw marks show over whoever was hit */
+    m = new THREE.Mesh(geo, mat); m.renderOrder = kind === 'claw' ? 9 : 5; SCN.add(m); m.userData.kind = kind; }
   m.visible = true; return m;
 }
 // o: { kind, x, y, z, s0, s1 (scale over life), life, col, op, yaw, roll, pitch }
@@ -219,6 +220,11 @@ function fxTick(dt) {
 // a blow lands (mhit): slash arcs for blades / kicks, shock ring + crack for the ground smashes, sparks on what it hit
 function mechHitFx(e, q) {
   if (!q || !inMech(q)) return; const M = mechOf(q), a = q._mA != null && q._mAT > 0 ? q._mA : q.aim, c = q._mcombo || 0, s = (MECH_DIM[M.style] || {}).s || 1;
+  if (M.atk === 'bite' && e.x != null) { const tz = (e.z != null ? e.z : q.z) + 0.6; /* (round 42) 青蛇: two jade fangs snapping shut on the target, a burst of venom */
+    fxSlash(e.x, e.y, tz + 0.25, a + Math.PI, 0.85, '#5fffb0', { roll: 1.25, life: 0.15 }); fxSlash(e.x, e.y, tz - 0.25, a + Math.PI, 0.85, '#5fffb0', { roll: -1.25, life: 0.15 }); fxFlash(e.x, e.y, tz, 0.5, '#3ad890');
+    for (let k = 0; k < 8; k++) addP({ x: e.x, y: e.y, z: tz, vx: frnd(-2, 2), vy: frnd(-2, 2), vz: frnd(0.5, 2.5), col: k % 2 ? '#7fffc0' : '#2ab070', s: 0.06, life: 0.4, g: 6 }); }
+  if (M.atk === 'shell' && e.x != null) { const tz = e.z != null ? e.z : q.z; /* (round 42) 玄龟: a heavy shell-bash — a jade shock ring and rune sparks where it lands */
+    fxShock(e.x, e.y, tz, 1.6, '#7fffd8', '#2a6a5a'); fxFlash(e.x, e.y, tz + 0.5, 0.6, '#4ae0c0'); for (let k = 0; k < 8; k++) { const aa = k / 8 * 6.283; addP({ x: e.x, y: e.y, z: tz + 0.2, vx: Math.cos(aa) * 3, vy: Math.sin(aa) * 3, vz: frnd(1, 2.5), col: '#aaffe8', s: 0.05, life: 0.4, g: 5 }); } }
   if (M.atk === 'chop' || M.atk === 'kick' || (M.atk === 'claw' && !e.g)) { // a bright crescent along the swing, tilted by the move; (round 37) 铁熊's paw swipes too
     const ax = (q.rx != null ? q.rx : q.x), ay = (q.ry != null ? q.ry : q.y), az = (q.zv != null ? q.zv : q.z) + (M.atk === 'kick' ? 0.5 : 1.3) * s, R = M.reach * 0.95;
     const roll = M.atk === 'kick' ? 0.15 : c === 0 ? 0.75 : c === 1 ? 0.12 : 1.45, col = M.atk === 'kick' ? '#ffe680' : '#ffb060';

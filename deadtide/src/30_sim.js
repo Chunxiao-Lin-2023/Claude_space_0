@@ -858,6 +858,7 @@ function killZombie(z, p) {
   else if (rand() < (z.k === 'boss' ? 1 : z.k === 'brute' ? 0.6 : 0.07)) { const n = z.k === 'boss' ? 15 : z.k === 'brute' ? 3 : 1; W.res.parts += n; emit({ k: 'loot', p: -1, x: z.x, y: z.y, z: z.z + z.h, text: '+' + n + ' 零件' }); }
 }
 function hurtPlayer(p, dmg, src) {
+  const sa = src && src.x != null ? r2(Math.atan2(src.y - p.y, src.x - p.x)) : undefined, sm = src && src.k && ZT[src.k] ? 1 : 0; /* (round 42) where the hit came from, and whether it was a zombie's claws — for the claw marks */
   if (p.gone || p.dead || (p.invT || 0) > 0) return; // invT: just respawned
   if (src && src.k && ZT[src.k] && (ZT[src.k].kaiju || ZT[src.k].elite) && !inMech(p)) dmg *= BAL.bigFoot; // (round 36) kaiju / 能力者 hit people on foot softer (they're tuned against mechs)
   if (W.phase === 'day' && src && src.k && ZT[src.k]) dmg *= BAL.day.dmg; // (round 36b) softer bites by day
@@ -866,7 +867,7 @@ function hurtPlayer(p, dmg, src) {
   for (const q of W.p) if (q !== p && q.evoOn && q.veh === 4 && inMech(q) && !q.gone && !q.dead && Math.hypot(q.x - p.x, q.y - p.y) < BAL.evoAura) { dmg *= BAL.evoAuraMul; break; } /* (round 37) 玄甲 aura */
   if (fusOf(p) && inMech(p)) { fuseHurt(p, dmg); return; } /* (round 40) a fused mech: the pooled hull takes it, the pilots are sealed in */
   if (inMech(p)) { // (round 34b) the hull takes the hit (by how armoured that mech is); a little still gets through to you; at zero it falls back into a vehicle
-    const M = mechOf(p); p.mh = p.mh || []; p.mh[p.veh] = Math.max(0, mhpOf(p) - dmg * M.armor / BAL.mechTough / MUP[mlvOf(p.veh)].t * (p.ccBrk > 0 ? 1.25 : 1)); emit({ k: 'phurt', p: p.i, d: 0 });
+    const M = mechOf(p); p.mh = p.mh || []; p.mh[p.veh] = Math.max(0, mhpOf(p) - dmg * M.armor / BAL.mechTough / MUP[mlvOf(p.veh)].t * (p.ccBrk > 0 ? 1.25 : 1)); emit({ k: 'phurt', p: p.i, d: 0, a: sa, m: sm });
     if (p.mh[p.veh] <= 0) mechEject(p, M.name + '的装甲被打穿了，变回载具：装甲会慢慢恢复，商店里能马上修好');
     dmg *= p.evoOn ? BAL.evoPass : BAL.mechPass; if (dmg < 0.5) return;
   }
@@ -877,8 +878,8 @@ function hurtPlayer(p, dmg, src) {
   if (src && p.shield && p.melee === 1 && !p.down && !p.ride && Math.cos(angDiff(p.aim, Math.atan2(src.y - p.y, src.x - p.x))) > BAL.shieldCos) { // riot shield out: hits from the front lose half
     dmg *= 1 - BAL.shieldBlock; emit({ k: 'sfx', n: 'clank', x: p.x, y: p.y });
   }
-  if (p.down) { p.downT -= dmg * 0.18; p.hurtT = 0.3; emit({ k: 'phurt', p: p.i, d: 1 }); return; }
-  p.hp -= dmg; p.hurtT = 0.3; p.hitAt = W.t; emit({ k: 'phurt', p: p.i, d: Math.round(dmg) });
+  if (p.down) { p.downT -= dmg * 0.18; p.hurtT = 0.3; emit({ k: 'phurt', p: p.i, d: 1, a: sa, m: sm }); return; }
+  p.hp -= dmg; p.hurtT = 0.3; p.hitAt = W.t; emit({ k: 'phurt', p: p.i, d: Math.round(dmg), a: sa, m: sm });
   if (p.hp <= 0) { p.hp = 0; p.down = true; p.ride = false; p.pass = -1; for (const q of W.p) if (q.pass === p.i) q.pass = -1; if (W.phase === 'night') W.clean = false; p.downT = activeP().length > 1 ? BAL.downTime : BAL.soloDownTime; p.reloadT = 0; p.medT = 0; p.build = false; emit({ k: 'down', p: p.i }); checkLose(); }
 }
 function knock(p, kx, ky) { if (armHas(p, 2) && !inMech(p)) { kx *= 0.5; ky *= 0.5; } /* (round 38k) pauldrons */ if (p.i === ME && NETROLE !== 'guest') { p.kbx += kx; p.kby += ky; } else emit({ k: 'kb', p: p.i, x: r2(kx), y: r2(ky) }); }

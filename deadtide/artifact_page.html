@@ -5153,7 +5153,7 @@ const ZT = {
   shade: { name: '隐身者', hp: 420, spd: 1.5, r: 0.35, h: 1.6, dmg: 12, bdmg: 10, cd: 0.9, sc: 1.55, look: 'walker', skin: '#50505e', elite: { k: 'cloak', cd: 6, col: '#c0c0e0', tip: '隐身摸到你身边偷袭，留意空气里的扭曲，附近炸一下就现形' } },
 };
 const ELITES = ['blinker', 'caller', 'warden', 'shade'];
-const BUILD_TAG = '第 41 轮'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
+const BUILD_TAG = '第 42 轮'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
 // aim assist (SET.assist): fire-button lock range (x weapon range), lock-on time before it fires, spread while auto-aimed, mouse/finger magnet
 const PORT = 1.25; // firing port: your own shots pass a wall / door you built if it is this close to you
 const ASSIST = [{ name: '关', range: 0, acq: 0, spread: 1, mag: 0 }, { name: '标准', range: 0.75, acq: 0.3, spread: 1.5, mag: 1 }, { name: '强', range: 1, acq: 0, spread: 1, mag: 1 }];
@@ -7143,6 +7143,7 @@ function killZombie(z, p) {
   else if (rand() < (z.k === 'boss' ? 1 : z.k === 'brute' ? 0.6 : 0.07)) { const n = z.k === 'boss' ? 15 : z.k === 'brute' ? 3 : 1; W.res.parts += n; emit({ k: 'loot', p: -1, x: z.x, y: z.y, z: z.z + z.h, text: '+' + n + ' 零件' }); }
 }
 function hurtPlayer(p, dmg, src) {
+  const sa = src && src.x != null ? r2(Math.atan2(src.y - p.y, src.x - p.x)) : undefined, sm = src && src.k && ZT[src.k] ? 1 : 0; /* (round 42) where the hit came from, and whether it was a zombie's claws — for the claw marks */
   if (p.gone || p.dead || (p.invT || 0) > 0) return; // invT: just respawned
   if (src && src.k && ZT[src.k] && (ZT[src.k].kaiju || ZT[src.k].elite) && !inMech(p)) dmg *= BAL.bigFoot; // (round 36) kaiju / 能力者 hit people on foot softer (they're tuned against mechs)
   if (W.phase === 'day' && src && src.k && ZT[src.k]) dmg *= BAL.day.dmg; // (round 36b) softer bites by day
@@ -7151,7 +7152,7 @@ function hurtPlayer(p, dmg, src) {
   for (const q of W.p) if (q !== p && q.evoOn && q.veh === 4 && inMech(q) && !q.gone && !q.dead && Math.hypot(q.x - p.x, q.y - p.y) < BAL.evoAura) { dmg *= BAL.evoAuraMul; break; } /* (round 37) 玄甲 aura */
   if (fusOf(p) && inMech(p)) { fuseHurt(p, dmg); return; } /* (round 40) a fused mech: the pooled hull takes it, the pilots are sealed in */
   if (inMech(p)) { // (round 34b) the hull takes the hit (by how armoured that mech is); a little still gets through to you; at zero it falls back into a vehicle
-    const M = mechOf(p); p.mh = p.mh || []; p.mh[p.veh] = Math.max(0, mhpOf(p) - dmg * M.armor / BAL.mechTough / MUP[mlvOf(p.veh)].t * (p.ccBrk > 0 ? 1.25 : 1)); emit({ k: 'phurt', p: p.i, d: 0 });
+    const M = mechOf(p); p.mh = p.mh || []; p.mh[p.veh] = Math.max(0, mhpOf(p) - dmg * M.armor / BAL.mechTough / MUP[mlvOf(p.veh)].t * (p.ccBrk > 0 ? 1.25 : 1)); emit({ k: 'phurt', p: p.i, d: 0, a: sa, m: sm });
     if (p.mh[p.veh] <= 0) mechEject(p, M.name + '的装甲被打穿了，变回载具：装甲会慢慢恢复，商店里能马上修好');
     dmg *= p.evoOn ? BAL.evoPass : BAL.mechPass; if (dmg < 0.5) return;
   }
@@ -7162,8 +7163,8 @@ function hurtPlayer(p, dmg, src) {
   if (src && p.shield && p.melee === 1 && !p.down && !p.ride && Math.cos(angDiff(p.aim, Math.atan2(src.y - p.y, src.x - p.x))) > BAL.shieldCos) { // riot shield out: hits from the front lose half
     dmg *= 1 - BAL.shieldBlock; emit({ k: 'sfx', n: 'clank', x: p.x, y: p.y });
   }
-  if (p.down) { p.downT -= dmg * 0.18; p.hurtT = 0.3; emit({ k: 'phurt', p: p.i, d: 1 }); return; }
-  p.hp -= dmg; p.hurtT = 0.3; p.hitAt = W.t; emit({ k: 'phurt', p: p.i, d: Math.round(dmg) });
+  if (p.down) { p.downT -= dmg * 0.18; p.hurtT = 0.3; emit({ k: 'phurt', p: p.i, d: 1, a: sa, m: sm }); return; }
+  p.hp -= dmg; p.hurtT = 0.3; p.hitAt = W.t; emit({ k: 'phurt', p: p.i, d: Math.round(dmg), a: sa, m: sm });
   if (p.hp <= 0) { p.hp = 0; p.down = true; p.ride = false; p.pass = -1; for (const q of W.p) if (q.pass === p.i) q.pass = -1; if (W.phase === 'night') W.clean = false; p.downT = activeP().length > 1 ? BAL.downTime : BAL.soloDownTime; p.reloadT = 0; p.medT = 0; p.build = false; emit({ k: 'down', p: p.i }); checkLose(); }
 }
 function knock(p, kx, ky) { if (armHas(p, 2) && !inMech(p)) { kx *= 0.5; ky *= 0.5; } /* (round 38k) pauldrons */ if (p.i === ME && NETROLE !== 'guest') { p.kbx += kx; p.kby += ky; } else emit({ k: 'kb', p: p.i, x: r2(kx), y: r2(ky) }); }
@@ -9235,8 +9236,11 @@ function buildScene() {
   OBJ.arrow = inst(merge([new THREE.BoxGeometry(0.62, 0.025, 0.025), new THREE.ConeGeometry(0.035, 0.1, 4).rotateZ(-Math.PI / 2).translate(0.35, 0, 0), new THREE.BoxGeometry(0.1, 0.06, 0.005).translate(-0.27, 0, 0), new THREE.BoxGeometry(0.1, 0.005, 0.06).translate(-0.27, 0, 0)]), new THREE.MeshBasicMaterial({ color: '#f0e2c0' }), 40, false); /* (round 41) the archer's arrows */
   OBJ.goo = inst(new THREE.IcosahedronGeometry(0.17, 1), new THREE.MeshBasicMaterial({ color: '#b46cff' }), 30, false); /* (round 41) the jelly's globs */
   OBJ.parts = inst(boxG(1, 1, 1), new THREE.MeshBasicMaterial({ color: '#ffffff' }), 900, false);
+  OBJ.partsS = inst(new THREE.IcosahedronGeometry(0.62, 1), new THREE.MeshLambertMaterial({ color: '#ffffff', transparent: true, opacity: 0.5, depthWrite: false }), 500, false); /* (round 42) smoke is soft */
+  OBJ.partsG = inst(new THREE.IcosahedronGeometry(0.62, 0), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }), 900, false); /* (round 42) bright particles glow */
+  OBJ.halo = inst(new THREE.IcosahedronGeometry(1, 1), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.38, blending: THREE.AdditiveBlending, depthWrite: false }), 80, false); /* (round 42) halos on things in flight */
     OBJ.flashM = inst(new THREE.IcosahedronGeometry(0.13, 0), new THREE.MeshBasicMaterial({ color: '#ffd27a', transparent: true, opacity: 0.95 }), 8, false);
-  OBJ.boom = inst(new THREE.IcosahedronGeometry(1, 1), new THREE.MeshBasicMaterial({ color: '#ffb050', transparent: true, opacity: 0.6, depthWrite: false }), 8, false);
+  OBJ.boom = inst(new THREE.IcosahedronGeometry(1, 2), new THREE.MeshBasicMaterial({ color: '#ff8a30', transparent: true, opacity: 0.6, depthWrite: false, blending: THREE.AdditiveBlending }), 8, false); /* (round 42) an additive fireball, not a flat dome */
   // build ghost + layer grid
   OBJ.ghost = new THREE.Mesh(GEO.wall, new THREE.MeshBasicMaterial({ color: '#7dff8a', transparent: true, opacity: 0.38, depthWrite: false })); OBJ.ghost.visible = false; SCN.add(OBJ.ghost);
   OBJ.ghostEdge = new THREE.LineSegments(new THREE.EdgesGeometry(boxG(1, FH, 1, 0, FH / 2, 0)), new THREE.LineBasicMaterial({ color: '#ffffff' })); OBJ.ghostEdge.visible = false; SCN.add(OBJ.ghostEdge);
@@ -9411,13 +9415,16 @@ function stepFx(dt) {
 }
 function drawFx() {
   const P = OBJ.parts; let n = 0;
-  for (const q of RND.parts) { const a = 1 - q.t / q.life, s = q.smoke ? q.s * (1 + q.t * 1.5) * a : q.s; setInst(P, n, q.x, q.z, q.y, q.t * 5, s, s, s, q.col); n++; }
+  const PG = OBJ.partsG, PS = OBJ.partsS; let ng2 = 0, ns = 0; /* (round 42) solid bits shrink away as they die; bright ones are soft glowing sparks that dim */
+  for (const q of RND.parts) { const a = 1 - q.t / q.life; if (q.smoke && ns < 500) { const s = q.s * (1 + q.t * 1.5) * (0.4 + 0.6 * a) * 1.3; setInst(PS, ns++, q.x, q.z, q.y, q.t * 2, s, s * 0.85, s, q.col); continue; } if (!q.smoke && pGlow(q.col)) { const big = q.s > 0.13, s = q.s * (0.55 + 0.6 * a) * (big ? 0.85 : 1); setInst(PG, ng2++, q.x, q.z, q.y, q.t * 5, s, s, s, q.col); tmpC.set(q.col).multiplyScalar(Math.min(1, a * 1.6) * (big ? 0.5 : 1)); /* big flames glow at half strength so a crowd of them doesn't burn out to white */ PG.setColorAt(ng2 - 1, tmpC); continue; } const s = q.smoke ? q.s * (1 + q.t * 1.5) * a : q.s * Math.min(1, a * 3); setInst(P, n, q.x, q.z, q.y, q.t * 5, s, s, s, q.col); n++; }
+  PS.count = ns; PS.instanceMatrix.needsUpdate = true; if (PS.instanceColor) PS.instanceColor.needsUpdate = true;
+  PG.count = ng2; PG.instanceMatrix.needsUpdate = true; if (PG.instanceColor) PG.instanceColor.needsUpdate = true;
   P.count = n; P.instanceMatrix.needsUpdate = true; if (P.instanceColor) P.instanceColor.needsUpdate = true;
   drawTracers();
   let f = 0; for (const fl of RND.flashes) { if (f >= 8) break; const s = (fl.big ? 1.6 : 1) * (1 - fl.t / fl.life); setInst(OBJ.flashM, f++, fl.x, fl.z, fl.y, 0, s, s, s); } OBJ.flashM.count = f; OBJ.flashM.instanceMatrix.needsUpdate = true;
-  let b = 0; for (const bo of RND.booms) { if (b >= 8) break; const s = (bo.r || BAL.nadeR) * (0.3 + bo.t * 1.4); setInst(OBJ.boom, b++, bo.x, bo.z, bo.y, 0, s, s, s); } OBJ.boom.count = b; OBJ.boom.instanceMatrix.needsUpdate = true; OBJ.boom.material.opacity = RND.booms.length ? 0.55 * (1 - RND.booms[0].t / 0.6) : 0;
-  let ng = 0, na = 0, nr = 0, nq = 0; for (const p of W.proj) { if (p.k === 'arrow') { setInst(OBJ.arrow, nr++, p.x, p.z, p.y, -Math.atan2(p.vy, p.vx), 1, 1, 1); if (Math.random() < 0.6) addP({ x: p.x, y: p.y, z: p.z, vz: 0, g: 0, col: '#ff6a5a', s: 0.05, life: 0.2 }); continue; } if (p.k === 'goo') { setInst(OBJ.goo, nq++, p.x, p.z, p.y, W.t * 5, 1, 0.85 + Math.sin(W.t * 20) * 0.12, 1); if (Math.random() < 0.5) addP({ x: p.x, y: p.y, z: p.z, vz: -0.5, g: 2, col: '#c58aff', s: 0.06, life: 0.4 }); continue; } /* (round 41) */ if (p.k === 'gl') { setInst(OBJ.nade, ng++, p.x, p.z, p.y, W.t * 12, p.rk ? 0.9 : 1.3, p.rk ? 0.9 : 1.3, p.rk ? 0.9 : 1.3); if (p.rk) for (let k = 0; k < 2; k++) addP({ x: p.x - p.vx * 0.02 * k, y: p.y - p.vy * 0.02 * k, z: p.z, vx: -p.vx * 0.05, vy: -p.vy * 0.05, vz: 0.1, g: 0, col: k ? '#ffd060' : '#ff6a1a', s: 0.11, life: 0.18 }); /* (round 39c) rockets burn */ if (Math.random() < 0.5) addP({ x: p.x, y: p.y, z: p.z, vz: 0.2, g: -0.2, col: '#9a948a', s: 0.07, life: 0.4, smoke: 1 }); } else if (p.k === 'nade') setInst(OBJ.nade, ng++, p.x, p.z, p.y, W.t * 8, 1, 1, 1); else setInst(OBJ.acid, na++, p.x, p.z, p.y, 0, 1, 1, 1); }
-  OBJ.nade.count = ng; OBJ.acid.count = na; OBJ.arrow.count = nr; OBJ.goo.count = nq; OBJ.nade.instanceMatrix.needsUpdate = OBJ.acid.instanceMatrix.needsUpdate = OBJ.arrow.instanceMatrix.needsUpdate = OBJ.goo.instanceMatrix.needsUpdate = true;
+  let b = 0; for (const bo of RND.booms) { if (b >= 8) break; const s = Math.min(2.2, bo.r || BAL.nadeR) * (0.2 + Math.sqrt(bo.t) * 0.6); setInst(OBJ.boom, b++, bo.x, bo.z + s * 0.3, bo.y, bo.t * 2, s, s * 0.8, s); } OBJ.boom.count = b; OBJ.boom.instanceMatrix.needsUpdate = true; OBJ.boom.material.opacity = RND.booms.length ? 0.4 * Math.pow(1 - RND.booms[0].t / 0.6, 2) : 0;
+  let ng = 0, na = 0, nr = 0, nq = 0; RND._nh = 0; for (const p of W.proj) { projFx(p, 0); /* (round 42) */ if (p.k === 'arrow') { setInst(OBJ.arrow, nr++, p.x, p.z, p.y, -Math.atan2(p.vy, p.vx), 1, 1, 1); if (Math.random() < 0.6) addP({ x: p.x, y: p.y, z: p.z, vz: 0, g: 0, col: '#ff6a5a', s: 0.05, life: 0.2 }); continue; } if (p.k === 'goo') { setInst(OBJ.goo, nq++, p.x, p.z, p.y, W.t * 5, 1, 0.85 + Math.sin(W.t * 20) * 0.12, 1); if (Math.random() < 0.5) addP({ x: p.x, y: p.y, z: p.z, vz: -0.5, g: 2, col: '#c58aff', s: 0.06, life: 0.4 }); continue; } /* (round 41) */ if (p.k === 'gl') { setInst(OBJ.nade, ng++, p.x, p.z, p.y, W.t * 12, p.rk ? 0.9 : 1.3, p.rk ? 0.9 : 1.3, p.rk ? 0.9 : 1.3); if (p.rk) for (let k = 0; k < 2; k++) addP({ x: p.x - p.vx * 0.02 * k, y: p.y - p.vy * 0.02 * k, z: p.z, vx: -p.vx * 0.05, vy: -p.vy * 0.05, vz: 0.1, g: 0, col: k ? '#ffd060' : '#ff6a1a', s: 0.11, life: 0.18 }); /* (round 39c) rockets burn */ if (Math.random() < 0.5) addP({ x: p.x, y: p.y, z: p.z, vz: 0.2, g: -0.2, col: '#9a948a', s: 0.07, life: 0.4, smoke: 1 }); } else if (p.k === 'nade') setInst(OBJ.nade, ng++, p.x, p.z, p.y, W.t * 8, 1, 1, 1); else setInst(OBJ.acid, na++, p.x, p.z, p.y, 0, 1, 1, 1); }
+  OBJ.nade.count = ng; OBJ.acid.count = na; OBJ.arrow.count = nr; OBJ.goo.count = nq; OBJ.halo.count = RND._nh; OBJ.halo.instanceMatrix.needsUpdate = true; if (OBJ.halo.instanceColor) OBJ.halo.instanceColor.needsUpdate = true; OBJ.nade.instanceMatrix.needsUpdate = OBJ.acid.instanceMatrix.needsUpdate = OBJ.arrow.instanceMatrix.needsUpdate = OBJ.goo.instanceMatrix.needsUpdate = true;
   // flashes + explosions light pool
   const srcs = RND.flashes.map(fl => [fl.x, fl.z, fl.y, (fl.big ? 6 : 4) * (1 - fl.t / fl.life), 5]).concat(RND.booms.map(bo => [bo.x, bo.z + 0.6, bo.y, 40 * (1 - bo.t / 0.6), 12])).sort((a, b) => b[3] - a[3]);
   OBJ.flash.forEach((L, k) => { const s = srcs[k]; if (s) { L.position.set(s[0], s[1], s[2]); L.intensity = s[3]; L.distance = s[4]; } else L.intensity = 0; });
@@ -9715,7 +9722,7 @@ function fxEvent(e) {
     case 'shot': if (guest && e.o === ME && wlvOf(e.w) < 2 && !e.dr) break; shotFx(e.o, e.w, e.e, e); break; /* (round 39c) upgraded guns aren't predicted on a guest: draw the host's shot */
     case 'cshot': { RND.tracers.push({ x: e.x, y: e.y, z: e.z, x2: e.e[0], y2: e.e[1], z2: e.e[2], t: 0, life: 0.12, w: 0.09, col: [1, 0.7, 0.35] }); RND.flashes.push({ x: e.x, y: e.y, z: e.z, t: 0, life: 0.08 }); sfx('cannon', e.x, e.y); const q = W.p[e.o]; if (q) q._crec = 1; for (let k = 0; k < 6; k++) addP({ x: e.x, y: e.y, z: e.z, vx: frnd(-0.6, 0.6), vy: frnd(-0.6, 0.6), vz: frnd(0.2, 0.8), g: -0.3, col: '#8d8a84', s: 0.1, life: 0.8, smoke: 1 }); break; } // (round 31) tank cannon
     case 'gshot': if (e.fm) RND.fgT = W.t; /* (round 40d) the capsule's 疾风 module fired */ else if (e.mg) { const q = W.p[e.o]; if (q) { q._mgT = W.t; q._mA = e.a; q._mAT = 0.3; } } /* (round 36n) 疾风's machine gun */ RND.tracers.push({ x: e.x, y: e.y, z: e.z, x2: e.e[0], y2: e.e[1], z2: e.e[2], t: 0, life: 0.07, w: e.mg ? 0.025 : 0.03, col: e.mg ? [1, 0.9, 0.55] : [1, 0.8, 0.4] }); RND.flashes.push({ x: e.x, y: e.y, z: e.z, t: 0, life: 0.04 }); if (thr('gyro', 0.1)) sfx('gyro', e.x, e.y); if (e.h) addP({ x: e.e[0], y: e.e[1], z: e.e[2], vx: frnd(-1, 1), vy: frnd(-1, 1), vz: 1, col: '#7a1010', s: 0.06, life: 0.4 }); break; // (round 30) gyrocopter chin gun
-    case 'tshot': { if (e.i != null) (RND.taim = RND.taim || {})[e.i] = Math.atan2(e.ty - e.y, e.tx - e.x);
+    case 'tshot': { if (e.i != null) (RND.taim = RND.taim || {})[e.i] = Math.atan2(e.ty - e.y, e.tx - e.x); RND.flashes.push({ x: e.x, y: e.y, z: e.z, t: 0, life: 0.06, big: e.w === 'snipe' || e.w === 'shot' }); RND.tracers.push({ x: e.x, y: e.y, z: e.z, x2: e.tx, y2: e.ty, z2: e.tz, t: 0, life: e.w === 'snipe' ? 0.3 : 0.12, w: e.w === 'snipe' ? 0.16 : 0.08, col: e.w === 'frost' ? [0.1, 0.25, 0.35] : [0.35, 0.22, 0.08] }); for (let k = 0; k < 4; k++) addP({ x: e.tx, y: e.ty, z: e.tz, vx: frnd(-2, 2), vy: frnd(-2, 2), vz: frnd(0.5, 2.5), col: e.w === 'frost' ? '#bfeaff' : '#ffd070', s: 0.04, life: 0.25, g: 6 }); /* (round 42) */
       const a = Math.atan2(e.ty - e.y, e.tx - e.x), d = Math.hypot(e.tx - e.x, e.ty - e.y);
       if (e.w === 'shot') { for (let k = 0; k < 6; k++) { const q = a + (k / 5 - 0.5) * 0.8, L = Math.min(5, d + 0.6); RND.tracers.push({ x: e.x, y: e.y, z: e.z, x2: e.x + Math.cos(q) * L, y2: e.y + Math.sin(q) * L, z2: e.tz, t: 0, life: 0.07, w: 0.03, col: [1, 0.75, 0.4] }); } sfx('shotgun', e.x, e.y); }
       else if (e.w === 'frost') { RND.tracers.push({ x: e.x, y: e.y, z: e.z, x2: e.tx, y2: e.ty, z2: e.tz, t: 0, life: 0.25, w: 0.07, col: [0.45, 0.8, 1] }); sfx('acid', e.x, e.y); }
@@ -9752,19 +9759,19 @@ function fxEvent(e) {
         if (q && q.ride && q.veh === 3 && !inMech(q) && m && m.veh) { q._tossT = 0; q._ldKT = W.t + 0.86; } // (round 36f) on the cargo trike the rider leans out, grabs it and lobs it over the shoulder into the bed (drawn in drawPlayers)
         if (q && inMech(q) && q.veh === 3) { q._grabT = 0; } } /* (round 36f) 工蜂 picks it up and lobs it into its rack (drawn in mechTick) */
       break; }
-    case 'phurt': if (guest && e.d > 0 && W.p[e.p]) W.p[e.p].hurtT = 0.3; if (e.d > 6 && Math.random() < 0.5) { const q = W.p[e.p]; addDecal(q.x + frnd(-0.2, 0.2), q.y + frnd(-0.2, 0.2), q.z, frnd(0.08, 0.14)); }
+    case 'phurt': if (guest && e.d > 0 && W.p[e.p]) W.p[e.p].hurtT = 0.3; if (e.m && e.a != null && W.p[e.p] && thr('claw' + e.p, 0.12)) { const q = W.p[e.p], qx = q.rx != null ? q.rx : q.x, qy = q.ry != null ? q.ry : q.y, qz = (q.zv != null ? q.zv : q.z) + (inMech(q) ? 1.5 : q.down ? 0.3 : 0.8); fxClaw(qx, qy, qz, e.a + frnd(-0.3, 0.3), e.d === 0 ? '#ffa030' : '#ff2a2a', inMech(q) ? 1.6 : 1); if (e.d === 0) for (let k = 0; k < 6; k++) addP({ x: qx + Math.cos(e.a) * 0.4, y: qy + Math.sin(e.a) * 0.4, z: qz, vx: frnd(-2.5, 2.5), vy: frnd(-2.5, 2.5), vz: frnd(0.5, 3), col: '#ffd070', s: 0.04, life: 0.3, g: 7 }); else bloodFx(qx + Math.cos(e.a) * 0.25, qy + Math.sin(e.a) * 0.25, qz, 5); } /* (round 42) */ if (e.d > 6 && Math.random() < 0.5) { const q = W.p[e.p]; addDecal(q.x + frnd(-0.2, 0.2), q.y + frnd(-0.2, 0.2), q.z, frnd(0.08, 0.14)); }
       if (e.p === ME) { RND.hurtV = Math.min(1, RND.hurtV + 0.5); CAM.shake = Math.max(CAM.shake, 0.12); if (thr('hurt', 0.25)) sfx('hurt'); } break;
     case 'down': sfx('down', W.p[e.p].x, W.p[e.p].y); uiMsg(e.p === ME ? (W.p.length > 1 ? '你倒地了！等队友扶你，或按 H 用医疗包自救' : '你倒地了！按 H 用医疗包自救') : W.p[e.p].name + ' 倒地了！快去扶（按住 F）', '#ff6b5a'); break;
     case 'revive': sfx('revive'); uiMsg(e.p === e.by ? W.p[e.p].name + ' 自救成功' : W.p[e.by].name + (e.rez ? ' 用医疗包救回了 ' : ' 扶起了 ') + W.p[e.p].name, '#8fe39a'); break;
     case 'dead': uiMsg(W.p[e.p].name + ' 阵亡了：' + (e.t >= 0 ? (e.t || 20) + ' 秒后在据点复活（还剩 ' + (e.n || 0) + ' 次）' : '复活次数用完了') + '，带医疗包到他倒下的地方能马上救回来', '#ff6b5a'); break;
-    case 'slam': { debrisFx(e.x, e.y, e.z + 0.2, '#9a8a70', e.r > 1 ? 18 : 8); shake(e.x, e.y, e.r > 1 ? 0.5 : 0.3); break; } // brute slam / charge crash
-    case 'sbash': { const q = W.p[e.p]; sfx('bash', q.x, q.y); if (e.p !== ME) q.knT = 0.3; if (e.n) { debrisFx(e.x, e.y, e.z, '#cfd8e0', 6); if (e.p === ME) shake(q.x, q.y, 0.18); } break; } // (round 23) shield bash
+    case 'slam': { debrisFx(e.x, e.y, e.z + 0.2, '#9a8a70', e.r > 1 ? 18 : 8); shake(e.x, e.y, e.r > 1 ? 0.5 : 0.3); const R = e.r > 1 ? e.r * 1.3 : 1.4; fxShock(e.x, e.y, e.z, R, '#ffe0a8', '#8a7a60'); for (let k = 0; k < 10; k++) { const a = k / 10 * 6.283; addP({ x: e.x + Math.cos(a) * 0.4, y: e.y + Math.sin(a) * 0.4, z: e.z + 0.1, vx: Math.cos(a) * 2.2, vy: Math.sin(a) * 2.2, vz: 0.4, g: -0.3, col: '#a89a80', s: 0.16, life: 0.8, smoke: 1 }); } if (e.r > 1 && addDecal) addDecal(e.x, e.y, e.z, 0.9, '#2e2a24'); break; } /* (round 42) */ // brute slam / charge crash
+    case 'sbash': { const q = W.p[e.p]; sfx('bash', q.x, q.y); if (e.p !== ME) q.knT = 0.3; { const qx = q.rx != null ? q.rx : q.x, qy = q.ry != null ? q.ry : q.y, qz = q.zv != null ? q.zv : q.z; fxSlash(qx, qy, qz + 0.7, q.aim, 1.25, '#8fd0ff', { life: 0.2 }); fxAdd({ kind: 'shock', x: qx + Math.cos(q.aim) * 0.9, y: qy + Math.sin(q.aim) * 0.9, z: qz + 0.06, s0: 0.2, s1: 1.1, life: 0.3, col: '#bfe4ff', op: 0.8 }); if (e.n) fxFlash(e.x, e.y, e.z, 0.5, '#8fd0ff'); } /* (round 42) */ if (e.n) { debrisFx(e.x, e.y, e.z, '#cfd8e0', 6); if (e.p === ME) shake(q.x, q.y, 0.18); } break; } // (round 23) shield bash
     case 'respawn': uiMsg(W.p[e.p].name + ' 回来了' + '（在据点）', '#8fe39a'); break;
     case 'task': sfx('craft'); uiMsg('任务完成：' + e.txt + '  奖励 ' + e.rt, '#ffd76a'); toast('任务完成 · ' + e.rt, '#ffd76a'); break;
     case 'tp': if (guest && e.p === ME) { const p = W.p[ME]; p.x = e.x; p.y = e.y; p.L = e.l; p.vx = p.vy = 0; } break;
     case 'ktell': case 'krock': case 'kspike': case 'kroar': case 'kxp': kaijuFx(e); break; // (round 36l)
-    case 'vbomb': { for (let k = 0; k < 14; k++) addP({ x: e.x, y: e.y, z: e.z + 0.2, vx: frnd(-2.5, 2.5), vy: frnd(-2.5, 2.5), vz: frnd(0.5, 3), col: k % 3 ? '#8fd14a' : '#c8f080', s: 0.08, life: 0.6 }); addDecal && addDecal(e.x, e.y, e.z, 0.9, '#5a7a2a'); sfx('flesh', e.x, e.y); break; } // (round 36l) 尸鹫 acid glob
-    case 'kacid': for (let k = 0; k < 10; k++) { const a = e.a + frnd(-0.45, 0.45), v = frnd(5, 9); addP({ x: e.x + Math.cos(e.a) * 1.4, y: e.y + Math.sin(e.a) * 1.4, z: e.z, vx: Math.cos(a) * v, vy: Math.sin(a) * v, vz: frnd(-1.5, 0.5), g: -3, col: k % 3 ? '#9dff3a' : '#5f9a20', s: 0.1, life: 0.8, floor: e.z - 3 }); } if (thr('kacid', 0.3)) sfx('acid', e.x, e.y); break; // (round 34) kaiju acid breath
+    case 'vbomb': { fxSplash(e.x, e.y, e.z, 1.2, '#8fd14a', '#e0ffa0', 18); /* (round 42) */ for (let k = 0; k < 14; k++) addP({ x: e.x, y: e.y, z: e.z + 0.2, vx: frnd(-2.5, 2.5), vy: frnd(-2.5, 2.5), vz: frnd(0.5, 3), col: k % 3 ? '#8fd14a' : '#c8f080', s: 0.08, life: 0.6 }); addDecal && addDecal(e.x, e.y, e.z, 0.9, '#5a7a2a'); sfx('flesh', e.x, e.y); break; } // (round 36l) 尸鹫 acid glob
+    case 'kacid': if (thr('kcone', 0.09)) fxAdd({ kind: 'cone', x: e.x + Math.cos(e.a) * 1.2, y: e.y + Math.sin(e.a) * 1.2, z: e.z, s0: 1.8, s1: 3.4, life: 0.26, col: '#7fd030', op: 0.22, yaw: e.a }); /* (round 42) */ for (let k = 0; k < 10; k++) { const a = e.a + frnd(-0.45, 0.45), v = frnd(5, 9); addP({ x: e.x + Math.cos(e.a) * 1.4, y: e.y + Math.sin(e.a) * 1.4, z: e.z, vx: Math.cos(a) * v, vy: Math.sin(a) * v, vz: frnd(-1.5, 0.5), g: -3, col: k % 3 ? '#9dff3a' : '#5f9a20', s: 0.1, life: 0.8, floor: e.z - 3 }); } if (thr('kacid', 0.3)) sfx('acid', e.x, e.y); break; // (round 34) kaiju acid breath
     case 'xform': { const q = W.p[e.o]; if (!q) break; q._xfT = 0; q._xfTo = e.to; q._xfS = -1; sfx('xform', q.x, q.y); shake(q.x, q.y, 0.12); break; } // (round 34b) start the 1 s transformation on every screen
     case 'mmove': if (guest && e.p === ME) { const p = W.p[ME]; if (e.m.dash) p.dash = e.m.dash; if (e.m.jmp) p.jmp = e.m.jmp; } break; // (round 34) a mech dash / leap the host started for this screen's survivor
     case 'fusreq': { const a = W.p[e.o], b = W.p[e.to]; if (e.to === ME) { UI.fusAsk = performance.now(); toast((a ? a.name : '队友') + ' 想和你合体成「' + (FUS_NAME[fusKey(e.kb, e.kp)] || '合体机甲') + '」：8 秒内按 J（触屏点「合体」）同意', '#ffd040'); sfx('ready'); } else if (e.o === ME) toast('已经请求合体，等 ' + (b ? b.name : '队友') + ' 同意（8 秒）', '#ffd040'); break; } /* (round 40) */
@@ -9784,7 +9791,7 @@ function fxEvent(e) {
     case 'mcc': { const q = W.p[e.p], L = { stg: ['硬直！', '#ffb04a', '机甲被震住了：看到地上的红圈 / 冲撞预警就提前走开'], slw: ['减速', '#a6e06a', '酸液让机甲变慢了：离开酸液，或者等它过去'], brk: ['破甲', '#ff6a5a', '防暴尸撬开了装甲：6 秒内机甲挨打 +25%，先把它打掉'], lat: ['被扒住', '#e0a0ff', '攀爬者扒在机甲上（越多越慢）：普攻甩掉一只，放技能 / 变形 / 进化全部甩掉'], off: ['甩掉了' + (e.n > 1 ? ' ×' + e.n : ''), '#d8fff0'] }[e.c]; /* (round 38g) */
       if (L) { RND.floats.push({ x: e.x, y: e.y, z: e.z + 3.2, text: L[0], col: L[1], t: 0 }); if (e.p === ME && L[2]) { UI.ccTip = UI.ccTip || {}; if (!UI.ccTip[e.c]) { UI.ccTip[e.c] = 1; toast(L[2], L[1]); } } if (e.c === 'stg' && q) { sfx('mclang', e.x, e.y); if (e.p === ME) shake(e.x, e.y, 0.35); } } } break;
     case 'dodge': RND.floats.push({ x: e.x, y: e.y, z: e.z + 1.6, text: '闪避', col: '#9ff0ff', t: 0 }); if (thr('dodge', 0.2)) sfx('mdash', e.x, e.y); break; /* (round 36n) */
-    case 'zland': for (let k = 0; k < 6; k++) addP({ x: e.x, y: e.y, z: e.z + 0.05, vx: frnd(-1.5, 1.5), vy: frnd(-1.5, 1.5), vz: 0.3, g: -0.2, col: '#9a8a70', s: 0.1, life: 0.45, smoke: 1 }); break;
+    case 'zland': fxShock(e.x, e.y, e.z, 1.1, '#e8dcc0', '#8a7a60'); /* (round 42) */ for (let k = 0; k < 6; k++) addP({ x: e.x, y: e.y, z: e.z + 0.05, vx: frnd(-1.5, 1.5), vy: frnd(-1.5, 1.5), vz: 0.3, g: -0.2, col: '#9a8a70', s: 0.1, life: 0.45, smoke: 1 }); break;
     case 'mskill': { let q = W.p[e.o]; if (q && W.fus && W.fus.b === e.o) q = W.p[W.fus.a] || q; /* (round 40) */ if (q) { q._msT = 0; q._msK = e.t; }
       if (['venom', 'dragdash', 'moon', 'spin', 'rebirth', 'roar'].includes(e.t)) evoSkillFx(e); /* (round 37) */
       else if (e.t === 'quake') { shake(e.x, e.y, 1.0); quakeFx(e); sfx('collapse', e.x, e.y); sfx('cannon', e.x, e.y); }
@@ -9798,29 +9805,32 @@ function fxEvent(e) {
     case 'dawn': document.getElementById('over').classList.add('hidden'); sfx('dawn'); banner('天亮了', '撑过了第 ' + e.n + ' 夜 · 新的任务已刷新（点上方「今日任务」展开）', '#ffe7b0'); break;
     case 'say': uiMsg(e.text, e.col); break;
     case 'elx': eliteEvent(e); break; // (round 35) 能力者 skill moments
-    case 'fdive': fxAdd({ kind: 'ring', x: e.x, y: e.y, z: e.z + 0.05, s0: 0.75, s1: 0.45, life: 0.9, col: '#ff4a3a', op: 0.85 }); break; // (round 36) where a bird is about to dive
+    case 'fdive': fxAdd({ kind: 'ring', x: e.x, y: e.y, z: e.z + 0.05, s0: 0.75, s1: 0.45, life: 0.9, col: '#ff4a3a', op: 0.85 }); fxAdd({ kind: 'shock', x: e.x, y: e.y, z: e.z + 0.04, s0: 1.2, s1: 0.4, life: 0.9, col: '#ff2a1a', op: 0.6 }); break; /* (round 42) */ // (round 36) where a bird is about to dive
     case 'mbanner': banner(e.t, '', e.c); sfx('ready'); break;
-    case 'dig': for (let k = 0; k < (e.big ? 14 : 4); k++) addP({ x: e.x + frnd(-0.4, 0.4), y: e.y + frnd(-0.4, 0.4), z: e.z + 0.05, vx: frnd(-1.2, 1.2), vy: frnd(-1.2, 1.2), vz: frnd(1, 3), col: k % 2 ? '#6a5236' : '#4a3a28', s: frnd(0.08, 0.16), life: 0.8, floor: e.z }); if (e.big) sfx('collapse', e.x, e.y); break;
+    case 'dig': if (e.big) { fxShock(e.x, e.y, e.z, 2, '#c8a878', '#5a4530'); addDecal && addDecal(e.x, e.y, e.z, 0.8, '#2a2016'); for (let k = 0; k < 8; k++) addP({ x: e.x + frnd(-0.5, 0.5), y: e.y + frnd(-0.5, 0.5), z: e.z + 0.2, vx: frnd(-0.8, 0.8), vy: frnd(-0.8, 0.8), vz: frnd(0.8, 2), g: -0.4, col: '#7a6448', s: 0.2, life: 1.1, smoke: 1 }); } /* (round 42) */ for (let k = 0; k < (e.big ? 14 : 4); k++) addP({ x: e.x + frnd(-0.4, 0.4), y: e.y + frnd(-0.4, 0.4), z: e.z + 0.05, vx: frnd(-1.2, 1.2), vy: frnd(-1.2, 1.2), vz: frnd(1, 3), col: k % 2 ? '#6a5236' : '#4a3a28', s: frnd(0.08, 0.16), life: 0.8, floor: e.z }); if (e.big) sfx('collapse', e.x, e.y); break;
     case 'craft': if (e.p === ME) { sfx('craft'); toast('制作完成：' + e.name); } break;
     case 'deny': if (e.p === ME && thr('deny', 0.3)) { sfx('deny'); toast(e.why, '#ff8a7a'); } break;
-    case 'boom': RND.booms.push({ x: e.x, y: e.y, z: e.z, t: 0, r: e.r || (e.g ? BAL.blastR : BAL.nadeR) }); fxAdd({ kind: 'ring', x: e.x, y: e.y, z: Math.max(0, e.z - 0.1), s0: 0.3, s1: (e.r || BAL.nadeR) * 1.15, life: 0.32, col: e.g ? '#b8ff6a' : '#ffc070', op: 0.7 }); /* (round 36) a shock ring along the ground */ debrisFx(e.x, e.y, e.z, e.g ? '#6a8a2a' : '#3a3530', 12); if (e.g) { bloodFx(e.x, e.y, e.z, 24, true); addDecal(e.x, e.y, e.z - 0.5, 1.1, '#3c5a14'); } if (e.r === BAL.barrelR) for (let k = 0; k < 26; k++) addP({ x: e.x + frnd(-1, 1), y: e.y + frnd(-1, 1), z: e.z, vx: frnd(-3, 3), vy: frnd(-3, 3), vz: frnd(2, 6), g: 3, life: 0.9, s: 0.16, col: k % 3 ? '#ff8a2a' : '#ffd04a' }); sfx('boom', e.x, e.y); shake(e.x, e.y, 0.4); break;
+    case 'boom': { const R = e.r || (e.g ? BAL.blastR : BAL.nadeR); fxFlash(e.x, e.y, e.z + 0.4, Math.min(1.4, R * 0.4), e.g ? '#b8ff6a' : '#ff9a3a'); fxShock(e.x, e.y, Math.max(0, e.z - 0.1), R * 1.25, e.g ? '#d8ff90' : '#ffd0a0', e.g ? '#5a7a2a' : '#4a4038');
+      for (let k = 0; k < 14; k++) { const a = FXR() * 6.283, r = FXR() * R * 0.5; addP({ x: e.x + Math.cos(a) * r, y: e.y + Math.sin(a) * r, z: e.z + 0.3, vx: Math.cos(a) * 0.8, vy: Math.sin(a) * 0.8, vz: frnd(0.8, 2.2), g: -0.5, col: e.g ? (k % 2 ? '#8aba4a' : '#b8e070') : (k % 3 ? '#4a4540' : '#6a5a4a'), s: frnd(0.25, 0.4), life: frnd(1, 1.6), smoke: 1 }); }
+      for (let k = 0; k < 18; k++) { const a = FXR() * 6.283, v = frnd(3, 8); addP({ x: e.x, y: e.y, z: e.z + 0.3, vx: Math.cos(a) * v, vy: Math.sin(a) * v, vz: frnd(1, 5), g: 9, col: e.g ? '#d8ff90' : k % 2 ? '#ffd060' : '#ff7a2a', s: 0.06, life: 0.5, floor: e.z }); } if (addDecal) addDecal(e.x, e.y, e.z, Math.min(1.2, R * 0.45), e.g ? '#3a5a1a' : '#1e1a16'); } /* (round 42) */
+      RND.booms.push({ x: e.x, y: e.y, z: e.z, t: 0, r: e.r || (e.g ? BAL.blastR : BAL.nadeR) }); fxAdd({ kind: 'ring', x: e.x, y: e.y, z: Math.max(0, e.z - 0.1), s0: 0.3, s1: (e.r || BAL.nadeR) * 1.15, life: 0.32, col: e.g ? '#b8ff6a' : '#ffc070', op: 0.7 }); /* (round 36) a shock ring along the ground */ debrisFx(e.x, e.y, e.z, e.g ? '#6a8a2a' : '#3a3530', 12); if (e.g) { bloodFx(e.x, e.y, e.z, 24, true); addDecal(e.x, e.y, e.z - 0.5, 1.1, '#3c5a14'); } if (e.r === BAL.barrelR) for (let k = 0; k < 26; k++) addP({ x: e.x + frnd(-1, 1), y: e.y + frnd(-1, 1), z: e.z, vx: frnd(-3, 3), vy: frnd(-3, 3), vz: frnd(2, 6), g: 3, life: 0.9, s: 0.16, col: k % 3 ? '#ff8a2a' : '#ffd04a' }); sfx('boom', e.x, e.y); shake(e.x, e.y, 0.4); break;
     case 'zbow': (RND.zbow = RND.zbow || {})[e.i] = { t0: W.t, dur: e.t, p: e.p, lock: null }; sfx('reload', W.p[e.p] ? W.p[e.p].x : 0, W.p[e.p] ? W.p[e.p].y : 0); if (e.p === ME && thr('bowTip', 30)) uiMsg('尸翼弓手在瞄你：红线锁定后闪一下就放箭——侧移躲开、躲到墙后、举盾，或者趁它瞄的时候打它一下就能打断', '#ff9a8a'); break; /* (round 41) */
     case 'zbowl': { const B = RND.zbow && RND.zbow[e.i]; if (B) B.lock = [e.x, e.y, e.z]; sfx('click'); break; }
     case 'zloose': if (RND.zbow) delete RND.zbow[e.i]; sfx('crossbow', e.x, e.y); for (let k = 0; k < 6; k++) addP({ x: e.x, y: e.y, z: e.z, vx: frnd(-1, 1), vy: frnd(-1, 1), vz: frnd(0, 1), g: 0, col: '#ffd0a0', s: 0.05, life: 0.25 }); break;
     case 'zflinch': if (RND.zbow) delete RND.zbow[e.i]; zMarkDrop(e.i); sfx('clank', e.x, e.y); for (let k = 0; k < 10; k++) addP({ x: e.x, y: e.y, z: e.z, vx: frnd(-3, 3), vy: frnd(-3, 3), vz: frnd(0, 3), col: k % 2 ? '#ffffff' : '#ffd040', s: 0.07, life: 0.35 }); break;
     case 'zgoo': zMark(e.i, e.x, e.y, e.z, BAL.gooR, e.t, '#b46cff'); sfx('acid', e.x, e.y); if (thr('gooTip', 30)) uiMsg('腐液水母鼓起来了：紫圈是它要吐的地方，粘液会让你走不动——走出圈，或者趁它鼓着打它，它会炸在自己下面', '#d0a0ff'); break;
     case 'zgoox': zMarkDrop(e.i); sfx('acid', e.x, e.y); for (let k = 0; k < 20; k++) addP({ x: e.x, y: e.y, z: e.z, vx: frnd(-3, 3), vy: frnd(-3, 3), vz: frnd(-2, 2), g: 6, col: k % 2 ? '#b46cff' : '#e0c0ff', s: 0.09, life: 0.6, floor: e.gz }); break;
-    case 'goo': for (let k = 0; k < 14; k++) { const a = k / 14 * 6.283; addP({ x: e.x, y: e.y, z: e.z + 0.2, vx: Math.cos(a) * 3, vy: Math.sin(a) * 3, vz: frnd(1, 3), g: 9, col: k % 2 ? '#b46cff' : '#7a3ac8', s: 0.08, life: 0.5, floor: e.z }); } sfx('acid', e.x, e.y); break;
+    case 'goo': fxSplash(e.x, e.y, e.z, 1.3, '#b46cff', '#f0d8ff', 14); /* (round 42) */ for (let k = 0; k < 14; k++) { const a = k / 14 * 6.283; addP({ x: e.x, y: e.y, z: e.z + 0.2, vx: Math.cos(a) * 3, vy: Math.sin(a) * 3, vz: frnd(1, 3), g: 9, col: k % 2 ? '#b46cff' : '#7a3ac8', s: 0.08, life: 0.5, floor: e.z }); } sfx('acid', e.x, e.y); break;
     case 'zslam': zMark(e.i, e.x, e.y, e.z, BAL.slamR, e.t, '#ff4a2a'); sfx('screech', e.x, e.y); if (thr('slamTip', 30)) uiMsg('石像鬼要砸下来了：躲开红圈！它砸完会卡在地上一会儿，这时候打它伤害 ×1.5（平时是石头，只吃三成）', '#ffb08a'); break;
     case 'zslamhit': zMarkDrop(e.i); shake(e.x, e.y, 0.6); sfx('smash', e.x, e.y); fxAdd({ kind: 'ring', x: e.x, y: e.y, z: e.z + 0.06, s0: 0.4, s1: BAL.slamR * 1.5, life: 0.45, col: '#d8c8b0', op: 0.85 }); fxAdd({ kind: 'disc', x: e.x, y: e.y, z: e.z + 0.05, s0: 0.3, s1: BAL.slamR, life: 0.3, col: '#fff0d0', op: 0.5 });
       for (let k = 0; k < 26; k++) { const a = FXR() * 6.283, v = frnd(2, 6); addP({ x: e.x, y: e.y, z: e.z + 0.2, vx: Math.cos(a) * v, vy: Math.sin(a) * v, vz: frnd(1, 4), g: 12, col: k % 3 ? '#8a8478' : '#5a554c', s: 0.1, life: 0.7, floor: e.z }); } if (typeof addDecal === 'function') addDecal(e.x, e.y, e.z + 0.02, 0.9, '#2a2622'); break;
     case 'zstone': sfx('clank', e.x, e.y); for (let k = 0; k < 5; k++) addP({ x: e.x, y: e.y, z: e.z, vx: frnd(-2, 2), vy: frnd(-2, 2), vz: frnd(0, 2), col: k % 2 ? '#d8d0c0' : '#ffffff', s: 0.05, life: 0.25 }); break;
     case 'zblock': for (let k = 0; k < 8; k++) addP({ x: e.x, y: e.y, z: e.z, vx: frnd(-2.5, 2.5), vy: frnd(-2.5, 2.5), vz: frnd(0, 2.5), col: '#ffe8a0', s: 0.05, life: 0.3 }); break;
-    case 'arrowhit': for (let k = 0; k < 4; k++) addP({ x: e.x, y: e.y, z: e.z, vx: frnd(-1, 1), vy: frnd(-1, 1), vz: frnd(0, 1.5), col: '#e8dcc0', s: 0.04, life: 0.3 }); sfx('clink', e.x, e.y); break;
-    case 'acid': for (let k = 0; k < 8; k++) addP({ x: e.x, y: e.y, z: e.z, vx: frnd(-2, 2), vy: frnd(-2, 2), vz: frnd(0, 2.5), col: k % 2 ? '#9dff3a' : '#5f9a20', s: 0.06, life: 0.5, floor: e.z - 0.3 }); sfx('acid', e.x, e.y); break;
+    case 'arrowhit': fxFlash(e.x, e.y, e.z, 0.3, '#ff6a4a'); for (let k = 0; k < 7; k++) addP({ x: e.x, y: e.y, z: e.z, vx: frnd(-2, 2), vy: frnd(-2, 2), vz: frnd(0, 2), col: k % 2 ? '#ffd0a0' : '#ff6a4a', s: 0.045, life: 0.3, g: 6 }); sfx('clink', e.x, e.y); break;
+    case 'acid': fxSplash(e.x, e.y, e.z, 0.9, '#9dff3a', '#d8ff90', 16); for (let k = 0; k < 5; k++) addP({ x: e.x + frnd(-0.3, 0.3), y: e.y + frnd(-0.3, 0.3), z: e.z + 0.1, vz: frnd(0.4, 1), g: -0.3, col: '#6a9a3a', s: 0.12, life: 0.9, smoke: 1 }); addDecal && addDecal(e.x, e.y, e.z, 0.45, '#4a7a1a'); sfx('acid', e.x, e.y); break; /* (round 42) */
     case 'rhit': if (thr('rhit', 0.3)) { sfx('rhit', W.radio.x, W.radio.y); for (let k = 0; k < 4; k++) addP({ x: W.radio.x + 0.5, y: W.radio.y + 0.5, z: 0.6, vx: frnd(-2, 2), vy: frnd(-2, 2), vz: frnd(1, 3), col: '#ffd76a', s: 0.05, life: 0.4 }); } break;
-    case 'knife': { const q = W.p[e.p]; sfx(e.n ? 'stab' : 'slash', q.x, q.y); if (e.p !== ME) q.knT = 0.28; if (e.n) { bloodFx(e.x, e.y, e.z, e.b ? 14 : 8, e.g); if (e.b) RND.floats.push({ x: e.x, y: e.y, z: e.z + 0.5, text: '背刺 ×' + BAL.knifeBack, col: '#ff8a6a', t: 0 }); } break; }
-    case 'scream': (RND.rings = RND.rings || []).push({ x: e.x, y: e.y, z: e.z, t: 0 }); sfx('scream', e.x, e.y); if (thr('scrMsg', 8)) uiMsg('尖叫者在叫——附近的丧尸发狂了！', '#ff8ac0'); break;
+    case 'knife': { const q = W.p[e.p]; sfx(e.n ? 'stab' : 'slash', q.x, q.y); if (e.p !== ME) q.knT = 0.28; { const qx = q.rx != null ? q.rx : q.x, qy = q.ry != null ? q.ry : q.y, qz = (q.zv != null ? q.zv : q.z) + 0.78; fxSlash(qx, qy, qz, q.aim, 1.05, e.b ? '#ff4a3a' : '#cfe6ff', { roll: 0.35, life: 0.16 }); if (e.n) { fxFlash(e.x, e.y, e.z, 0.35, e.b ? '#ff3a2a' : null); for (let k = 0; k < 6; k++) addP({ x: e.x, y: e.y, z: e.z, vx: frnd(-2.5, 2.5), vy: frnd(-2.5, 2.5), vz: frnd(0.5, 2.5), col: '#fff0c0', s: 0.04, life: 0.25, g: 6 }); } } /* (round 42) */ if (e.n) { bloodFx(e.x, e.y, e.z, e.b ? 14 : 8, e.g); if (e.b) RND.floats.push({ x: e.x, y: e.y, z: e.z + 0.5, text: '背刺 ×' + BAL.knifeBack, col: '#ff8a6a', t: 0 }); } break; }
+    case 'scream': (RND.rings = RND.rings || []).push({ x: e.x, y: e.y, z: e.z, t: 0 }); for (let k = 0; k < 3; k++) fxAdd({ kind: 'wave', x: e.x, y: e.y, z: e.z + 1.1 - k * 0.25, s0: 0.3 + k * 0.4, s1: BAL.screamR * (0.55 + k * 0.2), life: 0.55 + k * 0.15, col: k ? '#ff6aa8' : '#ffc0dc', op: 0.85 - k * 0.15, sy: 1 - k * 0.2 }); fxFlash(e.x, e.y, e.z + 1.3, 0.4, '#ff6aa8'); /* (round 42) */ sfx('scream', e.x, e.y); if (thr('scrMsg', 8)) uiMsg('尖叫者在叫——附近的丧尸发狂了！', '#ff8ac0'); break;
     case 'over': if (!W.demo && STATE.mode === 'play') showOver(e); break;
     case 'sfx': if (e.n === 'throw') { let bp = null, bd = 2; for (const q of W.p) { const d = d2(q.x, q.y, e.x, e.y); if (d < bd) { bd = d; bp = q; } } if (bp) bp._throwT = 0.35; }
       if (e.local || !(guest && e.o === ME && /reload|swap/.test(e.n))) sfx(e.n, e.x, e.y); break;
@@ -9880,6 +9890,56 @@ function zTellTick(dt) {
   pool.forEach((P, k) => { const m = RND.zmarks[k]; P.ring.visible = P.disc.visible = !!m; if (!m) return; const f = clamp((W.t - m.t0) / m.dur, 0, 1), pulse = 0.65 + 0.35 * Math.sin(W.t * (10 + f * 20));
     P.ring.position.set(m.x, m.z + 0.07, m.y); P.ring.scale.setScalar(m.r); P.ring.material.color.set(m.col); P.ring.material.opacity = 0.85 * pulse;
     P.disc.position.set(m.x, m.z + 0.06, m.y); P.disc.scale.setScalar(Math.max(0.05, m.r * f)); P.disc.material.color.set(m.col); P.disc.material.opacity = 0.18 + 0.22 * f; });
+}
+
+/* ---- 51_fx.js ---- */
+/* ================= (round 42) attack effects that read as skills and as things being thrown =================
+   Soft, gradient shapes for the pooled fx meshes (additive, vertex-coloured so their edges fade instead of ending in a hard line):
+   'cres' a crescent swing (opening along +x, flat), 'shock' a soft ground ring, 'wave' a standing band (sound / force waves),
+   'claw' three raking streaks (in a plane facing +x), 'cone' a spray cone from its tip along +x.
+   Plus: glowing particles (any bright particle glows and fades instead of being a hard cube), halos on things in flight. */
+const FXGEO = {
+  cres: () => { const g = new THREE.RingGeometry(0.58, 1, 36, 3, -1.25, 2.5), P = g.attributes.position, C = [];
+    for (let i = 0; i < P.count; i++) { const x = P.getX(i), y = P.getY(i), r = Math.hypot(x, y), t = (Math.atan2(y, x) + 1.25) / 2.5, rr = (r - 0.58) / 0.42, b = Math.pow(Math.sin(Math.PI * t), 0.7) * (0.25 + 0.75 * rr * rr); C.push(b, b, b); }
+    g.setAttribute('color', new THREE.Float32BufferAttribute(C, 3)); return g.rotateX(-Math.PI / 2); },
+  shock: () => { const g = new THREE.RingGeometry(0.45, 1, 56, 4), P = g.attributes.position, C = [];
+    for (let i = 0; i < P.count; i++) { const r = Math.hypot(P.getX(i), P.getY(i)), b = Math.max(0, 1 - Math.abs(r - 0.84) / (r < 0.84 ? 0.39 : 0.16)); C.push(b, b, b); }
+    g.setAttribute('color', new THREE.Float32BufferAttribute(C, 3)); return g.rotateX(-Math.PI / 2); },
+  wave: () => { const g = new THREE.CylinderGeometry(1, 1, 0.6, 48, 4, true), P = g.attributes.position, C = [];
+    for (let i = 0; i < P.count; i++) { const b = Math.max(0, 1 - Math.abs(P.getY(i)) / 0.3); C.push(b, b, b); }
+    g.setAttribute('color', new THREE.Float32BufferAttribute(C, 3)); return g; },
+  claw: () => { const pos = [], col = [], idx = []; let v = 0;
+    for (let s = -1; s <= 1; s++) { const N = 10, off = s * 0.13; for (let k = 0; k <= N; k++) { const t = k / N, z = -0.36 + t * 0.72, y = off + (t - 0.5) * 0.42 + Math.sin(t * Math.PI) * 0.05, w = 0.035 * Math.sin(Math.PI * t) + 0.004, b = Math.pow(Math.sin(Math.PI * t), 0.6);
+      pos.push(0, y + w, z, 0, y - w, z); col.push(b, b, b, b, b, b); if (k) idx.push(v - 2, v - 1, v, v - 1, v + 1, v); v += 2; } }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setIndex(idx); return g; },
+  cone: () => { const g = new THREE.ConeGeometry(0.5, 1, 24, 5, true).rotateZ(Math.PI / 2).translate(0.5, 0, 0), P = g.attributes.position, C = [];
+    for (let i = 0; i < P.count; i++) { const t = clamp(P.getX(i), 0, 1), b = (1 - t) * 0.8 + 0.2 * Math.sin(Math.PI * t); C.push(b, b, b); }
+    g.setAttribute('color', new THREE.Float32BufferAttribute(C, 3)); return g; },
+};
+// a sword / claw / knife swing: a bright crescent with a white core, sweeping out from r·0.6 to r
+function fxSlash(x, y, z, yaw, r, col, o) { o = o || {}; const roll = o.roll || 0, life = o.life || 0.17;
+  fxAdd({ kind: 'cres', x, y, z, s0: r * 0.62, s1: r, life, col, op: 1, yaw, roll }); fxAdd({ kind: 'cres', x, y, z: z + 0.01, s0: r * 0.5, s1: r * 0.86, life: life * 0.75, col: '#ffffff', op: 0.75, yaw, roll }); }
+// raking marks across whoever was hit, facing the attacker (yaw = angle from the victim to the attacker)
+function fxClaw(x, y, z, yaw, col, s) { s = s || 1; fxAdd({ kind: 'claw', x: x + Math.cos(yaw) * 0.42 * s, y: y + Math.sin(yaw) * 0.42 * s, z, s0: 0.75 * s, s1: 1.15 * s, life: 0.26, col, op: 1, yaw, pitch: 0.75 }); fxAdd({ kind: 'claw', x: x + Math.cos(yaw) * 0.44 * s, y: y + Math.sin(yaw) * 0.44 * s, z, s0: 0.7 * s, s1: 1.05 * s, life: 0.16, col: '#ffffff', op: 0.8, yaw, pitch: 0.75 }); }
+// a shock ring along the ground, with a darker dust ring a beat behind
+function fxShock(x, y, z, r, col, dust) { fxAdd({ kind: 'shock', x, y, z: z + 0.06, s0: r * 0.25, s1: r, life: 0.42, col, op: 0.95 }); if (dust) fxAdd({ kind: 'shock', x, y, z: z + 0.05, s0: r * 0.2, s1: r * 0.8, life: 0.7, col: dust, op: 0.6 }); }
+// a splash of liquid: a crown ring, glowing droplets thrown up and out, a few that hang
+function fxSplash(x, y, z, r, col, col2, n) { fxShock(x, y, z, r, col); fxAdd({ kind: 'ball', x, y, z: z + 0.15, s0: 0.1, s1: r * 0.35, life: 0.16, col: col2 || col, op: 0.35 });
+  for (let k = 0; k < (n || 16); k++) { const a = FXR() * 6.283, v = frnd(1.5, 4.5) * r; addP({ x, y, z: z + 0.1, vx: Math.cos(a) * v, vy: Math.sin(a) * v, vz: frnd(1.5, 4.5), g: 11, col: k % 3 ? col : (col2 || '#ffffff'), s: frnd(0.05, 0.09), life: frnd(0.35, 0.6), floor: z }); } }
+// a flash where something goes off
+function fxFlash(x, y, z, r, col) { fxAdd({ kind: 'ball', x, y, z, s0: r * 0.2, s1: r * 0.55, life: 0.1, col: '#fff4e0', op: 0.6 }); if (col) fxAdd({ kind: 'ball', x, y, z, s0: r * 0.35, s1: r, life: 0.2, col, op: 0.3 }); }
+// --- glowing particles: any bright particle is drawn as a soft additive spark that dims as it dies
+const PGLOW = {}; function pGlow(c) { if (PGLOW[c] == null) { const q = new THREE.Color(c); PGLOW[c] = 0.299 * q.r + 0.587 * q.g + 0.114 * q.b > 0.58 || Math.max(q.r, q.g, q.b) - Math.min(q.r, q.g, q.b) > 0.55 && Math.max(q.r, q.g, q.b) > 0.75; } return PGLOW[c]; }
+// --- things in flight: a halo, a short streak behind, drips / sparks (called for each projectile while drawing them)
+const PROJFX = { acid: ['#9dff3a', 0.24, '#d8ff90'], goo: ['#b46cff', 0.3, '#e8c8ff'], nade: ['#ff5a3a', 0.12, '#ffd0a0'], arrow: ['#ff6a4a', 0.1, '#fff0d0'] };
+function projFx(b, dt) {
+  const F = PROJFX[b.k]; if (!F || RND._nh >= 80) return; const [col, R, col2] = F; let rr = R, c = col;
+  if (b.k === 'nade') { const blink = Math.sin(W.t * 18 + (b.x * 7)) > 0.2; c = ['#ff5a3a', '#5fe0c8', '#e8ecf0', '#ffb040'][b.gt || 0] || '#ff5a3a'; rr = blink ? 0.16 : 0.08; }
+  setInst(OBJ.halo, RND._nh++, b.x, b.z, b.y, 0, rr, rr, rr, c);
+  const sp = Math.hypot(b.vx, b.vy, b.vz) || 1, L = b.k === 'arrow' ? 0.9 : b.k === 'nade' ? 0.35 : 0.5, f = L / sp;
+  RND.tracers.push({ x: b.x - b.vx * f, y: b.y - b.vy * f, z: b.z - b.vz * f, x2: b.x, y2: b.y, z2: b.z, t: 0, life: 0.035, w: b.k === 'arrow' ? 0.035 : b.k === 'nade' ? 0.025 : R * 0.45, col: new THREE.Color(b.k === 'nade' ? '#8a8a8a' : col).toArray() });
+  if (b.k === 'acid' || b.k === 'goo') { if (Math.random() < 0.55) addP({ x: b.x + frnd(-0.06, 0.06), y: b.y + frnd(-0.06, 0.06), z: b.z - 0.05, vx: b.vx * 0.1, vy: b.vy * 0.1, vz: -0.6, g: 7, col: Math.random() < 0.5 ? col : col2, s: frnd(0.04, 0.07), life: 0.45 }); }
+  else if (b.k === 'nade' && Math.random() < 0.4) addP({ x: b.x, y: b.y, z: b.z, vx: 0, vy: 0, vz: 0.3, g: -0.2, col: '#9a958a', s: 0.06, life: 0.5, smoke: 1 });
 }
 
 /* ---- 52_arch.js ---- */
@@ -12332,7 +12392,7 @@ function drawFlyer(z, corpse, dt) {
   const pitch = corpse ? 0 : kt === 2 ? -0.55 : kt === 1 ? 0.35 : clamp(vz * 0.12, -0.4, 0.3);
   J.body.rotation.z = lerp(J.body.rotation.z, pitch, Math.min(1, dt * 8)); J.body.position.y = 0.25 + (corpse ? 0 : Math.sin(z._ph) * 0.025 * amp);
   if (J.head) J.head.rotation.z = kt === 1 ? -0.4 + Math.sin(t * 30) * 0.08 : 0; // crying out
-  if (J.tail) J.tail.rotation.z = kt === 2 ? 0.25 : Math.sin(z._ph * 0.5) * 0.08; if (J.tick) J.tick(z, dt, kt, corpse); /* (round 41) */
+  if (J.tail) J.tail.rotation.z = kt === 2 ? 0.25 : Math.sin(z._ph * 0.5) * 0.08; if (J.tick) J.tick(z, dt, kt, corpse); /* (round 41) */ if (kt === 2 && !corpse && (z.k === 'crow' || z.k === 'bat' || z.k === 'vult') && Math.random() < 0.8) addP({ x: z.x + frnd(-0.1, 0.1), y: z.y + frnd(-0.1, 0.1), z: z.z + 0.2, vz: 0, g: 0, col: z.k === 'bat' ? '#c06aff' : '#ff5a3a', s: 0.05, life: 0.3 }); /* (round 42) a streak behind a diving bird */
   let zz = z.z; if (corpse) { const k = Math.min(1, z.t / 0.45); zz = lerp(z.fz != null ? z.fz : z.z, z.z, k * k); }
   g.position.set(z.x, zz, z.y); g.rotation.set(corpse ? Math.min(1.3, z.t * 3) : z._roll, -z._f, 0);
   g.scale.setScalar(S * (!corpse && z.hitT > 0 ? 1.12 : 1)); if (corpse && z.t > 7) g.visible = false;
@@ -12426,9 +12486,10 @@ function mprjFree(r) { if (!r.m) return; r.m.visible = false; (MPRJ[r.kd] || (MP
 const FXM = { live: [], pool: {} };
 function fxMesh(kind) {
   const q = FXM.pool[kind] || (FXM.pool[kind] = []); let m = q.pop();
-  if (!m) { const mat = new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 1, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
-    const geo = kind === 'pillar' ? new THREE.CylinderGeometry(1, 1, 1, 24, 1, true).translate(0, 0.5, 0) /* (round 40c) a light column; sy = its height */ : kind === 'arc' ? new THREE.RingGeometry(0.55, 1, 28, 1, -1.15, 2.3).rotateX(-Math.PI / 2) : kind === 'ring' ? new THREE.RingGeometry(0.82, 1, 40).rotateX(-Math.PI / 2) : kind === 'disc' ? new THREE.CircleGeometry(1, 24).rotateX(-Math.PI / 2) : new THREE.SphereGeometry(1, 10, 8);
-    m = new THREE.Mesh(geo, mat); m.renderOrder = 5; SCN.add(m); m.userData.kind = kind; }
+  if (!m) { const mat = new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 1, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, vertexColors: !!FXGEO[kind] }); /* (round 42) the soft gradient shapes */
+    const geo = FXGEO[kind] ? FXGEO[kind]() : kind === 'pillar' ? new THREE.CylinderGeometry(1, 1, 1, 24, 1, true).translate(0, 0.5, 0) /* (round 40c) a light column; sy = its height */ : kind === 'arc' ? new THREE.RingGeometry(0.55, 1, 28, 1, -1.15, 2.3).rotateX(-Math.PI / 2) : kind === 'ring' ? new THREE.RingGeometry(0.82, 1, 40).rotateX(-Math.PI / 2) : kind === 'disc' ? new THREE.CircleGeometry(1, 24).rotateX(-Math.PI / 2) : new THREE.SphereGeometry(1, 10, 8);
+    if (kind === 'claw') { mat.depthTest = false; } /* (round 42) the claw marks show over whoever was hit */
+    m = new THREE.Mesh(geo, mat); m.renderOrder = kind === 'claw' ? 9 : 5; SCN.add(m); m.userData.kind = kind; }
   m.visible = true; return m;
 }
 // o: { kind, x, y, z, s0, s1 (scale over life), life, col, op, yaw, roll, pitch }
@@ -12442,6 +12503,11 @@ function fxTick(dt) {
 // a blow lands (mhit): slash arcs for blades / kicks, shock ring + crack for the ground smashes, sparks on what it hit
 function mechHitFx(e, q) {
   if (!q || !inMech(q)) return; const M = mechOf(q), a = q._mA != null && q._mAT > 0 ? q._mA : q.aim, c = q._mcombo || 0, s = (MECH_DIM[M.style] || {}).s || 1;
+  if (M.atk === 'bite' && e.x != null) { const tz = (e.z != null ? e.z : q.z) + 0.6; /* (round 42) 青蛇: two jade fangs snapping shut on the target, a burst of venom */
+    fxSlash(e.x, e.y, tz + 0.25, a + Math.PI, 0.85, '#5fffb0', { roll: 1.25, life: 0.15 }); fxSlash(e.x, e.y, tz - 0.25, a + Math.PI, 0.85, '#5fffb0', { roll: -1.25, life: 0.15 }); fxFlash(e.x, e.y, tz, 0.5, '#3ad890');
+    for (let k = 0; k < 8; k++) addP({ x: e.x, y: e.y, z: tz, vx: frnd(-2, 2), vy: frnd(-2, 2), vz: frnd(0.5, 2.5), col: k % 2 ? '#7fffc0' : '#2ab070', s: 0.06, life: 0.4, g: 6 }); }
+  if (M.atk === 'shell' && e.x != null) { const tz = e.z != null ? e.z : q.z; /* (round 42) 玄龟: a heavy shell-bash — a jade shock ring and rune sparks where it lands */
+    fxShock(e.x, e.y, tz, 1.6, '#7fffd8', '#2a6a5a'); fxFlash(e.x, e.y, tz + 0.5, 0.6, '#4ae0c0'); for (let k = 0; k < 8; k++) { const aa = k / 8 * 6.283; addP({ x: e.x, y: e.y, z: tz + 0.2, vx: Math.cos(aa) * 3, vy: Math.sin(aa) * 3, vz: frnd(1, 2.5), col: '#aaffe8', s: 0.05, life: 0.4, g: 5 }); } }
   if (M.atk === 'chop' || M.atk === 'kick' || (M.atk === 'claw' && !e.g)) { // a bright crescent along the swing, tilted by the move; (round 37) 铁熊's paw swipes too
     const ax = (q.rx != null ? q.rx : q.x), ay = (q.ry != null ? q.ry : q.y), az = (q.zv != null ? q.zv : q.z) + (M.atk === 'kick' ? 0.5 : 1.3) * s, R = M.reach * 0.95;
     const roll = M.atk === 'kick' ? 0.15 : c === 0 ? 0.75 : c === 1 ? 0.12 : 1.45, col = M.atk === 'kick' ? '#ffe680' : '#ffb060';
@@ -13346,7 +13412,7 @@ function evoSkillFx(e) { const q = W.p[e.o], E = q && EVO[q.veh];
   else if (e.t === 'dragdash') { sfx('mdash', e.x, e.y); sfx('flame', e.x, e.y); for (let k = 0; k < 30; k++) { const d = FXR() * (e.d || 10), aa = e.a + frnd(-0.2, 0.2); addP({ x: e.x + Math.cos(e.a) * d, y: e.y + Math.sin(e.a) * d, z: e.z + 1, vx: Math.cos(aa) * 2, vy: Math.sin(aa) * 2, vz: frnd(0, 2), g: 0.4, col: FXR() < 0.5 ? '#ff8a2a' : '#ffd040', s: 0.2, life: 0.7 }); } }
   else if (e.t === 'moon') { sfx('jump', e.x, e.y); fxAdd({ kind: 'disc', x: e.e[0], y: e.e[1], z: e.z + 0.06, s0: 6, s1: 6, life: 0.95, col: '#bff8ff', op: 0.25 }); }
   else if (e.t === 'spin') { sfx('mdash', e.x, e.y); fxAdd({ kind: 'ring', x: e.x, y: e.y, z: e.z + 0.3, s0: 1, s1: 2.8, life: 0.4, col: '#7fffd0', op: 0.8 }); }
-  else if (e.t === 'rebirth') { sfx('blood', e.x, e.y); shake(e.x, e.y, 0.5); fxAdd({ kind: 'ring', x: e.x, y: e.y, z: e.z, s0: 0.5, s1: 6.5, life: 0.6, col: '#ffb030', op: 0.9 }); fxAdd({ kind: 'ball', x: e.x, y: e.y, z: e.z + 0.8, s0: 0.6, s1: 6, life: 0.55, col: '#ff6a1e', op: 0.5 });
+  else if (e.t === 'rebirth') { sfx('blood', e.x, e.y); shake(e.x, e.y, 0.5); fxAdd({ kind: 'ring', x: e.x, y: e.y, z: e.z + 0.07, s0: 0.5, s1: 6.5, life: 0.6, col: '#ffb030', op: 0.7 }); fxAdd({ kind: 'ball', x: e.x, y: e.y, z: e.z + 0.8, s0: 0.5, s1: 2.4, life: 0.4, col: '#ff6a1e', op: 0.4 }); fxAdd({ kind: 'shock', x: e.x, y: e.y, z: e.z + 0.06, s0: 1, s1: 6.5, life: 0.5, col: '#ff9a30', op: 0.45 }); for (let k = 0; k < 24; k++) { const aa = FXR() * 6.283, r = FXR() * 4; addP({ x: e.x + Math.cos(aa) * r, y: e.y + Math.sin(aa) * r, z: e.z + 0.2, vx: 0, vy: 0, vz: frnd(2, 5), g: -0.5, col: k % 3 ? '#ffb040' : '#fff0a0', s: 0.07, life: frnd(0.6, 1) }); } /* (round 42) a fire ring and rising embers, not a dome over the screen */
     for (let k = 0; k < 60; k++) { const a = FXR() * 6.28, s2 = frnd(3, 9); addP({ x: e.x, y: e.y, z: e.z + 0.8, vx: Math.cos(a) * s2, vy: Math.sin(a) * s2, vz: frnd(-2, 3), g: 0.2, col: FXR() < 0.5 ? '#ffd060' : '#ff4a1a', s: 0.2, life: 0.8 }); } }
   else if (e.t === 'roar') { sfx('bigdie', e.x, e.y); shake(e.x, e.y, 0.7); for (let k = 0; k < 3; k++) fxAdd({ kind: 'ring', x: e.x, y: e.y, z: e.z + 0.4 + k * 0.5, s0: 1, s1: 9, life: 0.5 + k * 0.15, col: '#ffcc88', op: 0.6 }); }
   void E;
