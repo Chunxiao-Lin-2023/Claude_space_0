@@ -76,7 +76,7 @@ function uiKeys(me) {
     if (me.vehs || me.pass >= 0 || pil) rows.push(['T', me.ride || me.pass >= 0 ? '下车' : pil ? '坐后座' : '上' + (VEH[me.veh] ? VEH[me.veh].name : '车'), me.ride || me.pass >= 0 || pil ? 1 : 0]);
     if (me.vehs & (me.vehs - 1)) rows.push(['⇧T', '换一辆车']);
     if (me.ride && MECHS[me.veh] && !(fusOf(me) && inMech(me))) { const E = EVO[me.veh], rdy = E && (me.evo || 0) >= 100 && !me.evoOn; rows.unshift(['X', me.mform !== 1 ? '变成' + MECHS[me.veh].name : me.evoOn ? '变回' + MECHS[me.veh].name + '（长按回载具）' : rdy ? '变回载具 · 长按进化 ' + E.name : '变回载具', rdy ? 2 : 0]); /* (round 38j) */ } /* (round 37) */
-    if (inMech(me)) { const F = fusOf(me), many = W.p.filter(q => !q.gone).length > 1, cn = capN(), ask = UI.fusAsk && performance.now() - UI.fusAsk < 8000; /* (round 40) ; (round 40d) capsules */
+    if (inMech(me)) { const F = fusOf(me), many = W.p.filter(q => !q.gone).length > 1, cn = capN(), ask = UI.fusAsk && W.t - UI.fusAsk < FUS.ask; /* (round 40) ; (round 40d) capsules */
       if (F) { if (!F.v) rows.unshift(['K', '换手（现在是' + (fusRole(me) === 'd' ? '驾驶' : '炮手') + '）', 1]); rows.unshift(['X / J', '解除合体']); }
       else if (many || cn) rows.unshift(['J', ask ? '同意合体' : cn && !many ? '合体胶囊：' + MECHS[capNext()].name + (cn > 1 ? '（共 ' + cn + ' 个）' : '') : cn ? '请求合体 · 没人在旁边就用胶囊' : '请求合体', ask || (cn && !many) ? 1 : 0]); }
     if (W.phase === 'day') rows.push(['N', me.ready ? '取消准备' : '准备入夜', me.ready ? 1 : 0]);
@@ -154,7 +154,15 @@ function uiPlanPos() {
   if (!PLAN) return; const el = $('bconf'), c = PLAN.cells[PLAN.cells.length - 1], [sx, sy] = w2s(c.x + 0.5, c.y + 0.5, (c.L + 1) * FH);
   el.style.left = clamp(sx - el.offsetWidth / 2, 8, VW - el.offsetWidth - 8) + 'px'; el.style.top = clamp(sy - el.offsetHeight - 26, 60, VH - el.offsetHeight - 110) + 'px';
 }
+/* (round 42b) a partner asked to fuse: a big 同意合体 card (touch has no J), with an 8 s bar */
+function fusAskTick() {
+  const el = document.getElementById('fusAsk'); if (!el) return;
+  const me = W && W.p[ME], w = UI.fusAskW, age = UI.fusAsk ? (W.t - UI.fusAsk) * 1000 : 1e9, on = !!(me && w && age < 8000 && !fusOf(me) && !me.dead && !W.over);
+  if (el.classList.contains('hidden') === on) { el.classList.toggle('hidden', !on); if (on) { $('fusAskT').innerHTML = '<b>' + w.n + '</b> 想和你合体'; $('fusAskS').textContent = '「' + w.f + '」 · ' + MECHS[w.kb].name + '（本体）× ' + MECHS[w.kp].name + '（你）'; } }
+  if (on) $('fusAskP').style.transform = 'scaleX(' + Math.max(0, 1 - age / 8000).toFixed(3) + ')';
+}
 function hudTick(dt) {
+  fusAskTick();
   { const me = W && W.p[ME], lw = !!me && !me.dead && !me.gone && !W.over && (me.down || me.hp < (me.maxHp || 100) * 0.3) && !inMech(me), el = document.getElementById('lowhp'); if (el && el.classList.contains('on') !== lw) el.classList.toggle('on', lw); // (round 34d) low health: red pulsing edges and a heartbeat
     if (lw) { UI.hbT = (UI.hbT || 0) - dt; if (UI.hbT <= 0) { UI.hbT = me.down ? 0.7 : 0.85; sfx('heart'); } } else UI.hbT = 0; }
   uiPlanPos();
@@ -253,7 +261,7 @@ function hudTick(dt) {
     md.firstElementChild.textContent = me.down ? '自救' : '医疗'; $('tMedN').textContent = '×' + me.meds;
     $('tWpn').firstElementChild.textContent = w.sn || w.name; $('tWpn').lastElementChild.textContent = w.inf ? '∞' : me.mag[wi] + '/' + me.ammo[wi];
     $('tWpn').classList.toggle('dim', me.down || me.owned.filter(Boolean).length < 2);
-    if (inMech(me) && (W.p.filter(q => !q.gone).length > 1 || capN() || (fusOf(me) && fusOf(me).v))) { const F = fusOf(me), ask = UI.fusAsk && performance.now() - UI.fusAsk < 8000, solo = W.p.filter(q => !q.gone).length < 2; $('tWpn').firstElementChild.textContent = F ? (F.v ? '解除' : '换手') : ask ? '同意' : '合体'; $('tWpn').lastElementChild.textContent = F ? (F.v ? '剩 ' + Math.max(0, Math.ceil(F.left)) + 's' : fusRole(me) === 'd' ? '驾驶' : '炮手') : ask ? '合体' : solo ? '胶囊×' + capN() : ''; /* (round 40d) */ $('tWpn').classList.toggle('dim', false); $('tWpn').classList.toggle('hot', !!ask); } /* (round 40) in a mech the weapon key asks / agrees to fuse, then swaps roles */
+    if (inMech(me) && (W.p.filter(q => !q.gone).length > 1 || capN() || (fusOf(me) && fusOf(me).v))) { const F = fusOf(me), ask = UI.fusAsk && W.t - UI.fusAsk < FUS.ask, solo = W.p.filter(q => !q.gone).length < 2; $('tWpn').firstElementChild.textContent = F ? (F.v ? '解除' : '换手') : ask ? '同意' : '合体'; $('tWpn').lastElementChild.textContent = F ? (F.v ? '剩 ' + Math.max(0, Math.ceil(F.left)) + 's' : fusRole(me) === 'd' ? '驾驶' : '炮手') : ask ? '合体' : solo ? '胶囊×' + capN() : ''; /* (round 40d) */ $('tWpn').classList.toggle('dim', false); $('tWpn').classList.toggle('hot', !!ask); $('tWpn').dataset.g = F ? (F.v ? '点=解除合体' : '点=换手') : ask ? '点=同意合体' : '点=合体'; } else if ($('tWpn').dataset.g !== '点=换枪 · 拖=选枪') $('tWpn').dataset.g = '点=换枪 · 拖=选枪'; /* (round 42b) the guide label follows what the key does */ /* (round 40) in a mech the weapon key asks / agrees to fuse, then swaps roles */
     const gt = me.gt || 0, im = inMech(me), FN = im && fusOf(me), fnOff = FN && fusRole(me) === 'd' && !FN.v, mc = FN ? FN.cd : me.mcd || 0, gc = im ? (fnOff ? '炮手' : mc > 0 ? Math.ceil(mc) : '✓') : gCount(me, gt), tn = $('tNade'), lb = FN ? '合体技' : im ? mechOf(me).sn : GREN[gt].sn; $('tNadeN').textContent = gc; tn.classList.toggle('empty', im ? mc > 0 || !!fnOff : !gc); /* (round 40e) fused: the combined skill (the co-op driver can't fire it) */ if (tn.firstChild.nodeValue !== lb) tn.firstChild.nodeValue = lb; // (round 24) shows the picked grenade type
     const sv = $('tShove'), svm = fusOf(me) && inMech(me) ? 'f' /* (round 40e) fused: this key splits */ : me.ride && MECHS[me.veh] ? (me.mform === 1 ? (me.evoOn ? 'r' : (me.evo || 0) >= 100 && EVO[me.veh] ? 'e' : 'b') : 'x') : String(me.melee === 1 && me.shield ? 1 : 0); if (sv.dataset.m !== svm) { sv.dataset.m = svm; sv.textContent = svm === 'f' ? '解除合体' : svm === 'x' ? '变形' : svm === 'b' ? '变回' : svm === 'e' ? '变回 · 长按进化' : svm === 'r' ? '复原' : svm === '1' ? '盾' : '刀'; } sv.classList.toggle('evo', svm === 'e'); sv.style.setProperty('--ev', me.ride && me.mform === 1 && !me.evoOn ? Math.min(100, me.evo || 0) + '%' : '0%'); /* (round 37) tap = 进化 / 复原, hold = back to the vehicle; the button fills up with the meter */ sv.classList.toggle('sw', !!me.shield && !me.ride); sv.classList.toggle('xf', !!me.ride); // (round 34b) driving: the melee key transforms
     $('tFire').style.setProperty('--rl', rl);

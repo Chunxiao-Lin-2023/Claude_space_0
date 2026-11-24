@@ -948,6 +948,7 @@ function doAct(p, a, v) {
     case 'melee': p.melee = v === 1 && p.shield ? 1 : 0; break;
     case 'nade': if (inMech(p)) { const fr = fusRole(p); if (fr === 'g' || (fr === 'd' && W.fus.v)) fuseSkill(p, v); /* (round 40d) alone, you fire the combined skill yourself */ else if (fr === 'd') emit({ k: 'deny', p: p.i, why: '合体中大招归炮手放：按 K 换手' }); else mechSkill(p, v); } else throwNade(p, v); break;
     case 'fuse': fuseAct(p); break; /* (round 40) */
+    case 'fusno': { const R = W.fusReq; if (R && R.to === p.i) { W.fusReq = null; emit({ k: 'deny', p: R.from, why: (p.name || '队友') + ' 拒绝了合体' }); } break; } /* (round 42b) */
     case 'fswap': fuseSwap(p); break; // (round 34) in a mech the grenade key is its skill
     case 'med':
       if (p.medT > 0 || p.meds <= 0) break;

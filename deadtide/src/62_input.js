@@ -406,6 +406,8 @@ function bindBtn(id, down, up) {
 bindBtn('tReload', () => inGame() && (W.p[ME].build ? rotStairs() : act('reload')));
 // (round 22) the weapon key on the fire ring: tap = next quick weapon; drag (or hold) = a fan of every gun you own — slide onto one and let go
 const WK = document.getElementById('tWpn');
+/* (round 42b) the accept card */
+for (const [id, yes] of [['fusYes', 1], ['fusNo', 0]]) { const el = document.getElementById(id); if (el) el.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); audioInit(); if (inGame()) act(yes ? 'fuse' : 'fusno'); if (!yes) toast('已拒绝合体', '#bbb'); UI.fusAsk = 0; }); }
 function wpickItems(me) {
   const q = quickList(me), out = q.concat(WPN.map((w, k) => k).filter(k => me.owned[k] && !q.includes(k))).map(k => ({ k, t: WPN[k].sn || WPN[k].name, s: WPN[k].inf ? '∞' : String(me.mag[k] + me.ammo[k]), sel: k === me.wpn, q: q.includes(k) }));
   const w = WPN[me.wpn]; if (me.mag[me.wpn] < magCap(me.wpn) && (w.inf || me.ammo[me.wpn] > 0)) out.push({ k: 'rl', t: '换弹', s: '' });
