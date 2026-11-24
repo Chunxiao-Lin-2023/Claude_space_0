@@ -186,7 +186,7 @@ const mlvCost = lv => ({ steel: 20 * (lv + 1), parts: 15 * (lv + 1) });
 const mupName = (v, lv) => lv && typeof MUPG_NAME !== 'undefined' && MUPG_NAME[v] ? MUPG_NAME[v][lv - 1] : MUP[lv].n; /* (round 39) each mech's own level names */
 const bpLabel = b => b[0] === 'm' ? MECHS[+b.slice(1)].name + ' · ' + mupName(+b.slice(1), Math.min(UPG_MAX, mlvOf(+b.slice(1)) + 1)) : WPN[+b.slice(1)].name + ' · ' + gunUpName(+b.slice(1), Math.min(UPG_MAX, wlvOf(+b.slice(1)) + 1));
 const isBig = z => { const T = ZT[z.k]; return !!(T && T.kaiju); }; /* (round 38g) the tough ones — (round 38h) just the 怪兽 now */
-const mechOf = p => (p && p.evoOn && EVO[p.veh]) || MECHS[p && p.veh] || MECHS[4]; /* (round 37) in beast form its EVO entry stands in for the mech */
+const mechOf = p => { const F = p && W && W.fus && (W.fus.a === p.i || W.fus.b === p.i) ? W.fus : null; if (F) return MECHS[F.d === p.i ? F.kb : F.kp]; /* (round 40) fused: the driver fights with the body's attack, the gunner with the module's */ return (p && p.evoOn && EVO[p.veh]) || MECHS[p && p.veh] || MECHS[4]; }; /* (round 37) in beast form its EVO entry stands in for the mech */
 const mhpOf = (p, v) => { v = v || p.veh; const M = MECHS[v]; if (!M) return 0; const h = p.mh && p.mh[v]; return h == null ? M.hp : h; };
 const PILLION = 0.38;                                   // how far behind the driver the back-seat rider sits
 // (round 24) grenade types: 0 frag (p.nades), 1–3 in p.gn[t - 1]
@@ -260,7 +260,7 @@ const ZT = {
   shade: { name: '隐身者', hp: 420, spd: 1.5, r: 0.35, h: 1.6, dmg: 12, bdmg: 10, cd: 0.9, sc: 1.55, look: 'walker', skin: '#50505e', elite: { k: 'cloak', cd: 6, col: '#c0c0e0', tip: '隐身摸到你身边偷袭，留意空气里的扭曲，附近炸一下就现形' } },
 };
 const ELITES = ['blinker', 'caller', 'warden', 'shade'];
-const BUILD_TAG = '第 39 轮之三'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
+const BUILD_TAG = '第 40 轮'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
 // aim assist (SET.assist): fire-button lock range (x weapon range), lock-on time before it fires, spread while auto-aimed, mouse/finger magnet
 const PORT = 1.25; // firing port: your own shots pass a wall / door you built if it is this close to you
 const ASSIST = [{ name: '关', range: 0, acq: 0, spread: 1, mag: 0 }, { name: '标准', range: 0.75, acq: 0.3, spread: 1.5, mag: 1 }, { name: '强', range: 1, acq: 0, spread: 1, mag: 1 }];

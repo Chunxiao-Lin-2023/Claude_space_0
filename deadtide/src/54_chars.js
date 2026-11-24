@@ -501,7 +501,7 @@ let DKN = 0;
 function drawPlayers(vl, dt) {
   DKN = darkness();
   while (OBJ.pl.length < W.p.length) OBJ.pl.push(mkPlayerModel(OBJ.pl.length));
-  OBJ.pl.forEach((m, i) => { const p = W.p[i]; m.g.visible = !!p && !p.gone && p.L <= vl; });
+  OBJ.pl.forEach((m, i) => { const p = W.p[i]; m.g.visible = !!p && !p.gone && p.L <= vl && !(W.fus && W.fus.b === i && inMech(p)); }); /* (round 40) the module's pilot is drawn as part of the fused body */
   W.p.forEach((p, i) => {
     const m = OBJ.pl[i]; if (!m.g.visible) return; if (m.evo) m.evo.visible = false; /* (round 37) the beast shows only while evoDraw says so */
     if (!m.veh) { m.veh = mkVehicles(); m.g.add(m.veh); }
@@ -513,7 +513,7 @@ function drawPlayers(vl, dt) {
     if (p._xfT != null) p._xfT += dt;
     const xfing = p._xfT != null && p._xfT < BAL.xformT && p.ride && !p.dead && !p.down && MECHS[p.veh];
     if ((inMech(p) || xfing) && !p.dead && !p.down) { // (round 34) in a mech (or turning into / out of one): draw the mech, hide the pilot
-      if (!m.mech || m.mech.userData.J.k !== p.veh) { if (m.mech) m.g.remove(m.mech); m.mech = mkMech(p.veh); m.g.add(m.mech); } mechUpgSet(m.mech.userData.J, mlvOf(p.veh)); /* (round 38j) */
+      if (!m.mech || m.mech.userData.J.k !== p.veh) { if (m.mech) m.g.remove(m.mech); m.mech = mkMech(p.veh); m.g.add(m.mech); } mechUpgSet(m.mech.userData.J, mlvOf(p.veh)); /* (round 38j) */ fuseDraw(p, m, dt); /* (round 40) */
       const f = xfing ? (p._xfTo ? p._xfT / BAL.xformT : 1 - p._xfT / BAL.xformT) : 1; // 0 = vehicle … 1 = mech
       m.mech.visible = f > 0.2; m.lower.visible = m.upper.visible = false; m.g.rotation.set(0, 0, 0);
       // (round 34b) the vehicle stands up on its tail, folds and splits while the mech unfolds out of it, with sparks
@@ -522,8 +522,8 @@ function drawPlayers(vl, dt) {
       if (xfing) { const stp = Math.floor(p._xfT / 0.25); if (stp !== p._xfS) { p._xfS = stp; if (p.i === ME || thr('xf' + p.i, 0.2)) sfx('clank', gx, gy); } }
       if (p._px == null || p._ly == null) { p._px = gx; p._py = gy; p._ly = p.aim; p._spd = 0; }
       const mvx = gx - p._px, mvy = gy - p._py; p._spd = lerp(p._spd || 0, dt > 0 ? Math.min(8, Math.hypot(mvx, mvy) / dt) : 0, Math.min(1, dt * 10)); p._px = gx; p._py = gy;
-      if (p._spd > 0.4 && Math.hypot(mvx, mvy) > 1e-4) { const md = Math.atan2(mvy, mvx); p._mback = Math.cos(angDiff(md, p.aim)) < (p._mback ? -0.2 : -0.45); p._ly = angLerp(p._ly, p._mback ? md + Math.PI : md, Math.min(1, dt * 4)); } else if (p._spd < 0.25) { p._mback = false; p._ly = angLerp(p._ly, p.aim, Math.min(1, dt * 1.6)); } // (round 34b) backing away: walk backwards, still facing the fight
-      if (p._mAT > 0) { p._mAT -= dt; p._ly = angLerp(p._ly, p._mA, Math.min(1, dt * 14)); } p._uy = p._mAT > 0 ? p._mA : p.aim; m.mech.rotation.y = -p._ly; /* (round 35) swing / shoot toward the locked target */ const evS = xfing ? 1 : evoDraw(p, m, dt); /* (round 37) beast form */ if (evS <= 0.02) { m.mech.visible = false; if (p._mpT != null) p._mpT += dt; if (p._msT != null) p._msT += dt; } /* (round 38b) mechTick isn't run for a beast, so its attack / skill clocks must tick here — they were frozen at 0, every beast move stuck on its first frame */ if (m.mech.visible) { mechTick(p, m.mech, dt, xfing ? clamp((f - 0.2) / 0.8, 0, 1) : 1); if (evS < 1) m.mech.scale.multiplyScalar(evS); if (!xfing && evS > 0.5) mechDamageFx(p, m.mech, dt); } return; /* (round 36) battle damage */
+      if (p._spd > 0.4 && Math.hypot(mvx, mvy) > 1e-4) { const md = Math.atan2(mvy, mvx); p._mback = Math.cos(angDiff(md, p.aim)) < (p._mback ? -0.2 : -0.45); p._ly = angLerp(p._ly, p._mback ? md + Math.PI : md, Math.min(1, dt * 4)); } else if (p._spd < 0.25) { p._mback = false; p._ly = angLerp(p._ly, W.fus && fusOf(p) && W.p[W.fus.d] ? W.p[W.fus.d].aim : p.aim, Math.min(1, dt * 1.6)); } // (round 34b) backing away: walk backwards, still facing the fight
+      if (p._mAT > 0) { p._mAT -= dt; p._ly = angLerp(p._ly, p._mA, Math.min(1, dt * 14)); } p._uy = p._mAT > 0 ? p._mA : W.fus && fusOf(p) && W.p[W.fus.d] ? W.p[W.fus.d].aim : p.aim; m.mech.rotation.y = -p._ly; /* (round 35) swing / shoot toward the locked target */ const evS = xfing ? 1 : evoDraw(p, m, dt); /* (round 37) beast form */ if (evS <= 0.02) { m.mech.visible = false; if (p._mpT != null) p._mpT += dt; if (p._msT != null) p._msT += dt; } /* (round 38b) mechTick isn't run for a beast, so its attack / skill clocks must tick here — they were frozen at 0, every beast move stuck on its first frame */ if (m.mech.visible) { mechTick(p, m.mech, dt, xfing ? clamp((f - 0.2) / 0.8, 0, 1) : 1); if (evS < 1) m.mech.scale.multiplyScalar(evS); if (!xfing && evS > 0.5) mechDamageFx(p, m.mech, dt); } return; /* (round 36) battle damage */
     }
     if (m.mech) m.mech.visible = false; m.lower.visible = m.upper.visible = true;
     if (m.veh && m.veh.userData.all) for (const q of m.veh.userData.all) if (q && (q.rotation.z || q.position.y || q.scale.x !== 1)) { q.rotation.z = 0; q.position.y = 0; q.scale.set(1, 1, 1); } // undo the fold

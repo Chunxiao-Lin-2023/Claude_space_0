@@ -634,7 +634,7 @@ function mechUpgBox(root, skip) { // bounding box of root's meshes in root's own
   for (const c of root.children) walk(c); return box.isEmpty() ? new THREE.Box3(new THREE.Vector3(-0.25, 0, -0.3), new THREE.Vector3(0.25, 0.8, 0.3)) : box; }
 /* (round 39) mechUpgBuild moved to 57_mechupg.js: every mech has its own three-level look */
 function mechTick(p, mm, dt, xf = 1) { // xf < 1: mid-transform (0 = folded up, 1 = standing)
-  const J = mm.userData.J, M = mechOf(p), L = J.LEG || MECH_LEG, k = J.k, DS = J.D ? J.D.s : 1;
+  const J = mm.userData.J, M = W.fus && fusOf(p) ? MECHS[J.k] : mechOf(p), L = J.LEG || MECH_LEG, k = J.k, DS = J.D ? J.D.s : 1; /* (round 40) the fused body moves as itself */
   // hit-stop: a landed blow freezes the attack pose for a moment
   if (p._mhs > 0) { p._mhs -= dt; dt *= 0.08; }
   const sp = p._spd || 0, maxS = BAL.pSpeed * M.spd, a = clamp(sp / (maxS * 0.85), 0, 1.1), air = (p.jz || 0) > 0.05 || airborne(p);
@@ -698,7 +698,7 @@ function mechTick(p, mm, dt, xf = 1) { // xf < 1: mid-transform (0 = folded up, 
   // ---- springs → joints ----
   const u = xf < 1 ? ease(xf) : 1;
   const S = xf < 1 ? (key, v) => { const fv = MFOLD[key] != null ? MFOLD[key] : v, x = lerp(fv, v, u), q = (J.sp || (J.sp = {}))[key] = { x, v: 0 }; return q.x; } : (key, v, kk) => mSpring(J, key, v, dt, kk); // mid-transform: driven straight from the fold, springs pick up from there
-  mm.scale.setScalar(xf < 1 ? lerp(0.5, 1, Math.min(1.06, u * 1.06)) : 1); J.head.scale.setScalar((J.hs || 1) * (xf < 1 ? clamp((xf - 0.55) / 0.3, 0.01, 1) : 1)); /* (round 36h) J.hs: 工蜂's oversized head */
+  mm.scale.setScalar((xf < 1 ? lerp(0.5, 1, Math.min(1.06, u * 1.06)) : 1) * (mm.userData.fsc || 1)); /* (round 40) fsc: a fused body is bigger */ J.head.scale.setScalar((J.hs || 1) * (xf < 1 ? clamp((xf - 0.55) / 0.3, 0.01, 1) : 1)); /* (round 36h) J.hs: 工蜂's oversized head */
   const thL = S('thL', T.thL, 420), thR = S('thR', T.thR, 420), knL = S('knL', T.knL, 420), knR = S('knR', T.knR, 420);
   const lean = S('lean', T.lean, 160), crouch = S('cr', T.crouch, 260), bob = S('bob', T.bob, 500), roll = S('roll', T.roll, 200), yawH = S('yawH', T.yawH, 200);
   const legH = (q, kq) => L.th * Math.cos(q) + L.sh * Math.cos(q - kq) + L.ft;
