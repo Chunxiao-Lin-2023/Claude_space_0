@@ -5025,17 +5025,17 @@ const inMech = p => !!(p && p.ride && p.mform === 1 && MECHS[p.veh]);
 const mechMul = () => 1 + BAL.mechUpg * Math.max(0, (W.upg || 0) - BAL.upgStart); /* (round 36n) */
 /* (round 37) 第二形态: a full 进化 meter turns a mech into its beast for a while (same hull, own attack / skill / speed / armour) */
 const EVO = [null,
-  { k: 'snake', evo: 1, name: '青蛇', from: '疾风', hp: 1000, armor: 0.75, spd: 1.95, dmg: 75, rate: 0.95, /* (round 38c) 0.42 → 0.95: slower, much heavier tail blows */ reach: 3.8, atk: 'bite', skill: 'venom', sn: '毒雾', cd: 9, col: ['#2f9a6a', '#173d2c', '#e8d24a'], glow: '#9dff6a', noise: 0,
+  { k: 'snake', evo: 1, name: '青蛇', from: '疾风', hp: 1000, armor: 0.6, /* (round 38f) 0.75 → 0.6 */ spd: 1.95, dmg: 75, rate: 0.95, /* (round 38c) 0.42 → 0.95: slower, much heavier tail blows */ reach: 3.8, atk: 'bite', skill: 'venom', sn: '毒雾', cd: 9, col: ['#2f9a6a', '#173d2c', '#e8d24a'], glow: '#9dff6a', noise: 0,
     tag: '贴地游走，最快；有人打它 35% 闪开。普攻只用尾巴：前两下甩尾横扫一圈（半径 3.6，120，抽飞 + 晕 1 秒 + 中毒），第三下尾巴从头顶砸下（前方半径 2.7，165，晕 1.6 秒）。技能「毒雾」：吐出一团毒雾（半径 4.5，9 秒，每秒 30 + 减速一半），冷却 9 秒' },
-  { k: 'dragon', evo: 1, name: '赤龙', from: '赤刃', hp: 1200, armor: 0.7, spd: 1.75, dmg: 24, rate: 0.12, reach: 6.5, atk: 'breath', skill: 'dragdash', sn: '龙腾', cd: 8, col: ['#c8282a', '#5a1012', '#f2c040'], glow: '#ffb040', noise: 7,
+  { k: 'dragon', evo: 1, name: '赤龙', from: '赤刃', hp: 1200, armor: 0.55, /* (round 38f) 0.7 → 0.55 */ spd: 1.75, dmg: 24, rate: 0.12, reach: 6.5, atk: 'breath', skill: 'dragdash', sn: '龙腾', cd: 8, col: ['#c8282a', '#5a1012', '#f2c040'], glow: '#ffb040', noise: 7,
     tag: '浮在半空的长龙。普攻「龙息」：按住朝前喷火（6.5 格扇形，每 0.12 秒 24，点着丧尸）。技能「龙腾」：卷着火朝前冲 12 格，路上的丧尸受 260 并着火，冲过的路烧 5 秒（每秒 30），冷却 8 秒' },
-  { k: 'rabbit', evo: 1, name: '玉兔', from: '工蜂', hp: 1600, armor: 0.8, spd: 1.6, dmg: 110, rate: 0.75, reach: 6.2, atk: 'ears', skill: 'moon', sn: '月落', cd: 10, col: ['#eef4f2', '#7fd8c4', '#ff9ab0'], glow: '#bff8ff', noise: 4,
-    tag: '一蹦一跳的白玉兔。普攻「耳鞭」：两只耳朵像鞭子一样甩长，往正前方抽下去（前方 6.2 格、宽 3 格一条，110，抽退 + 晕），连到第三下原地转一圈，长耳朵扫一整圈（半径 5.8，×1.6，甩飞 + 晕 1 秒）。技能「月落」：高高跳起砸向 14 格内的落点（半径 6，320，砸晕 1.5 秒），之后月光照着坑 6 秒（里面的丧尸减速、每秒 22），冷却 10 秒；照样能踩平收资源' },
-  { k: 'turtle', evo: 1, name: '玄龟', from: '铁卫', hp: 2400, armor: 0.35, spd: 0.95, dmg: 150, rate: 0.85, reach: 3, atk: 'shell', skill: 'spin', sn: '旋甲', cd: 10, col: ['#3d5a48', '#1d2a22', '#c9a446'], glow: '#7fffd0', noise: 6,
-    tag: '最硬（挨打 ×0.35），身边 5 格的队友挨打少 40%（玄甲）。普攻「甲撞」：缩进壳里往前冲 3.6 格，路上的丧尸都被撞开（150，撞晕），停下时再震一下。技能「旋甲」：缩进壳里高速旋转 6 秒，刀枪不入、跑得快，碰到的丧尸每 0.4 秒 70 并弹飞，冷却 10 秒' },
-  { k: 'phoenix', evo: 1, name: '火凤', from: '苍隼', hp: 1000, armor: 0.85, spd: 1.6, dmg: 34, rate: 0.45, range: 14, atk: 'feather', skill: 'rebirth', sn: '涅槃', cd: 16, col: ['#ff6a1e', '#9a1a10', '#ffd24a'], glow: '#ffcf60', noise: 8,
+  { k: 'rabbit', evo: 1, name: '玉兔', from: '工蜂', hp: 1600, armor: 0.45, /* (round 38f) 0.8 → 0.45 */ spd: 1.6, dmg: 110, rate: 0.75, reach: 6.2, atk: 'ears', skill: 'moon', sn: '月落', cd: 10, col: ['#eef4f2', '#7fd8c4', '#ff9ab0'], glow: '#bff8ff', noise: 4,
+    tag: '一蹦一跳的白玉兔，皮实耐打（挨打 ×0.45）。普攻「耳鞭」：两只耳朵像鞭子一样甩长，往正前方抽下去（前方 6.2 格、宽 3 格一条，110，抽退 + 晕），连到第三下原地转一圈，长耳朵扫一整圈（半径 5.8，×1.6，甩飞 + 晕 1 秒）。技能「月落」：高高跳起砸向 14 格内的落点（半径 6，320，砸晕 1.5 秒），之后月光照着坑 6 秒（里面的丧尸减速、每秒 22），冷却 10 秒；照样能踩平收资源' },
+  { k: 'turtle', evo: 1, name: '玄龟', from: '铁卫', hp: 2400, armor: 0.3, /* (round 38f) 0.35 → 0.3 */ spd: 0.95, dmg: 150, rate: 0.85, reach: 3, atk: 'shell', skill: 'spin', sn: '旋甲', cd: 10, col: ['#3d5a48', '#1d2a22', '#c9a446'], glow: '#7fffd0', noise: 6,
+    tag: '最硬（挨打 ×0.3），身边 5 格的队友挨打少 40%（玄甲）。普攻「甲撞」：缩进壳里往前冲 3.6 格，路上的丧尸都被撞开（150，撞晕），停下时再震一下。技能「旋甲」：缩进壳里高速旋转 6 秒，刀枪不入、跑得快，碰到的丧尸每 0.4 秒 70 并弹飞，冷却 10 秒' },
+  { k: 'phoenix', evo: 1, name: '火凤', from: '苍隼', hp: 1000, armor: 0.65, /* (round 38f) 0.85 → 0.65 */ spd: 1.6, dmg: 34, rate: 0.45, range: 14, atk: 'feather', skill: 'rebirth', sn: '涅槃', cd: 16, col: ['#ff6a1e', '#9a1a10', '#ffd24a'], glow: '#ffcf60', noise: 8,
     tag: '一直在天上飞。普攻「火羽」：猛扇一下翅膀，从两边翅尖射出 5 根火羽扎向目标（每根 34，14 格，点着丧尸）。技能「涅槃」：一圈烈火（半径 6，240 并着火），自己装甲回 40%，8 格内的队友回 60 血；之后 7 秒身边燃着涅槃之火（4 格内每秒 30、队友每秒回 8 血），冷却 16 秒' },
-  { k: 'bear', evo: 1, name: '铁熊', from: '重炮', hp: 2000, armor: 0.55, spd: 1.3, dmg: 135, rate: 0.6, reach: 3.4, arc: 1.5, atk: 'claw', skill: 'roar', sn: '熊吼', cd: 11, col: ['#7a5232', '#3a2616', '#d8d0c0'], glow: '#ff8a3a', noise: 9,
+  { k: 'bear', evo: 1, name: '铁熊', from: '重炮', hp: 2000, armor: 0.45, /* (round 38f) 0.55 → 0.45 */ spd: 1.3, dmg: 135, rate: 0.6, reach: 3.4, arc: 1.5, atk: 'claw', skill: 'roar', sn: '熊吼', cd: 11, col: ['#7a5232', '#3a2616', '#d8d0c0'], glow: '#ff8a3a', noise: 9,
     tag: '每杀一只回 1.5% 装甲。普攻「熊掌」：左右掌轮流举高拍下去（前方半径 1.9，135），第三下人立双掌砸地（半径 2.6，×1.5）。技能「熊吼」：一吼震住 9 格内的丧尸 3.5 秒（4 格内再受 120），之后 12 秒狂暴：伤害 +40%、出手更快，冷却 11 秒' },
 ];
 const mechOf = p => (p && p.evoOn && EVO[p.veh]) || MECHS[p && p.veh] || MECHS[4]; /* (round 37) in beast form its EVO entry stands in for the mech */
@@ -5112,7 +5112,7 @@ const ZT = {
   shade: { name: '隐身者', hp: 420, spd: 1.5, r: 0.3, h: 1.25, dmg: 12, bdmg: 10, cd: 0.9, sc: 1.2, look: 'walker', skin: '#50505e', elite: { k: 'cloak', cd: 6, col: '#c0c0e0', tip: '隐身摸到你身边偷袭，留意空气里的扭曲，附近炸一下就现形' } },
 };
 const ELITES = ['blinker', 'caller', 'warden', 'shade'];
-const BUILD_TAG = '第 38 轮之五'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
+const BUILD_TAG = '第 38 轮之六'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
 // aim assist (SET.assist): fire-button lock range (x weapon range), lock-on time before it fires, spread while auto-aimed, mouse/finger magnet
 const PORT = 1.25; // firing port: your own shots pass a wall / door you built if it is this close to you
 const ASSIST = [{ name: '关', range: 0, acq: 0, spread: 1, mag: 0 }, { name: '标准', range: 0.75, acq: 0.3, spread: 1.5, mag: 1 }, { name: '强', range: 1, acq: 0, spread: 1, mag: 1 }];
@@ -5251,7 +5251,7 @@ const BAL = {
   smokeR: 3.8, smokeT: 10, smokeConf: 1.2,                      // smoke: zombies in the cloud lose you, wander and don't bite (and for 1.2 s after leaving)
   blastR: 4.4, blastDmg: 70, blastKB: 24, blastStun: 1.6,       // blast: little damage, throws everything out of the way (clears a path)
   tankDmg: 120, tankR: 2.3, tankRate: 1.45, /* (round 36b) 1.6 → 1.45 */ tankRange: 20, tankCap: 200, tankStart: 100, // (round 31) tank cannon: a shell that bursts where it hits
-  mechBat: 120, mechLow: 20, mechPass: 0.1, mechRegen: 0.015, batRegen: 0.4, xformT: 1.0, // (round 34b) mech energy (s), low warning, share of a hit the pilot still feels, hull / energy coming back while not a mech (/s), transform time
+  mechBat: 120, mechLow: 20, mechPass: 0.1, evoPass: 0.05, /* (round 38f) in beast form only half as much gets through to the pilot */ mechRegen: 0.015, batRegen: 0.4, xformT: 1.0, // (round 34b) mech energy (s), low warning, share of a hit the pilot still feels, hull / energy coming back while not a mech (/s), transform time
   gyroDmg: 12, gyroRate: 0.11, /* (round 36b) 0.12 → 0.11 */ gyroSpread: 0.06, gyroRange: 22, gyroCap: 500, gyroStart: 250, // (round 30) gyrocopter chin gun: its own ammo, bought in the shop
   flyHover: 2.2, flyClimb: 0.8, flyDrop: 0.6, fuelLow: 10, refuelT: 4, // (round 29) gyrocopter: cruise 2.2 floors over whatever is below, climb / descend rate (of the take-off curve per second), warn at 10 s of fuel, 4 s to refuel indoors
   zSlope: 0.45, zSlopeC: 0.7, // (round 36) zombie speed going UP a hill slope (climbers barely mind)
@@ -7049,7 +7049,7 @@ function hurtPlayer(p, dmg, src) {
   if (inMech(p)) { // (round 34b) the hull takes the hit (by how armoured that mech is); a little still gets through to you; at zero it falls back into a vehicle
     const M = mechOf(p); p.mh = p.mh || []; p.mh[p.veh] = Math.max(0, mhpOf(p) - dmg * M.armor); emit({ k: 'phurt', p: p.i, d: 0 });
     if (p.mh[p.veh] <= 0) mechEject(p, M.name + '的装甲被打穿了，变回载具：装甲会慢慢恢复，商店里能马上修好');
-    dmg *= BAL.mechPass; if (dmg < 0.5) return;
+    dmg *= p.evoOn ? BAL.evoPass : BAL.mechPass; if (dmg < 0.5) return;
   }
   if (p.ride && VEH[p.veh] && VEH[p.veh].armor) dmg *= VEH[p.veh].armor;                                   // (round 22) inside the armoured car
   else if (paxVeh(p) && paxVeh(p).armor && paxVeh(p).port) dmg *= paxVeh(p).armor; /* (round 36n) the armoured car's back seat is inside the armour too */

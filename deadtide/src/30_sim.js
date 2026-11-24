@@ -805,7 +805,7 @@ function hurtPlayer(p, dmg, src) {
   if (inMech(p)) { // (round 34b) the hull takes the hit (by how armoured that mech is); a little still gets through to you; at zero it falls back into a vehicle
     const M = mechOf(p); p.mh = p.mh || []; p.mh[p.veh] = Math.max(0, mhpOf(p) - dmg * M.armor); emit({ k: 'phurt', p: p.i, d: 0 });
     if (p.mh[p.veh] <= 0) mechEject(p, M.name + '的装甲被打穿了，变回载具：装甲会慢慢恢复，商店里能马上修好');
-    dmg *= BAL.mechPass; if (dmg < 0.5) return;
+    dmg *= p.evoOn ? BAL.evoPass : BAL.mechPass; if (dmg < 0.5) return;
   }
   if (p.ride && VEH[p.veh] && VEH[p.veh].armor) dmg *= VEH[p.veh].armor;                                   // (round 22) inside the armoured car
   else if (paxVeh(p) && paxVeh(p).armor && paxVeh(p).port) dmg *= paxVeh(p).armor; /* (round 36n) the armoured car's back seat is inside the armour too */

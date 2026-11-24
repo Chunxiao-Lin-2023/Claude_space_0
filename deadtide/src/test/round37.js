@@ -36,7 +36,11 @@ const { chromium } = require('playwright');
     me.veh = 4; me.ride = true; me.mform = 1; me.mh = []; me.evoOn = true; me.spinT = 2; const h0 = mhpOf(me); hurtPlayer(me, 100); out.spin = h0 - mhpOf(me); me.spinT = 0; hurtPlayer(me, 100); out.shell = Math.round(h0 - mhpOf(me));
     me.veh = 1; me.mh = []; let dodged = 0; for (let k = 0; k < 200; k++) { me.hp = me.maxHp; me.dead = false; const h = mhpOf(me); hurtPlayer(me, 10); if (mhpOf(me) === h) dodged++; me.mh = []; } out.dodge = dodged;
     me.evoOn = false; me.ride = false; me.mform = 0; return out; });
-  check('玄龟 spinning takes nothing, in the shell ×0.35; 青蛇 slips ~35% of hits', s.spin === 0 && s.shell === 35 && s.dodge > 45 && s.dodge < 95, JSON.stringify(s));
+  check('玄龟 spinning takes nothing, in the shell ×0.3; 青蛇 slips ~35% of hits', s.spin === 0 && s.shell === 30 && s.dodge > 45 && s.dodge < 95, JSON.stringify(s));
+  s = await S(() => { const me = W.p[ME], out = {}; me.ride = true; me.mform = 1; me.mtr = 0; me.bat = 120; me.spinT = 0; // (round 38f) beasts are tougher, 玉兔 most of all; only 5% reaches the pilot
+    for (const v of [2, 3, 4, 5, 6]) { me.veh = v; me.mh = []; me.evoOn = true; me.hp = me.maxHp; const h0 = mhpOf(me), p0 = me.hp; hurtPlayer(me, 100); out[v] = [Math.round(h0 - mhpOf(me)), Math.round((p0 - me.hp) * 10) / 10]; }
+    me.evoOn = false; me.veh = 3; me.mh = []; me.hp = me.maxHp; const h1 = mhpOf(me), p1 = me.hp; hurtPlayer(me, 100); out.mech = [Math.round(h1 - mhpOf(me)), Math.round((p1 - me.hp) * 10) / 10]; me.ride = false; me.mform = 0; return out; });
+  check('beast hulls: 赤龙 55 · 玉兔 45 · 玄龟 30 · 火凤 65 · 铁熊 45 per 100 (工蜂 still 90); pilot gets 5 in beast form, 10 in a mech', s[2][0] === 55 && s[3][0] === 45 && s[4][0] === 30 && s[5][0] === 65 && s[6][0] === 45 && s.mech[0] === 90 && s[3][1] === 5 && s.mech[1] === 10, JSON.stringify(s));
   check('no page errors', !errs.length, errs.join(' | '));
   console.log(ok ? 'ALL PASS' : 'SOME FAIL'); await b.close(); process.exit(ok ? 0 : 1);
 })();
