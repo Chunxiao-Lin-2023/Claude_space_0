@@ -501,3 +501,10 @@
 - 工蜂 parcels burst at the flyer's height; mech guns aim steeply up at flyers (dz clamp 0.4 → 2.2).
 - Crosshair: 3 px ring with dark outline and faint dark disc, four tick marks, 6 px centre dot, minimum size 12 → 22 px.
 - test/round44.js: 12 mechs/beasts × 7 flyer types, near and mid range — all hit.
+
+## Round 45 — room-from-save reaches the teammate whole; 风暴陨击 reworked; version check
+- Bug: the world a room opened from a save sends (`wsync`, 80–210 KB) was one WebRTC message; Safari / iPad (64 KB) and Chrome (256 KB) drop oversize messages silently, so the teammate saw the freshly generated map. `sendRaw` now splits anything over 15 KB (snapshots: 60 KB) into numbered `chk` pieces on the reliable channel; `netUnchunk` reassembles.
+- The teammate's 神兽 progress (`evo`) is restored from the save; `NET.obv / tkv` reset at game start so the objective / tasks always reach the guest.
+- 风暴陨击 (铁卫 + 苍隼): tornado on the aim point (≤ 9; was 2 ahead), 1.3 → 2.2 s, pull 9 → 10 at speed 6 → 9 with ≥ 60 % pull at the edge, lifts zombies within 3, 0 → 15 / 0.5 s; the fusion rides up and lands on the eye: r 4 → 5.5, 320 → 360. Walking crowd of 20: 10566 → 19977 total, 15 → 20 hit.
+- Version check: lobby / hello carry `BUILD_TAG`; a mismatch shows a warning in the lobby and twice in game (old cached page → refresh).
+- test/round45.js.

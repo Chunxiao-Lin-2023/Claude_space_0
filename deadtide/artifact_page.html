@@ -697,6 +697,7 @@ body:not(.touch) #hTL .items{flex-wrap:wrap;gap:1px 10px}body:not(.touch):not([d
     <div class="lbl">难度 <span id="lDiffNote"></span></div>
     <div class="seg" id="lDiffSeg"><button data-d="easy">简单</button><button data-d="normal">普通</button><button data-d="hard">困难</button></div>
     <div class="status" id="lStatus"></div>
+    <div class="status hidden" id="lVer" style="color:#ffb35a;font-weight:600;max-width:440px;margin:6px auto 0;line-height:1.45"></div>
     <div class="btns"><button id="lReady" class="hidden">准备</button><button id="lStart" class="primary hidden" disabled>开始守夜</button><button id="lLeave" class="ghost">离开</button></div>
   </div>
 </div>
@@ -5164,7 +5165,7 @@ const ZT = {
   shade: { name: '隐身者', hp: 420, spd: 1.5, r: 0.35, h: 1.6, dmg: 12, bdmg: 10, cd: 0.9, sc: 1.55, look: 'walker', skin: '#50505e', elite: { k: 'cloak', cd: 6, col: '#c0c0e0', tip: '隐身摸到你身边偷袭，留意空气里的扭曲，附近炸一下就现形' } },
 };
 const ELITES = ['blinker', 'caller', 'warden', 'shade'];
-const BUILD_TAG = '第 44 轮'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
+const BUILD_TAG = '第 45 轮'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
 // aim assist (SET.assist): fire-button lock range (x weapon range), lock-on time before it fires, spread while auto-aimed, mouse/finger magnet
 const PORT = 1.25; // firing port: your own shots pass a wall / door you built if it is this close to you
 const ASSIST = [{ name: '关', range: 0, acq: 0, spread: 1, mag: 0 }, { name: '标准', range: 0.75, acq: 0.3, spread: 1.5, mag: 1 }, { name: '强', range: 1, acq: 0, spread: 1, mag: 1 }];
@@ -5303,7 +5304,7 @@ const BAL = {
   smokeR: 3.8, smokeT: 10, smokeConf: 1.2,                      // smoke: zombies in the cloud lose you, wander and don't bite (and for 1.2 s after leaving)
   blastR: 4.4, blastDmg: 70, blastKB: 24, blastStun: 1.6,       // blast: little damage, throws everything out of the way (clears a path)
   tankDmg: 120, tankR: 2.3, tankRate: 1.45, /* (round 36b) 1.6 → 1.45 */ tankRange: 20, tankCap: 200, tankStart: 100, // (round 31) tank cannon: a shell that bursts where it hits
-  mechBat: 120, mechLow: 20, mechPass: 0.1, evoPass: 0.05, biteWU: 0.45, biteDrive: 2.2, bpOdds: 0.035, bpPity: 32, aaZ: 5.8, aaR: 10, aaMul: 0.8, aaSpd: 24, /* (round 44) anti-air: melee reaches flyers up to 5.8 above; a flyer out of reach (≤ 10) gets a thrown shot ×0.8 */ fUltCd: 18, fUltCdS: 22, /* (round 43) fusion ultimates: 18 s (a mutated same-kind one 22 s) */ fFlyT: 4, fDiveR: 8, fWaveL: 8, fWaveMul: 0.7, fGlide: 1.05, fWhirlR: 8, fWhirlT: 2.5, fWhirlPull: 3.5, fWhirlDmg: 10, /* (round 43) 苍隼 fusions: 4 s in the air, a dive ≤ 8 tiles, the blade wave 8 × 0.7; heavy ones glide ×1.05, a whirlwind ≤ 8 away for 2.5 s pulling in 3.5, 10 / 0.5 s */ fShield: 0.6, fShieldArc: 1.05, fReact: 0.9, fBackArc: 2.1, sbNear: 3.5, sbRange: 10, sbR: 2.6, sbT: 1.2, sbMul: 0.74, /* (round 43) fusion parts: the tower shield ×0.6 from the front ±60°, 重炮's reactive armour ×0.9, the partner's arm strikes behind past 120°; shield slam within 3.5 (r 2.6), boomerang to 10 and back in 1.2 s (70 = 95 × 0.74 per pass) */ bearSee: 4, bearLunge: 2.5, bearLunge3: 3.5, bearRam: 0.5, /* (round 43) 铁熊 charges only at a zombie within 4, 2.5 tiles (the pounce 3.5), ×0.5 to what it rams */ rfRange: 9, rfMul: 1.4, rfR: 2.4, rfKB: 9, rfBack: 0.5, /* (round 43) 铁卫's rocket fist: reach, × its blow, burst radius, knock-back, time to come back */ arrowSpd: 24, arrowRange: 18, bowLock: 0.55, bowFire: 0.9, gooWind: 0.7, gooFly: 0.95, gooR: 1.7, gooT: 5, gooSlow: 0.5, slamRise: 0.35, slamHit: 0.95, slamR: 1.9, slamStuck: 1.7, slamKB: 7, gargStone: 0.3, gargOpen: 1.5, /* (round 41) the new flyers */ capOdds: 0.03, capPity: 45, capMax: 4, capT: 45, /* (round 40d) fusion capsules: 3% of searches (at the latest every 45th) while someone has a mech, hold 4, a fusion lasts 45 s */ /* (round 38j) a search finds a blueprint 3.5% of the time, at the latest every 32 searches (≈ one in 20) */ mechDmg: 1.5, mechTough: 1.5, bigHp: 1.25, /* (round 38g) mechs / beasts hit 1.5× harder and lose hull 1.5× slower; (round 38h) only 怪兽 get more hp (1.5 → 1.25, and 尸王 / 巨尸 / 能力者 back to 1): the control skills carry the difficulty now. Everything that isn't a mech does ×bigHp to a 怪兽, so on foot nothing changes */ /* (round 38g) on foot / in a vehicle a zombie must hold on 0.45 s before the first bite; a vehicle moving faster than 2.2 isn't bitten */ /* (round 38f) in beast form only half as much gets through to the pilot */ mechRegen: 0.015, batRegen: 0.4, xformT: 1.0, // (round 34b) mech energy (s), low warning, share of a hit the pilot still feels, hull / energy coming back while not a mech (/s), transform time
+  mechBat: 120, mechLow: 20, mechPass: 0.1, evoPass: 0.05, biteWU: 0.45, biteDrive: 2.2, bpOdds: 0.035, bpPity: 32, aaZ: 5.8, aaR: 10, aaMul: 0.8, aaSpd: 24, /* (round 44) anti-air: melee reaches flyers up to 5.8 above; a flyer out of reach (≤ 10) gets a thrown shot ×0.8 */ fStormT: 2.2, fStormD: 9, fStormPull: 10, fStormSpd: 9, fStormDmg: 15, fStormR: 5.5, fStormHit: 360, /* (round 45) 风暴陨击 (铁卫 + 苍隼): tornado 2.2 s on the aim point (≤ 9), pulls from 10 at ≥ 9×0.6 /s, 15 / 0.5 s, lifts within 3; landing r 5.5, 360 */ fUltCd: 18, fUltCdS: 22, /* (round 43) fusion ultimates: 18 s (a mutated same-kind one 22 s) */ fFlyT: 4, fDiveR: 8, fWaveL: 8, fWaveMul: 0.7, fGlide: 1.05, fWhirlR: 8, fWhirlT: 2.5, fWhirlPull: 3.5, fWhirlDmg: 10, /* (round 43) 苍隼 fusions: 4 s in the air, a dive ≤ 8 tiles, the blade wave 8 × 0.7; heavy ones glide ×1.05, a whirlwind ≤ 8 away for 2.5 s pulling in 3.5, 10 / 0.5 s */ fShield: 0.6, fShieldArc: 1.05, fReact: 0.9, fBackArc: 2.1, sbNear: 3.5, sbRange: 10, sbR: 2.6, sbT: 1.2, sbMul: 0.74, /* (round 43) fusion parts: the tower shield ×0.6 from the front ±60°, 重炮's reactive armour ×0.9, the partner's arm strikes behind past 120°; shield slam within 3.5 (r 2.6), boomerang to 10 and back in 1.2 s (70 = 95 × 0.74 per pass) */ bearSee: 4, bearLunge: 2.5, bearLunge3: 3.5, bearRam: 0.5, /* (round 43) 铁熊 charges only at a zombie within 4, 2.5 tiles (the pounce 3.5), ×0.5 to what it rams */ rfRange: 9, rfMul: 1.4, rfR: 2.4, rfKB: 9, rfBack: 0.5, /* (round 43) 铁卫's rocket fist: reach, × its blow, burst radius, knock-back, time to come back */ arrowSpd: 24, arrowRange: 18, bowLock: 0.55, bowFire: 0.9, gooWind: 0.7, gooFly: 0.95, gooR: 1.7, gooT: 5, gooSlow: 0.5, slamRise: 0.35, slamHit: 0.95, slamR: 1.9, slamStuck: 1.7, slamKB: 7, gargStone: 0.3, gargOpen: 1.5, /* (round 41) the new flyers */ capOdds: 0.03, capPity: 45, capMax: 4, capT: 45, /* (round 40d) fusion capsules: 3% of searches (at the latest every 45th) while someone has a mech, hold 4, a fusion lasts 45 s */ /* (round 38j) a search finds a blueprint 3.5% of the time, at the latest every 32 searches (≈ one in 20) */ mechDmg: 1.5, mechTough: 1.5, bigHp: 1.25, /* (round 38g) mechs / beasts hit 1.5× harder and lose hull 1.5× slower; (round 38h) only 怪兽 get more hp (1.5 → 1.25, and 尸王 / 巨尸 / 能力者 back to 1): the control skills carry the difficulty now. Everything that isn't a mech does ×bigHp to a 怪兽, so on foot nothing changes */ /* (round 38g) on foot / in a vehicle a zombie must hold on 0.45 s before the first bite; a vehicle moving faster than 2.2 isn't bitten */ /* (round 38f) in beast form only half as much gets through to the pilot */ mechRegen: 0.015, batRegen: 0.4, xformT: 1.0, // (round 34b) mech energy (s), low warning, share of a hit the pilot still feels, hull / energy coming back while not a mech (/s), transform time
   gyroDmg: 12, gyroRate: 0.11, /* (round 36b) 0.12 → 0.11 */ gyroSpread: 0.06, gyroRange: 22, gyroCap: 500, gyroStart: 250, // (round 30) gyrocopter chin gun: its own ammo, bought in the shop
   flyHover: 2.2, flyClimb: 0.8, flyDrop: 0.6, fuelLow: 10, refuelT: 4, // (round 29) gyrocopter: cruise 2.2 floors over whatever is below, climb / descend rate (of the take-off curve per second), warn at 10 s of fuel, 4 s to refuel indoors
   zSlope: 0.45, zSlopeC: 0.7, // (round 36) zombie speed going UP a hill slope (climbers barely mind)
@@ -8510,10 +8511,10 @@ function fuseWhirl(p, T, a) { const F = fusOf(p), D = F ? W.p[F.d] || p : p, tgt
   (W.whirl = W.whirl || []).push({ x: E.x, y: E.y, z: D.z, t: BAL.fWhirlT, tk: 0, o: p.i }); p.mAim = aa;
   emit({ k: 'mpunch', o: p.i, s: p.mside, c: 0, a: r2(aa), fm: FUS_ALT ? 1 : 0, sk: 0 }); emit({ k: 'whirl', o: F ? F.a : p.i, x0: r2(D.x), y0: r2(D.y), x: r2(E.x), y: r2(E.y), z: r2(D.z), t: BAL.fWhirlT }); noiseAt(E.x, E.y, 6, D.z); }
 function whirlStep(dt) { if (!W.whirl || !W.whirl.length) return;
-  for (const w of W.whirl) { w.t -= dt; w.tk -= dt; const tick = w.tk <= 0; if (tick) w.tk = 0.5; const o = W.p[w.o], PR = w.pull || BAL.fWhirlPull, dm = w.dmg != null ? w.dmg : BAL.fWhirlDmg, sp = w.big ? 6 : 3.2; /* (round 43) the ultimates use bigger / stronger ones */
+  for (const w of W.whirl) { w.t -= dt; w.tk -= dt; const tick = w.tk <= 0; if (tick) w.tk = 0.5; const o = W.p[w.o], PR = w.pull || BAL.fWhirlPull, dm = w.dmg != null ? w.dmg : BAL.fWhirlDmg, sp = w.spd || (w.big ? 6 : 3.2); /* (round 43) the ultimates use bigger / stronger ones; (round 45) w.spd: 风暴陨击 pulls hard all the way out */
     for (const z of W.zs) { if (z.hp <= 0 || z.hidden || Math.abs(z.z - w.z) > 3) continue; const dx = w.x - z.x, dy = w.y - z.y, d = Math.hypot(dx, dy); if (d > PR + z.r || ZT[z.k].boss || ZT[z.k].kaiju) continue;
-      if (d > 0.35) { const k = Math.min(d - 0.3, sp * dt * (1.2 - d / PR)); const nx = z.x + dx / d * k, ny = z.y + dy / d * k; if (inMap(Math.floor(nx), Math.floor(ny)) && standable(Math.floor(nx), Math.floor(ny), z.L, 'z')) { z.x = nx; z.y = ny; } }
-      if (w.lift && !z.air && d < 2.2 && !ZT[z.k].fly) z.air = { t: 0, T: 1.0, h: 1.8, vx: 0, vy: 0 };
+      if (d > 0.35) { const k = Math.min(d - 0.3, sp * dt * Math.max(w.spd ? 0.6 : 0, 1.2 - d / PR)); const nx = z.x + dx / d * k, ny = z.y + dy / d * k; if (inMap(Math.floor(nx), Math.floor(ny)) && standable(Math.floor(nx), Math.floor(ny), z.L, 'z')) { z.x = nx; z.y = ny; } }
+      if (w.lift && !z.air && d < (w.big > 1 ? 3 : 2.2) && !ZT[z.k].fly) z.air = { t: 0, T: 1.0, h: w.big > 1 ? 2.8 : 1.8, vx: 0, vy: 0 };
       z.stun = Math.max(z.stun || 0, 0.12); if (tick && dm) hurtZombie(z, dm, o, 0, 0, true); } }
   W.whirl = W.whirl.filter(w => w.t > 0); }
 
@@ -8587,9 +8588,12 @@ const FUS_ULT = {
   '3-6'(c) { const { D, G, tx, ty, a, m, F } = c; F.ultT = W.t + 0.6; const d0 = Math.min(16, Math.max(5, c.dist)), cx = D.x + Math.cos(a) * d0, cy = D.y + Math.sin(a) * d0;
     [[0, 0], [1.8, 1.2], [-1.6, -1.4]].forEach(([ox, oy], k) => { const x = cx + ox, y = cy + oy, z = FU.gz(x, y) + 4.5, t = 0.45 + k * 0.15; emit({ k: 'cshot', o: G.i, x: r2(D.x), y: r2(D.y), z: r2(D.z + 2.6), e: [r2(x), r2(y), r2(z)], t: r2(t) });
       FU.later(t, () => { FU.fx({ ek: 'burst', o: F.a, x: r2(x), y: r2(y), z: r2(z) }); for (let q = 0; q < 8; q++) { const aa = q / 8 * Math.PI * 2 + rand() * 0.4, r = 0.8 + rand() * 2, bx = x + Math.cos(aa) * r, by = y + Math.sin(aa) * r; FU.parcel(G, { x, y, z }, bx, by, 0.35 + rand() * 0.15, 1.4, 55 * m); } }); }); void tx; void ty; },
-  '4-5'(c) { const { D, G, a, m, F } = c; F.ultT = W.t + 1.7; const cx = D.x + Math.cos(a) * 2, cy = D.y + Math.sin(a) * 2; (W.whirl = W.whirl || []).push({ x: cx, y: cy, z: D.z, t: 1.3, tk: 0, o: G.i, pull: 9, dmg: 0, big: 1 }); emit({ k: 'whirl', o: F.a, x0: r2(D.x), y0: r2(D.y), x: r2(cx), y: r2(cy), z: r2(D.z), t: 1.3, big: 1 });
-    FU.later(1.2, () => FU.fx({ ek: 'hop', o: F.a, x: r2(D.x), y: r2(D.y), z: r2(D.z), a: r2(a) }));
-    FU.later(1.55, () => { const hx = D.x + Math.cos(a) * 2, hy = D.y + Math.sin(a) * 2; FU.area(G, hx, hy, D.z, 4, 320 * m, { kb: 8, st: 1.2, fall: 0.3 }); FU.fx({ ek: 'meteor', o: F.a, x: r2(hx), y: r2(hy), z: r2(D.z), r: 4 }); (W.whirl = W.whirl || []).push({ x: hx, y: hy, z: D.z, t: 3, tk: 0, o: G.i, pull: 3.5, dmg: 20 }); emit({ k: 'whirl', o: F.a, x0: r2(hx), y0: r2(hy), x: r2(hx), y: r2(hy), z: r2(D.z), t: 3 }); noiseAt(hx, hy, 14, D.z); }); },
+  '4-5'(c) { const { D, G, a, m, F } = c, T0 = BAL.fStormT, d0 = Math.min(BAL.fStormD, Math.max(4, c.dist || 6)), E = evoLineEnd(D, a, d0); F.ultT = W.t + T0 + 0.5; /* (round 45) 风暴陨击: a big tornado on the aim point pulls the crowd in and lifts it; 飞天要塞 rides up with it and comes down on its eye */
+    (W.whirl = W.whirl || []).push({ x: E.x, y: E.y, z: D.z, t: T0, tk: 0, o: G.i, pull: BAL.fStormPull, dmg: BAL.fStormDmg * m, lift: 1, big: 2, spd: BAL.fStormSpd }); emit({ k: 'whirl', o: F.a, x0: r2(D.x), y0: r2(D.y), x: r2(E.x), y: r2(E.y), z: r2(D.z), t: T0, big: 2 });
+    fuseLift(F, T0 + 0.3); noiseAt(E.x, E.y, 14, D.z);
+    FU.later(T0 - 0.35, () => FU.fx({ ek: 'hop', o: F.a, x: r2(D.x), y: r2(D.y), z: r2(D.z), a: r2(Math.atan2(E.y - D.y, E.x - D.x)) }));
+    FU.later(T0, () => { const L = fuseSetDown(F, E.x, E.y) || E, hx = L.x, hy = L.y, hz = L.z != null ? L.z : D.z; FU.area(G, hx, hy, hz, BAL.fStormR, BAL.fStormHit * m, { kb: 8, st: 1.5, fall: 0.3 }); FU.fx({ ek: 'meteor', o: F.a, x: r2(hx), y: r2(hy), z: r2(hz), r: BAL.fStormR });
+      (W.whirl = W.whirl || []).push({ x: hx, y: hy, z: hz, t: 3, tk: 0, o: G.i, pull: 4.5, dmg: 20 * m }); emit({ k: 'whirl', o: F.a, x0: r2(hx), y0: r2(hy), x: r2(hx), y: r2(hy), z: r2(hz), t: 3 }); noiseAt(hx, hy, 14, hz); }); },
   '4-6'(c) { const { D, G, m, F } = c; F.ultT = W.t + 1.0; FU.area(G, D.x, D.y, D.z, BAL.quakeR, BAL.quakeDmg * m, { up: 2.6, upT: 1.4, out: 1.2, st: 2, fall: 0.45 }); FU.fx({ ek: 'quake', o: F.a, x: r2(D.x), y: r2(D.y), z: r2(D.z), r: BAL.quakeR });
     FU.later(0.45, () => { const air = W.zs.filter(z => z.hp > 0 && z.air && Math.hypot(z.x - D.x, z.y - D.y) < 10).slice(0, 3), from = { x: D.x, y: D.y, z: D.z + 2.6 }; for (let k = 0; k < 3; k++) { const z = air[k]; const x = z ? z.x : D.x + Math.cos(c.a + k) * 4, y = z ? z.y : D.y + Math.sin(c.a + k) * 4; FU.shell(G, from, x, y, 0.15 + k * 0.12, 2.2, 165 * m); } }); },
   '5-6'(c) { const { D, G, a, m, F } = c; F.ultT = W.t + 2.4; const d0 = Math.min(14, Math.max(4, c.dist)), E = evoLineEnd(D, a, d0); (W.whirl = W.whirl || []).push({ x: E.x, y: E.y, z: D.z, t: 4, tk: 0, o: G.i, pull: 7, dmg: 10, lift: 1 }); emit({ k: 'whirl', o: F.a, x0: r2(D.x), y0: r2(D.y), x: r2(E.x), y: r2(E.y), z: r2(D.z), t: 4, big: 1 });
@@ -10231,9 +10235,10 @@ function fusFxTick(dt) {
       fxAdd({ kind: 'cres', x, y, z, s0: 1.25, s1: 1.3, life: 0.05, col: '#ffa040', op: 0.85 * (1 - u * 0.4), yaw: w.a }); fxAdd({ kind: 'cres', x, y, z: z + 0.01, s0: 1.0, s1: 1.05, life: 0.05, col: '#ffffff', op: 0.6, yaw: w.a });
       if (FXR() < 0.7) addP({ x: x + frnd(-0.4, 0.4), y: y + frnd(-0.4, 0.4), z, vx: 0, vy: 0, vz: 0.3, g: 0, col: '#ffd0a0', s: 0.06, life: 0.25 }); } RND.bwaves = RND.bwaves.filter(w => w.t < w.T); }
   if (RND.whirls && RND.whirls.length) { for (const w of RND.whirls) { w.t += dt; const k = Math.min(1, w.t / 0.25) * (w.t > w.T - 0.3 ? Math.max(0, (w.T - w.t) / 0.3) : 1); if (k <= 0) continue;
-      for (let q = 0; q < (w.big ? 7 : 3); q++) { const h = FXR() * (w.big ? 4.2 : 2.6), a = W.t * 9 + FXR() * 6.28 + h, r = (0.4 + h * 0.55) * k * (w.big ? 1.5 : 1); addP({ x: w.x + Math.cos(a) * r, y: w.y + Math.sin(a) * r, z: w.z + 0.1 + h, vx: -Math.sin(a) * 4, vy: Math.cos(a) * 4, vz: 0.6, g: 0, col: q ? '#dff8ff' : '#9fe8ff', s: 0.07, life: 0.3 }); }
-      if (FXR() < 0.5) addP({ x: w.x + frnd(-2.5, 2.5), y: w.y + frnd(-2.5, 2.5), z: w.z + 0.2, vx: 0, vy: 0, vz: 0.8, g: -0.2, col: '#a89a80', s: 0.16, life: 0.6, smoke: 1 });
-      if (thr('wh' + w.id, 0.12)) { fxAdd({ kind: 'wave', x: w.x, y: w.y, z: w.z + 0.5, s0: 1.4 * k, s1: 0.6 * k, life: 0.3, col: '#9fe8ff', op: 0.3, sy: 1.6 }); fxAdd({ kind: 'shock', x: w.x, y: w.y, z: w.z + 0.05, s0: 3.6, s1: 1.0, life: 0.35, col: '#cfefff', op: 0.35 }); } }
+      const H = w.big > 1; /* (round 45) 风暴陨击's tornado: taller, wider, denser */ for (let q = 0; q < (H ? 14 : w.big ? 7 : 3); q++) { const h = FXR() * (H ? 7 : w.big ? 4.2 : 2.6), a = W.t * (H ? 7 : 9) + FXR() * 6.28 + h, r = (0.4 + h * 0.55) * k * (H ? 1.9 : w.big ? 1.5 : 1); addP({ x: w.x + Math.cos(a) * r, y: w.y + Math.sin(a) * r, z: w.z + 0.1 + h, vx: -Math.sin(a) * 4, vy: Math.cos(a) * 4, vz: 0.6, g: 0, col: q ? '#dff8ff' : '#9fe8ff', s: 0.07, life: 0.3 }); }
+      for (let q = 0; q < (H ? 3 : 1); q++) if (FXR() < 0.5) addP({ x: w.x + frnd(-2.5, 2.5) * (H ? 2.4 : 1), y: w.y + frnd(-2.5, 2.5) * (H ? 2.4 : 1), z: w.z + 0.2, vx: 0, vy: 0, vz: 0.8, g: -0.2, col: H ? '#c8c2b4' : '#a89a80', s: 0.16, life: 0.6, smoke: 1 });
+      if (H && thr('whH' + w.id, 0.05)) { const a = FXR() * 6.28, r = frnd(5, 9.5); addP({ x: w.x + Math.cos(a) * r, y: w.y + Math.sin(a) * r, z: w.z + 0.3, vx: -Math.cos(a) * 7 - Math.sin(a) * 5, vy: -Math.sin(a) * 7 + Math.cos(a) * 5, vz: 0.4, g: 0, col: '#dff8ff', s: 0.09, life: 0.7 }); } /* the inflow: streaks rushing in from the edge */
+      if (thr('wh' + w.id, 0.12)) { fxAdd({ kind: 'wave', x: w.x, y: w.y, z: w.z + 0.5, s0: 1.4 * k, s1: 0.6 * k, life: 0.3, col: '#9fe8ff', op: 0.3, sy: 1.6 }); fxAdd({ kind: 'shock', x: w.x, y: w.y, z: w.z + 0.05, s0: H ? 9 : 3.6, s1: 1.0, life: H ? 0.5 : 0.35, col: '#cfefff', op: 0.35 }); if (H) fxAdd({ kind: 'wave', x: w.x, y: w.y, z: w.z + 3, s0: 3.2 * k, s1: 1.6 * k, life: 0.3, col: '#cfefff', op: 0.25, sy: 2.6 }); } }
     RND.whirls = RND.whirls.filter(w => w.t < w.T); }
   // the landing spot, the last half second of the flight: a ring on the driver's aim point (≤ 8)
   const F = W.fus; if (F && fusFlyKind(F) === 1) { const left = F.fly ? F.fly.T - F.fly.t : F.flyL || 0; if (left > 0 && left < 0.55) { const D = W.p[F.d]; if (D) { const tg = D.aimPt && !D.aimPt.auto ? D.aimPt : { x: D.x + Math.cos(D.aim) * 6, y: D.y + Math.sin(D.aim) * 6 }, a = Math.atan2(tg.y - D.y, tg.x - D.x), dd = Math.min(BAL.fDiveR, Math.hypot(tg.x - D.x, tg.y - D.y)), x = D.x + Math.cos(a) * dd, y = D.y + Math.sin(a) * dd, gz = surfZ(x, y, skyTop(x, y));
@@ -14652,11 +14657,19 @@ const genCode = () => Array.from({ length: 4 }, () => CODE_CH[Math.floor(Math.ra
 const NET = { peer: null, code: '', ctl: null, snap: null, gctl: null, gsnap: null, guestName: '', hostName: '', ready: false, seen: 0, sT: 0, iT: 0, inN: 0, lastT: 0, diff: 'normal' };
 function loadPeer() { return new Promise((res, rej) => { if (window.Peer) return res(); let i = 0; const next = () => { if (i >= PEER_SRC.length) return rej(new Error('load')); const sc = document.createElement('script'); sc.src = PEER_SRC[i++]; sc.onload = () => window.Peer ? res() : next(); sc.onerror = next; document.head.appendChild(sc); }; next(); }); }
 const linkUp = () => NETROLE === 'host' ? !!(NET.gctl && NET.gctl.open) : NETROLE === 'guest' ? !!(NET.ctl && NET.ctl.open) : NETROLE === 'solo';
-function sendRaw(c, o) { try { if (c && c.open) c.send(JSON.stringify(o)); } catch (e) { } }
+/* (round 45) WebRTC drops a message over its size limit (Safari / iPad 64 KB, Chrome 256 KB) without a word — the world a room from a save sends
+   was 80–210 KB, so a teammate often got the freshly generated map instead. Anything over NET_CHUNK goes as numbered pieces on the reliable channel. */
+const NET_CHUNK = 15000; let NET_CID = 0;
+function sendRaw(c, o) { try { if (!c || !c.open) return; const js = JSON.stringify(o); if (js.length <= (c.label === 'snap' ? 60000 : NET_CHUNK)) { c.send(js); return; } /* snapshots up to 60 KB still go whole on the fast channel */
+  const ctl = NETROLE === 'host' ? NET.gctl : NET.ctl, ch = ctl && ctl.open ? ctl : c, id = ++NET_CID, n = Math.ceil(js.length / NET_CHUNK); /* pieces only on the ordered, reliable channel */
+  for (let i = 0; i < n; i++) ch.send(JSON.stringify({ t: 'chk', id, i, n, d: js.slice(i * NET_CHUNK, (i + 1) * NET_CHUNK) })); } catch (e) { console.warn('send failed', e); } }
+// put the pieces back together; returns the whole message when the last one is in
+const NET_PARTS = {};
+function netUnchunk(m) { const P = NET_PARTS[m.id] || (NET_PARTS[m.id] = { n: m.n, got: 0, a: [] }); if (P.a[m.i] == null) { P.a[m.i] = m.d; P.got++; } if (P.got < P.n) return null; delete NET_PARTS[m.id]; return JSON.parse(P.a.join('')); }
 function netSendCtl(o) { sendRaw(NETROLE === 'host' ? NET.gctl : NET.ctl, o); }
 function netSendFast(o) { const c = NETROLE === 'host' ? (NET.gsnap && NET.gsnap.open ? NET.gsnap : NET.gctl) : (NET.snap && NET.snap.open ? NET.snap : NET.ctl); sendRaw(c, o); }
 function netLeave() {
-  try { netSendCtl({ t: 'bye' }); } catch (e) { }
+  try { netSendCtl({ t: 'bye' }); } catch (e) { } NET.peerV = null; /* (round 45) */
   try { NET.peer && NET.peer.destroy(); } catch (e) { }
   Object.assign(NET, { peer: null, code: '', ctl: null, snap: null, gctl: null, gsnap: null, guestName: '', ready: false });
   NETROLE = null;
@@ -14683,9 +14696,10 @@ async function netHost() {
   open(0);
 }
 function hostRecv(m) {
+  if (m.t === 'chk') { const w = netUnchunk(m); if (w) hostRecv(w); return; } /* (round 45) */
   NET.seen = performance.now();
   switch (m.t) {
-    case 'hello': NET.guestName = (m.name || '队友').slice(0, 10); NET.ready = false; sendLobby(); lobbyUI(); sfx('ready'); return;
+    case 'hello': NET.guestName = (m.name || '队友').slice(0, 10); NET.peerV = m.v || '旧版本'; NET.ready = false; sendLobby(); lobbyUI(); sfx('ready'); return;
     case 'bye': guestGone(); return;
     case 'ready': NET.ready = !!m.v; sendLobby(); lobbyUI(); return;
   }
@@ -14703,7 +14717,7 @@ function guestGone() {
   if (STATE.mode === 'play' && W && W.p[1]) { W.p[1].gone = true; W.p[1].down = false; uiMsg('队友断开了连接，你可以继续单人守夜', '#ff6b5a'); }
   lobbyUI();
 }
-function sendLobby() { netSendCtl({ t: 'lobby', ready: NET.ready, host: SET.name || '房主', code: NET.code, diff: SET.diff, mode: SET.mode || 'classic', map: SET.map || '' }); }
+function sendLobby() { netSendCtl({ t: 'lobby', v: BUILD_TAG, ready: NET.ready, host: SET.name || '房主', code: NET.code, diff: SET.diff, mode: SET.mode || 'classic', map: SET.map || '' }); }
 function hostStart() {
   if (!NET.gctl || !NET.gctl.open) return;
   const S = SET.hostFrom ? loadSlot(SET.hostFrom) : null; // (round 32) open the room from a save
@@ -14711,23 +14725,24 @@ function hostStart() {
   const n = newRunSlot(t => (typeof TK !== 'undefined' ? TK.toast(t, 4500) : titleStatus(t))); if (!n) return; SLOT = n; // (round 27) the host saves into an empty slot
   const seed = (Math.random() * 1e9) | 0, names = [SET.name || '房主', NET.guestName || '队友'];
   const mode = MODES[SET.mode] ? SET.mode : 'classic', map = MAPS[SET.map] ? SET.map : MODES[mode].map;
-  netSendCtl({ t: 'start', seed, names, diff: SET.diff, mode, map });
-  startGame(seed, names, SET.diff, 0, mode, map);
+  netSendCtl({ t: 'start', seed, names, diff: SET.diff, mode, map }); NET.obv = NET.tkv = -1; /* (round 45) leftovers from the last game could match and hold back the objective / tasks */
+  startGame(seed, names, SET.diff, 0, mode, map); verWarn();
 }
 // (round 32) co-op from a save: same seed / mode / map / difficulty, the host loads it, the teammate gets the built world and their saved gear back (or starts fresh next to the host)
 function hostFromSave(S, n) {
   const names = [SET.name || '房主', NET.guestName || '队友'], mode = S.mode || 'classic', map = S.map || 'town';
   netSendCtl({ t: 'start', seed: S.seed, names, diff: S.diff, mode, map });
-  startGame(S.seed, names, S.diff, 0, mode, map); SLOT = n;
+  startGame(S.seed, names, S.diff, 0, mode, map); SLOT = n; NET.obv = NET.tkv = -1; /* (round 45) */
   try { applySave(S); } catch (e) { console.error(e); toast('存档读取失败', '#ff8a7a'); return; }
   const g = W.p[1], P = S.p && S.p[1], h = W.p[0];
-  if (g) { if (P) Object.assign(g, { arm: P.arm || 0, hp: P.dead ? BAL.pMaxHp * 0.5 : P.hp, wpn: P.wpn, owned: P.owned, mag: P.mag, ammo: P.ammo, meds: P.meds, nades: P.nades, kills: P.kills, veh: P.veh || 0, vehs: P.vehs || 0, shield: P.shield ? 1 : 0, melee: P.shield ? P.melee || 0 : 0, gn: P.gn || [0, 0, 0], lives: P.lives != null ? P.lives : livesFor(W.diff, W.mode), fuel: P.fuel != null ? P.fuel : 60, gam: P.gam || 0, shl: P.shl || 0, vehs: (P.vehs || 0) & 127, mh: P.mh || [], bat: P.bat != null ? P.bat : BAL.mechBat });
+  if (g) { if (P) Object.assign(g, { arm: P.arm || 0, hp: P.dead ? BAL.pMaxHp * 0.5 : P.hp, wpn: P.wpn, owned: P.owned, mag: P.mag, ammo: P.ammo, meds: P.meds, nades: P.nades, kills: P.kills, veh: P.veh || 0, vehs: P.vehs || 0, shield: P.shield ? 1 : 0, melee: P.shield ? P.melee || 0 : 0, gn: P.gn || [0, 0, 0], lives: P.lives != null ? P.lives : livesFor(W.diff, W.mode), fuel: P.fuel != null ? P.fuel : 60, gam: P.gam || 0, shl: P.shl || 0, vehs: (P.vehs || 0) & 127, mh: P.mh || [], bat: P.bat != null ? P.bat : BAL.mechBat, evo: Math.min(BAL.evoCap, P.evo || 0) }); if (g.veh === 7) g.veh = [4, 2, 3, 1, 5, 6].find(k => g.vehs >> k & 1) || 0; /* (round 45) the teammate's 神兽 progress was left behind */
     for (const k of ['owned', 'mag', 'ammo']) while (g[k].length < NW) g[k].push(0);
     const lo = S.mw === MW0 && MW !== MW0 ? MOFF : 0, px = P ? P.x + lo : 0, py = P ? P.y + lo : 0; /* (round 33) an old 160×160 save */
     const at = P && P.L <= skyTop(px, py) ? [px, py, P.L] : [h.x + 1, h.y + 0.5, h.L]; g.x = at[0]; g.y = at[1]; g.L = at[2]; g.z = surfZ(g.x, g.y, g.L); g.maxHp = pMaxHpOf(g); }
   netSendCtl({ t: 'wsync', g: S.g, leg: S.mw === MW0 && MW !== MW0 ? 1 : 0, srch: [...W.srch], me: g ? [g.x, g.y, g.L] : null, label: saveLabel(S) });
-  banner('继续 · 存档 ' + n, saveLabel(S) + ' · 双人', '#ffe7b0');
+  banner('继续 · 存档 ' + n, saveLabel(S) + ' · 双人', '#ffe7b0'); verWarn();
 }
+function verWarn() { const t = typeof verMismatch === 'function' ? verMismatch() : ''; if (t) { uiMsg(t, '#ffb35a'); setTimeout(() => { if (verMismatch()) uiMsg(t, '#ffb35a'); }, 9000); } } /* (round 45) once at the start, once more a bit later */
 const ZI = ZKEYS;
 function pFlags(p) { return (p.down ? 1 : 0) | (p.dead ? 2 : 0) | (p.gone ? 4 : 0) | (p.build ? 32 : 0) | (p.ready ? 64 : 0) | (p.selfRev ? 128 : 0) | (p.ride ? 256 : 0) | ((p.veh || 0) << 9) | ((p.pass != null && p.pass >= 0 ? p.pass + 1 : 0) << 12) | (p.land ? 1 << 15 : 0); } // (round 29) bit 15: the gyrocopter is coming down // veh: 3 bits (round 22: four vehicles)
 function makeSnap() {
@@ -14754,7 +14769,7 @@ async function netJoin(code) {
   peer.on('open', () => {
     const ctl = peer.connect('deadtide-' + code, { label: 'ctl', reliable: true, serialization: 'raw' }); NET.ctl = ctl;
     ctl.on('open', () => {
-      NET.seen = performance.now(); sendRaw(ctl, { t: 'hello', name: SET.name || '' });
+      NET.seen = performance.now(); sendRaw(ctl, { t: 'hello', name: SET.name || '', v: BUILD_TAG }); /* (round 45) the version, so an old cached page shows up */
       const sn = peer.connect('deadtide-' + code, { label: 'snap', reliable: false, serialization: 'raw' }); NET.snap = sn;
       sn.on('data', d => { try { guestRecv(JSON.parse(d)); } catch (e) { } });
       titleStatus(''); showScreen('lobby'); lobbyUI();
@@ -14766,11 +14781,12 @@ async function netJoin(code) {
 function hostGone() { const was = STATE.mode; netLeave(); if (was === 'play' || was === 'lobby') { W = null; showScreen('title'); titleStatus('房主断开了连接'); } }
 function guestRecv(m) {
   NET.seen = performance.now();
+  if (m.t === 'chk') { const w = netUnchunk(m); if (w) guestRecv(w); return; } /* (round 45) */
   switch (m.t) {
     case 'busy': titleStatus('房间已满或已经开始'); netLeave(); showScreen('title'); return;
     case 'bye': hostGone(); return;
-    case 'lobby': NET.ready = m.ready; NET.hostName = m.host; NET.diff = m.diff; NET.mode = m.mode; NET.map = m.map; lobbyUI(); return;
-    case 'start': startGame(m.seed, m.names, m.diff, 1, m.mode, m.map); return;
+    case 'lobby': NET.peerV = m.v || '旧版本'; NET.ready = m.ready; NET.hostName = m.host; NET.diff = m.diff; NET.mode = m.mode; NET.map = m.map; lobbyUI(); return;
+    case 'start': startGame(m.seed, m.names, m.diff, 1, m.mode, m.map); verWarn(); return;
     case 'wsync': if (W) { applyWorld(m.g, !!m.leg); W.srch = new Set(m.srch || []); const me = W.p[ME]; if (me && m.me) { me.x = m.me[0]; me.y = m.me[1]; me.L = m.me[2]; me.z = surfZ(me.x, me.y, me.L); me.zv = me.z; CAM.tx = me.x; CAM.ty = me.y; } banner('继续存档', m.label || '', '#ffe7b0'); } return; // (round 32) the host opened the room from a save
     case 'toLobby': backToLobby(); return;
     case 'ev': if (W && m.e.q > (W.rq || 0)) { W.rq = m.e.q; fxEvent(m.e); } return; // own counter: local emits on the guest never swallow host events
@@ -14895,7 +14911,10 @@ function lobbyUI(status) {
   $('lDiffNote').textContent = host ? '' : '（房主决定）'; uiModeLbl();
   markDiff();
   if (host && !NET.guestName && !$('lStatus').textContent) $('lStatus').textContent = '把房间码发给队友';
+  { const vm = verMismatch(); $('lVer').classList.toggle('hidden', !vm); if (vm) $('lVer').textContent = vm; } /* (round 45) */
 }
+// (round 45) two devices on different versions draw (and play) differently — usually one has an old page cached: say so plainly
+function verMismatch() { if (!NET.peerV || NET.peerV === BUILD_TAG) return ''; const host = NETROLE === 'host'; return '⚠ 两台设备的游戏版本不一样（你：' + BUILD_TAG + '，' + (host ? '队友' : '房主') + '：' + NET.peerV + '）。画面和合体会对不上——版本旧的那台请刷新页面（iPad 可能要关掉标签页重新打开）。'; }
 function backToLobby() {
   STATE.mode = 'lobby'; W = null; showScreen('lobby'); NET.ready = false; lobbyUI('');
   if (NETROLE === 'host') sendLobby();

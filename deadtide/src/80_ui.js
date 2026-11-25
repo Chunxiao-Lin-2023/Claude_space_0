@@ -46,7 +46,10 @@ function lobbyUI(status) {
   $('lDiffNote').textContent = host ? '' : '（房主决定）'; uiModeLbl();
   markDiff();
   if (host && !NET.guestName && !$('lStatus').textContent) $('lStatus').textContent = '把房间码发给队友';
+  { const vm = verMismatch(); $('lVer').classList.toggle('hidden', !vm); if (vm) $('lVer').textContent = vm; } /* (round 45) */
 }
+// (round 45) two devices on different versions draw (and play) differently — usually one has an old page cached: say so plainly
+function verMismatch() { if (!NET.peerV || NET.peerV === BUILD_TAG) return ''; const host = NETROLE === 'host'; return '⚠ 两台设备的游戏版本不一样（你：' + BUILD_TAG + '，' + (host ? '队友' : '房主') + '：' + NET.peerV + '）。画面和合体会对不上——版本旧的那台请刷新页面（iPad 可能要关掉标签页重新打开）。'; }
 function backToLobby() {
   STATE.mode = 'lobby'; W = null; showScreen('lobby'); NET.ready = false; lobbyUI('');
   if (NETROLE === 'host') sendLobby();

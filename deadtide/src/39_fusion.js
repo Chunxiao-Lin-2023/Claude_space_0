@@ -175,9 +175,9 @@ function fuseWhirl(p, T, a) { const F = fusOf(p), D = F ? W.p[F.d] || p : p, tgt
   (W.whirl = W.whirl || []).push({ x: E.x, y: E.y, z: D.z, t: BAL.fWhirlT, tk: 0, o: p.i }); p.mAim = aa;
   emit({ k: 'mpunch', o: p.i, s: p.mside, c: 0, a: r2(aa), fm: FUS_ALT ? 1 : 0, sk: 0 }); emit({ k: 'whirl', o: F ? F.a : p.i, x0: r2(D.x), y0: r2(D.y), x: r2(E.x), y: r2(E.y), z: r2(D.z), t: BAL.fWhirlT }); noiseAt(E.x, E.y, 6, D.z); }
 function whirlStep(dt) { if (!W.whirl || !W.whirl.length) return;
-  for (const w of W.whirl) { w.t -= dt; w.tk -= dt; const tick = w.tk <= 0; if (tick) w.tk = 0.5; const o = W.p[w.o], PR = w.pull || BAL.fWhirlPull, dm = w.dmg != null ? w.dmg : BAL.fWhirlDmg, sp = w.big ? 6 : 3.2; /* (round 43) the ultimates use bigger / stronger ones */
+  for (const w of W.whirl) { w.t -= dt; w.tk -= dt; const tick = w.tk <= 0; if (tick) w.tk = 0.5; const o = W.p[w.o], PR = w.pull || BAL.fWhirlPull, dm = w.dmg != null ? w.dmg : BAL.fWhirlDmg, sp = w.spd || (w.big ? 6 : 3.2); /* (round 43) the ultimates use bigger / stronger ones; (round 45) w.spd: 风暴陨击 pulls hard all the way out */
     for (const z of W.zs) { if (z.hp <= 0 || z.hidden || Math.abs(z.z - w.z) > 3) continue; const dx = w.x - z.x, dy = w.y - z.y, d = Math.hypot(dx, dy); if (d > PR + z.r || ZT[z.k].boss || ZT[z.k].kaiju) continue;
-      if (d > 0.35) { const k = Math.min(d - 0.3, sp * dt * (1.2 - d / PR)); const nx = z.x + dx / d * k, ny = z.y + dy / d * k; if (inMap(Math.floor(nx), Math.floor(ny)) && standable(Math.floor(nx), Math.floor(ny), z.L, 'z')) { z.x = nx; z.y = ny; } }
-      if (w.lift && !z.air && d < 2.2 && !ZT[z.k].fly) z.air = { t: 0, T: 1.0, h: 1.8, vx: 0, vy: 0 };
+      if (d > 0.35) { const k = Math.min(d - 0.3, sp * dt * Math.max(w.spd ? 0.6 : 0, 1.2 - d / PR)); const nx = z.x + dx / d * k, ny = z.y + dy / d * k; if (inMap(Math.floor(nx), Math.floor(ny)) && standable(Math.floor(nx), Math.floor(ny), z.L, 'z')) { z.x = nx; z.y = ny; } }
+      if (w.lift && !z.air && d < (w.big > 1 ? 3 : 2.2) && !ZT[z.k].fly) z.air = { t: 0, T: 1.0, h: w.big > 1 ? 2.8 : 1.8, vx: 0, vy: 0 };
       z.stun = Math.max(z.stun || 0, 0.12); if (tick && dm) hurtZombie(z, dm, o, 0, 0, true); } }
   W.whirl = W.whirl.filter(w => w.t > 0); }

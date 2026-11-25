@@ -7,11 +7,19 @@ const genCode = () => Array.from({ length: 4 }, () => CODE_CH[Math.floor(Math.ra
 const NET = { peer: null, code: '', ctl: null, snap: null, gctl: null, gsnap: null, guestName: '', hostName: '', ready: false, seen: 0, sT: 0, iT: 0, inN: 0, lastT: 0, diff: 'normal' };
 function loadPeer() { return new Promise((res, rej) => { if (window.Peer) return res(); let i = 0; const next = () => { if (i >= PEER_SRC.length) return rej(new Error('load')); const sc = document.createElement('script'); sc.src = PEER_SRC[i++]; sc.onload = () => window.Peer ? res() : next(); sc.onerror = next; document.head.appendChild(sc); }; next(); }); }
 const linkUp = () => NETROLE === 'host' ? !!(NET.gctl && NET.gctl.open) : NETROLE === 'guest' ? !!(NET.ctl && NET.ctl.open) : NETROLE === 'solo';
-function sendRaw(c, o) { try { if (c && c.open) c.send(JSON.stringify(o)); } catch (e) { } }
+/* (round 45) WebRTC drops a message over its size limit (Safari / iPad 64 KB, Chrome 256 KB) without a word — the world a room from a save sends
+   was 80–210 KB, so a teammate often got the freshly generated map instead. Anything over NET_CHUNK goes as numbered pieces on the reliable channel. */
+const NET_CHUNK = 15000; let NET_CID = 0;
+function sendRaw(c, o) { try { if (!c || !c.open) return; const js = JSON.stringify(o); if (js.length <= (c.label === 'snap' ? 60000 : NET_CHUNK)) { c.send(js); return; } /* snapshots up to 60 KB still go whole on the fast channel */
+  const ctl = NETROLE === 'host' ? NET.gctl : NET.ctl, ch = ctl && ctl.open ? ctl : c, id = ++NET_CID, n = Math.ceil(js.length / NET_CHUNK); /* pieces only on the ordered, reliable channel */
+  for (let i = 0; i < n; i++) ch.send(JSON.stringify({ t: 'chk', id, i, n, d: js.slice(i * NET_CHUNK, (i + 1) * NET_CHUNK) })); } catch (e) { console.warn('send failed', e); } }
+// put the pieces back together; returns the whole message when the last one is in
+const NET_PARTS = {};
+function netUnchunk(m) { const P = NET_PARTS[m.id] || (NET_PARTS[m.id] = { n: m.n, got: 0, a: [] }); if (P.a[m.i] == null) { P.a[m.i] = m.d; P.got++; } if (P.got < P.n) return null; delete NET_PARTS[m.id]; return JSON.parse(P.a.join('')); }
 function netSendCtl(o) { sendRaw(NETROLE === 'host' ? NET.gctl : NET.ctl, o); }
 function netSendFast(o) { const c = NETROLE === 'host' ? (NET.gsnap && NET.gsnap.open ? NET.gsnap : NET.gctl) : (NET.snap && NET.snap.open ? NET.snap : NET.ctl); sendRaw(c, o); }
 function netLeave() {
-  try { netSendCtl({ t: 'bye' }); } catch (e) { }
+  try { netSendCtl({ t: 'bye' }); } catch (e) { } NET.peerV = null; /* (round 45) */
   try { NET.peer && NET.peer.destroy(); } catch (e) { }
   Object.assign(NET, { peer: null, code: '', ctl: null, snap: null, gctl: null, gsnap: null, guestName: '', ready: false });
   NETROLE = null;
@@ -38,9 +46,10 @@ async function netHost() {
   open(0);
 }
 function hostRecv(m) {
+  if (m.t === 'chk') { const w = netUnchunk(m); if (w) hostRecv(w); return; } /* (round 45) */
   NET.seen = performance.now();
   switch (m.t) {
-    case 'hello': NET.guestName = (m.name || '队友').slice(0, 10); NET.ready = false; sendLobby(); lobbyUI(); sfx('ready'); return;
+    case 'hello': NET.guestName = (m.name || '队友').slice(0, 10); NET.peerV = m.v || '旧版本'; NET.ready = false; sendLobby(); lobbyUI(); sfx('ready'); return;
     case 'bye': guestGone(); return;
     case 'ready': NET.ready = !!m.v; sendLobby(); lobbyUI(); return;
   }
@@ -58,7 +67,7 @@ function guestGone() {
   if (STATE.mode === 'play' && W && W.p[1]) { W.p[1].gone = true; W.p[1].down = false; uiMsg('队友断开了连接，你可以继续单人守夜', '#ff6b5a'); }
   lobbyUI();
 }
-function sendLobby() { netSendCtl({ t: 'lobby', ready: NET.ready, host: SET.name || '房主', code: NET.code, diff: SET.diff, mode: SET.mode || 'classic', map: SET.map || '' }); }
+function sendLobby() { netSendCtl({ t: 'lobby', v: BUILD_TAG, ready: NET.ready, host: SET.name || '房主', code: NET.code, diff: SET.diff, mode: SET.mode || 'classic', map: SET.map || '' }); }
 function hostStart() {
   if (!NET.gctl || !NET.gctl.open) return;
   const S = SET.hostFrom ? loadSlot(SET.hostFrom) : null; // (round 32) open the room from a save
@@ -66,23 +75,24 @@ function hostStart() {
   const n = newRunSlot(t => (typeof TK !== 'undefined' ? TK.toast(t, 4500) : titleStatus(t))); if (!n) return; SLOT = n; // (round 27) the host saves into an empty slot
   const seed = (Math.random() * 1e9) | 0, names = [SET.name || '房主', NET.guestName || '队友'];
   const mode = MODES[SET.mode] ? SET.mode : 'classic', map = MAPS[SET.map] ? SET.map : MODES[mode].map;
-  netSendCtl({ t: 'start', seed, names, diff: SET.diff, mode, map });
-  startGame(seed, names, SET.diff, 0, mode, map);
+  netSendCtl({ t: 'start', seed, names, diff: SET.diff, mode, map }); NET.obv = NET.tkv = -1; /* (round 45) leftovers from the last game could match and hold back the objective / tasks */
+  startGame(seed, names, SET.diff, 0, mode, map); verWarn();
 }
 // (round 32) co-op from a save: same seed / mode / map / difficulty, the host loads it, the teammate gets the built world and their saved gear back (or starts fresh next to the host)
 function hostFromSave(S, n) {
   const names = [SET.name || '房主', NET.guestName || '队友'], mode = S.mode || 'classic', map = S.map || 'town';
   netSendCtl({ t: 'start', seed: S.seed, names, diff: S.diff, mode, map });
-  startGame(S.seed, names, S.diff, 0, mode, map); SLOT = n;
+  startGame(S.seed, names, S.diff, 0, mode, map); SLOT = n; NET.obv = NET.tkv = -1; /* (round 45) */
   try { applySave(S); } catch (e) { console.error(e); toast('存档读取失败', '#ff8a7a'); return; }
   const g = W.p[1], P = S.p && S.p[1], h = W.p[0];
-  if (g) { if (P) Object.assign(g, { arm: P.arm || 0, hp: P.dead ? BAL.pMaxHp * 0.5 : P.hp, wpn: P.wpn, owned: P.owned, mag: P.mag, ammo: P.ammo, meds: P.meds, nades: P.nades, kills: P.kills, veh: P.veh || 0, vehs: P.vehs || 0, shield: P.shield ? 1 : 0, melee: P.shield ? P.melee || 0 : 0, gn: P.gn || [0, 0, 0], lives: P.lives != null ? P.lives : livesFor(W.diff, W.mode), fuel: P.fuel != null ? P.fuel : 60, gam: P.gam || 0, shl: P.shl || 0, vehs: (P.vehs || 0) & 127, mh: P.mh || [], bat: P.bat != null ? P.bat : BAL.mechBat });
+  if (g) { if (P) Object.assign(g, { arm: P.arm || 0, hp: P.dead ? BAL.pMaxHp * 0.5 : P.hp, wpn: P.wpn, owned: P.owned, mag: P.mag, ammo: P.ammo, meds: P.meds, nades: P.nades, kills: P.kills, veh: P.veh || 0, vehs: P.vehs || 0, shield: P.shield ? 1 : 0, melee: P.shield ? P.melee || 0 : 0, gn: P.gn || [0, 0, 0], lives: P.lives != null ? P.lives : livesFor(W.diff, W.mode), fuel: P.fuel != null ? P.fuel : 60, gam: P.gam || 0, shl: P.shl || 0, vehs: (P.vehs || 0) & 127, mh: P.mh || [], bat: P.bat != null ? P.bat : BAL.mechBat, evo: Math.min(BAL.evoCap, P.evo || 0) }); if (g.veh === 7) g.veh = [4, 2, 3, 1, 5, 6].find(k => g.vehs >> k & 1) || 0; /* (round 45) the teammate's 神兽 progress was left behind */
     for (const k of ['owned', 'mag', 'ammo']) while (g[k].length < NW) g[k].push(0);
     const lo = S.mw === MW0 && MW !== MW0 ? MOFF : 0, px = P ? P.x + lo : 0, py = P ? P.y + lo : 0; /* (round 33) an old 160×160 save */
     const at = P && P.L <= skyTop(px, py) ? [px, py, P.L] : [h.x + 1, h.y + 0.5, h.L]; g.x = at[0]; g.y = at[1]; g.L = at[2]; g.z = surfZ(g.x, g.y, g.L); g.maxHp = pMaxHpOf(g); }
   netSendCtl({ t: 'wsync', g: S.g, leg: S.mw === MW0 && MW !== MW0 ? 1 : 0, srch: [...W.srch], me: g ? [g.x, g.y, g.L] : null, label: saveLabel(S) });
-  banner('继续 · 存档 ' + n, saveLabel(S) + ' · 双人', '#ffe7b0');
+  banner('继续 · 存档 ' + n, saveLabel(S) + ' · 双人', '#ffe7b0'); verWarn();
 }
+function verWarn() { const t = typeof verMismatch === 'function' ? verMismatch() : ''; if (t) { uiMsg(t, '#ffb35a'); setTimeout(() => { if (verMismatch()) uiMsg(t, '#ffb35a'); }, 9000); } } /* (round 45) once at the start, once more a bit later */
 const ZI = ZKEYS;
 function pFlags(p) { return (p.down ? 1 : 0) | (p.dead ? 2 : 0) | (p.gone ? 4 : 0) | (p.build ? 32 : 0) | (p.ready ? 64 : 0) | (p.selfRev ? 128 : 0) | (p.ride ? 256 : 0) | ((p.veh || 0) << 9) | ((p.pass != null && p.pass >= 0 ? p.pass + 1 : 0) << 12) | (p.land ? 1 << 15 : 0); } // (round 29) bit 15: the gyrocopter is coming down // veh: 3 bits (round 22: four vehicles)
 function makeSnap() {
@@ -109,7 +119,7 @@ async function netJoin(code) {
   peer.on('open', () => {
     const ctl = peer.connect('deadtide-' + code, { label: 'ctl', reliable: true, serialization: 'raw' }); NET.ctl = ctl;
     ctl.on('open', () => {
-      NET.seen = performance.now(); sendRaw(ctl, { t: 'hello', name: SET.name || '' });
+      NET.seen = performance.now(); sendRaw(ctl, { t: 'hello', name: SET.name || '', v: BUILD_TAG }); /* (round 45) the version, so an old cached page shows up */
       const sn = peer.connect('deadtide-' + code, { label: 'snap', reliable: false, serialization: 'raw' }); NET.snap = sn;
       sn.on('data', d => { try { guestRecv(JSON.parse(d)); } catch (e) { } });
       titleStatus(''); showScreen('lobby'); lobbyUI();
@@ -121,11 +131,12 @@ async function netJoin(code) {
 function hostGone() { const was = STATE.mode; netLeave(); if (was === 'play' || was === 'lobby') { W = null; showScreen('title'); titleStatus('房主断开了连接'); } }
 function guestRecv(m) {
   NET.seen = performance.now();
+  if (m.t === 'chk') { const w = netUnchunk(m); if (w) guestRecv(w); return; } /* (round 45) */
   switch (m.t) {
     case 'busy': titleStatus('房间已满或已经开始'); netLeave(); showScreen('title'); return;
     case 'bye': hostGone(); return;
-    case 'lobby': NET.ready = m.ready; NET.hostName = m.host; NET.diff = m.diff; NET.mode = m.mode; NET.map = m.map; lobbyUI(); return;
-    case 'start': startGame(m.seed, m.names, m.diff, 1, m.mode, m.map); return;
+    case 'lobby': NET.peerV = m.v || '旧版本'; NET.ready = m.ready; NET.hostName = m.host; NET.diff = m.diff; NET.mode = m.mode; NET.map = m.map; lobbyUI(); return;
+    case 'start': startGame(m.seed, m.names, m.diff, 1, m.mode, m.map); verWarn(); return;
     case 'wsync': if (W) { applyWorld(m.g, !!m.leg); W.srch = new Set(m.srch || []); const me = W.p[ME]; if (me && m.me) { me.x = m.me[0]; me.y = m.me[1]; me.L = m.me[2]; me.z = surfZ(me.x, me.y, me.L); me.zv = me.z; CAM.tx = me.x; CAM.ty = me.y; } banner('继续存档', m.label || '', '#ffe7b0'); } return; // (round 32) the host opened the room from a save
     case 'toLobby': backToLobby(); return;
     case 'ev': if (W && m.e.q > (W.rq || 0)) { W.rq = m.e.q; fxEvent(m.e); } return; // own counter: local emits on the guest never swallow host events
