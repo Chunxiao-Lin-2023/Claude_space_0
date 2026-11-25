@@ -376,7 +376,7 @@ const MECH_DIM = { // s = overall scale; th / sh = thigh / shin; cw = chest widt
   scout: { s: 1.05, th: 0.3, sh: 0.3, ft: 0.22, cw: 1.0, arm: 1.15, hunch: 0.04, amp: 1.5 }, // keep the toy proportions (short chunky limbs), just bigger overall // (round 36i) 疾风 is now the toy robot (was s .82 / th .72 / sh .82, a tall slim runner)
   slim: { s: 1.0, th: 0.78, sh: 0.8, ft: 0.15, cw: 0.86, arm: 0.9, hunch: 0.04 },
   worker: { amp: 1.5, s: 1.1, th: 0.28, sh: 0.28, ft: 0.2, cw: 1.0, arm: 1.15, hunch: 0.04 }, // (round 36h) a toy robot: short legs, big head (was th .42 / sh .44)
-  big: { s: 1.2, th: 0.7, sh: 0.7, ft: 0.18, cw: 1.18, arm: 1.25, hunch: 0.05 },
+  big: { s: 1.2, th: 0.56, sh: 0.56, ft: 0.18, cw: 1.36, arm: 1.3, hunch: 0.12, al: 1.25, fs: 1.3 }, // (round 43) 铁卫: short legs (0.7 → 0.56), a broad chest (1.18 → 1.36), long arms (al) and big fists (fs), a low stance
   fly: { s: 0.94, th: 0.74, sh: 0.78, ft: 0.15, cw: 0.82, arm: 0.88, hunch: 0.02 },
   cannon: { s: 1.12, th: 0.56, sh: 0.6, ft: 0.18, cw: 1.12, arm: 1.12, hunch: 0.1 },
 };
@@ -560,16 +560,19 @@ function mkMech(k) {
     mPart(sh, mBall(0.14 * A), steel, 0, 0, 0);
     const pd = new THREE.Mesh(new THREE.SphereGeometry(0.27 * A, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.5), main); pd.scale.set(1.15, 0.75, 1); pd.rotation.x = s * 0.35; pd.position.set(0, 0.06, s * 0.05); sh.add(pd);
     const ps = new THREE.Mesh(new THREE.TorusGeometry(0.255 * A, 0.018, 4, 18), acc); ps.rotation.x = Math.PI / 2 + s * 0.35; ps.scale.set(1.15, 1, 1); ps.position.set(0, 0.07, s * 0.05); sh.add(ps);
-    mPart(sh, mTaper(0.11 * A, 0.095 * A, 0.6), dark, 0, -0.04, 0);
-    vRod(sh, hyd, [0.12, -0.08, 0], [0.11, -0.58, 0], 0.02);
-    const el = new THREE.Group(); el.position.y = -0.66; sh.add(el);
+    const AL = D.al || 1, FS = D.fs || 1; /* (round 43) arm length / fist size (铁卫's long arms and big fists; 1 for the others) */
+    mPart(sh, mTaper(0.11 * A, 0.095 * A, 0.6 * AL), dark, 0, -0.04, 0);
+    vRod(sh, hyd, [0.12, -0.08, 0], [0.11, -0.58 * AL, 0], 0.02);
+    const el = new THREE.Group(); el.position.y = -0.66 * AL; sh.add(el);
     mPart(el, mBall(0.1 * A), steel, 0, 0, 0);
-    mPart(el, mTaper(0.11 * A, 0.15 * A, 0.56, 10), main, 0, -0.02, 0, 0, 0, 0, 1.05, 1, 1);                               // gauntlet widens to the wrist
-    mRB(el, dark, 0.2 * A, 0.12, 0.32 * A, 0.04, 0.02, -0.18, 0); mRB(el, line, 0.03, 0.4, 0.1, 0.01, 0.15 * A, -0.32, 0);
-    mRB(el, blk, 0.27 * A, 0.22, 0.25 * A, 0.07, 0, -0.71, 0);                                                                  // fist
-    for (let a = 0; a < 4; a++) mRB(el, steel, 0.07, 0.06, 0.055 * A, 0.02, 0.14 * A, -0.67 - (a % 2) * 0.012, (a - 1.5) * 0.06 * A);
-    mRB(el, steel, 0.06, 0.1, 0.05, 0.02, 0.08, -0.62, -s * 0.12 * A, 0, 0, s * 0.4);                                       // thumb
-    if (big && !cannon) mRB(el, acc, 0.08, 0.5, 0.42, 0.03, 0, -0.32, s * 0.18);
+    const fa = new THREE.Group(); fa.scale.y = AL; el.add(fa); /* the forearm stretches with AL */
+    mPart(fa, mTaper(0.11 * A, 0.15 * A, 0.56, 10), main, 0, -0.02, 0, 0, 0, 0, 1.05, 1, 1);                               // gauntlet widens to the wrist
+    mRB(fa, dark, 0.2 * A, 0.12, 0.32 * A, 0.04, 0.02, -0.18, 0); mRB(fa, line, 0.03, 0.4, 0.1, 0.01, 0.15 * A, -0.32, 0);
+    const fg = new THREE.Group(); fg.position.y = -0.71 * AL + 0.04 * (FS - 1); fg.scale.setScalar(FS); el.add(fg); /* (round 43) the fist in its own group: 铁卫 fires it off (the rocket punch) and a fusion swaps it for a weapon */
+    mRB(fg, blk, 0.27 * A, 0.22, 0.25 * A, 0.07, 0, 0, 0);                                                                  // fist
+    for (let a = 0; a < 4; a++) mRB(fg, steel, 0.07, 0.06, 0.055 * A, 0.02, 0.14 * A, 0.04 - (a % 2) * 0.012, (a - 1.5) * 0.06 * A);
+    mRB(fg, steel, 0.06, 0.1, 0.05, 0.02, 0.08, 0.09, -s * 0.12 * A, 0, 0, s * 0.4);                                       // thumb
+    if (big && !cannon) { mRB(fa, acc, 0.08, 0.5, 0.42, 0.03, 0, -0.32, s * 0.18); for (const yy of [0.12, -0.02]) mPart(fg, new THREE.CylinderGeometry(0.15 * A, 0.15 * A, 0.035, 14), acc, 0, yy, 0); /* (round 43) gold cuff rings on the rocket fist */ }
     if (edge && s === -1) { // (round 36f) 赤刃 carries a long curved 太刀 in its right hand (drawn from the scabbard on its back when it fights): wrapped hilt, round guard, a gently curved blade with a glowing edge
       const kat = new THREE.Group(); kat.position.set(0.1, -0.74, 0); kat.scale.setScalar(1.35); el.add(kat); J.kat = kat; const bladeM = lit('#dfe6ec'), wrap = lit('#2a1c1c'), gold = lit('#c9a24a'), hamon = new THREE.MeshBasicMaterial({ color: '#f6fbff' }), hi = lit('#8e98a2');
       mPart(kat, mTaper(0.034, 0.034, 0.38, 8), wrap, -0.2, 0, 0, Math.PI / 2); // the hilt runs from x -0.39 to -0.01
@@ -589,7 +592,7 @@ function mkMech(k) {
     }
     if (fly) mPart(el, mTaper(0.06, 0.08, 0.16, 10), blk, -0.15, -0.24, 0);
     if (edge) { const lace = lit('#b0242a'); for (let q = 0; q < 3; q++) { mRB(sh, q % 2 ? dark : main, 0.36, 0.08, 0.05, 0.02, 0, -0.04 - q * 0.085, s * (0.27 + q * 0.018), 0, 0, s * 0.22); vBox(sh, lace, 0.012, 0.07, 0.055, 0.08, -0.04 - q * 0.085, s * (0.27 + q * 0.018), 0, 0, s * 0.22); vBox(sh, lace, 0.012, 0.07, 0.055, -0.08, -0.04 - q * 0.085, s * (0.27 + q * 0.018), 0, 0, s * 0.22); } } // (round 36f) layered 大袖 shoulder plates with red lacing
-    J.arms.push({ sh, el, s, fist: vMark(el, 0.12, -0.74, 0), tip: null });
+    J.arms.push({ sh, el, s, fg, fa, fist: vMark(el, 0.12, -0.74 * AL - 0.03 * (FS - 1), 0), tip: null });
   }
   /* (round 36i) the chibis build their own short, chunky arms (no more 0.8 shrink) */ // (round 36f) short little arms to go with the short legs
   // what the vehicle turned into still shows: wheels, cargo box, rotor, tracks and guns ride on the mech
@@ -633,6 +636,24 @@ function mechUpgBox(root, skip) { // bounding box of root's meshes in root's own
   const walk = o => { if (skip && skip.includes(o)) return; if (o.isMesh && o.geometry) { if (!o.geometry.boundingBox) o.geometry.computeBoundingBox(); tb.copy(o.geometry.boundingBox).applyMatrix4(m4.multiplyMatrices(inv, o.matrixWorld)); box.union(tb); } for (const c of o.children) walk(c); };
   for (const c of root.children) walk(c); return box.isEmpty() ? new THREE.Box3(new THREE.Vector3(-0.25, 0, -0.3), new THREE.Vector3(0.25, 0.8, 0.3)) : box; }
 /* (round 39) mechUpgBuild moved to 57_mechupg.js: every mech has its own three-level look */
+/* (round 43) two players, two arms: the body (legs, torso twist, lean, main arm) follows the driver; the free arm follows the partner — it turns
+   toward the partner's aim within ±120° on its own side (abducting out, or across the chest a little), the waist helps up to 40° when the driver
+   isn't swinging, and past that the partner's blows are backhands (sk 3). The partner's swings move only shoulder and elbow, on their own clock. */
+function fuseArmPose(J, p, T) {
+  const F = W.fus, o = J.fOff, A = J.arms[o]; if (!A) return; const D = W.p[F.d], G = F.v ? null : W.p[F.g], tf = D ? D.aim : p.aim, gA = G ? G.aim : F.ga != null ? F.ga : p.aim;
+  const rel = angDiff(tf, gA), out = rel * A.s, gT = W.t - (RND.fgT != null ? RND.fgT : -9), k = RND.fgK || 0, kp = J.fKp;
+  const sw = (cockT, hitT, recT) => gT < cockT ? -ease(gT / cockT) : gT < hitT ? -1 + 2 * ease((gT - cockT) / (hitT - cockT)) : gT < recT ? 1 - ease((gT - hitT) / (recT - hitT)) : 0; /* -1 cocked … 1 struck … 0 back on guard */
+  const drv = p._mpT != null && p._mpT < 0.6; if (!drv && Math.abs(rel) > 1.2) T.twist += clamp(Math.abs(rel) - 1.2, 0, 0.7) * Math.sign(rel) * 0.9;
+  let sh, el, ab;
+  if (kp === 1) { const fire = gT < 0.3; sh = 1.45 + (fire ? Math.sin(W.t * 90) * 0.03 : 0); el = 0.08; ab = 0.12 + clamp(out, -0.35, 1.35); }
+  else if (kp === 2) { sh = 0.85; el = 1.0; ab = 0.15 + clamp(out * 0.6, -0.2, 0.9); const f = sw(0.12, 0.22, 0.5); if (f) { if (k === 3) { const c = Math.max(0, -f), s2 = Math.max(0, f); sh = 0.85 + 0.6 * c - 1.6 * s2; ab = 0.15 + 1.3 * c + 0.2 * s2; el = 0.5 * c + 0.1 * s2 + (1 - c - s2) * 1.0; } else { const c = Math.max(0, -f), s2 = Math.max(0, f); sh = lerp(0.85, 2.6, c) * (1 - s2) + 0.35 * s2; el = lerp(1.0, 0.5, c) * (1 - s2) + 0.05 * s2; ab = 0.15 + clamp(out * 0.6, -0.2, 0.9) * (1 - s2 * 0.5); } } }
+  else if (kp === 4) { sh = 0.5; el = 1.3; ab = 0.25 + clamp(out * 0.5, -0.1, 0.8);
+    if (k === 1 && gT < 0.55) { const f = sw(0.18, 0.28, 0.55), c = Math.max(0, -f), s2 = Math.max(0, f); sh = lerp(0.5, 2.7, c) * (1 - s2) + 0.25 * s2; el = lerp(1.3, 0.35, c) * (1 - s2) + 0.15 * s2; }
+    else if (k === 2 && gT < 0.45) { const f = sw(0.12, 0.22, 0.45), c = Math.max(0, -f), s2 = Math.max(0, f); sh = lerp(0.5, 1.2, c) * (1 - s2) + 1.5 * s2; ab = lerp(0.25, 1.4, c) * (1 - s2) - 0.2 * s2; el = lerp(1.3, 0.6, c) * (1 - s2) + 0.1 * s2; }
+    else if (k === 3 && gT < 0.45) { const f = sw(0.1, 0.18, 0.45), c = Math.max(0, -f), s2 = Math.max(0, f); sh = 0.5 + 0.5 * c - 1.2 * s2; ab = 0.25 + 0.9 * c + 0.4 * s2; el = 1.3 - 0.8 * s2; } }
+  else return;
+  T.sh[o] = sh; T.el[o] = el; T.ab[o] = ab;
+}
 function mechTick(p, mm, dt, xf = 1) { // xf < 1: mid-transform (0 = folded up, 1 = standing)
   const J = mm.userData.J, M = W.fus && fusOf(p) ? MECHS[J.k] : mechOf(p), L = J.LEG || MECH_LEG, k = J.k, DS = J.D ? J.D.s : 1; /* (round 40) the fused body moves as itself */
   // hit-stop: a landed blow freezes the attack pose for a moment
@@ -664,10 +685,12 @@ function mechTick(p, mm, dt, xf = 1) { // xf < 1: mid-transform (0 = folded up, 
       else if (combo === 1) { T.sh[0] = bl(1.35, 1.4, G.sh); T.ab[0] = bl(1.3, -1.0, G.ab); T.el[0] = bl(0.35, 0.1, G.el); T.kz = bl(0.15, 0.05, G.kz); T.kx = bl(1.45, 1.45, 0); T.twist = 0.8 * cock - 0.95 * on; T.crouch += 0.26 * on; T.lean += 0.12 * on; T.sh[1] = 0.5; T.el[1] = 1.0; T.ab[1] = 0.4 * on; }
       else { for (const s2 of [0, 1]) { T.sh[s2] = bl(2.95, 0.5, G.sh); T.el[s2] = bl(0.55, 0.08, 1.2); T.ab[s2] = s2 ? -0.18 : 0.18; } T.kz = bl(1.95, -0.3, G.kz); T.kx = 0; T.twist = 0; T.lean += 0.5 * on - 0.15 * cock; T.crouch += 0.34 * on; }
       void mix; void sgn; void o;
-    } else if (st === 'big') { // 铁卫 (round 36n): every blow pounds the ground — one fist, the other fist, then both together
-      if (combo < 2) { T.sh[side] = 2.8 * cock + 0.35 * on + 0.3 * rest; T.el[side] = 0.2; T.lean += 0.45 * on; T.crouch += 0.28 * on; T.twist = sgn * -0.3 * on; T.sh[o] = 0.7; T.el[o] = 1.5; }
-      else { for (const s2 of [0, 1]) { T.sh[s2] = 3.0 * cock + 0.3 * on + 0.3 * rest; T.el[s2] = 0.25 + 0.2 * cock; T.ab[s2] = 0.15; } T.lean += 0.6 * on - 0.1 * cock; T.crouch += 0.38 * on; T.twist = 0; }
+    } else if (st === 'big') { // 铁卫 (round 43): a short, hard pound with one long arm, then the other (less of a wind-up, the shoulder drops into it); the third blow punches straight out and fires the right fist off
+      const ps = J.fOff === 1 ? 0 : combo === 0 ? 1 : 0, po = 1 - ps, sg2 = ps ? 1 : -1; /* (round 43) fused: the free arm isn't the body's to swing */
+      if (combo < 2) { T.sh[ps] = 2.1 * cock + 0.25 * on + 0.3 * rest; T.el[ps] = 0.15 + 0.35 * cock; T.ab[ps] = 0.1; T.lean += 0.5 * on - 0.05 * cock; T.crouch += 0.3 * on + 0.06 * cock; T.twist = sg2 * (0.2 * cock - 0.35 * on); T.roll = sg2 * 0.08 * on; T.sh[po] = 0.75; T.el[po] = 1.45; }
+      else { T.sh[0] = -0.45 * cock + 1.6 * on + 0.5 * rest; T.el[0] = 1.7 * cock + 0.04 * on + 1.2 * rest; T.ab[0] = 0.05; T.twist = 0.4 * cock - 0.5 * on; T.lean += 0.15 * on; T.crouch += 0.12 * on; T.sh[1] = 0.6; T.el[1] = 1.5; T.ab[1] = -0.2; }
     } else if (st === 'worker') { // 工蜂 (round 35): points where it wants them and the back rack kicks up, flinging parcels out over the shoulder
+      if (J.fOff === side) { /* (round 43) fused: the main hand throws */ }
       T.sh[side] = 1.45 * (on + cock) + 0.3 * rest; T.el[side] = 0.15; T.ab[side] = 0.1; T.twist = sgn * -0.25 * on; T.lean -= 0.12 * on - 0.1 * cock; T.crouch += 0.12 * cock; T.sh[o] = 0.5; T.el[o] = 1.3; T.rack = 0.55 * on - 0.1 * cock;
     } else if (st === 'scout') { // 疾风: low snap kicks, arms swinging against them
       const thK = -0.45 * cock + 1.15 * on, knK = 1.3 * cock + 0.1 * on + 0.2 * rest; if (side) { T.thL = thK; T.knL = knK; } else { T.thR = thK; T.knR = knK; }
@@ -695,6 +718,7 @@ function mechTick(p, mm, dt, xf = 1) { // xf < 1: mid-transform (0 = folded up, 
     else if (g < 0.6) { const r = ease((g - 0.28) / 0.32); T.sh[1] = 1.3 + 1.85 * r; T.el[1] = 0.1 + 1.0 * r; T.ab[1] = 0.05; T.sh[0] = 0.9 + 1.4 * r; T.el[0] = 0.3 + 0.5 * r; T.ab[0] = 0.3 * r; T.lean += 0.45 - 0.75 * r; T.crouch += 0.22 * (1 - r); T.twist = 0.25 * r; }
     else { const r = ease(Math.min(1, (g - 0.6) / 0.3)); T.sh[1] = 3.15 - 0.9 * r; T.el[1] = 1.1 - 0.8 * r; T.sh[0] = 2.3 - 1.2 * r; T.el[0] = 0.8; T.ab[0] = 0.3; T.lean += -0.3 + 0.3 * r; T.twist = 0.25 - 0.45 * r; T.rack = Math.max(T.rack || 0, g > 0.88 ? 0.5 * Math.sin(Math.min(1, (g - 0.88) / 0.17) * Math.PI) : 0); } }
   if (air) { T.thL = 0.55; T.thR = 0.15; T.knL = 1.2; T.knR = 0.75; T.sh = [0.9, 0.9]; T.el = [0.9, 0.9]; T.ab = [0.5, 0.5]; T.flame = 1; T.lean = 0.15; }
+  if (J.fOff >= 0 && W.fus && W.fus.a === p.i) fuseArmPose(J, p, T); /* (round 43) the free arm carries the partner's weapon: only the partner moves it */
   // ---- springs → joints ----
   const u = xf < 1 ? ease(xf) : 1;
   const S = xf < 1 ? (key, v) => { const fv = MFOLD[key] != null ? MFOLD[key] : v, x = lerp(fv, v, u), q = (J.sp || (J.sp = {}))[key] = { x, v: 0 }; return q.x; } : (key, v, kk) => mSpring(J, key, v, dt, kk); // mid-transform: driven straight from the fold, springs pick up from there
@@ -709,6 +733,7 @@ function mechTick(p, mm, dt, xf = 1) { // xf < 1: mid-transform (0 = folded up, 
   const yaw = S('yaw', clamp(-angDiff(face, p.aim), -1.5, 1.5), 160) - yawH + twist;
   J.tor.rotation.set(-roll * 0.6, yaw, -lean * 0.7);
   J.head.rotation.set(0, -twist * 0.4, lean * 0.4);
+  if (J.st === 'big' && J.arms[0] && J.arms[0].fg) J.arms[0].fg.visible = !(p._rfT > W.t); /* (round 43) the rocket fist is out */
   J.arms.forEach((A, n) => { A.sh.rotation.z = S('sh' + n, T.sh[n], 380); A.el.rotation.z = S('el' + n, T.el[n], 380); A.sh.rotation.x = A.s * S('ab' + n, T.ab[n], 300); });
   for (const b of J.blades) b.rotation.z = S('blade', J.cmb > 0.25 ? 0 : T.blade, 600);
   if (J.kat) { const drawn = sT < 1 || J.cmb > 0.05 && t < 1.7; J.kat.visible = drawn; if (J.katSheathed) J.katSheathed.visible = !drawn; // (round 36f) the 太刀: in hand for a fight, back in the scabbard after

@@ -187,6 +187,11 @@ function mprjMake(kd) {
   else if (kd === 'feather') { const ad = c => new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false }); /* (round 37) 火凤's burning feather */
     const a = new THREE.Mesh(new THREE.SphereGeometry(0.1, 10, 6), ad('#ff6a1e')); a.scale.set(3.2, 0.25, 0.9); g.add(a); const b = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), ad('#ffd060')); b.scale.set(2.4, 0.3, 0.6); b.position.x = 0.12; g.add(b); }
   else if (kd === 'cannon') { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.22, 8).rotateZ(Math.PI / 2), L('#c8a040')); g.add(m); const n = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6).translate(0.11, 0, 0), L('#c8a040')); g.add(n); const gl = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 6).translate(-0.08, 0, 0), new THREE.MeshBasicMaterial({ color: '#ffd27a', transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false })); g.add(gl); }
+  else if (kd === 'fist') { /* (round 43) 铁卫's rocket fist: a big gauntlet fist, knuckles first, gold cuff rings, a jet out of the wrist */
+    B(0.46, 0.4, 0.44, '#2c333b', 0, 0, 0); for (let a = 0; a < 4; a++) B(0.1, 0.09, 0.09, '#80878f', 0.25, 0.08 - (a % 2) * 0.02, (a - 1.5) * 0.105); B(0.12, 0.14, 0.1, '#80878f', 0.12, -0.16, 0.2);
+    for (const xx of [-0.2, -0.3]) { const r = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.21, 0.05, 16).rotateZ(Math.PI / 2).translate(xx, 0, 0), L('#e2b93b')); g.add(r); }
+    const gl = new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 8).translate(-0.36, 0, 0), new THREE.MeshBasicMaterial({ color: '#9fe8ff', transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending, depthWrite: false })); g.add(gl);
+    const fl = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.7, 10).rotateZ(Math.PI / 2).translate(-0.7, 0, 0), new THREE.MeshBasicMaterial({ color: '#ffb84a', transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false })); g.add(fl); g.userData.fl = fl; }
   else { const m = new THREE.Mesh(new THREE.SphereGeometry(0.2, 10, 8), new THREE.MeshBasicMaterial({ color: '#9fe8ff', transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false })); g.add(m); const c = new THREE.Mesh(boxG(0.26, 0.22, 0.24), L('#3a4048')); g.add(c); }
   g.traverse(o => { if (o.isMesh && o.material.type !== 'MeshBasicMaterial') o.castShadow = true; }); SCN.add(g); return g;
 }
@@ -194,7 +199,7 @@ function mprjDraw(r, x, y, z) {
   if (!r.m) { const q = MPRJ[r.kd] || (MPRJ[r.kd] = []); r.m = q.pop() || mprjMake(r.kd); r.m.visible = true; r.m.scale.setScalar(r.sm || 1); r.rs = (Math.random() - 0.5) * 2; }
   const m = r.m; m.position.set(x, z, y);
   if (r.kd === 'parcel' || r.kd === 'bigparcel') m.rotation.set(r.t * 7 * r.rs, -Math.atan2(r.e[1] - r.y, r.e[0] - r.x), r.t * 9);
-  else { const dx = r.e[0] - r.x, dy = r.e[1] - r.y, dz = r.e[2] - r.z; m.rotation.set(0, -Math.atan2(dy, dx), Math.atan2(dz, Math.hypot(dx, dy))); if (m.userData.fl) m.userData.fl.scale.set(0.8 + Math.random() * 0.5, 1, 1); }
+  else { const dx = r.e[0] - r.x, dy = r.e[1] - r.y, dz = r.e[2] - r.z; m.rotation.set(0, -Math.atan2(dy, dx) + (r.back ? Math.PI : 0), Math.atan2(dz, Math.hypot(dx, dy)) * (r.back ? -1 : 1)); if (r.back && m.userData.fl) m.userData.fl.visible = false; else if (m.userData.fl) m.userData.fl.visible = true; /* (round 43) the rocket fist flies home knuckles out */ if (m.userData.fl) m.userData.fl.scale.set(0.8 + Math.random() * 0.5, 1, 1); }
 }
 function mprjFree(r) { if (!r.m) return; r.m.visible = false; (MPRJ[r.kd] || (MPRJ[r.kd] = [])).push(r.m); r.m = null; if (r.fake) debrisFx(r.e[0], r.e[1], r.e[2] + 0.1, '#b8893a', 4); }
 
@@ -305,8 +310,8 @@ function droneMesh() {
   const fl = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), new THREE.MeshBasicMaterial({ color: '#ffd070', transparent: true, opacity: 0.9 })); fl.position.set(0.42, -0.04, 0); fl.visible = false; g.add(fl); g.userData.fl = fl;
   SCN.add(g); return g;
 }
-function droneEvent(e) { let D = DRN.get(e.o); if (!e.t) { if (D) D.end = W.t; return; } if (!D) { D = { ms: [], aim: [], fl: [] }; DRN.set(e.o, D); } D.end = W.t + e.t; D.t0 = W.t;
-  const q = W.p[e.o]; if (q) for (let k = 0; k < BAL.droneN; k++) { const P = dronePos(q, k, W.t); for (let j = 0; j < 5; j++) addP({ x: P.x, y: P.y, z: P.z, vx: frnd(-1, 1), vy: frnd(-1, 1), vz: frnd(0, 1), col: '#7fe8ff', s: 0.06, life: 0.4 }); } }
+function droneEvent(e) { let D = DRN.get(e.o); if (!e.t) { if (D) D.end = W.t; return; } if (!D) { D = { ms: [], aim: [], fl: [] }; DRN.set(e.o, D); } D.end = W.t + e.t; D.t0 = W.t; D.ro = e.ro || 0; /* (round 43) */
+  const q = W.p[e.o]; if (q) for (let k = 0; k < BAL.droneN; k++) { const P = dronePos(q, k, W.t, D.ro); for (let j = 0; j < 5; j++) addP({ x: P.x, y: P.y, z: P.z, vx: frnd(-1, 1), vy: frnd(-1, 1), vz: frnd(0, 1), col: '#7fe8ff', s: 0.06, life: 0.4 }); } }
 function droneShots(e) { const D = DRN.get(e.o), q = W.p[e.o]; if (!D || !q) return; const s = e.s;
   for (let i = 0; i + 3 < s.length; i += 4) { const k = s[i], P = dronePos(q, k, W.t); RND.tracers.push({ x: P.x, y: P.y, z: P.z, x2: s[i + 1], y2: s[i + 2], z2: s[i + 3], t: 0, life: 0.06, w: 0.018, col: [0.55, 0.95, 1] }); D.aim[k] = Math.atan2(s[i + 2] - P.y, s[i + 1] - P.x); D.fl[k] = W.t; }
   if (thr('drn', 0.12)) sfx('gyro', q.x, q.y); }
@@ -314,7 +319,7 @@ function drawDrones(dt) {
   for (const [o, D] of DRN) { const q = W.p[o], on = q && W.t < D.end + 0.4;
     if (!on) { for (const m of D.ms) { SCN.remove(m); m.traverse(c => { if (c.geometry) c.geometry.dispose(); }); } DRN.delete(o); continue; }
     const fade = clamp(Math.min((W.t - D.t0) / 0.4, (D.end + 0.4 - W.t) / 0.4), 0, 1);
-    for (let k = 0; k < BAL.droneN; k++) { const m = D.ms[k] || (D.ms[k] = droneMesh()); const P = dronePos(q, k, W.t); m.position.set(P.x, P.z - (1 - fade) * 1.2, P.y); m.scale.setScalar(0.3 + 0.7 * fade);
+    for (let k = 0; k < BAL.droneN; k++) { const m = D.ms[k] || (D.ms[k] = droneMesh()); const P = dronePos(q, k, W.t, D.ro); m.position.set(P.x, P.z - (1 - fade) * 1.2, P.y); m.scale.setScalar(0.3 + 0.7 * fade);
       const a = D.aim[k] != null && W.t - D.fl[k] < 0.6 ? D.aim[k] : (q._ly != null ? q._ly : q.aim); m.rotation.y = -a; m.userData.rot.rotation.y += dt * 40; m.userData.fl.visible = W.t - (D.fl[k] || -9) < 0.05; }
   }
 }

@@ -769,6 +769,7 @@ function bearTick(p, g, dt, ev = 9) {
   const rg = p.rageT > 0; for (const e of U.eyes) { e.material.color.set(rg ? '#ff3020' : '#ff8a3a'); e.scale.setScalar(rg ? 1.3 + Math.sin(W.t * 12) * 0.2 : 1); }
   U.core.material.color.set(rg ? '#ff3020' : '#ff8a3a'); U.core.scale.setScalar(1 + Math.sin(W.t * (rg ? 10 : 3)) * 0.15);
   if ((rg || sp > 2 || roar > 0.5) && FXR() < dt * (rg ? 20 : 8)) { const pp = U.pipes[FXR() < 0.5 ? 0 : 1]; pp.getWorldPosition(EVW); addP({ x: EVW.x, y: EVW.z, z: EVW.y + 0.25, vx: frnd(-0.3, 0.3), vy: frnd(-0.3, 0.3), vz: 1.4, g: -0.4, col: rg ? '#ff7a40' : '#888888', s: 0.14, life: 0.8, smoke: 1 }); }
+  { const cg = W.t - (p._blgT || -9); if (cg < 0.2) { const f = Math.sin(clamp(cg / 0.2, 0, 1) * Math.PI); bxR(B.root, 0, 0, rear * 0.35 - 0.2 * f); bxR(B.head, 0, 0, -0.35 * f); bxR(B.shL, 0, 0, -0.5 * f); bxR(B.shR, 0, 0, -0.5 * f); } } /* (round 43) the shoulder charge: head down, front low, forelegs tucked */
   if (c === 2 && t > 0.3 && t < 0.36 && FXR() < 0.6) { B.pwL.getWorldPosition(EVW); for (let k = 0; k < 10; k++) { const a = k / 10 * 6.28; addP({ x: EVW.x, y: EVW.z, z: EVW.y, vx: Math.cos(a) * 3, vy: Math.sin(a) * 3, vz: 1, g: 4, col: '#8a7a60', s: 0.12, life: 0.5, smoke: 1 }); } }
 }
 

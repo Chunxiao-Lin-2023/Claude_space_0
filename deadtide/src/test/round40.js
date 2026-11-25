@@ -25,7 +25,7 @@ const { chromium } = require('playwright');
     const z = spawnZombie('walker', 0); z.x = me.x + 2; z.y = me.y; z.L = me.L; z.z = me.z; z.hp = z.maxHp = 1e5; z.sleep = false; hurtZombie(z, 100, me); out.dmg = Math.round(1e5 - z.hp);
     const qx = q.x; z.x = me.x + 3.4; q.gcd = 0; mechPunch(q); out.noDash = q.x === qx;
     const ev = []; const fx0 = window.fxEvent; window.fxEvent = e => { ev.push(e); return fx0(e); };
-    try { doAct(me, 'nade', { x: me.x + 6, y: me.y }); out.drvDeny = ev.some(e => e.k === 'deny' && /炮手/.test(e.why)); ev.length = 0; doAct(q, 'nade', { x: me.x + 6, y: me.y }); out.ult = [ev.some(e => e.k === 'fskill'), ev.filter(e => e.k === 'mskill').map(e => e.t).join('+'), F.cd].join(',');
+    try { doAct(me, 'nade', { x: me.x + 6, y: me.y }); out.drvDeny = ev.some(e => e.k === 'deny' && /炮手/.test(e.why)); ev.length = 0; doAct(q, 'nade', { x: me.x + 6, y: me.y }); out.ult = [ev.some(e => e.k === 'fskill'), (ev.find(e => e.k === 'fskill') || {}).n, F.cd].join(','); /* (round 43) one combined move per pair */
       ev.length = 0; doAct(q, 'nade', {}); out.ultCd = ev.some(e => e.k === 'deny' && /冷却/.test(e.why)); } finally { window.fxEvent = fx0; }
     doAct(q, 'fswap'); out.swap = [F.d === q.i, mechOf(q).name, mechOf(me).name].join(',');
     // the gunner rides inside: stepping the gunner snaps it onto the driver
@@ -41,7 +41,7 @@ const { chromium } = require('playwright');
   check('a hit on the gunner lands on the pooled hull (100 × 0.7 × 0.8 ÷ 1.5 = 37.3), pilots untouched', s.hurt === '37.3,true,true', s.hurt);
   check('fused attacks ×1.2 (on top of the mech ×1.5)', s.dmg === 180, s.dmg);
   check('the gunner\'s melee does not step the body', s.noDash);
-  check('the driver cannot fire the ultimate; the gunner fires both skills at once, then it cools down', s.drvDeny && /^true,(quake\+dash|dash\+quake),10$/.test(s.ult) && s.ultCd, s.ult);
+  check('the driver cannot fire the ultimate; the gunner fires the pair\'s own move (铁卫 + 赤刃 = 居合·断地), then it cools down 18 s', s.drvDeny && s.ult === 'true,居合·断地,18' && s.ultCd, s.ult);
   check('K swaps: the attacks follow the roles', s.swap === 'true,铁卫,赤刃', s.swap);
   check('the gunner is kept inside the body', s.snap);
   check('split: each mech gets its share of what is left (half)', s.split === 'true,1200,600', s.split);
@@ -54,18 +54,19 @@ const { chromium } = require('playwright');
     for (const k of [2, 3, 4, 5, 6]) { F.kp = k; for (let i = 0; i < 3; i++) { T += 16.7; frame(T); } out['m' + k] = !!(m.mech.userData.fmods[k] && m.mech.userData.fmods[k].visible); }
     const sn = makeSnap(); out.snap = JSON.stringify(sn.fu); const keep = W.fus; W.fus = null; applySnap(JSON.parse(JSON.stringify(sn))); out.guest = W.fus ? [W.fus.a, W.fus.b, W.fus.kb, W.fus.kp, W.fus.d, W.fus.g].join(',') : 'none'; W.fus = keep;
     return out; });
-  check('the body grows ×1.3 and wears the module; the second pilot is hidden', s.scale > 1.2 && s.mod && s.hide, JSON.stringify(s));
+  check('the body grows ×1.15 (round 43) and wears the partner\'s parts; the second pilot is hidden', s.scale > 1.1 && s.mod && s.hide, JSON.stringify(s));
   check('every kind of module builds and shows', s.m2 && s.m3 && s.m4 && s.m5 && s.m6, JSON.stringify(s));
   check('the snapshot carries the fusion to a guest', s.guest === '0,1,5,6,0,1', s.snap + ' ' + s.guest);
   // (round 40c) the cut-in: the partner's model flies in shrinking, the module bursts out after the impact, the name banner shows, then everything settles
   s = await S(() => { const me = W.p[ME], q = W.p[1], out = {}; fuseSplit(W.fus, 'x'); let T = performance.now(); const st = n => { for (let k = 0; k < n; k++) { T += 16.7; frame(T); } };
     st(40); q.x = me.x - 2.5; q.y = me.y + 1; q.rx = q.x; q.ry = q.y; me.mh = []; q.mh = []; st(2); fuseStart(me, q); const m = OBJ.pl[0], m2 = OBJ.pl[1];
     st(24); out.fly = [m2.g.visible, Math.round(m2.g.scale.x * 100) / 100, Math.round(d2(m2.g.position.x, m2.g.position.z, m.g.position.x, m.g.position.z) * 10) / 10].join(',');
-    st(30); const md = m.mech.userData.fmods[W.fus.kp]; out.hit = [!m2.g.visible, !!document.querySelector('.fusban'), Math.round(md.scale.x * 100) / 100].join(',');
-    st(60); out.done = [Math.round(m.mech.userData.fsc * 100) / 100, md.scale.x, RND.fusA === null].join(',');
+    st(30); const md = m.mech.userData.fmods[W.fus.kp], pl = md.userData.parts || []; out.hit = [m2.g.scale.x < 0.05, pl.some(q => q.o.scale.x > 0.5), pl.some(q => q.o.scale.x < 0.05)].join(','); /* (round 43) 0.9 s: it came apart, some pieces are on, some still flying */
+    st(30); out.ban = !!document.querySelector('.fusban');
+    st(30); out.done = [Math.round(m.mech.userData.fsc * 100) / 100, md.scale.x, RND.fusA === null].join(',');
     fuseSplit(W.fus, 'x'); st(14); out.split = [RND.fusU ? 1 : 0, md.visible, Math.round(md.scale.x * 100) / 100].join(','); st(40); out.after = [md.visible, RND.fusU === null, m2.g.scale.x].join(',');
     return out; });
-  check('cut-in: the partner flies in and shrinks, then the impact shows the banner and bursts the module out, then it settles', /^true,0\.[0-9]+,/.test(s.fly) && +s.fly.split(',')[1] < 0.9 && s.hit.startsWith('true,true,') && +s.hit.split(',')[2] > 0.2 && s.done === '1.3,1,true', JSON.stringify(s));
+  check('cut-in (round 43): the partner leaps up over the body, comes apart, its pieces lock on one by one, the banner, then it settles at ×1.15', /^true,0\.[0-9]+,/.test(s.fly) && s.hit === 'true,true,true' && s.ban && s.done === '1.15,1,true', JSON.stringify(s));
   check('split: the module spins back into the chest, then hides and the partner is back to full size', s.split.startsWith('1,true,') && +s.split.split(',')[2] < 1 && s.after === 'false,true,1', JSON.stringify(s));
   check('no page errors', !errs.length, errs.join(' | '));
   console.log(ok ? 'ALL PASS' : 'SOME FAILED'); await b.close(); process.exit(ok ? 0 : 1);

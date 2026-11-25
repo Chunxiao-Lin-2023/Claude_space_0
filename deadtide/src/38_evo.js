@@ -102,10 +102,15 @@ function evoAttack(p, M) {
       const big = ZT[z.k].boss || ZT[z.k].kaiju, sd = Math.sign(ca * ry - sa * rx) || 1, kb = big ? 1 : 7; hurtZombie(z, M.dmg * mul, p, ca * kb * 0.7 - sa * sd * kb * 0.7, sa * kb * 0.7 + ca * sd * kb * 0.7); z.stun = Math.max(z.stun || 0, big ? 0.15 : 0.8); n++; }
     mechMove(p, { dash: { t: 0, T: 0.3, dx: E2.x - p.x, dy: E2.y - p.y } }); (W.dly = W.dly || []).push({ t: 0.3, stomp: 1, x: E2.x + ca * 0.8, y: E2.y + sa * 0.8, L: p.L, R: 1.8, dmg: M.dmg * 0.4 * mul, o: p.i, st: 0.4, kb: 6, ring: 'ram' }); return;
   }
-  if (M.atk === 'claw') { // 铁熊: left paw, right paw, then both paws slam down
-    if (T) { const d = Math.hypot(T.x - p.x, T.y - p.y); if (d > M.reach * 0.75 + 0.2) { const st = Math.min(d - M.reach * 0.75, 2); mechMove(p, { dash: { dx: ca * st, dy: sa * st, t: 0, T: 0.12 } }); } }
-    if (p.mcmb === 2) { (W.dly = W.dly || []).push({ t: 0.22, stomp: 1, x: p.x + ca * 1.9, y: p.y + sa * 1.9, L: p.L, R: 2.6, dmg: M.dmg * 1.5 * mul, o: p.i, st: 1.0, kb: 7 }); return; }
-    (W.dly = W.dly || []).push({ t: 0.17, stomp: 1, x: p.x + ca * 2.1, y: p.y + sa * 2.1, L: p.L, R: 1.9, dmg: M.dmg * mul, o: p.i, st: 0.6, kb: 4, ring: 'slap' }); return; /* (round 38b) a paw raised high and slapped down on them */
+  if (M.atk === 'claw') { // 铁熊 (round 43): a shoulder charge into them, then the paw comes down — left, right, then a pounce and both paws; no zombie within BAL.bearSee: slaps on the spot
+    const third = p.mcmb === 2, want = third ? BAL.bearLunge3 : BAL.bearLunge; let E2 = { x: p.x, y: p.y };
+    if (T && Math.hypot(T.x - p.x, T.y - p.y) <= BAL.bearSee + T.r) { const st = clamp(Math.hypot(T.x - p.x, T.y - p.y) - (third ? 1.5 : 1.7), 0, want);
+      if (st > 0.3) { E2 = evoLineEnd(p, a, st); const L2 = Math.hypot(E2.x - p.x, E2.y - p.y);
+        for (const z of W.zs) { if (z.hp <= 0 || z.hidden || Math.abs(z.z - p.z) > 2.4) continue; const rx = z.x - p.x, ry = z.y - p.y, tt = clamp(rx * ca + ry * sa, 0, L2), off = Math.hypot(rx - ca * tt, ry - sa * tt); if (off > 1.1 + z.r) continue; /* rammed on the way: half a blow, shoved aside */
+          const big = ZT[z.k].boss || ZT[z.k].kaiju, sd = Math.sign(ca * ry - sa * rx) || 1, kb = big ? 0.8 : 5; hurtZombie(z, M.dmg * BAL.bearRam * mul, p, ca * kb * 0.6 - sa * sd * kb * 0.7, sa * kb * 0.6 + ca * sd * kb * 0.7); z.stun = Math.max(z.stun || 0, big ? 0.1 : 0.4); }
+        mechMove(p, { dash: { t: 0, T: 0.13, dx: E2.x - p.x, dy: E2.y - p.y } }); emit({ k: 'blunge', o: p.i, x: r2(p.x), y: r2(p.y), z: r2(p.z), a: r2(a), d: r2(L2) }); } }
+    if (third) { (W.dly = W.dly || []).push({ t: 0.24, stomp: 1, x: E2.x + ca * 1.9, y: E2.y + sa * 1.9, L: p.L, R: 2.6, dmg: M.dmg * 1.5 * mul, o: p.i, st: 1.0, kb: 7 }); return; }
+    (W.dly = W.dly || []).push({ t: 0.18, stomp: 1, x: E2.x + ca * 2.1, y: E2.y + sa * 2.1, L: p.L, R: 1.9, dmg: M.dmg * mul, o: p.i, st: 0.6, kb: 4, ring: 'slap' }); return; /* (round 38b) a paw raised high and slapped down on them */
   }
 }
 function evoEars(p, a, dmg, hard) { const M = mechOf(p), ca = Math.cos(a), sa = Math.sin(a), R = M.reach || 6.2; let n = 0; // a strip 3 tiles wide straight ahead

@@ -31,7 +31,7 @@ const IPAD = 'Mozilla/5.0 (iPad; CPU OS 17_5 like Mac OS X) AppleWebKit/605.1.15
     else { await S(() => setTouch(true)); await wait(0.3); check(D + 'weapon key offers the capsule, transform key says 变回, skill key shows the mech skill', (await lbl('#tWpn')) === '合体 胶囊×2' && /^变回/.test(await lbl('#tShove')) && /掀地/.test(await lbl('#tNade')), [await lbl('#tWpn'), await lbl('#tShove'), await lbl('#tNade')]); }
     if (touch) await tap('#tWpn'); else { await p.keyboard.press('j'); await wait(0.2); }
     let F = await fus(); check(D + (touch ? 'tap 合体' : 'J') + ' uses the first capsule (赤刃)', F && F.v === 1 && F.kp === 2, F);
-    if (!touch) { const t = await keysTxt(); check(D + 'fused hints: fire = both attacks, G = combined skill, X / J = split, each key once', /左键 铁卫 \+ 赤刃 一起打/.test(t) && /G 合体技/.test(t) && /X \/ J 解除合体/.test(t) && !/K 换手|变回载具/.test(t) && (t.match(/ G /g) || []).length === 1, t); }
+    if (!touch) { const t = await keysTxt(); check(D + 'fused hints: fire = both attacks, G = combined skill, X / J = split, each key once', /左键 铁卫 \+ 臂刃 一起打/.test(t) && /G 合体技/.test(t) && /X \/ J 解除合体/.test(t) && !/K 换手|变回载具/.test(t) && (t.match(/ G /g) || []).length === 1, t); }
     else check(D + 'fused labels: weapon key 解除 + time left, transform key 解除合体, skill key 合体技 ✓', /^解除 剩 4\ds$/.test(await lbl('#tWpn')) && (await lbl('#tShove')) === '解除合体' && /^合体技/.test(await lbl('#tNade')), [await lbl('#tWpn'), await lbl('#tShove'), await lbl('#tNade')]);
     // fire: both the body and the module swing
     await clr(); if (touch) await tap('#tFire', 1.2); else { await p.mouse.move(640, 300); await p.mouse.down(); await wait(1.2); await p.mouse.up(); }

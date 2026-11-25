@@ -46,3 +46,34 @@ function projFx(b, dt) {
   if (b.k === 'acid' || b.k === 'goo') { if (Math.random() < 0.55) addP({ x: b.x + frnd(-0.06, 0.06), y: b.y + frnd(-0.06, 0.06), z: b.z - 0.05, vx: b.vx * 0.1, vy: b.vy * 0.1, vz: -0.6, g: 7, col: Math.random() < 0.5 ? col : col2, s: frnd(0.04, 0.07), life: 0.45 }); }
   else if (b.k === 'nade' && Math.random() < 0.4) addP({ x: b.x, y: b.y, z: b.z, vx: 0, vy: 0, vz: 0.3, g: -0.2, col: '#9a958a', s: 0.06, life: 0.5, smoke: 1 });
 }
+/* ================= (round 43) fusion parts and 苍隼 fusions: flying blade waves, whirlwinds, the dive, the landing moves ================= */
+function fusFxTick(dt) {
+  if (RND.bwaves && RND.bwaves.length) { for (const w of RND.bwaves) { w.t += dt; const u = Math.min(1, w.t / w.T), d = w.L * u, x = w.x + Math.cos(w.a) * d, y = w.y + Math.sin(w.a) * d, z = lerp(w.z, w.gz + 0.6, u);
+      fxAdd({ kind: 'cres', x, y, z, s0: 1.25, s1: 1.3, life: 0.05, col: '#ffa040', op: 0.85 * (1 - u * 0.4), yaw: w.a }); fxAdd({ kind: 'cres', x, y, z: z + 0.01, s0: 1.0, s1: 1.05, life: 0.05, col: '#ffffff', op: 0.6, yaw: w.a });
+      if (FXR() < 0.7) addP({ x: x + frnd(-0.4, 0.4), y: y + frnd(-0.4, 0.4), z, vx: 0, vy: 0, vz: 0.3, g: 0, col: '#ffd0a0', s: 0.06, life: 0.25 }); } RND.bwaves = RND.bwaves.filter(w => w.t < w.T); }
+  if (RND.whirls && RND.whirls.length) { for (const w of RND.whirls) { w.t += dt; const k = Math.min(1, w.t / 0.25) * (w.t > w.T - 0.3 ? Math.max(0, (w.T - w.t) / 0.3) : 1); if (k <= 0) continue;
+      for (let q = 0; q < (w.big ? 7 : 3); q++) { const h = FXR() * (w.big ? 4.2 : 2.6), a = W.t * 9 + FXR() * 6.28 + h, r = (0.4 + h * 0.55) * k * (w.big ? 1.5 : 1); addP({ x: w.x + Math.cos(a) * r, y: w.y + Math.sin(a) * r, z: w.z + 0.1 + h, vx: -Math.sin(a) * 4, vy: Math.cos(a) * 4, vz: 0.6, g: 0, col: q ? '#dff8ff' : '#9fe8ff', s: 0.07, life: 0.3 }); }
+      if (FXR() < 0.5) addP({ x: w.x + frnd(-2.5, 2.5), y: w.y + frnd(-2.5, 2.5), z: w.z + 0.2, vx: 0, vy: 0, vz: 0.8, g: -0.2, col: '#a89a80', s: 0.16, life: 0.6, smoke: 1 });
+      if (thr('wh' + w.id, 0.12)) { fxAdd({ kind: 'wave', x: w.x, y: w.y, z: w.z + 0.5, s0: 1.4 * k, s1: 0.6 * k, life: 0.3, col: '#9fe8ff', op: 0.3, sy: 1.6 }); fxAdd({ kind: 'shock', x: w.x, y: w.y, z: w.z + 0.05, s0: 3.6, s1: 1.0, life: 0.35, col: '#cfefff', op: 0.35 }); } }
+    RND.whirls = RND.whirls.filter(w => w.t < w.T); }
+  // the landing spot, the last half second of the flight: a ring on the driver's aim point (≤ 8)
+  const F = W.fus; if (F && fusFlyKind(F) === 1) { const left = F.fly ? F.fly.T - F.fly.t : F.flyL || 0; if (left > 0 && left < 0.55) { const D = W.p[F.d]; if (D) { const tg = D.aimPt && !D.aimPt.auto ? D.aimPt : { x: D.x + Math.cos(D.aim) * 6, y: D.y + Math.sin(D.aim) * 6 }, a = Math.atan2(tg.y - D.y, tg.x - D.x), dd = Math.min(BAL.fDiveR, Math.hypot(tg.x - D.x, tg.y - D.y)), x = D.x + Math.cos(a) * dd, y = D.y + Math.sin(a) * dd, gz = surfZ(x, y, skyTop(x, y));
+      fxAdd({ kind: 'shock', x, y, z: gz + 0.05, s0: 3.2, s1: 3.2, life: 0.04, col: '#ffd040', op: 0.75 }); fxAdd({ kind: 'shock', x, y, z: gz + 0.06, s0: 3.2 * (left / 0.55), s1: 3.2 * (left / 0.55), life: 0.04, col: '#ffffff', op: 0.5 }); } } }
+  const fd = RND.fdv; if (fd) { fd.t = W.t - fd.t0; if (fd.t > 0.32) RND.fdv = null; else { const u = fd.t / 0.3, x = lerp(fd.x0, fd.x, u), y = lerp(fd.y0, fd.y, u), z = lerp(fd.z0, fd.z, u * u); const m = OBJ.pl[fd.o]; if (m && m.g.visible) m.g.position.set(x, z, y); for (let k = 0; k < 3; k++) addP({ x: x + frnd(-0.3, 0.3), y: y + frnd(-0.3, 0.3), z: z + 1 + FXR(), vx: 0, vy: 0, vz: 0, g: 0, col: k ? '#9fe8ff' : '#ffffff', s: 0.1, life: 0.3 }); if (fd.px != null) RND.tracers.push({ x: fd.px, y: fd.py, z: fd.pz, x2: x, y2: y, z2: z + 1.2, t: 0, life: 0.3, w: 0.35, col: fusRGB('#9fe8ff') }); fd.px = x; fd.py = y; fd.pz = z + 1.2; } }
+}
+function fusFxEvent(e) {
+  switch (e.k) {
+    case 'ffly': { fxShock(e.x, e.y, e.z, 3.2, '#cfefff', '#a89a80'); fxAdd({ kind: 'wave', x: e.x, y: e.y, z: e.z + 0.3, s0: 0.8, s1: 2.6, life: 0.4, col: '#9fe8ff', op: 0.45 }); for (let k = 0; k < 16; k++) { const a = k / 16 * 6.283; addP({ x: e.x, y: e.y, z: e.z + 0.2, vx: Math.cos(a) * 4, vy: Math.sin(a) * 4, vz: frnd(0.5, 2), g: 1, col: '#a89a80', s: 0.18, life: 0.7, smoke: 1 }); } sfx('gyro', e.x, e.y); if (W.fus && (fusOf(W.p[ME]))) toast('翼能满了：起飞！4 秒后俯冲到你瞄准的地方', '#9fe8ff'); return true; }
+    case 'fdive': RND.fdv = { o: e.o, x0: e.x0, y0: e.y0, z0: e.z0, x: e.x, y: e.y, z: e.z, t0: W.t, t: 0 }; sfx('mdash', e.x, e.y); return true;
+    case 'fland': if (NETROLE === 'guest') for (const i of e.ps) { const q = W.p[i]; if (q && i === ME) { q.mfly = false; q.land = false; q.alt = 0; q.x = e.x; q.y = e.y; q.L = skyTop(e.x, e.y); q.z = surfZ(e.x, e.y, q.L); q.zv = q.z; q.jz = 0; } } return true;
+    case 'fdhit': { const R = e.kk === '3-5' ? 3.5 : e.kk === '2-5' ? 3.2 : 3; fxFlash(e.x, e.y, e.z + 0.4, 1.6, '#9fe8ff'); fxShock(e.x, e.y, e.z, R * 1.15, '#ffffff', '#5a5040'); fxShock(e.x, e.y, e.z, R * 0.8, '#9fe8ff'); debrisFx(e.x, e.y, e.z + 0.05, '#7a6a58', 12); shake(e.x, e.y, 0.6); sfx('boom', e.x, e.y);
+      if (e.kk === '2-5') { for (const s of [-1, 1]) (RND.bwaves = RND.bwaves || []).push({ x: e.x, y: e.y, z: e.z + 0.6, gz: e.z, a: e.a + s * Math.PI / 2, L: 6, t: 0, T: 0.3 }); fxSlash(e.x, e.y, e.z + 0.8, e.a, 3.2, '#ffa040'); }
+      else if (e.kk === '1-5') { for (let k = 0; k < 24; k++) { const a = k / 24 * 6.283; RND.tracers.push({ x: e.x, y: e.y, z: e.z + 1.2, x2: e.x + Math.cos(a) * 4, y2: e.y + Math.sin(a) * 4, z2: e.z + 0.4, t: 0, life: 0.18 + k * 0.012, w: 0.05, col: fusRGB('#ffd27a') }); } }
+      else if (e.kk === '3-5') { for (let k = 0; k < 10; k++) addP({ x: e.x, y: e.y, z: e.z + 0.6, vx: frnd(-4, 4), vy: frnd(-4, 4), vz: frnd(2, 5), g: 9, col: k % 2 ? '#b8893a' : '#e8d9a8', s: frnd(0.1, 0.18), life: 0.9, floor: e.z }); }
+      else { for (let k = 0; k < 20; k++) { const a = FXR() * 6.283; addP({ x: e.x, y: e.y, z: e.z + 0.8, vx: Math.cos(a) * 5, vy: Math.sin(a) * 5, vz: frnd(1, 4), g: 6, col: k % 2 ? '#dff8ff' : '#59b8ff', s: 0.08, life: 0.6 }); } }
+      return true; }
+    case 'bwave': (RND.bwaves = RND.bwaves || []).push({ x: e.x, y: e.y, z: e.z, gz: e.gz, a: e.a, L: e.L, t: 0, T: 0.32 }); sfx('mslash', e.x, e.y); return true;
+    case 'whirl': (RND.whirls = RND.whirls || []).push({ x: e.x, y: e.y, z: e.z, t: 0, T: e.t, id: Math.random(), big: e.big }); RND.tracers.push({ x: e.x0, y: e.y0, z: e.z + 1.6, x2: e.x, y2: e.y, z2: e.z + 1, t: 0, life: 0.25, w: 0.25, col: fusRGB('#9fe8ff') }); sfx('gyro', e.x, e.y); return true;
+  }
+  return false;
+}
