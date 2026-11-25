@@ -5167,7 +5167,7 @@ const ZT = {
   shade: { name: '隐身者', hp: 420, spd: 1.5, r: 0.35, h: 1.6, dmg: 12, bdmg: 10, cd: 0.9, sc: 1.55, look: 'walker', skin: '#50505e', elite: { k: 'cloak', cd: 6, col: '#c0c0e0', tip: '隐身摸到你身边偷袭，留意空气里的扭曲，附近炸一下就现形' } },
 };
 const ELITES = ['blinker', 'caller', 'warden', 'shade'];
-const BUILD_TAG = '第 45 轮'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
+const BUILD_TAG = '第 45b 轮'; // (round 36b) shown in the pause menu so you can tell whether a phone is still on a cached older version
 // aim assist (SET.assist): fire-button lock range (x weapon range), lock-on time before it fires, spread while auto-aimed, mouse/finger magnet
 const PORT = 1.25; // firing port: your own shots pass a wall / door you built if it is this close to you
 const ASSIST = [{ name: '关', range: 0, acq: 0, spread: 1, mag: 0 }, { name: '标准', range: 0.75, acq: 0.3, spread: 1.5, mag: 1 }, { name: '强', range: 1, acq: 0, spread: 1, mag: 1 }];
@@ -7521,7 +7521,7 @@ function dawn() {
   if (W.mode === 'classic' && W.night >= BAL.nights && !W.endless) return endGame('win', '救援直升机到了');
   W.phase = 'day'; W.dayLen = W.clock = BAL.dayFor(W.night + 1); // (round 34b) days get shorter
   rollTasks();
-  setTimeout(() => saveGame(true), 0); // autosave every morning
+  setTimeout(() => saveGame(true, true), 0); // autosave every morning (round 45: and the teammate gets a copy)
   for (const i of [...W.srch]) { const S = SPOTS[B[W.blk[i]].spot]; if (!S || rand() < (S.refill || 1)) { W.srch.delete(i); emit({ k: 'spot', i, v: 0 }); } }
   W.ver++; restockSpots(false);
   for (const p of activeP()) {
@@ -8374,6 +8374,7 @@ function fuseAct(p) {
 }
 function fuseStart(A, B) {
   const kb = A.veh, kp = B.veh, same = kb === kp, mx = (MECHS[kb].hp + MECHS[kp].hp) * FUS.hpMul * (same ? FUS.sameHp : 1);
+  W.fblades = W.fdrop = W.fturret = W.fspin = W.fhive = W.fking = W.ffire = W.fsky = null; /* (round 45) nothing of a previous fusion's ultimate carries over */
   const F = W.fus = { a: A.i, b: B.i, kb, kp, d: A.i, g: B.i, same: same ? 1 : 0, max: Math.round(mx), hp: Math.round(Math.min(mx, (mhpOf(A) + mhpOf(B)) * FUS.hpMul * (same ? FUS.sameHp : 1))), cd: 0, t: W.t };
   for (const q of [A, B]) { if (q.ccLat) shakeOff(q, 99); ccClear(q); q.mfly = false; q.invT = Math.max(q.invT || 0, 1.2); }
   const bx = r2(B.x), by = r2(B.y), bz = r2(B.z); /* (round 40c) where the partner leaps from, for the cut-in */
@@ -8566,30 +8567,31 @@ function fuseSkill(G, v) {
   emit({ k: 'fskill', o: G.i, n: fusUltName(F), x: r2(D.x), y: r2(D.y), z: r2(D.z), kk: key });
 }
 const FUS_ULT = {
-  '1-2'(c) { const { D, G, a, m, F } = c; F.ultT = W.t + 0.45; const x0 = D.x, y0 = D.y, E = FU.dash(D, a, 10, 0.35); FU.strip(G, x0, y0, D.z, a, Math.hypot(E.x - x0, E.y - y0), 1.5, 220 * m, { kb: 6 });
-    W.fblades = { o: G.i, t: 8, cd: 0.4 }; FU.fx({ ek: 'blades', o: F.a, t: 8, x0: r2(x0), y0: r2(y0), x: r2(E.x), y: r2(E.y), z: r2(D.z), a: r2(a) }); },
-  '1-3'(c) { const { D, G, F } = c; F.ultT = W.t + 0.3; FU.drones(G, 8, { nofire: 1 }); W.fdrop = { o: G.i, t: 8, cd: 0.3 }; FU.fx({ ek: 'drop', o: F.a, x: r2(D.x), y: r2(D.y), z: r2(D.z) }); },
+  '1-2'(c) { const { D, G, a, m, F } = c; F.ultT = W.t + 0.45; const x0 = D.x, y0 = D.y, E = FU.dash(D, a, 12, 0.35); FU.strip(G, x0, y0, D.z, a, Math.hypot(E.x - x0, E.y - y0), 2.4, 220 * m, { kb: 6 }); /* (round 45) 浮游刃阵: 12 long, 2.4 wide; then 8 big blades orbit at 3.2 for 10 s and fly out to cut up to 3 zombies within 10 every 0.35 s, and every 2.5 s they sweep out in a ring (r 6) */
+    W.fblades = { o: G.i, t: 10, cd: 0.4, rg: 2.5 }; FU.fx({ ek: 'blades', o: F.a, t: 10, x0: r2(x0), y0: r2(y0), x: r2(E.x), y: r2(E.y), z: r2(D.z), a: r2(a) }); },
+  '1-3'(c) { const { D, G, F } = c; F.ultT = W.t + 0.3; FU.drones(G, 8, { nofire: 1 }); W.fdrop = { o: G.i, t: 8, cd: 0.3 }; FU.fx({ ek: 'drop', o: F.a, x: r2(D.x), y: r2(D.y), z: r2(D.z) }); }, /* (round 45) drops every 0.2 s (was 0.4), bigger blasts — see fuseUltStep */
   '1-4'(c) { const { D, G, m, F } = c; F.ultT = W.t + 0.6; const hit = FU.area(G, D.x, D.y, D.z, BAL.quakeR, BAL.quakeDmg * m, { up: 3.0, upT: 2.5, out: 1.4, st: 2, fall: 0.45 }); F.airX = W.t + 8; FU.drones(G, 8); FU.fx({ ek: 'quake', o: F.a, x: r2(D.x), y: r2(D.y), z: r2(D.z), r: BAL.quakeR }); noiseAt(D.x, D.y, 14, D.z); void hit; },
-  '1-5'(c) { const { G, F, D } = c; F.ultT = W.t + 0.5; fuseLift(F, 6); FU.drones(G, 6); FU.fx({ ek: 'skyguns', o: F.a, x: r2(D.x), y: r2(D.y), z: r2(D.z) }); },
-  '1-6'(c) { const { D, G, F } = c; F.ultT = W.t + 6; F.lockT = W.t + 6; FU.drones(G, 6, { nofire: 1 }); W.fturret = { o: G.i, t: 6, cd: 0.25, n: 18 }; FU.fx({ ek: 'turret', o: F.a, x: r2(D.x), y: r2(D.y), z: r2(D.z), t: 6 }); },
-  '2-3'(c) { const { D, G, a, m, F } = c; F.ultT = W.t + 0.45; const x0 = D.x, y0 = D.y, E = FU.dash(D, a, 10, 0.35), hit = FU.strip(G, x0, y0, D.z, a, Math.hypot(E.x - x0, E.y - y0), 1.5, 180 * m, { kb: 3 });
-    hit.slice(0, 16).forEach((z, k) => { FU.later(1.0 + k * 0.06, () => { if (z.hp > 0) explode(z.x, z.y, z.z + 0.3, G, 1.5, 55 * m); else explode(z.x, z.y, z.z + 0.3, G, 1.5, 55 * m); }); emit({ k: 'mrkt', o: G.i, kd: 'parcel', x: r2(x0), y: r2(y0), z: r2(D.z + 2), e: [r2(z.x), r2(z.y), r2(z.z + z.h * 0.6)], t: 0.25 }); });
-    FU.fx({ ek: 'slash', o: F.a, x0: r2(x0), y0: r2(y0), x: r2(E.x), y: r2(E.y), z: r2(D.z), a: r2(a), col: '#ffa040' }); },
-  '2-4'(c) { const { D, G, a, m, F } = c; F.ultT = W.t + 1.0; FU.fx({ ek: 'iai', o: F.a, x: r2(D.x), y: r2(D.y), z: r2(D.z), a: r2(a) });
-    FU.later(0.4, () => { FU.strip(G, D.x, D.y, D.z, a, 10, 1.4, 260 * m, { up: 2.4, upT: 1.1, kb: 2 }); FU.fx({ ek: 'fissure', o: F.a, x: r2(D.x), y: r2(D.y), z: r2(D.z), a: r2(a), L: 10 }); noiseAt(D.x, D.y, 12, D.z); });
-    FU.later(0.85, () => { FU.area(G, D.x, D.y, D.z, 3.2, 150 * m, { airX: 1.5, kb: 6, st: 0.6, dz: 4 }); FU.fx({ ek: 'iaicut', o: F.a, x: r2(D.x), y: r2(D.y), z: r2(D.z), a: r2(a) }); }); },
-  '2-5'(c) { const { D, G, F } = c; F.ultT = W.t + 3; W.fspin = { o: G.i, t: 3, tk: 0 }; FU.fx({ ek: 'spin', o: F.a, t: 3 }); },
-  '2-6'(c) { const { D, G, a, m, F } = c; F.ultT = W.t + 0.8; const from = { x: D.x, y: D.y, z: D.z + 2.6 }, ca = Math.cos(a), sa = Math.sin(a); [3, 6, 9].forEach((d, k) => { const E = evoLineEnd(D, a, d); FU.shell(G, from, E.x, E.y, 0.15 + k * 0.1, 2.2, 110 * m); });
-    FU.later(0.4, () => { const x0 = D.x, y0 = D.y, E = FU.dash(D, a, 12, 0.3); FU.strip(G, x0, y0, D.z, a, Math.hypot(E.x - x0, E.y - y0), 1.5, 180 * m, { kb: 6 }); FU.fx({ ek: 'slash', o: F.a, x0: r2(x0), y0: r2(y0), x: r2(E.x), y: r2(E.y), z: r2(D.z), a: r2(a), col: '#ff9a3a' }); }); void ca; void sa; },
-  '3-4'(c) { const { D, G, m, F } = c; F.ultT = W.t + 0.8; FU.area(G, D.x, D.y, D.z, 6, 120 * m, { kb: 9, st: 1.0 }); FU.fx({ ek: 'quake', o: F.a, x: r2(D.x), y: r2(D.y), z: r2(D.z), r: 6 });
+  '1-5'(c) { const { G, F, D } = c; F.ultT = W.t + 0.5; fuseLift(F, 6); FU.drones(G, 6); W.fsky = { o: G.i, t: 6, cd: 0.6 }; FU.fx({ ek: 'skyguns', o: F.a, x: r2(D.x), y: r2(D.y), z: r2(D.z), t: 6 }); }, /* (round 45) 空中炮阵: from the air it also shells the crowd below (a shell every 0.2 s on zombies within 13) */
+  '1-6'(c) { const { D, G, F } = c; F.ultT = W.t + 6; F.lockT = W.t + 6; FU.drones(G, 6, { nofire: 1 }); W.fturret = { o: G.i, t: 6, cd: 0.25, n: 30 }; FU.fx({ ek: 'turret', o: F.a, x: r2(D.x), y: r2(D.y), z: r2(D.z), t: 6 }); }, /* (round 45) 30 shells (was 18), bigger blasts */
+  '2-3'(c) { const { D, G, a, m, F } = c; F.ultT = W.t + 0.45; const x0 = D.x, y0 = D.y, E = FU.dash(D, a, 12, 0.35), L = Math.hypot(E.x - x0, E.y - y0), hit = FU.strip(G, x0, y0, D.z, a, L, 2.4, 180 * m, { kb: 3 }); /* (round 45) 快递斩: 12 long, 2.4 wide; the boxes it tagged blow up, and a row of 12 boxes rains down the cut */
+    hit.slice(0, 16).forEach((z, k) => { FU.later(1.0 + k * 0.06, () => explode(z.x, z.y, z.z + 0.3, G, 2, 60 * m)); emit({ k: 'mrkt', o: G.i, kd: 'parcel', x: r2(x0), y: r2(y0), z: r2(D.z + 2), e: [r2(z.x), r2(z.y), r2(z.z + z.h * 0.6)], t: 0.25 }); });
+    for (let k = 0; k < 18; k++) { const aa = a + ((k % 6) / 5 - 0.5) * 1.3, d = 3 + Math.floor(k / 6) * 3.5 + (k % 2) * 0.8, x = x0 + Math.cos(aa) * d, y = y0 + Math.sin(aa) * d; FU.parcel(G, { x: x0 + Math.cos(a) * d * 0.6, y: y0 + Math.sin(a) * d * 0.6, z: D.z + 8 }, x, y, 0.55 + k * 0.05, 2.2, 80 * m, k % 5 === 0); } /* a fan of 18 boxes over the cut (±37°, out to 11) */
+    FU.fx({ ek: 'slash', o: F.a, x0: r2(x0), y0: r2(y0), x: r2(E.x), y: r2(E.y), z: r2(D.z), a: r2(a), col: '#ffa040', w: 2 }); },
+  '2-4'(c) { const { D, G, a, m, F } = c; F.ultT = W.t + 1.0; FU.fx({ ek: 'iai', o: F.a, x: r2(D.x), y: r2(D.y), z: r2(D.z), a: r2(a) }); /* (round 45) 居合·断地: three fissures fanning out (16 long, 2 wide), then a cross cut r 5 */
+    FU.later(0.4, () => { const seen = new Set(); for (const da of [0, -0.38, 0.38]) { const aa = a + da, h = FU.strip(G, D.x, D.y, D.z, aa, da ? 13 : 16, 2.0, (da ? 200 : 260) * m, { up: 2.4, upT: 1.1, kb: 2 }); h.forEach(z => seen.add(z.id)); FU.fx({ ek: 'fissure', o: F.a, x: r2(D.x), y: r2(D.y), z: r2(D.z), a: r2(aa), L: da ? 13 : 16 }); } noiseAt(D.x, D.y, 14, D.z); });
+    FU.later(0.85, () => { FU.area(G, D.x, D.y, D.z, 5, 170 * m, { airX: 1.5, kb: 7, st: 0.8, dz: 4 }); FU.fx({ ek: 'iaicut', o: F.a, x: r2(D.x), y: r2(D.y), z: r2(D.z), a: r2(a), r: 5 }); }); },
+  '2-5'(c) { const { D, G, F } = c; F.ultT = W.t + 5; W.fspin = { o: G.i, t: 5, tk: 0, wv: 1 }; FU.fx({ ek: 'spin', o: F.a, t: 5 }); }, /* (round 45) 隼刃回旋: 5 s (was 3), r 4.2 (was 2.4), and a ring of 8 blade waves flies out every second */
+  '2-6'(c) { const { D, G, a, m, F } = c; F.ultT = W.t + 0.8; const from = { x: D.x, y: D.y, z: D.z + 2.6 }; [3, 5.5, 8, 10.5, 13, 15.5].forEach((d, k) => { const E = evoLineEnd(D, a, d); FU.shell(G, from, E.x + (k % 2 ? 0.8 : -0.8) * Math.sin(a), E.y - (k % 2 ? 0.8 : -0.8) * Math.cos(a), 0.15 + k * 0.08, 2.6, 120 * m); }); /* (round 45) 炮进斩: six shells walk up the line (was 3), then a 14-long, 2.4-wide charge */
+    FU.later(0.55, () => { const x0 = D.x, y0 = D.y, E = FU.dash(D, a, 14, 0.3); FU.strip(G, x0, y0, D.z, a, Math.hypot(E.x - x0, E.y - y0), 2.4, 190 * m, { kb: 6 }); FU.fx({ ek: 'slash', o: F.a, x0: r2(x0), y0: r2(y0), x: r2(E.x), y: r2(E.y), z: r2(D.z), a: r2(a), col: '#ff9a3a', w: 2 }); }); },
+  '3-4'(c) { const { D, G, m, F } = c; F.ultT = W.t + 0.8; FU.area(G, D.x, D.y, D.z, 7.5, 160 * m, { kb: 9, st: 1.2 }); FU.fx({ ek: 'quake', o: F.a, x: r2(D.x), y: r2(D.y), z: r2(D.z), r: 7.5 }); /* (round 45) r 6 → 7.5, 120 → 160 */
     const cells = []; for (let k = 0; k < 16 && cells.length < 8; k++) { const ang = k / 16 * Math.PI * 2, x = Math.floor(D.x + Math.cos(ang) * 3), y = Math.floor(D.y + Math.sin(ang) * 3); if (!inMap(x, y) || cells.some(q => q[0] === x && q[1] === y)) continue; const L = gAt(x, y), i = ci(x, y, L); if (W.blk[i] || !standable(x, y, L, 'p')) continue; cells.push([x, y, L, i]); }
     cells.forEach(([x, y, L, i], k) => { const from = { x: D.x, y: D.y, z: D.z + 7 }; FU.parcel(G, from, x + 0.5, y + 0.5, 0.45 + k * 0.04, 0.9, 55 * m, true); FU.later(0.5 + k * 0.04, () => { if (!W.blk[i] && !W.p.some(q => Math.floor(q.x) === x && Math.floor(q.y) === y)) { setCell(i, 1, W.slab[i] || 0, 0, 'fult'); (W.ftmp = W.ftmp || []).push({ i, t: 8 }); } }); }); },
-  '3-5'(c) { const { D, G, a, m, F } = c; F.ultT = W.t + 0.5; fuseLift(F, 2.6); const ca = Math.cos(a), sa = Math.sin(a);
-    for (let k = 0; k < 30; k++) { const d = 1 + k / 30 * 13, sd = (rand() - 0.5) * 2.2, x = D.x + ca * d - sa * sd, y = D.y + sa * d + ca * sd, t = 0.3 + k / 30 * 1.6; FU.parcel(G, { x: D.x + ca * (d - 1), y: D.y + sa * (d - 1), z: D.z + 5 }, x, y, t, 1.4, 45 * m); }
+  '3-5'(c) { const { D, G, a, m, F } = c; F.ultT = W.t + 0.5; fuseLift(F, 3); const ca = Math.cos(a), sa = Math.sin(a); /* (round 45) 空投轰炸: 44 boxes over 17 × 10 (was 30 over 13 × 4.4), bigger blasts */
+    for (let k = 0; k < 44; k++) { const d = 1 + k / 44 * 16, sd = (rand() - 0.5) * 10, x = D.x + ca * d - sa * sd, y = D.y + sa * d + ca * sd, t = 0.3 + k / 44 * 2.0; FU.parcel(G, { x: D.x + ca * (d - 1), y: D.y + sa * (d - 1), z: D.z + 6 }, x, y, t, 2.0, 50 * m, k % 6 === 0); }
     FU.fx({ ek: 'bombrun', o: F.a, x: r2(D.x), y: r2(D.y), z: r2(D.z), a: r2(a) }); },
-  '3-6'(c) { const { D, G, tx, ty, a, m, F } = c; F.ultT = W.t + 0.6; const d0 = Math.min(16, Math.max(5, c.dist)), cx = D.x + Math.cos(a) * d0, cy = D.y + Math.sin(a) * d0;
-    [[0, 0], [1.8, 1.2], [-1.6, -1.4]].forEach(([ox, oy], k) => { const x = cx + ox, y = cy + oy, z = FU.gz(x, y) + 4.5, t = 0.45 + k * 0.15; emit({ k: 'cshot', o: G.i, x: r2(D.x), y: r2(D.y), z: r2(D.z + 2.6), e: [r2(x), r2(y), r2(z)], t: r2(t) });
-      FU.later(t, () => { FU.fx({ ek: 'burst', o: F.a, x: r2(x), y: r2(y), z: r2(z) }); for (let q = 0; q < 8; q++) { const aa = q / 8 * Math.PI * 2 + rand() * 0.4, r = 0.8 + rand() * 2, bx = x + Math.cos(aa) * r, by = y + Math.sin(aa) * r; FU.parcel(G, { x, y, z }, bx, by, 0.35 + rand() * 0.15, 1.4, 55 * m); } }); }); void tx; void ty; },
+  '3-6'(c) { const { D, G, tx, ty, a, m, F } = c; F.ultT = W.t + 0.6; const d0 = Math.min(16, Math.max(5, c.dist)), cx = D.x + Math.cos(a) * d0, cy = D.y + Math.sin(a) * d0; /* (round 45) 集束炸弹: five bombs (was 3), 10 bomblets each over r 3.6 */
+    [[0, 0], [2.6, 1.6], [-2.4, -1.8], [1.8, -2.6], [-2, 2.4]].forEach(([ox, oy], k) => { const x = cx + ox, y = cy + oy, z = FU.gz(x, y) + 4.5, t = 0.45 + k * 0.12; emit({ k: 'cshot', o: G.i, x: r2(D.x), y: r2(D.y), z: r2(D.z + 2.6), e: [r2(x), r2(y), r2(z)], t: r2(t) });
+      FU.later(t, () => { FU.fx({ ek: 'burst', o: F.a, x: r2(x), y: r2(y), z: r2(z) }); for (let q = 0; q < 10; q++) { const aa = q / 10 * Math.PI * 2 + rand() * 0.4, r = 0.8 + rand() * 2.8, bx = x + Math.cos(aa) * r, by = y + Math.sin(aa) * r; FU.parcel(G, { x, y, z }, bx, by, 0.35 + rand() * 0.15, 1.7, 55 * m); } }); }); void tx; void ty; },
   '4-5'(c) { const { D, G, a, m, F } = c, T0 = BAL.fStormT, d0 = Math.min(BAL.fStormD, Math.max(4, c.dist || 6)), E = evoLineEnd(D, a, d0); F.ultT = W.t + T0 + 0.5; /* (round 45) 风暴陨击: a big tornado on the aim point pulls the crowd in and lifts it; 飞天要塞 rides up with it and comes down on its eye */
     (W.whirl = W.whirl || []).push({ x: E.x, y: E.y, z: D.z, t: T0, tk: 0, o: G.i, pull: BAL.fStormPull, dmg: BAL.fStormDmg * m, lift: 1, big: 2, spd: BAL.fStormSpd }); emit({ k: 'whirl', o: F.a, x0: r2(D.x), y0: r2(D.y), x: r2(E.x), y: r2(E.y), z: r2(D.z), t: T0, big: 2 });
     fuseLift(F, T0 + 0.3); noiseAt(E.x, E.y, 14, D.z);
@@ -8597,19 +8599,20 @@ const FUS_ULT = {
     FU.later(T0, () => { const L = fuseSetDown(F, E.x, E.y) || E, hx = L.x, hy = L.y, hz = L.z != null ? L.z : D.z; FU.area(G, hx, hy, hz, BAL.fStormR, BAL.fStormHit * m, { kb: 8, st: 1.5, fall: 0.3 }); FU.fx({ ek: 'meteor', o: F.a, x: r2(hx), y: r2(hy), z: r2(hz), r: BAL.fStormR });
       (W.whirl = W.whirl || []).push({ x: hx, y: hy, z: hz, t: 3, tk: 0, o: G.i, pull: 4.5, dmg: 20 * m }); emit({ k: 'whirl', o: F.a, x0: r2(hx), y0: r2(hy), x: r2(hx), y: r2(hy), z: r2(hz), t: 3 }); noiseAt(hx, hy, 14, hz); }); },
   '4-6'(c) { const { D, G, m, F } = c; F.ultT = W.t + 1.0; FU.area(G, D.x, D.y, D.z, BAL.quakeR, BAL.quakeDmg * m, { up: 2.6, upT: 1.4, out: 1.2, st: 2, fall: 0.45 }); FU.fx({ ek: 'quake', o: F.a, x: r2(D.x), y: r2(D.y), z: r2(D.z), r: BAL.quakeR });
-    FU.later(0.45, () => { const air = W.zs.filter(z => z.hp > 0 && z.air && Math.hypot(z.x - D.x, z.y - D.y) < 10).slice(0, 3), from = { x: D.x, y: D.y, z: D.z + 2.6 }; for (let k = 0; k < 3; k++) { const z = air[k]; const x = z ? z.x : D.x + Math.cos(c.a + k) * 4, y = z ? z.y : D.y + Math.sin(c.a + k) * 4; FU.shell(G, from, x, y, 0.15 + k * 0.12, 2.2, 165 * m); } }); },
+    FU.later(0.45, () => { const air = W.zs.filter(z => z.hp > 0 && z.air && Math.hypot(z.x - D.x, z.y - D.y) < 10).slice(0, 6), from = { x: D.x, y: D.y, z: D.z + 2.6 }; for (let k = 0; k < 6; k++) { const z = air[k]; const x = z ? z.x : D.x + Math.cos(c.a + k) * 4.5, y = z ? z.y : D.y + Math.sin(c.a + k) * 4.5; FU.shell(G, from, x, y, 0.15 + k * 0.1, 2.4, 165 * m); } }); }, /* (round 45) six shells at the launched crowd (was 3) */
   '5-6'(c) { const { D, G, a, m, F } = c; F.ultT = W.t + 2.4; const d0 = Math.min(14, Math.max(4, c.dist)), E = evoLineEnd(D, a, d0); (W.whirl = W.whirl || []).push({ x: E.x, y: E.y, z: D.z, t: 4, tk: 0, o: G.i, pull: 7, dmg: 10, lift: 1 }); emit({ k: 'whirl', o: F.a, x0: r2(D.x), y0: r2(D.y), x: r2(E.x), y: r2(E.y), z: r2(D.z), t: 4, big: 1 });
     FU.dash(D, a + Math.PI, 3, 0.4); FU.fx({ ek: 'slide', o: F.a, x: r2(D.x), y: r2(D.y), z: r2(D.z), a: r2(a) });
     for (let k = 0; k < 6; k++) FU.later(0.6 + k * 0.3, () => { FU.shell(G, { x: D.x, y: D.y, z: D.z + 2.8 }, E.x + frnd(-0.8, 0.8), E.y + frnd(-0.8, 0.8), 0.3, 2.2, 110 * m * 1.5); }); },
-  '1-1'(c) { const { D, G, F } = c; F.ultT = W.t + 0.4; FU.drones(G, 10, { ro: 0 }); if (G !== D) FU.drones(D, 10, { ro: 1.3 }); else W.drones.push({ o: D.i, t: 10, cd: [...Array(BAL.droneN)].map((_, k) => k * BAL.droneRate / BAL.droneN), buf: [], eT: 0, fu: 1, ro: 1.3, x2: 1 }); F.pblockT = W.t + 10; FU.fx({ ek: 'stars', o: F.a, t: 10 }); },
-  '2-2'(c) { const { D, G, m, F } = c; const n = 6, st = 0.24; F.ultT = W.t + n * st + 0.2; for (const q of [D, G]) q.invT = Math.max(q.invT || 0, n * st + 0.4); const hitIds = [];
-    for (let k = 0; k < n; k++) FU.later(k * st, () => { let best = null, bd = 9; for (const z of W.zs) { if (z.hp <= 0 || z.hidden || hitIds.includes(z.id)) continue; const d = Math.hypot(z.x - D.x, z.y - D.y); if (d < bd) { bd = d; best = z; } }
-      const aa = best ? Math.atan2(best.y - D.y, best.x - D.x) + (k % 2 ? 0.35 : -0.35) : c.a + (k % 2 ? 1 : -1) * 0.9, L = best ? Math.min(8, bd + 1.2) : 4, x0 = D.x, y0 = D.y, E = FU.dash(D, aa, L, st * 0.8); if (best) hitIds.push(best.id);
-      FU.strip(G, x0, y0, D.z, aa, Math.hypot(E.x - x0, E.y - y0), 1.4, 150 * m, { kb: 5 }); FU.fx({ ek: 'slash', o: F.a, x0: r2(x0), y0: r2(y0), x: r2(E.x), y: r2(E.y), z: r2(D.z), a: r2(aa), col: k % 2 ? '#ff5a1a' : '#ffa040', zig: 1 }); }); },
-  '3-3'(c) { const { D, G, a, F } = c; F.ultT = W.t + 0.5; const d0 = Math.min(10, Math.max(3, c.dist)), E = evoLineEnd(D, a, d0); W.fhive = { o: G.i, x: E.x, y: E.y, z: FU.gz(E.x, E.y), t: 10, cd: 0.6 }; FU.parcel(G, { x: D.x, y: D.y, z: D.z + 3 }, E.x, E.y, 0.4, 1.6, 60 * c.m, true); FU.fx({ ek: 'hive', o: F.a, x: r2(E.x), y: r2(E.y), z: r2(W.fhive.z), t: 10 }); },
-  '4-4'(c) { const { D, G, m, F } = c; F.ultT = W.t + 10; F.lockT = W.t + 10; for (const q of [D, G]) q.invT = Math.max(q.invT || 0, 10); W.fking = { o: G.i, t: 10, tk: 0.3, n: 0, m }; FU.fx({ ek: 'king', o: F.a, t: 10 }); },
-  '5-5'(c) { const { D, G, m, F } = c; F.ultT = W.t + 3.7; fuseLift(F, 3.6); const pts = FU.densest(D.x, D.y, 12, 3); FU.fx({ ek: 'stars5', o: F.a, x: r2(D.x), y: r2(D.y), z: r2(D.z) });
-    pts.forEach((P2, k) => { FU.later(2.0 + k * 0.6, () => { const gz = FU.gz(P2.x, P2.y); FU.fx({ ek: 'meteor', o: F.a, x: r2(P2.x), y: r2(P2.y), z: r2(gz), r: 3.5, x0: r2(D.x), y0: r2(D.y), z0: r2(D.z + 6), dive: 1 }); FU.later(0.22, () => FU.area(G, P2.x, P2.y, gz, 3.5, 220 * m, { kb: 8, st: 1, fall: 0.3 })); if (k === pts.length - 1) FU.later(0.25, () => fuseSetDown(F, P2.x, P2.y)); }); }); },
+  '1-1'(c) { const { D, G, F } = c; F.ultT = W.t + 0.4; FU.drones(G, 10, { ro: 0 }); if (G !== D) FU.drones(D, 10, { ro: 1.3 }); else W.drones.push({ o: D.i, t: 10, cd: [...Array(BAL.droneN)].map((_, k) => k * BAL.droneRate / BAL.droneN), buf: [], eT: 0, fu: 1, ro: 1.3, x2: 1 }); F.pblockT = W.t + 10; FU.fx({ ek: 'stars', o: F.a, t: 10 }); }, /* (round 45) the shield dome blocks within 7 (was 5) */
+  '2-2'(c) { const { D, G, m, F } = c; const n = 8, st = 0.22; F.ultT = W.t + n * st + 0.7; for (const q of [D, G]) q.invT = Math.max(q.invT || 0, n * st + 0.9); const hitIds = []; /* (round 45) 修罗六连斩: 8 dashes (was 6), each 2 wide, then a cross cut r 5.5 */
+    for (let k = 0; k < n; k++) FU.later(k * st, () => { let best = null, bd = 11; for (const z of W.zs) { if (z.hp <= 0 || z.hidden || hitIds.includes(z.id)) continue; const d = Math.hypot(z.x - D.x, z.y - D.y); if (d < bd) { bd = d; best = z; } }
+      const aa = best ? Math.atan2(best.y - D.y, best.x - D.x) + (k % 2 ? 0.35 : -0.35) : c.a + (k % 2 ? 1 : -1) * 0.9, L = best ? Math.min(10, bd + 1.5) : 5, x0 = D.x, y0 = D.y, E = FU.dash(D, aa, L, st * 0.8); if (best) hitIds.push(best.id);
+      FU.strip(G, x0, y0, D.z, aa, Math.hypot(E.x - x0, E.y - y0), 2.0, 150 * m, { kb: 5 }); FU.fx({ ek: 'slash', o: F.a, x0: r2(x0), y0: r2(y0), x: r2(E.x), y: r2(E.y), z: r2(D.z), a: r2(aa), col: k % 2 ? '#ff5a1a' : '#ffa040', zig: 1, w: 1.5 }); });
+    FU.later(n * st + 0.25, () => { FU.area(G, D.x, D.y, D.z, 5.5, 260 * m, { kb: 8, st: 1, dz: 4 }); FU.fx({ ek: 'iaicut', o: F.a, x: r2(D.x), y: r2(D.y), z: r2(D.z), a: r2(c.a + 0.785), r: 5.5, x2: 1, col: '#ff5a1a' }); }); },
+  '3-3'(c) { const { D, G, a, F } = c; F.ultT = W.t + 0.5; const d0 = Math.min(10, Math.max(3, c.dist)), E = evoLineEnd(D, a, d0); W.fhive = { o: G.i, x: E.x, y: E.y, z: FU.gz(E.x, E.y), t: 12, cd: 0.6 }; FU.parcel(G, { x: D.x, y: D.y, z: D.z + 3 }, E.x, E.y, 0.4, 2.2, 80 * c.m, true); FU.fx({ ek: 'hive', o: F.a, x: r2(E.x), y: r2(E.y), z: r2(W.fhive.z), t: 12 }); }, /* (round 45) 蜂王巢: a bigger hive for 12 s (was 10) firing two boxes every 0.3 s at zombies within 11 (was one / 0.35 s within 8) */
+  '4-4'(c) { const { D, G, m, F } = c; F.ultT = W.t + 10; F.lockT = W.t + 10; for (const q of [D, G]) q.invT = Math.max(q.invT || 0, 10); W.fking = { o: G.i, t: 10, tk: 0.3, n: 0, m }; FU.fx({ ek: 'king', o: F.a, t: 10 }); }, /* (round 45) 不动明王: each stomp r 8 (was 6), a golden aura r 3 around it */
+  '5-5'(c) { const { D, G, m, F } = c; F.ultT = W.t + 4.6; fuseLift(F, 4.6); const pts = FU.densest(D.x, D.y, 14, 5); FU.fx({ ek: 'stars5', o: F.a, x: r2(D.x), y: r2(D.y), z: r2(D.z) }); /* (round 45) 流星雨: five dives (was 3), r 4.5 (was 3.5) */
+    pts.forEach((P2, k) => { FU.later(1.8 + k * 0.5, () => { const gz = FU.gz(P2.x, P2.y); FU.fx({ ek: 'meteor', o: F.a, x: r2(P2.x), y: r2(P2.y), z: r2(gz), r: 4.5, x0: r2(D.x), y0: r2(D.y), z0: r2(D.z + 6), dive: 1 }); FU.later(0.22, () => FU.area(G, P2.x, P2.y, gz, 4.5, 230 * m, { kb: 8, st: 1, fall: 0.3 })); if (k === pts.length - 1) FU.later(0.25, () => fuseSetDown(F, P2.x, P2.y)); }); }); },
   '6-6'(c) { const { D, G, a, m, F } = c; F.ultT = W.t + 2.3; F.lockT = W.t + 2.2; const d0 = Math.min(22, Math.max(6, c.dist)), E = evoLineEnd(D, a, d0); FU.fx({ ek: 'charge', o: F.a, x: r2(D.x), y: r2(D.y), z: r2(D.z), a: r2(a), t: 2 });
     FU.later(2.0, () => { const z = FU.gz(E.x, E.y); emit({ k: 'cshot', o: G.i, x: r2(D.x), y: r2(D.y), z: r2(D.z + 3), e: [r2(E.x), r2(E.y), r2(z + 0.3)], t: 0.55, big: 1 });
       FU.later(0.55, () => { FU.area(G, E.x, E.y, z, 5, 600 * m, { kb: 10, st: 1.5, fall: 0.5 }); FU.fx({ ek: 'bigboom', o: F.a, x: r2(E.x), y: r2(E.y), z: r2(z), r: 5 }); W.ffire = { o: G.i, x: E.x, y: E.y, z, t: 5, tk: 0 }; noiseAt(E.x, E.y, 20, z); }); }); },
@@ -8618,37 +8621,48 @@ const FUS_ULT = {
 function fuseUltStep(F, dt) {
   if (W.fuq && W.fuq.length) { const due = []; for (const q of W.fuq) { q.t -= dt; if (q.t <= 0) due.push(q); } W.fuq = W.fuq.filter(q => q.t > 0); for (const q of due) { try { q.f(); } catch (e) { console.error(e); } } }
   if (W.ftmp && W.ftmp.length) { for (const q of W.ftmp) { q.t -= dt; if (q.t <= 0 && W.blk[q.i] === 1) setCell(q.i, 0, W.slab[q.i] || 0, null, 'fult'); } W.ftmp = W.ftmp.filter(q => q.t > 0); }
-  if (!F) { W.fblades = W.fdrop = W.fturret = W.fspin = W.fhive = W.fking = W.ffire = null; return; }
+  if (!F) { W.fblades = W.fdrop = W.fturret = W.fspin = W.fhive = W.fking = W.ffire = W.fsky = null; return; }
   const D = W.p[F.d], m = mechMul(); if (!D) return;
   if (F.uFly) { F.uFly.t += dt; if (F.uFly.t >= F.uFly.T) fuseSetDown(F); }
   const near = (x, y, R) => { let best = null, bd = R; for (const z of W.zs) { if (z.hp <= 0 || z.hidden || z.sleep) continue; const d = Math.hypot(z.x - x, z.y - y); if (d < bd) { bd = d; best = z; } } return best; };
-  const B2 = W.fblades; if (B2) { B2.t -= dt; B2.cd -= dt; if (B2.cd <= 0) { B2.cd = 0.5; const out = []; for (let k = 0; k < 8; k++) { const z = near(D.x, D.y, 7); if (!z) break; hurtZombie(z, 40 * m, W.p[B2.o], 0, 0); z.stun = Math.max(z.stun || 0, 0.25); out.push(k, r2(z.x), r2(z.y), r2(z.z + z.h * 0.5)); if (rand() < 0.5) break; } if (out.length) FU.fx({ ek: 'bladehit', o: F.a, s: out }); } if (B2.t <= 0) W.fblades = null; }
-  const Dr = W.fdrop; if (Dr) { Dr.t -= dt; Dr.cd -= dt; if (Dr.cd <= 0) { Dr.cd = 0.4; const zs = W.zs.filter(z => z.hp > 0 && !z.hidden && Math.hypot(z.x - D.x, z.y - D.y) < 10), z = zs.length ? zs[Math.floor(rand() * zs.length)] : null, k = Math.floor(rand() * BAL.droneN), q = dronePos(D, k, W.t, 0);
-      const x = z ? z.x : D.x + frnd(-6, 6), y = z ? z.y : D.y + frnd(-6, 6); FU.parcel(W.p[Dr.o], q, x, y, 0.45, 1.4, 45 * m); } if (Dr.t <= 0) W.fdrop = null; }
-  const Tu = W.fturret; if (Tu) { Tu.t -= dt; Tu.cd -= dt; const G = W.p[Tu.o]; if (Tu.cd <= 0 && Tu.n > 0 && G) { Tu.cd = 1 / 3; Tu.n--; const A = G.aimPt && !G.aimPt.auto ? G.aimPt : { x: D.x + Math.cos(G.aim) * 10, y: D.y + Math.sin(G.aim) * 10 }, k = Tu.n % BAL.droneN, q = dronePos(D, k, W.t, 0); FU.shell(G, q, A.x + frnd(-1.2, 1.2), A.y + frnd(-1.2, 1.2), 0.32, 1.8, 90 * m); } if (Tu.t <= 0) W.fturret = null; }
-  const Sp = W.fspin; if (Sp) { Sp.t -= dt; Sp.tk -= dt; if (Sp.tk <= 0) { Sp.tk = 0.25; FU.area(W.p[Sp.o], D.x, D.y, D.z, 2.4, 60 * m, { kb: 3, pull: 1, st: 0.3, quiet: true }); } if (Sp.t <= 0) W.fspin = null; }
-  const Hv = W.fhive; if (Hv) { Hv.t -= dt; Hv.cd -= dt; if (Hv.cd <= 0) { Hv.cd = 0.35; const z = near(Hv.x, Hv.y, 8); if (z) { const hp0 = z.hp; FU.parcel(W.p[Hv.o], { x: Hv.x, y: Hv.y, z: Hv.z + 1.4 }, z.x, z.y, 0.4, 1.4, 45 * m); (W.fhiveK = W.fhiveK || []).push({ id: z.id, t: 0.6 }); void hp0; } } if (Hv.t <= 0) W.fhive = null; }
+  const B2 = W.fblades; if (B2) { B2.t -= dt; B2.cd -= dt; B2.rg -= dt; /* (round 45) up to 3 different zombies within 10 every 0.35 s, each by its own blade; every 2.5 s the ring sweeps out */
+    if (B2.cd <= 0) { B2.cd = 0.35; const out = [], pool = W.zs.filter(z => z.hp > 0 && !z.hidden && !z.sleep && Math.hypot(z.x - D.x, z.y - D.y) < 10).sort((p1, p2) => Math.hypot(p1.x - D.x, p1.y - D.y) - Math.hypot(p2.x - D.x, p2.y - D.y)).slice(0, 6);
+      for (let k = 0; k < 3 && pool.length; k++) { const z = pool.splice(Math.floor(rand() * pool.length), 1)[0]; hurtZombie(z, 55 * m, W.p[B2.o], 0, 0); z.stun = Math.max(z.stun || 0, 0.3); out.push(Math.floor(rand() * 8), r2(z.x), r2(z.y), r2(z.z + z.h * 0.5)); } if (out.length) FU.fx({ ek: 'bladehit', o: F.a, s: out }); }
+    if (B2.rg <= 0) { B2.rg = 2.5; FU.area(W.p[B2.o], D.x, D.y, D.z, 6, 70 * m, { kb: 4, st: 0.5, quiet: true }); FU.fx({ ek: 'bladering', o: F.a, x: r2(D.x), y: r2(D.y), z: r2(D.z), r: 6 }); }
+    if (B2.t <= 0) W.fblades = null; }
+  const Dr = W.fdrop; if (Dr) { Dr.t -= dt; Dr.cd -= dt; if (Dr.cd <= 0) { Dr.cd = 0.2; /* (round 45) was 0.4 */ const zs = W.zs.filter(z => z.hp > 0 && !z.hidden && Math.hypot(z.x - D.x, z.y - D.y) < 10), z = zs.length ? zs[Math.floor(rand() * zs.length)] : null, k = Math.floor(rand() * BAL.droneN), q = dronePos(D, k, W.t, 0);
+      const x = z ? z.x : D.x + frnd(-6, 6), y = z ? z.y : D.y + frnd(-6, 6); FU.parcel(W.p[Dr.o], q, x, y, 0.45, 2.0, 50 * m); } if (Dr.t <= 0) W.fdrop = null; }
+  const Tu = W.fturret; if (Tu) { Tu.t -= dt; Tu.cd -= dt; const G = W.p[Tu.o]; if (Tu.cd <= 0 && Tu.n > 0 && G) { Tu.cd = 0.2; /* (round 45) 30 shells over 6 s */ Tu.n--; const A = G.aimPt && !G.aimPt.auto ? G.aimPt : { x: D.x + Math.cos(G.aim) * 10, y: D.y + Math.sin(G.aim) * 10 }, k = Tu.n % BAL.droneN, q = dronePos(D, k, W.t, 0); FU.shell(G, q, A.x + frnd(-1.8, 1.8), A.y + frnd(-1.8, 1.8), 0.32, 2.4, 80 * m); }
+  const Sk = W.fsky; if (Sk) { Sk.t -= dt; Sk.cd -= dt; const G = W.p[Sk.o]; if (Sk.cd <= 0 && G) { Sk.cd = 0.2; const zs = W.zs.filter(z => z.hp > 0 && !z.hidden && Math.hypot(z.x - D.x, z.y - D.y) < 13); if (zs.length) { const z = zs[Math.floor(rand() * zs.length)], k = Math.floor(rand() * BAL.droneN); FU.shell(G, dronePos(D, k, W.t, 0), z.x + frnd(-0.6, 0.6), z.y + frnd(-0.6, 0.6), 0.28, 2.2, 75 * m); } } if (Sk.t <= 0) W.fsky = null; } /* (round 45) 空中炮阵 shells the crowd below */ if (Tu.t <= 0) W.fturret = null; }
+  const Sp = W.fspin; if (Sp) { Sp.t -= dt; Sp.tk -= dt; Sp.wv -= dt; if (Sp.tk <= 0) { Sp.tk = 0.25; FU.area(W.p[Sp.o], D.x, D.y, D.z, 4.2, 55 * m, { kb: 3, pull: 1, st: 0.3, quiet: true }); } /* (round 45) r 2.4 → 4.2 */
+    if (Sp.wv <= 0) { Sp.wv = 1; const a0 = rand() * 6.283; for (let k = 0; k < 8; k++) FU.strip(W.p[Sp.o], D.x, D.y, D.z, a0 + k / 8 * 6.283, 8, 0.9, 60 * m, { kb: 4, st: 0.4 }); FU.fx({ ek: 'spinwave', o: F.a, x: r2(D.x), y: r2(D.y), z: r2(D.z), a: r2(a0) }); } /* and a ring of 8 blade waves (8 long) every second */
+    if (Sp.t <= 0) W.fspin = null; }
+  const Hv = W.fhive; if (Hv) { Hv.t -= dt; Hv.cd -= dt; if (Hv.cd <= 0) { Hv.cd = 0.3; const zs = W.zs.filter(z => z.hp > 0 && !z.hidden && !z.sleep && Math.hypot(z.x - Hv.x, z.y - Hv.y) < 11).sort((p1, p2) => Math.hypot(p1.x - Hv.x, p1.y - Hv.y) - Math.hypot(p2.x - Hv.x, p2.y - Hv.y)); /* (round 45) two boxes every 0.3 s within 11: the nearest and one more */ for (const z of [zs[0], zs.length > 1 ? zs[1 + Math.floor(rand() * Math.min(5, zs.length - 1))] : null]) { if (!z) continue; FU.parcel(W.p[Hv.o], { x: Hv.x, y: Hv.y, z: Hv.z + 2.4 }, z.x, z.y, 0.4, 1.8, 50 * m); (W.fhiveK = W.fhiveK || []).push({ id: z.id, t: 0.6 }); } } if (Hv.t <= 0) W.fhive = null; }
   if (W.fhiveK && W.fhiveK.length) { for (const q of W.fhiveK) { q.t -= dt; if (q.t <= 0) { const z = W.zs.find(z2 => z2.id === q.id); if (z && z.hp <= 0 && !z._hv) { z._hv = 1; const r = RES[Math.floor(rand() * RES.length)].k; W.res[r] = (W.res[r] || 0) + 1; emit({ k: 'fult', ek: 'hivegain', x: r2(z.x), y: r2(z.y), z: r2(z.z), r }); } } } W.fhiveK = W.fhiveK.filter(q => q.t > 0); }
-  const Kg = W.fking; if (Kg) { Kg.t -= dt; Kg.tk -= dt; if (Kg.tk <= 0 && Kg.n < 5) { Kg.tk = 2; Kg.n++; FU.area(W.p[Kg.o], D.x, D.y, D.z, 6, 160 * m, { up: 2.0, upT: 0.9, out: 1.4, st: 1.4, fall: 0.4 }); FU.fx({ ek: 'quake', o: F.a, x: r2(D.x), y: r2(D.y), z: r2(D.z), r: 6, gold: 1 }); noiseAt(D.x, D.y, 12, D.z); } if (Kg.t <= 0) W.fking = null; }
+  const Kg = W.fking; if (Kg) { Kg.t -= dt; Kg.tk -= dt; if (Kg.tk <= 0 && Kg.n < 5) { Kg.tk = 2; Kg.n++; FU.area(W.p[Kg.o], D.x, D.y, D.z, 8, 160 * m, { up: 2.0, upT: 0.9, out: 1.4, st: 1.4, fall: 0.4 }); FU.fx({ ek: 'quake', o: F.a, x: r2(D.x), y: r2(D.y), z: r2(D.z), r: 8, gold: 1 }); noiseAt(D.x, D.y, 12, D.z); } Kg.au = (Kg.au || 0) - dt; if (Kg.au <= 0) { Kg.au = 0.5; FU.area(W.p[Kg.o], D.x, D.y, D.z, 3, 35 * m, { kb: 3, st: 0.3, quiet: true }); } /* (round 45) a golden aura burns what comes close */ if (Kg.t <= 0) W.fking = null; }
   const Fi = W.ffire; if (Fi) { Fi.t -= dt; Fi.tk -= dt; if (Fi.tk <= 0) { Fi.tk = 0.5; for (const z of W.zs) { if (z.hp <= 0 || z.hidden || Math.hypot(z.x - Fi.x, z.y - Fi.y) > 3 + z.r) continue; z.burn = Math.max(z.burn || 0, 1.2); z.burnBy = Fi.o; hurtZombie(z, 25 * m, W.p[Fi.o], 0, 0, true); } } if (Fi.t <= 0) W.ffire = null; }
-  if (F.pblockT > W.t && W.proj && W.proj.length) { const keep = []; for (const b of W.proj) { if ((b.k === 'acid' || b.k === 'goo' || b.k === 'arrow') && Math.hypot(b.x - D.x, b.y - D.y) < 5) { emit({ k: 'fult', ek: 'pblock', x: r2(b.x), y: r2(b.y), z: r2(b.z) }); continue; } keep.push(b); } W.proj = keep; }
+  if (F.pblockT > W.t && W.proj && W.proj.length) { const keep = []; for (const b of W.proj) { if ((b.k === 'acid' || b.k === 'goo' || b.k === 'arrow') && Math.hypot(b.x - D.x, b.y - D.y) < 7) { emit({ k: 'fult', ek: 'pblock', x: r2(b.x), y: r2(b.y), z: r2(b.z) }); continue; } keep.push(b); } W.proj = keep; }
 }
 
 /* ---------- (round 43) what the ultimates look like (render side) ---------- */
+const FBL_R = 3.2; /* (round 45) 浮游刃阵's ring of blades */
 const FUV2 = new THREE.Vector3();
 function fusBodyPos(o) { const m = OBJ.pl[o]; return m ? { x: m.g.position.x, y: m.g.position.z, z: m.g.position.y } : null; }
 function fusUltFx(e) { const cb = W.fus ? MECHS[W.fus.kp].glow : '#ffd040';
   switch (e.ek) {
     case 'blades': RND.fbl = { o: e.o, t0: W.t, T: e.t }; fusSlashLine(e, '#7fe8ff'); sfx('mslash', e.x, e.y); break;
-    case 'bladehit': { const P0 = fusBodyPos(e.o); if (!P0) break; for (let i = 0; i + 3 < e.s.length; i += 4) { const k = e.s[i], a = W.t * 3 + k / 8 * 6.283, bx = P0.x + Math.cos(a) * 1.8, by = P0.y + Math.sin(a) * 1.8, bz = P0.z + 2.2; RND.tracers.push({ x: bx, y: by, z: bz, x2: e.s[i + 1], y2: e.s[i + 2], z2: e.s[i + 3], t: 0, life: 0.14, w: 0.07, col: [0.5, 0.95, 1] }); fxSlash(e.s[i + 1], e.s[i + 2], e.s[i + 3], a + Math.PI, 0.9, '#7fe8ff'); } if (thr('fbh', 0.1)) sfx('slash', P0.x, P0.y); break; }
+    case 'bladehit': { const P0 = fusBodyPos(e.o); if (!P0) break; for (let i = 0; i + 3 < e.s.length; i += 4) { const k = e.s[i], a = W.t * 2.2 + k / 8 * 6.283, bx = P0.x + Math.cos(a) * FBL_R, by = P0.y + Math.sin(a) * FBL_R, bz = P0.z + 2.0, tx = e.s[i + 1], ty = e.s[i + 2], tz = e.s[i + 3], ta = Math.atan2(ty - by, tx - bx); /* (round 45) the blade flies out, cuts, and flies back */
+        (RND.fblF = RND.fblF || []).push({ x: bx, y: by, z: bz, x2: tx, y2: ty, z2: tz, t: 0, k }); RND.tracers.push({ x: bx, y: by, z: bz, x2: tx, y2: ty, z2: tz, t: 0, life: 0.2, w: 0.16, col: [0.55, 0.95, 1] }); fxSlash(tx, ty, tz, ta, 1.6, '#7fe8ff', { life: 0.22 }); fxSlash(tx, ty, tz, ta + 1.2, 1.2, '#ffffff', { life: 0.16 }); for (let q = 0; q < 5; q++) addP({ x: tx, y: ty, z: tz, vx: frnd(-3, 3), vy: frnd(-3, 3), vz: frnd(0, 3), g: 6, col: q % 2 ? '#bff6ff' : '#7fe8ff', s: 0.06, life: 0.3 }); } if (thr('fbh', 0.08)) sfx('slash', P0.x, P0.y); break; }
+    case 'bladering': { for (let k = 0; k < 16; k++) { const a = k / 16 * 6.283; (RND.fring = RND.fring || []).push({ x: e.x, y: e.y, z: e.z + 1.2, a, t: 0, T: 0.35, R: e.r }); } fxAdd({ kind: 'shock', x: e.x, y: e.y, z: e.z + 0.05, s0: 1, s1: e.r * 1.1, life: 0.35, col: '#7fe8ff', op: 0.55 }); fxAdd({ kind: 'wave', x: e.x, y: e.y, z: e.z + 1, s0: 1.5, s1: e.r, life: 0.35, col: '#bff6ff', op: 0.35 }); sfx('mslash', e.x, e.y); break; }
+    case 'spinwave': { for (let k = 0; k < 8; k++) (RND.fring = RND.fring || []).push({ x: e.x, y: e.y, z: e.z + 1.2, a: e.a + k / 8 * 6.283, t: 0, T: 0.4, R: 8, col: k % 2 ? '#ffa040' : '#9fe8ff' }); fxAdd({ kind: 'shock', x: e.x, y: e.y, z: e.z + 0.05, s0: 1.5, s1: 8.5, life: 0.4, col: '#ffd0a0', op: 0.4 }); if (thr('fspw', 0.3)) sfx('mslash', e.x, e.y); break; }
+    case 'skyguns': RND.fskyV = { o: e.o, t0: W.t, T: e.t || 6 }; sfx('plane', e.x, e.y); break;
     case 'drop': sfx('plane', e.x, e.y); break;
     case 'quake': fxEvent({ k: 'mskill', o: e.o, t: 'quake', x: e.x, y: e.y, z: e.z, r: e.r }); if (e.gold) { fxShock(e.x, e.y, e.z, e.r * 1.1, '#ffd040'); fxAdd({ kind: 'wave', x: e.x, y: e.y, z: e.z + 0.4, s0: 1, s1: e.r, life: 0.45, col: '#ffd040', op: 0.45 }); } break;
-    case 'skyguns': break;
     case 'turret': { fxShock(e.x, e.y, e.z, 2.4, '#ffd27a', '#5a5040'); for (let k = 0; k < 4; k++) { const a = k / 4 * 6.283 + 0.785; debrisFx(e.x + Math.cos(a) * 1.1, e.y + Math.sin(a) * 1.1, e.z, '#7a6a58', 4); } RND.fturT = { o: e.o, t0: W.t, T: e.t }; sfx('clank', e.x, e.y); break; }
     case 'slash': fusSlashLine(e, e.col || '#ffa040'); sfx('mslash', e.x, e.y); break;
     case 'iai': RND.fhop = { o: e.o, t0: W.t, T: 0.4, h: 2.2 }; fxAdd({ kind: 'wave', x: e.x, y: e.y, z: e.z + 0.2, s0: 0.6, s1: 2, life: 0.3, col: '#ffa040', op: 0.4 }); sfx('jump', e.x, e.y); break;
     case 'fissure': { const ca = Math.cos(e.a), sa = Math.sin(e.a); for (let k = 0; k < 20; k++) { const d = k / 20 * e.L, x = e.x + ca * d + frnd(-0.3, 0.3), y = e.y + sa * d + frnd(-0.3, 0.3); fxAdd({ kind: 'shock', x, y, z: e.z + 0.04, s0: 0.3, s1: 0.9, life: 0.6 + k * 0.02, col: '#ff7a2a', op: 0.75 }); if (k % 2) debrisFx(x, y, e.z, '#6a5a48', 3); addP({ x, y, z: e.z + 0.1, vx: 0, vy: 0, vz: frnd(3, 6), g: 9, col: '#ffb060', s: 0.08, life: 0.5 }); } shake(e.x, e.y, 0.6); sfx('collapse', e.x, e.y); break; }
-    case 'iaicut': { for (const r of [0, Math.PI]) fxSlash(e.x, e.y, e.z + 1.0, e.a + r, 3.4, '#ffa040', { life: 0.3 }); fxAdd({ kind: 'shock', x: e.x, y: e.y, z: e.z + 1.0, s0: 1.2, s1: 3.6, life: 0.3, col: '#ffffff', op: 0.6 }); sfx('mslash', e.x, e.y); break; }
+    case 'iaicut': { const R = e.r || 3.2, col = e.col || '#ffa040'; for (const r of e.x2 ? [0, Math.PI / 2, Math.PI, Math.PI * 1.5] : [0, Math.PI]) { fxSlash(e.x, e.y, e.z + 1.0, e.a + r, R * 1.05, col, { life: 0.34 }); fxSlash(e.x, e.y, e.z + 1.05, e.a + r + 0.3, R * 0.8, '#ffffff', { life: 0.22 }); } fxAdd({ kind: 'shock', x: e.x, y: e.y, z: e.z + 1.0, s0: 1.2, s1: R * 1.15, life: 0.32, col: '#ffffff', op: 0.6 }); fxShock(e.x, e.y, e.z, R, col); shake(e.x, e.y, 0.5); sfx('mslash', e.x, e.y); break; } /* (round 45) sized to its reach; 修罗 cuts an X */
     case 'spin': RND.fsp = { o: e.o, t0: W.t, T: e.t }; sfx('gyro', 0, 0); break;
     case 'bombrun': sfx('plane', e.x, e.y); break;
     case 'burst': { fxFlash(e.x, e.y, e.z, 1.2, '#ffd27a'); fxAdd({ kind: 'ring', x: e.x, y: e.y, z: e.z, s0: 0.3, s1: 2.2, life: 0.3, col: '#ffd27a', op: 0.7 }); sfx('boom', e.x, e.y); break; }
@@ -8656,27 +8670,32 @@ function fusUltFx(e) { const cb = W.fus ? MECHS[W.fus.kp].glow : '#ffd040';
     case 'meteor': { if (e.dive) { RND.tracers.push({ x: e.x0, y: e.y0, z: e.z0, x2: e.x, y2: e.y, z2: e.z + 0.8, t: 0, life: 0.35, w: 0.45, col: fusRGB('#9fe8ff') }); setTimeout(() => fusImpact(e), 200); } else fusImpact(e); break; }
     case 'slide': for (let k = 0; k < 8; k++) addP({ x: e.x + frnd(-0.5, 0.5), y: e.y + frnd(-0.5, 0.5), z: e.z + 0.1, vx: -Math.cos(e.a) * 3 + frnd(-0.5, 0.5), vy: -Math.sin(e.a) * 3 + frnd(-0.5, 0.5), vz: frnd(0.2, 0.8), g: -0.2, col: '#a89a80', s: 0.2, life: 0.7, smoke: 1 }); break;
     case 'stars': RND.fdome = { o: e.o, t0: W.t, T: e.t }; sfx('ready', 0, 0); break;
-    case 'hive': RND.fhive = { x: e.x, y: e.y, z: e.z, t0: W.t, T: e.t }; break;
+    case 'hive': RND.fhive = { o: e.o, x: e.x, y: e.y, z: e.z, t0: W.t, T: e.t }; break;
     case 'hivegain': for (let k = 0; k < 6; k++) addP({ x: e.x, y: e.y, z: e.z + 0.6, vx: frnd(-1, 1), vy: frnd(-1, 1), vz: frnd(1, 2.5), g: 3, col: (RES.find(r => r.k === e.r) || {}).col || '#ffd040', s: 0.07, life: 0.6 }); if (thr('hvg', 0.8)) sfx('loot', e.x, e.y); break;
     case 'king': RND.fking = { o: e.o, t0: W.t, T: e.t }; sfx('heal', 0, 0); break;
     case 'stars5': break;
     case 'charge': RND.fchg = { o: e.o, t0: W.t, T: e.t, a: e.a }; break;
-    case 'bigboom': { fxFlash(e.x, e.y, e.z + 0.6, 3, '#ffb060'); fxShock(e.x, e.y, e.z, e.r * 1.2, '#ffffff', '#4a4038'); fxShock(e.x, e.y, e.z, e.r * 0.8, '#ff9a3a'); fxAdd({ kind: 'pillar', x: e.x, y: e.y, z: e.z, s0: 1.6, s1: 0.2, sy: 9, life: 0.6, col: '#ff9a3a', op: 0.5 }); for (let k = 0; k < 30; k++) { const a = FXR() * 6.283, v = frnd(3, 9); addP({ x: e.x, y: e.y, z: e.z + 0.5, vx: Math.cos(a) * v, vy: Math.sin(a) * v, vz: frnd(2, 7), g: 7, col: k % 3 ? '#ffd27a' : '#ff6a2a', s: frnd(0.07, 0.14), life: frnd(0.5, 1) }); } debrisFx(e.x, e.y, e.z, '#6a5a48', 16); RND.ffireV = { x: e.x, y: e.y, z: e.z, t0: W.t, T: 5 }; shake(e.x, e.y, 1.0); sfx('boom', e.x, e.y); break; }
+    case 'bigboom': { fxFlash(e.x, e.y, e.z + 0.6, 3, '#ffb060'); fxShock(e.x, e.y, e.z, e.r * 1.2, '#ffffff', '#4a4038'); fxShock(e.x, e.y, e.z, e.r * 0.8, '#ff9a3a'); fxAdd({ kind: 'pillar', x: e.x, y: e.y, z: e.z, s0: 1.6, s1: 0.2, sy: 9, life: 0.6, col: '#ff9a3a', op: 0.5 }); for (let k = 0; k < 30; k++) { const a = FXR() * 6.283, v = frnd(3, 9); addP({ x: e.x, y: e.y, z: e.z + 0.5, vx: Math.cos(a) * v, vy: Math.sin(a) * v, vz: frnd(2, 7), g: 7, col: k % 3 ? '#ffd27a' : '#ff6a2a', s: frnd(0.07, 0.14), life: frnd(0.5, 1) }); } debrisFx(e.x, e.y, e.z, '#6a5a48', 16); RND.ffireV = { o: e.o, x: e.x, y: e.y, z: e.z, t0: W.t, T: 5 }; shake(e.x, e.y, 1.0); sfx('boom', e.x, e.y); break; }
     case 'pblock': fxFlash(e.x, e.y, e.z, 0.5, '#7fe8ff'); for (let k = 0; k < 5; k++) addP({ x: e.x, y: e.y, z: e.z, vx: frnd(-2, 2), vy: frnd(-2, 2), vz: frnd(0, 2), g: 6, col: '#bff6ff', s: 0.05, life: 0.3 }); break;
   } void cb; }
-function fusSlashLine(e, col) { const dx = e.x - e.x0, dy = e.y - e.y0, L = Math.hypot(dx, dy) || 1, n = Math.max(3, Math.floor(L / 1.2)); for (let k = 0; k <= n; k++) { const u = k / n; fxSlash(e.x0 + dx * u, e.y0 + dy * u, e.z + 1.0, e.a + (k % 2 ? 0.4 : -0.4), 1.8, col, { life: 0.2 + u * 0.12 }); }
-  RND.tracers.push({ x: e.x0, y: e.y0, z: e.z + 1.1, x2: e.x, y2: e.y, z2: e.z + 1.1, t: 0, life: 0.3, w: 0.3, col: fusRGB(col) }); }
+function fusSlashLine(e, col) { const w = e.w || 1, dx = e.x - e.x0, dy = e.y - e.y0, L = Math.hypot(dx, dy) || 1, n = Math.max(3, Math.floor(L / 1.1)); for (let k = 0; k <= n; k++) { const u = k / n; fxSlash(e.x0 + dx * u, e.y0 + dy * u, e.z + 1.0, e.a + (k % 2 ? 0.4 : -0.4), 1.8 * w, col, { life: 0.22 + u * 0.14 }); if (w > 1 && k % 2) fxAdd({ kind: 'shock', x: e.x0 + dx * u, y: e.y0 + dy * u, z: e.z + 0.05, s0: 0.4, s1: 1.2 * w, life: 0.4, col, op: 0.45 }); }
+  RND.tracers.push({ x: e.x0, y: e.y0, z: e.z + 1.1, x2: e.x, y2: e.y, z2: e.z + 1.1, t: 0, life: 0.34, w: 0.3 * w, col: fusRGB(col) }); if (w > 1) RND.tracers.push({ x: e.x0, y: e.y0, z: e.z + 1.1, x2: e.x, y2: e.y, z2: e.z + 1.1, t: 0, life: 0.22, w: 0.1 * w, col: [1, 1, 1] }); } /* (round 45) e.w: a wider cut gets a wider trail and scorch rings */
 function fusImpact(e) { fxFlash(e.x, e.y, e.z + 0.4, 1.8, '#9fe8ff'); fxShock(e.x, e.y, e.z, e.r * 1.2, '#ffffff', '#5a5040'); fxShock(e.x, e.y, e.z, e.r * 0.8, '#9fe8ff'); debrisFx(e.x, e.y, e.z + 0.05, '#7a6a58', 14); for (let k = 0; k < 18; k++) { const a = FXR() * 6.283; addP({ x: e.x, y: e.y, z: e.z + 0.3, vx: Math.cos(a) * 6, vy: Math.sin(a) * 6, vz: frnd(1, 4), g: 7, col: k % 2 ? '#dff8ff' : '#ffd040', s: 0.08, life: 0.6 }); } shake(e.x, e.y, 0.7); sfx('boom', e.x, e.y); }
 function fusUltTick(dt) {
-  const life = r => r && W.t - r.t0 < r.T;
-  if (life(RND.fbl)) { const P0 = fusBodyPos(RND.fbl.o); if (P0) for (let k = 0; k < 8; k++) { const a = W.t * 3 + k / 8 * 6.283, x = P0.x + Math.cos(a) * 1.8, y = P0.y + Math.sin(a) * 1.8, z = P0.z + 2.2 + Math.sin(W.t * 4 + k) * 0.15; fxAdd({ kind: 'cres', x, y, z, s0: 0.42, s1: 0.45, life: 0.04, col: '#7fe8ff', op: 0.9, yaw: a + Math.PI / 2 }); } } else RND.fbl = null;
-  if (life(RND.fsp)) { const P0 = fusBodyPos(RND.fsp.o); if (P0) { const sp = W.t * 16; for (let k = 0; k < 4; k++) { const a = sp + k * Math.PI / 2; fxAdd({ kind: 'cres', x: P0.x, y: P0.y, z: P0.z + 1.3, s0: 2.0, s1: 2.4, life: 0.05, col: k % 2 ? '#ffa040' : '#9fe8ff', op: 0.85, yaw: a }); } if (FXR() < 0.6) addP({ x: P0.x + frnd(-2, 2), y: P0.y + frnd(-2, 2), z: P0.z + 1.3, vx: 0, vy: 0, vz: 0.3, g: 0, col: '#ffd0a0', s: 0.06, life: 0.25 }); } } else RND.fsp = null;
+  const fk = W.fus ? W.fus.a * 100 + W.fus.kb * 10 + W.fus.kp : -1, life = r => { if (r && r.fk == null) r.fk = fk; return r && W.t - r.t0 < r.T && (r.o == null || r.fk === fk); }; /* (round 45) a fusion's lasting visuals end with that fusion */ /* (round 45) a fusion's lasting visuals end with the fusion (they used to linger after a split) */
+  if (life(RND.fbl)) { const P0 = fusBodyPos(RND.fbl.o), out = new Set((RND.fblF || []).filter(f => f.t < 0.3).map(f => f.k)); if (P0) { for (let k = 0; k < 8; k++) { if (out.has(k)) continue; const a = W.t * 2.2 + k / 8 * 6.283, x = P0.x + Math.cos(a) * FBL_R, y = P0.y + Math.sin(a) * FBL_R, z = P0.z + 2.0 + Math.sin(W.t * 4 + k) * 0.25; /* (round 45) eight big blades on a 3.2 ring, each with an after-image */
+      fxAdd({ kind: 'cres', x, y, z, s0: 1.05, s1: 1.1, life: 0.04, col: '#7fe8ff', op: 0.95, yaw: a + Math.PI / 2, roll: 0.5 }); fxAdd({ kind: 'cres', x, y, z: z + 0.02, s0: 0.75, s1: 0.8, life: 0.04, col: '#ffffff', op: 0.75, yaw: a + Math.PI / 2, roll: 0.5 }); const a2 = a - 0.22; fxAdd({ kind: 'cres', x: P0.x + Math.cos(a2) * FBL_R, y: P0.y + Math.sin(a2) * FBL_R, z, s0: 0.95, s1: 1.0, life: 0.04, col: '#3fb8ff', op: 0.35, yaw: a2 + Math.PI / 2, roll: 0.5 }); }
+      if (thr('fblr', 0.12)) fxAdd({ kind: 'ring', x: P0.x, y: P0.y, z: P0.z + 0.06, s0: FBL_R + 0.3, s1: FBL_R + 0.5, life: 0.14, col: '#7fe8ff', op: 0.3 }); } } else RND.fbl = null;
+  if (RND.fblF && RND.fblF.length) { for (const f of RND.fblF) { f.t += dt; const u = f.t < 0.12 ? f.t / 0.12 : Math.max(0, 1 - (f.t - 0.12) / 0.2), x = lerp(f.x, f.x2, u), y = lerp(f.y, f.y2, u), z = lerp(f.z, f.z2, u); fxAdd({ kind: 'cres', x, y, z, s0: 1.05, s1: 1.1, life: 0.04, col: '#bff6ff', op: 0.95, yaw: W.t * 30 + f.k, roll: 0.3 }); } RND.fblF = RND.fblF.filter(f => f.t < 0.32); }
+  if (RND.fring && RND.fring.length) { for (const f of RND.fring) { f.t += dt; const u = Math.min(1, f.t / f.T), r = 0.8 + (f.R - 0.8) * u, x = f.x + Math.cos(f.a) * r, y = f.y + Math.sin(f.a) * r; fxAdd({ kind: 'cres', x, y, z: f.z, s0: 1.3, s1: 1.4, life: 0.04, col: f.col || '#7fe8ff', op: 0.9 * (1 - u * 0.6), yaw: f.a, roll: 0.15 }); } RND.fring = RND.fring.filter(f => f.t < f.T); }
+  if (life(RND.fskyV)) { const P0 = fusBodyPos(RND.fskyV.o); if (P0 && thr('fsky', 0.3)) fxAdd({ kind: 'ring', x: P0.x, y: P0.y, z: P0.z + 0.06, s0: 6, s1: 13, life: 0.5, col: '#ffd27a', op: 0.18 }); } else RND.fskyV = null;
+  if (life(RND.fsp)) { const P0 = fusBodyPos(RND.fsp.o); if (P0) { const sp = W.t * 16; for (let k = 0; k < 6; k++) { const a = sp + k * Math.PI / 3; fxAdd({ kind: 'cres', x: P0.x, y: P0.y, z: P0.z + 1.3 + (k % 2) * 0.5, s0: 4.0, s1: 4.4, life: 0.05, col: k % 2 ? '#ffa040' : '#9fe8ff', op: 0.8, yaw: a }); } if (thr('fspr', 0.1)) fxAdd({ kind: 'shock', x: P0.x, y: P0.y, z: P0.z + 0.05, s0: 3.6, s1: 4.6, life: 0.2, col: '#ffd0a0', op: 0.35 }); /* (round 45) the spin is r 4.2 now */ if (FXR() < 0.8) addP({ x: P0.x + frnd(-4, 4), y: P0.y + frnd(-4, 4), z: P0.z + 1.3, vx: 0, vy: 0, vz: 0.3, g: 0, col: '#ffd0a0', s: 0.06, life: 0.25 }); } } else RND.fsp = null;
   if (life(RND.fturT)) { const P0 = fusBodyPos(RND.fturT.o); if (P0 && thr('ftur', 0.4)) fxAdd({ kind: 'shock', x: P0.x, y: P0.y, z: P0.z + 0.05, s0: 1.6, s1: 2.2, life: 0.4, col: '#ffd27a', op: 0.4 }); } else RND.fturT = null;
-  if (life(RND.fdome)) { const P0 = fusBodyPos(RND.fdome.o); if (P0) { if (!RND.fdomeM) { RND.fdomeM = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16), new THREE.MeshBasicMaterial({ color: '#7fe8ff', transparent: true, opacity: 0.1, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide })); SCN.add(RND.fdomeM); } const m = RND.fdomeM; m.visible = true; m.position.set(P0.x, P0.z + 1.6, P0.y); m.scale.setScalar(4.6); m.material.opacity = 0.08 + 0.04 * Math.sin(W.t * 5); } } else { RND.fdome = null; if (RND.fdomeM) RND.fdomeM.visible = false; }
+  if (life(RND.fdome)) { const P0 = fusBodyPos(RND.fdome.o); if (P0) { if (!RND.fdomeM) { RND.fdomeM = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16), new THREE.MeshBasicMaterial({ color: '#7fe8ff', transparent: true, opacity: 0.1, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide })); SCN.add(RND.fdomeM); } const m = RND.fdomeM; m.visible = true; m.position.set(P0.x, P0.z + 1.6, P0.y); m.scale.setScalar(7); m.material.opacity = 0.08 + 0.04 * Math.sin(W.t * 5); } } else { RND.fdome = null; if (RND.fdomeM) RND.fdomeM.visible = false; }
   if (life(RND.fhive)) { const H = RND.fhive; if (!RND.fhiveM) { const g = new THREE.Group(), gold = new THREE.MeshLambertMaterial({ color: '#e8b830', emissive: '#4a3000' }), dk = new THREE.MeshLambertMaterial({ color: '#6a4a10' }); for (let k = 0; k < 4; k++) { const c = new THREE.Mesh(new THREE.CylinderGeometry(0.7 - k * 0.12, 0.75 - k * 0.12, 0.42, 6), k % 2 ? dk : gold); c.position.y = 0.21 + k * 0.4; c.castShadow = true; g.add(c); } const gl = new THREE.Mesh(new THREE.CircleGeometry(0.16, 6), new THREE.MeshBasicMaterial({ color: '#ffe080' })); gl.position.set(0.66, 0.7, 0); gl.rotation.y = Math.PI / 2; g.add(gl); SCN.add(g); RND.fhiveM = g; }
-    const m = RND.fhiveM, k = Math.min(1, (W.t - H.t0) / 0.3), e2 = H.T - (W.t - H.t0) < 0.4 ? Math.max(0, (H.T - (W.t - H.t0)) / 0.4) : 1; m.visible = true; m.position.set(H.x, H.z, H.y); m.scale.setScalar(Math.max(0.01, k * e2)); m.rotation.y = W.t * 0.4;
+    const m = RND.fhiveM, k = Math.min(1, (W.t - H.t0) / 0.3), e2 = H.T - (W.t - H.t0) < 0.4 ? Math.max(0, (H.T - (W.t - H.t0)) / 0.4) : 1; m.visible = true; m.position.set(H.x, H.z, H.y); m.scale.setScalar(Math.max(0.01, k * e2) * 1.8); m.rotation.y = W.t * 0.4; /* (round 45) a bigger hive */
     if (FXR() < 0.5) { const a = FXR() * 6.283, r = 0.8 + FXR() * 1.2; addP({ x: H.x + Math.cos(a) * r, y: H.y + Math.sin(a) * r, z: H.z + 0.8 + FXR() * 1.2, vx: -Math.sin(a) * 2, vy: Math.cos(a) * 2, vz: 0, g: 0, col: '#ffd040', s: 0.05, life: 0.3 }); } } else { RND.fhive = null; if (RND.fhiveM) RND.fhiveM.visible = false; }
-  if (life(RND.fking)) { const P0 = fusBodyPos(RND.fking.o); if (P0) { if (thr('fk', 0.15)) { fxAdd({ kind: 'ring', x: P0.x, y: P0.y, z: P0.z + 0.08, s0: 1.8, s1: 2.6, life: 0.3, col: '#ffd040', op: 0.5 }); fxAdd({ kind: 'pillar', x: P0.x, y: P0.y, z: P0.z, s0: 1.4, s1: 1.4, sy: 4.5, life: 0.18, col: '#ffd040', op: 0.12 }); } if (FXR() < 0.7) { const a = FXR() * 6.283; addP({ x: P0.x + Math.cos(a) * 1.5, y: P0.y + Math.sin(a) * 1.5, z: P0.z + 0.2, vx: 0, vy: 0, vz: 2.2, g: 0, col: '#ffe080', s: 0.06, life: 0.7 }); } } } else RND.fking = null;
+  if (life(RND.fking)) { const P0 = fusBodyPos(RND.fking.o); if (P0) { if (thr('fk', 0.15)) { fxAdd({ kind: 'ring', x: P0.x, y: P0.y, z: P0.z + 0.08, s0: 2.8, s1: 3.3, life: 0.3, col: '#ffd040', op: 0.55 }); fxAdd({ kind: 'pillar', x: P0.x, y: P0.y, z: P0.z, s0: 2.2, s1: 2.2, sy: 7, life: 0.18, col: '#ffd040', op: 0.14 }); } /* (round 45) the aura (r 3) */ if (FXR() < 0.7) { const a = FXR() * 6.283; addP({ x: P0.x + Math.cos(a) * 1.5, y: P0.y + Math.sin(a) * 1.5, z: P0.z + 0.2, vx: 0, vy: 0, vz: 2.2, g: 0, col: '#ffe080', s: 0.06, life: 0.7 }); } } } else RND.fking = null;
   if (life(RND.fchg)) { const C = RND.fchg, P0 = fusBodyPos(C.o); if (P0) { const k = (W.t - C.t0) / C.T, x = P0.x + Math.cos(C.a) * 2.2, y = P0.y + Math.sin(C.a) * 2.2, z = P0.z + 3.3; fxAdd({ kind: 'ball', x, y, z, s0: 0.2 + k * 0.6, s1: 0.25 + k * 0.6, life: 0.04, col: '#ff9a3a', op: 0.4 + k * 0.4 }); for (let q = 0; q < 2; q++) { const a = FXR() * 6.283, r = 1.6; addP({ x: x + Math.cos(a) * r, y: y + Math.sin(a) * r, z: z + frnd(-1, 1), vx: -Math.cos(a) * r * 3, vy: -Math.sin(a) * r * 3, vz: 0, g: 0, col: '#ffd27a', s: 0.06, life: 0.3 }); } } } else RND.fchg = null;
   if (life(RND.ffireV)) { const Fv = RND.ffireV; for (let q = 0; q < 3; q++) { const a = FXR() * 6.283, r = FXR() * 3; addP({ x: Fv.x + Math.cos(a) * r, y: Fv.y + Math.sin(a) * r, z: Fv.z + 0.1, vx: 0, vy: 0, vz: frnd(1, 2.5), g: -0.5, col: q ? '#ff7a2a' : '#ffd27a', s: frnd(0.08, 0.16), life: 0.5 }); } if (FXR() < 0.3) addP({ x: Fv.x + frnd(-2, 2), y: Fv.y + frnd(-2, 2), z: Fv.z + 0.8, vx: 0, vy: 0, vz: 0.8, g: -0.2, col: '#5a5048', s: 0.25, life: 1, smoke: 1 }); } else RND.ffireV = null;
   if (life(RND.fhop)) { const H = RND.fhop, m = OBJ.pl[H.o]; if (m) { const u = (W.t - H.t0) / H.T; m.g.position.y += Math.sin(u * Math.PI) * H.h; } } else RND.fhop = null;
@@ -10241,7 +10260,8 @@ function fusFxTick(dt) {
       for (let q = 0; q < (H ? 3 : 1); q++) if (FXR() < 0.5) addP({ x: w.x + frnd(-2.5, 2.5) * (H ? 2.4 : 1), y: w.y + frnd(-2.5, 2.5) * (H ? 2.4 : 1), z: w.z + 0.2, vx: 0, vy: 0, vz: 0.8, g: -0.2, col: H ? '#c8c2b4' : '#a89a80', s: 0.16, life: 0.6, smoke: 1 });
       if (H && thr('whH' + w.id, 0.05)) { const a = FXR() * 6.28, r = frnd(5, 9.5); addP({ x: w.x + Math.cos(a) * r, y: w.y + Math.sin(a) * r, z: w.z + 0.3, vx: -Math.cos(a) * 7 - Math.sin(a) * 5, vy: -Math.sin(a) * 7 + Math.cos(a) * 5, vz: 0.4, g: 0, col: '#dff8ff', s: 0.09, life: 0.7 }); } /* the inflow: streaks rushing in from the edge */
       if (thr('wh' + w.id, 0.12)) { fxAdd({ kind: 'wave', x: w.x, y: w.y, z: w.z + 0.5, s0: 1.4 * k, s1: 0.6 * k, life: 0.3, col: '#9fe8ff', op: 0.3, sy: 1.6 }); fxAdd({ kind: 'shock', x: w.x, y: w.y, z: w.z + 0.05, s0: H ? 9 : 3.6, s1: 1.0, life: H ? 0.5 : 0.35, col: '#cfefff', op: 0.35 }); if (H) fxAdd({ kind: 'wave', x: w.x, y: w.y, z: w.z + 3, s0: 3.2 * k, s1: 1.6 * k, life: 0.3, col: '#cfefff', op: 0.25, sy: 2.6 }); } }
-    RND.whirls = RND.whirls.filter(w => w.t < w.T); }
+    whirlFunnels(); RND.whirls = RND.whirls.filter(w => w.t < w.T); }
+  else whirlFunnels();
   // the landing spot, the last half second of the flight: a ring on the driver's aim point (≤ 8)
   const F = W.fus; if (F && fusFlyKind(F) === 1) { const left = F.fly ? F.fly.T - F.fly.t : F.flyL || 0; if (left > 0 && left < 0.55) { const D = W.p[F.d]; if (D) { const tg = D.aimPt && !D.aimPt.auto ? D.aimPt : { x: D.x + Math.cos(D.aim) * 6, y: D.y + Math.sin(D.aim) * 6 }, a = Math.atan2(tg.y - D.y, tg.x - D.x), dd = Math.min(BAL.fDiveR, Math.hypot(tg.x - D.x, tg.y - D.y)), x = D.x + Math.cos(a) * dd, y = D.y + Math.sin(a) * dd, gz = surfZ(x, y, skyTop(x, y));
       fxAdd({ kind: 'shock', x, y, z: gz + 0.05, s0: 3.2, s1: 3.2, life: 0.04, col: '#ffd040', op: 0.75 }); fxAdd({ kind: 'shock', x, y, z: gz + 0.06, s0: 3.2 * (left / 0.55), s1: 3.2 * (left / 0.55), life: 0.04, col: '#ffffff', op: 0.5 }); } } }
@@ -10263,6 +10283,19 @@ function fusFxEvent(e) {
   }
   return false;
 }
+/* (round 45) a visible funnel for each whirlwind: two open cones (pale wind + a darker dust band near the ground), normal blending so they read on a
+   bright day as well as at night; the 风暴陨击 tornado (big 2) is a tall wide one, the ultimates' (big 1) medium, the glide's small */
+const WFUN = []; let WFTEX = null;
+function wfTex() { if (WFTEX) return WFTEX; const c = document.createElement('canvas'); c.width = 64; c.height = 128; const g = c.getContext('2d'); g.clearRect(0, 0, 64, 128); /* diagonal wind streaks, soft-edged */
+  for (let k = -4; k < 10; k++) { const gr = g.createLinearGradient(0, 0, 64, 0); gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(0.5, 'rgba(255,255,255,' + (0.55 + (k % 3) * 0.15) + ')'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.save(); g.translate(0, k * 16); g.transform(1, 0.45, 0, 1, 0, 0); g.fillStyle = gr; g.fillRect(0, 0, 64, 5 + (k % 2) * 3); g.restore(); }
+  g.fillStyle = 'rgba(255,255,255,0.18)'; g.fillRect(0, 0, 64, 128); WFTEX = new THREE.CanvasTexture(c); WFTEX.wrapS = WFTEX.wrapT = THREE.RepeatWrapping; WFTEX.repeat.set(3, 1); return WFTEX; }
+function whirlFunnels() { const L = RND.whirls || []; let n = 0;
+  for (const w of L) { const k = Math.min(1, w.t / 0.25) * (w.t > w.T - 0.3 ? Math.max(0, (w.T - w.t) / 0.3) : 1); if (k <= 0.01) continue; let F = WFUN[n];
+    if (!F) { F = new THREE.Group(); const mk = (r0, r1, h, col, op) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(r1, r0, h, 28, 6, true).translate(0, h / 2, 0), new THREE.MeshBasicMaterial({ color: col, map: wfTex(), transparent: true, opacity: op, depthWrite: false, side: THREE.DoubleSide })); m.userData.op = op; F.add(m); return m; };
+      mk(0.35, 1.6, 4.2, '#e8f4f8', 0.55); mk(0.5, 1.15, 3.2, '#ffffff', 0.4); mk(0.9, 1.5, 1.0, '#a89a82', 0.6); for (const c of F.children) c.renderOrder = 5; SCN.add(F); WFUN[n] = F; }
+    const S = w.big > 1 ? 2.4 : w.big ? 1.5 : 0.85; F.visible = true; F.position.set(w.x, w.z, w.y); F.scale.set(S * k, S * (0.5 + 0.5 * k), S * k);
+    F.children[0].rotation.y = W.t * 5; F.children[1].rotation.y = -W.t * 7; F.children[2].rotation.y = W.t * 3; F.children.forEach((c, i) => { c.material.opacity = c.userData.op * k * (1 + 0.15 * Math.sin(W.t * 11 + i * 2)); c.scale.x = c.scale.z = 1 + 0.06 * Math.sin(W.t * 9 + i); }); n++; }
+  for (let i = n; i < WFUN.length; i++) WFUN[i].visible = false; }
 /* ================= (round 44) anti-air throws: what a melee mech / beast sends up at a flyer it can't reach ================= */
 const AAK = { blade: ['#ffa040', '#ffffff', 'cres'], shield: ['#5fe0ff', '#cfefff', 'ring'], venom: ['#7dff5a', '#d8ff90', 'ball'], fire: ['#ff7a2a', '#ffd27a', 'ball'], moon: ['#cfe8ff', '#ffffff', 'cres'], water: ['#5ab8ff', '#e0f4ff', 'ball'], rock: ['#8a7a60', '#c8b898', 'rock'] };
 function aaFxTick(dt) { if (!RND.aas || !RND.aas.length) return;
@@ -14719,7 +14752,8 @@ function guestGone() {
   if (STATE.mode === 'play' && W && W.p[1]) { W.p[1].gone = true; W.p[1].down = false; uiMsg('队友断开了连接，你可以继续单人守夜', '#ff6b5a'); }
   lobbyUI();
 }
-function sendLobby() { netSendCtl({ t: 'lobby', v: BUILD_TAG, ready: NET.ready, host: SET.name || '房主', code: NET.code, diff: SET.diff, mode: SET.mode || 'classic', map: SET.map || '' }); }
+function sendLobby() { const n = SET.hostFrom || 0, S = n ? loadSlot(n) : null; /* (round 45) a room from a save: the teammate sees the save's settings */
+  netSendCtl({ t: 'lobby', v: BUILD_TAG, ready: NET.ready, host: SET.name || '房主', code: NET.code, diff: S ? S.diff : SET.diff, mode: S ? S.mode || 'classic' : SET.mode || 'classic', map: S ? S.map || 'town' : SET.map || '', fromLbl: S ? '房主用存档开的房间：' + saveLabel(S) + (S.p && S.p.some(q => q && q.name === NET.guestName) ? '。你在这个存档里的装备会还给你' : '') : '' }); }
 function hostStart() {
   if (!NET.gctl || !NET.gctl.open) return;
   const S = SET.hostFrom ? loadSlot(SET.hostFrom) : null; // (round 32) open the room from a save
@@ -14736,7 +14770,7 @@ function hostFromSave(S, n) {
   netSendCtl({ t: 'start', seed: S.seed, names, diff: S.diff, mode, map });
   startGame(S.seed, names, S.diff, 0, mode, map); SLOT = n; NET.obv = NET.tkv = -1; /* (round 45) */
   try { applySave(S); } catch (e) { console.error(e); toast('存档读取失败', '#ff8a7a'); return; }
-  const g = W.p[1], P = S.p && S.p[1], h = W.p[0];
+  const g = W.p[1], h = W.p[0], P = kitOf(S, g && g.name, kitOf(S, h.name).i).P; /* (round 45) the teammate's own kit, by name */
   if (g) { if (P) Object.assign(g, { arm: P.arm || 0, hp: P.dead ? BAL.pMaxHp * 0.5 : P.hp, wpn: P.wpn, owned: P.owned, mag: P.mag, ammo: P.ammo, meds: P.meds, nades: P.nades, kills: P.kills, veh: P.veh || 0, vehs: P.vehs || 0, shield: P.shield ? 1 : 0, melee: P.shield ? P.melee || 0 : 0, gn: P.gn || [0, 0, 0], lives: P.lives != null ? P.lives : livesFor(W.diff, W.mode), fuel: P.fuel != null ? P.fuel : 60, gam: P.gam || 0, shl: P.shl || 0, vehs: (P.vehs || 0) & 127, mh: P.mh || [], bat: P.bat != null ? P.bat : BAL.mechBat, evo: Math.min(BAL.evoCap, P.evo || 0) }); if (g.veh === 7) g.veh = [4, 2, 3, 1, 5, 6].find(k => g.vehs >> k & 1) || 0; /* (round 45) the teammate's 神兽 progress was left behind */
     for (const k of ['owned', 'mag', 'ammo']) while (g[k].length < NW) g[k].push(0);
     const lo = S.mw === MW0 && MW !== MW0 ? MOFF : 0, px = P ? P.x + lo : 0, py = P ? P.y + lo : 0; /* (round 33) an old 160×160 save */
@@ -14787,10 +14821,11 @@ function guestRecv(m) {
   switch (m.t) {
     case 'busy': titleStatus('房间已满或已经开始'); netLeave(); showScreen('title'); return;
     case 'bye': hostGone(); return;
-    case 'lobby': NET.peerV = m.v || '旧版本'; NET.ready = m.ready; NET.hostName = m.host; NET.diff = m.diff; NET.mode = m.mode; NET.map = m.map; lobbyUI(); return;
+    case 'lobby': NET.peerV = m.v || '旧版本'; NET.fromLbl = m.fromLbl || ''; NET.ready = m.ready; NET.hostName = m.host; NET.diff = m.diff; NET.mode = m.mode; NET.map = m.map; lobbyUI(); return;
     case 'start': startGame(m.seed, m.names, m.diff, 1, m.mode, m.map); verWarn(); return;
     case 'wsync': if (W) { applyWorld(m.g, !!m.leg); W.srch = new Set(m.srch || []); const me = W.p[ME]; if (me && m.me) { me.x = m.me[0]; me.y = m.me[1]; me.L = m.me[2]; me.z = surfZ(me.x, me.y, me.L); me.zv = me.z; CAM.tx = me.x; CAM.ty = me.y; } banner('继续存档', m.label || '', '#ffe7b0'); } return; // (round 32) the host opened the room from a save
     case 'toLobby': backToLobby(); return;
+    case 'savecopy': keepSaveCopy(m.S); return; /* (round 45) */
     case 'ev': if (W && m.e.q > (W.rq || 0)) { W.rq = m.e.q; fxEvent(m.e); } return; // own counter: local emits on the guest never swallow host events
     case 's': if (W && STATE.mode === 'play') applySnap(m); return;
   }
@@ -15417,8 +15452,8 @@ function initUI() {
   $('lLeave').onclick = () => { netLeave(); showScreen('title'); };
   $('craftClose').onclick = closeCraft; $('kitClose').onclick = closeKit;
   $('resumeBtn').onclick = () => togglePause(false);
-  confirmBtn($('pTitle'), () => { saveGame(true); netLeave(); W = null; STATE.paused = false; showScreen('title'); renderBest(); });
-  $('pSave').onclick = () => { if (NETROLE === 'guest') { toast('联机时由房主存档'); return; } saveGame(false); sfx('click'); };
+  confirmBtn($('pTitle'), () => { saveGame(true, true); netLeave(); W = null; STATE.paused = false; showScreen('title'); renderBest(); });
+  $('pSave').onclick = () => { if (NETROLE === 'guest') { toast('联机时由房主存档，每天早上会给你也存一份'); return; } saveGame(false, true); sfx('click'); };
   $('contBtn').onclick = () => continueGame();
   confirmBtn($('pHub'), () => { netLeave(); location.href = '../'; });
   $('pauseBtn').onclick = () => togglePause();
@@ -15455,11 +15490,21 @@ function initUI() {
 const TK_DIFFS = [{ v: 'easy', label: '简单', sub: '丧尸少，资源多' }, { v: 'normal', label: '普通', sub: '推荐' }, { v: 'hard', label: '困难', sub: '尸潮更凶' }];
 const tkModes = () => MODE_IDS.map(k => ({ v: k, icon: MODES[k].icon, label: MODES[k].name, sub: MODES[k].desc }));
 const tkMaps = (mode) => MAP_IDS.map(k => ({ v: k, label: MAPS[k].name + (MODES[mode] && MODES[mode].map === k ? ' · 推荐' : ''), sub: MAPS[k].desc }));
+/* (round 45) a room from a save: the save decides difficulty / mode / map, so those give way to a summary of the save; the choice of save is remembered;
+   your own new-game choices (SET.diff / mode / map) are never overwritten by a save's */
+const tkEsc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+const fromOn = v => { const n = +(v && v.from || 0); return n > 0 && !!loadSlot(n); }; /* a save that still exists */
+const tkFixFrom = () => { try { if (TK.setup.from && !loadSlot(+TK.setup.from)) TK.setSetup({ from: 0 }); } catch (e) { } };
+const hostSave = () => { const n = SET.hostFrom || 0, S = n ? loadSlot(n) : null; return S ? { n, S } : null; };
+const fromDef = () => hostSave() ? SET.hostFrom : 0;
+const saveSummary = (n, S) => { const P = S.p || [], mine = P.find(q => q && q.name === SET.name), kits = P.filter(Boolean).map(q => q.name).join('、');
+  return '继续存档 ' + n + (S.name ? '「' + tkEsc(S.name) + '」' : '') + '：' + tkEsc(saveLabel(S)) + '<br><small>难度、模式和地图跟着存档，不能改。存档里的装备：' + tkEsc(kits || '—') + (mine ? '（你的会还给你）' : '') + '；队友用同一个名字进来就能拿回他的装备。</small>'; };
 const tkFields = (vals, host) => [
-  { key: 'from', label: '从哪开始', hint: '可以用存档开房间：队友进来后接着这个存档玩（存档里有队友的装备就还给他）', type: 'cards', modes: ['host'], options: () => [{ v: 0, label: '新开一局', sub: '用下面的难度、模式和地图' }].concat([1, 2, 3, 4, 5].map(n => { const s = loadSlot(n); return s ? { v: n, label: '存档 ' + n, sub: saveLabel(s) + (s.p && s.p.length > 1 ? ' · 双人' : '') } : null; }).filter(Boolean)), def: () => 0, change: v => { SET.hostFrom = +v || 0; } }, // (round 32)
-  { key: 'diff', label: '难度', type: 'seg', options: TK_DIFFS, def: () => SET.diff, change: v => { SET.diff = v; saveSet(); markDiff(); } },
-  { key: 'mode', label: '模式', type: 'cards', options: tkModes, def: () => curMode(), change: (v, o) => { SET.mode = v; SET.map = o.map = MODES[v].map; saveSet(); uiModeLbl(); tkDemo(); } },
-  { key: 'map', label: '地图', hint: '每种模式在哪张图上都能玩', type: 'cards', options: () => tkMaps((vals || TK.setup).mode || curMode()), def: () => curMap(), change: v => { SET.map = v; saveSet(); uiModeLbl(); tkDemo(); } }
+  { key: 'from', label: '从哪开始', hint: '可以用存档开房间：队友进来后接着这个存档玩（装备按名字还给各自）', type: 'cards', modes: ['host'], options: () => [{ v: 0, label: '新开一局', sub: '用下面的难度、模式和地图' }].concat([1, 2, 3, 4, 5].map(n => { const s = loadSlot(n); return s ? { v: n, label: '存档 ' + n, sub: saveLabel(s) + (s.p && s.p.length > 1 ? ' · 双人' : '') } : null; }).filter(Boolean)), def: fromDef, change: v => { SET.hostFrom = +v || 0; saveSet(); } }, // (round 32 / 45)
+  { key: 'fromNote', type: 'note', modes: ['host'], when: (m, v) => m === 'host' && fromOn(v), html: () => { const n = +(TK.setup && TK.setup.from || 0), S = n && loadSlot(n); return S ? saveSummary(n, S) : ''; } },
+  { key: 'diff', label: '难度', type: 'seg', options: TK_DIFFS, when: (m, v) => !(m === 'host' && fromOn(v)), def: () => SET.diff, change: v => { SET.diff = v; saveSet(); markDiff(); } },
+  { key: 'mode', label: '模式', type: 'cards', options: tkModes, when: (m, v) => !(m === 'host' && fromOn(v)), def: () => curMode(), change: (v, o) => { SET.mode = v; SET.map = o.map = MODES[v].map; saveSet(); uiModeLbl(); tkDemo(); } },
+  { key: 'map', label: '地图', hint: '每种模式在哪张图上都能玩', type: 'cards', options: () => tkMaps((vals || TK.setup).mode || curMode()), when: (m, v) => !(m === 'host' && fromOn(v)), def: () => curMap(), change: v => { SET.map = v; saveSet(); uiModeLbl(); tkDemo(); } }
 ];
 const tkDemo = () => { if (STATE.mode === 'title' && (!W || W.demo) && MAP_ID !== curMap()) startDemo(); };
 let tkArm = 0;
@@ -15473,10 +15518,10 @@ const TK = TitleKit.create({
   setup: { fields: () => tkFields(), start: '开始守夜', wide: true },
   saves: {
     label: '存档', slots: 5, export: true, remove: true, import: true, rename: (n, name) => renameSave(+n, name),
-    note: '一共 5 个存档位。新开一局会用一个空位，不会覆盖别的存档；5 个都满了才会提示覆盖最早的那个。每个天亮、暂停菜单里点「存档」、以及关掉页面时自动写入（单人或房主）。',
+    note: '一共 5 个存档位。新开一局会用一个空位，不会覆盖别的存档；5 个都满了才会提示覆盖最早的那个。每个天亮、暂停菜单里点「存档」、以及关掉页面时自动写入（单人或房主）。双人时房主存档会同时给队友存一份（同一局总是存在同一个位置），所以下次谁开房间都行；用存档开房间时难度、模式和地图跟着存档，装备按名字还给各自。',
     list: () => { const l = []; for (let n = 1; n <= NSLOT; n++) { const s = loadSlot(n); l.push(s ? { slot: n, name: s.name || '', title: (s.name ? s.name + ' · ' : '') + saveLabel(s), detail: (s.p && s.p[0] ? s.p[0].name : '') + (s.p && s.p.length > 1 ? ' · 双人' : ''), time: s.at } : { slot: n, empty: true, title: '空位', detail: '新开一局会存到这里' }); } return l; },
     load: n => continueGame(+n),
-    remove: n => clearSave(+n),
+    remove: n => { clearSave(+n); if (SET.hostFrom === +n) { SET.hostFrom = 0; saveSet(); } tkFixFrom(); }, /* (round 45) */
     export: n => { try { const raw = localStorage.getItem(SKEY + slotKey(+n)); return raw ? 'DTS1' + btoa(unescape(encodeURIComponent(raw))) : ''; } catch (e) { return ''; } },
     import: code => {
       try {
@@ -15508,13 +15553,15 @@ const TK = TitleKit.create({
     Object.assign(SET, { diff: setup.diff, mode: setup.mode, map: setup.map }); saveSet();
     audioInit(); netLeave(); NETROLE = 'solo'; startGame((Math.random() * 1e9) | 0, [SET.name || '幸存者'], SET.diff, 0, SET.mode, SET.map);
   },
-  host: ({ setup }) => { Object.assign(SET, { diff: setup.diff, mode: setup.mode, map: setup.map }); SET.hostFrom = +setup.from || 0; saveSet(); audioInit(); netHost(); }, // (round 32) from: 0 = a new run, n = save slot n
+  host: ({ setup }) => { SET.hostFrom = fromOn(setup) ? +setup.from : 0; if (!SET.hostFrom) Object.assign(SET, { diff: setup.diff, mode: setup.mode, map: setup.map }); saveSet(); audioInit(); netHost(); }, // (round 32) from: 0 = a new run, n = save slot n; (round 45) a save leaves your new-game choices alone
   join: ({ code }) => { audioInit(); netJoin(code); },
   leaveRoom: () => { netLeave(); STATE.mode = 'title'; },
   roomReady: () => $('lReady').click(),
   roomStart: () => hostStart(),
   roomSet: (k, v) => {
     if (NETROLE !== 'host') return;
+    if (k === 'from') { SET.hostFrom = +v || 0; saveSet(); sendLobby(); tkRoom(); return; } /* (round 45) switch between a new run and a save in the room */
+    if (hostSave()) return; /* a save's settings are fixed */
     if (k === 'diff') { SET.diff = v; markDiff(); }
     if (k === 'mode') { SET.mode = v; SET.map = MODES[v].map; }
     if (k === 'map') SET.map = v;
@@ -15524,7 +15571,8 @@ const TK = TitleKit.create({
 function tkRoom() {
   if (STATE.mode !== 'lobby') return;
   const host = NETROLE === 'host', hostName = host ? (SET.name || '房主') : (NET.hostName || '房主'), guest = host ? NET.guestName : (SET.name || '你');
-  const vals = host ? { diff: SET.diff, mode: curMode(), map: curMap() } : { diff: NET.diff, mode: NET.mode || 'classic', map: NET.map || MODES[NET.mode || 'classic'].map };
+  const HS = host ? hostSave() : null, vals = HS ? { from: HS.n, diff: HS.S.diff, mode: HS.S.mode || 'classic', map: HS.S.map || 'town' } : host ? { from: 0, diff: SET.diff, mode: curMode(), map: curMap() } : { diff: NET.diff, mode: NET.mode || 'classic', map: NET.map || MODES[NET.mode || 'classic'].map }; /* (round 45) a room from a save shows the save's settings */
+  const fromSave = HS || (!host && NET.fromLbl);
   TK.room({
     host, code: NET.code || '',
     status: guest && NET.code ? (NET.ready ? (host ? '队友准备好了，可以开始' : '等房主开始') : (host ? '等队友点「准备」' : '准备好了就点「准备」')) : $('lStatus').textContent,
@@ -15532,7 +15580,8 @@ function tkRoom() {
       { name: hostName, sub: '房主 · 橙色', me: host, color: '#ff9a3c' },
       guest ? { name: guest, sub: '队友 · 青色', me: !host, tag: NET.ready ? '已准备' : '未准备', ok: NET.ready, color: '#4fd1c5' } : { empty: true, name: '等待队友加入', sub: '队友 · 青色' }
     ],
-    fields: tkFields(vals, host).map(f => Object.assign({}, f, { label: f.label + (host ? '' : '（房主决定）') })), values: vals,
+    fields: tkFields(vals, host).filter(f => f.key !== 'fromNote' && (host || f.key !== 'from')).map(f => Object.assign({}, f, { label: (f.label || '') + (host ? (fromSave && f.key !== 'from' ? '（跟着存档）' : '') : '（房主决定）'), ro: f.key === 'from' ? !host : (!host || !!fromSave), when: undefined }))
+      .concat(fromSave ? [{ key: 'fromNote', type: 'note', html: HS ? saveSummary(HS.n, HS.S) : tkEsc(NET.fromLbl) }] : []).sort((a, b) => (a.key === 'fromNote' ? 0.5 : a.key === 'from' ? 0 : 1) - (b.key === 'fromNote' ? 0.5 : b.key === 'from' ? 0 : 1)), values: vals,
     readyBtn: !host, ready: NET.ready, startBtn: host, canStart: !!(host && NET.guestName && NET.ready), startLabel: '开始守夜'
   });
 }
@@ -15647,10 +15696,10 @@ const b64d = s => { const b = atob(s), u = new Uint8Array(b.length); for (let i 
 const hpPack = f => { const u = new Uint16Array(f.length); for (let i = 0; i < f.length; i++) u[i] = Math.max(0, Math.min(65535, Math.round(f[i]))); return new Uint8Array(u.buffer); };
 const hpUnpack = (u8, f) => { const u = new Uint16Array(u8.buffer, u8.byteOffset, f.length); for (let i = 0; i < f.length; i++) f[i] = u[i]; };
 function canSave() { return W && !W.demo && !W.over && STATE.mode === 'play' && NETROLE !== 'guest'; }
-function saveGame(quiet) {
-  if (!canSave()) return false;
+function saveGame(quiet, share) {
+  if (!canSave()) return false; if (!W.rid) W.rid = ((Math.random() * 2 ** 31) >>> 0).toString(36) + Date.now().toString(36); /* (round 45) a run id: the teammate's copy of this run goes back into the same slot */
   const S = {
-    v: SAVE_V, mw: MW, at: Date.now(), name: W.saveName || '', mode: W.mode, map: W.map, obj: W.obj, seed: W.seed, diff: W.diff, night: W.night, phase: W.phase, clock: W.clock, dayLen: W.dayLen, nightT: W.nightT,
+    v: SAVE_V, rid: W.rid, mw: MW, at: Date.now(), name: W.saveName || '', mode: W.mode, map: W.map, obj: W.obj, seed: W.seed, diff: W.diff, night: W.night, phase: W.phase, clock: W.clock, dayLen: W.dayLen, nightT: W.nightT,
     res: W.res, upg: W.upg, bp: { vbp: W.vbp || null, n: W.bpN || 0, mlv: W.mlv || null, wlv: W.wlv || null, bps: W.bps || [] }, /* (round 38i/j) */ kills: W.kills, stats: W.stats, endless: W.endless, clean: W.clean, tasks: W.tasks, srch: [...W.srch], spotN: W.spotN, t: W.t,
     p: W.p.map(p => ({ name: p.name, x: p.x, y: p.y, L: inAirZ(p) != null ? skyTop(p.x, p.y) : p.L, /* (round 31) saved in flight: put them on what is below */ hp: p.hp, dead: p.dead, wpn: p.wpn, owned: p.owned, mag: p.mag, ammo: p.ammo, meds: p.meds, nades: p.nades, kills: p.kills, veh: p.veh || 0, vehs: p.vehs || 0, shield: p.shield ? 1 : 0, melee: p.melee || 0, gn: p.gn || [0, 0, 0], lives: p.lives || 0, fuel: p.fuel != null ? +p.fuel.toFixed(1) : 60, gam: p.gam || 0, shl: p.shl || 0, mh: (p.mh || []).map(h => h == null ? null : Math.round(h)), bat: +(p.bat != null ? p.bat : BAL.mechBat).toFixed(1), evo: Math.round(p.evo || 0), arm: p.arm || 0 })).concat(W.p.length < 2 && W.p2keep ? [W.p2keep] : []), /* (round 34) a two-player save played on alone still keeps the teammate's kit */
     zs: W.zs.filter(z => z.hp > 0).slice(0, 300).map(z => [z.k, +z.x.toFixed(2), +z.y.toFixed(2), z.L, Math.round(z.hp), Math.round(z.max), z.mz ? 1 : 0, z.g || 0, z.sleep ? 1 : 0, z.occ == null ? -1 : z.occ]),
@@ -15662,8 +15711,15 @@ function saveGame(quiet) {
   try { localStorage.setItem(SKEY + slotKey(SLOT), JSON.stringify(S)); }
   catch (e) { if (!quiet) toast('存档失败：浏览器存储空间不够', '#ff8a7a'); return false; }
   if (!quiet) toast('已存档（存档 ' + SLOT + '）· ' + saveLabel(S), '#7dff8a');
+  if (share && NETROLE === 'host' && NET.gctl && NET.gctl.open) netSendCtl({ t: 'savecopy', S }); /* (round 45) the teammate keeps a copy, so either of you can open the next room from it */
   return true;
 }
+// (round 45) the teammate's copy: into the slot that already holds this run, else an empty one (never over another run)
+function keepSaveCopy(S) { if (!S || S.v !== SAVE_V || !S.g) return; let n = 0; for (let k = 1; k <= NSLOT; k++) { const q = loadSlot(k); if (q && q.rid && q.rid === S.rid) { n = k; break; } } const first = !n; if (!n) n = freeSlot();
+  if (!n) { if (!NET.copyWarn) { NET.copyWarn = 1; uiMsg('你的 5 个存档位都满了，这局没在你这台设备上存副本', '#ffb35a'); } return; }
+  try { localStorage.setItem(SKEY + slotKey(n), JSON.stringify(S)); } catch (e) { return; } if (first) uiMsg('这局也存了一份在你的设备上（存档 ' + n + '）：下次你也可以用它开房间，装备跟着名字走', '#7dff8a'); }
+// (round 45) whose kit is whose: by name, so the two of you can swap who hosts; no match → by position
+function kitOf(S, name, other) { const L = S.p || []; let i = name ? L.findIndex(P => P && P.name === name) : -1; if (i < 0) i = other != null ? (other === 0 ? 1 : 0) : 0; if (i === other) i = other === 0 ? 1 : 0; return { i, P: L[i] || null }; }
 const NSLOT = 5; let SLOT = 0; // (round 30) 3 → 5 slots                                   // the slot this run saves into (0 = not chosen yet)
 const slotKey = n => n > 1 ? 'save' + n : 'save';
 // (round 34d) give a save slot your own name (kept when the game saves into it again)
@@ -15685,7 +15741,8 @@ function saveLabel(s) { return (MODES[s.mode] && s.mode !== 'classic' ? MODES[s.
 function continueGame(n) {
   n = n || latestSlot(); const S = n && loadSlot(n); if (!S) return;
   audioInit(); netLeave(); NETROLE = 'solo'; SLOT = n;
-  startGame(S.seed, [S.p[0] ? S.p[0].name : SET.name || '幸存者'], S.diff, 0, S.mode || 'classic', S.map || 'town');
+  const mine = SET.name && (S.p || []).some(P => P && P.name === SET.name); /* (round 45) a copy from a teammate: carry on with your own kit */
+  startGame(S.seed, [mine ? SET.name : S.p[0] ? S.p[0].name : SET.name || '幸存者'], S.diff, 0, S.mode || 'classic', S.map || 'town');
   try { applySave(S); } catch (e) { console.error(e); toast('存档读取失败，已开始新的一局', '#ff8a7a'); return; }
   TIPS.forEach(clearTimeout); TIPS = [];
   banner('继续 · 存档 ' + n, saveLabel(S), '#ffe7b0');
@@ -15710,12 +15767,13 @@ function applySave(S) {
   const leg = S.mw === MW0 && MW !== MW0; // (round 33) an old 160×160 save
   if (leg) { S = JSON.parse(JSON.stringify(S)); S.srch = (S.srch || []).map(legIdx); S.mine = (S.mine || []).map(legIdx); for (const z of S.zs || []) { z[1] += MOFF; z[2] += MOFF; } for (const P of S.p || []) { P.x += MOFF; P.y += MOFF; } legObj(S.obj); }
   applyWorld(S.g, leg);
-  W.p2keep = S.p && S.p[1] ? JSON.parse(JSON.stringify(S.p[1])) : null; // (round 34) the teammate's kit stays in the save even when you carry on alone
-  W.saveName = S.name || ''; W.perm = S.perm || null; W.perk = S.perk || null; W.mine = new Set(S.mine || []);
+  const K0 = kitOf(S, W.p[0] && W.p[0].name), K1 = kitOf(S, null, K0.i); /* (round 45) your own kit by name */
+  W.p2keep = K1.P ? JSON.parse(JSON.stringify(K1.P)) : null; // (round 34) the teammate's kit stays in the save even when you carry on alone
+  W.saveName = S.name || ''; W.rid = S.rid || null; W.perm = S.perm || null; W.perk = S.perk || null; W.mine = new Set(S.mine || []);
   Object.assign(W, { night: S.night, phase: S.phase, clock: S.clock, dayLen: S.dayLen, nightT: S.nightT || 0, res: S.res, upg: Math.max(S.upg || 0, BAL.upgStart), kills: S.kills, stats: S.stats, endless: !!S.endless, clean: S.clean !== false, tasks: S.tasks || [], t: S.t || 0 });
   W.vbp = S.bp && S.bp.vbp ? S.bp.vbp.slice() : VEH.filter(Boolean).map(q => q.k); W.bpN = S.bp ? S.bp.n || 0 : 0; W.mlv = S.bp && S.bp.mlv ? S.bp.mlv.map(x => Math.min(UPG_MAX, x)) : [0, 0, 0, 0, 0, 0, 0]; W.wlv = S.bp && S.bp.wlv ? S.bp.wlv.slice() : WPN.map(() => 0); W.bps = S.bp && S.bp.bps ? S.bp.bps.slice() : []; /* (round 38i/j) older saves: every vehicle unlocked */
   W.srch = new Set(S.srch || []); W.spotN = S.spotN || null; if (!W.spotN) { W.spotN = spotCount(); for (const k in W.spotN) W.spotN[k] = Math.round(W.spotN[k] * 2); } W.tkv++; W.rng = mulberry((S.seed ^ (S.night * 7919) ^ (S.at & 0xffff)) >>> 0);
-  const p = W.p[0], P = S.p[0];
+  const p = W.p[0], P = K0.P;
   if (P) { Object.assign(p, { x: P.x, y: P.y, L: P.L, hp: P.dead ? BAL.pMaxHp * 0.5 : P.hp, wpn: P.wpn, owned: P.owned, mag: P.mag, ammo: P.ammo, meds: P.meds, nades: P.nades, kills: P.kills, veh: P.veh || 0, vehs: P.vehs != null ? P.vehs : (P.veh ? 1 << P.veh : 0), shield: 0, melee: 0, /* (round 36f) no more riot shield */ gn: P.gn || [0, 0, 0], lives: P.lives != null ? P.lives : livesFor(W.diff, W.mode), fuel: P.fuel != null ? P.fuel : 60, gam: P.gam || 0, shl: P.shl || 0, mh: P.mh || [], bat: P.bat != null ? P.bat : BAL.mechBat, evo: Math.min(BAL.evoCap, P.evo || 0), arm: P.arm || 0 }); p.vehs &= 127; if (p.veh === 7) p.veh = [4, 2, 3, 1, 5, 6].find(k => p.vehs >> k & 1) || 0; p.dead = false; /* (round 34b) the stand-alone mech of 34a became the vehicles' second stage */ p.down = false; } // (round 22) vehs = owned bitmask; older saves only knew the best one
   // older saves may have fewer weapons
   for (const k of ['owned', 'mag', 'ammo']) while (p[k].length < NW) p[k].push(0);

@@ -67,7 +67,8 @@ function guestGone() {
   if (STATE.mode === 'play' && W && W.p[1]) { W.p[1].gone = true; W.p[1].down = false; uiMsg('队友断开了连接，你可以继续单人守夜', '#ff6b5a'); }
   lobbyUI();
 }
-function sendLobby() { netSendCtl({ t: 'lobby', v: BUILD_TAG, ready: NET.ready, host: SET.name || '房主', code: NET.code, diff: SET.diff, mode: SET.mode || 'classic', map: SET.map || '' }); }
+function sendLobby() { const n = SET.hostFrom || 0, S = n ? loadSlot(n) : null; /* (round 45) a room from a save: the teammate sees the save's settings */
+  netSendCtl({ t: 'lobby', v: BUILD_TAG, ready: NET.ready, host: SET.name || '房主', code: NET.code, diff: S ? S.diff : SET.diff, mode: S ? S.mode || 'classic' : SET.mode || 'classic', map: S ? S.map || 'town' : SET.map || '', fromLbl: S ? '房主用存档开的房间：' + saveLabel(S) + (S.p && S.p.some(q => q && q.name === NET.guestName) ? '。你在这个存档里的装备会还给你' : '') : '' }); }
 function hostStart() {
   if (!NET.gctl || !NET.gctl.open) return;
   const S = SET.hostFrom ? loadSlot(SET.hostFrom) : null; // (round 32) open the room from a save
@@ -84,7 +85,7 @@ function hostFromSave(S, n) {
   netSendCtl({ t: 'start', seed: S.seed, names, diff: S.diff, mode, map });
   startGame(S.seed, names, S.diff, 0, mode, map); SLOT = n; NET.obv = NET.tkv = -1; /* (round 45) */
   try { applySave(S); } catch (e) { console.error(e); toast('存档读取失败', '#ff8a7a'); return; }
-  const g = W.p[1], P = S.p && S.p[1], h = W.p[0];
+  const g = W.p[1], h = W.p[0], P = kitOf(S, g && g.name, kitOf(S, h.name).i).P; /* (round 45) the teammate's own kit, by name */
   if (g) { if (P) Object.assign(g, { arm: P.arm || 0, hp: P.dead ? BAL.pMaxHp * 0.5 : P.hp, wpn: P.wpn, owned: P.owned, mag: P.mag, ammo: P.ammo, meds: P.meds, nades: P.nades, kills: P.kills, veh: P.veh || 0, vehs: P.vehs || 0, shield: P.shield ? 1 : 0, melee: P.shield ? P.melee || 0 : 0, gn: P.gn || [0, 0, 0], lives: P.lives != null ? P.lives : livesFor(W.diff, W.mode), fuel: P.fuel != null ? P.fuel : 60, gam: P.gam || 0, shl: P.shl || 0, vehs: (P.vehs || 0) & 127, mh: P.mh || [], bat: P.bat != null ? P.bat : BAL.mechBat, evo: Math.min(BAL.evoCap, P.evo || 0) }); if (g.veh === 7) g.veh = [4, 2, 3, 1, 5, 6].find(k => g.vehs >> k & 1) || 0; /* (round 45) the teammate's 神兽 progress was left behind */
     for (const k of ['owned', 'mag', 'ammo']) while (g[k].length < NW) g[k].push(0);
     const lo = S.mw === MW0 && MW !== MW0 ? MOFF : 0, px = P ? P.x + lo : 0, py = P ? P.y + lo : 0; /* (round 33) an old 160×160 save */
@@ -135,10 +136,11 @@ function guestRecv(m) {
   switch (m.t) {
     case 'busy': titleStatus('房间已满或已经开始'); netLeave(); showScreen('title'); return;
     case 'bye': hostGone(); return;
-    case 'lobby': NET.peerV = m.v || '旧版本'; NET.ready = m.ready; NET.hostName = m.host; NET.diff = m.diff; NET.mode = m.mode; NET.map = m.map; lobbyUI(); return;
+    case 'lobby': NET.peerV = m.v || '旧版本'; NET.fromLbl = m.fromLbl || ''; NET.ready = m.ready; NET.hostName = m.host; NET.diff = m.diff; NET.mode = m.mode; NET.map = m.map; lobbyUI(); return;
     case 'start': startGame(m.seed, m.names, m.diff, 1, m.mode, m.map); verWarn(); return;
     case 'wsync': if (W) { applyWorld(m.g, !!m.leg); W.srch = new Set(m.srch || []); const me = W.p[ME]; if (me && m.me) { me.x = m.me[0]; me.y = m.me[1]; me.L = m.me[2]; me.z = surfZ(me.x, me.y, me.L); me.zv = me.z; CAM.tx = me.x; CAM.ty = me.y; } banner('继续存档', m.label || '', '#ffe7b0'); } return; // (round 32) the host opened the room from a save
     case 'toLobby': backToLobby(); return;
+    case 'savecopy': keepSaveCopy(m.S); return; /* (round 45) */
     case 'ev': if (W && m.e.q > (W.rq || 0)) { W.rq = m.e.q; fxEvent(m.e); } return; // own counter: local emits on the guest never swallow host events
     case 's': if (W && STATE.mode === 'play') applySnap(m); return;
   }

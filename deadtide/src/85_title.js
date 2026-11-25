@@ -5,11 +5,21 @@
 const TK_DIFFS = [{ v: 'easy', label: '简单', sub: '丧尸少，资源多' }, { v: 'normal', label: '普通', sub: '推荐' }, { v: 'hard', label: '困难', sub: '尸潮更凶' }];
 const tkModes = () => MODE_IDS.map(k => ({ v: k, icon: MODES[k].icon, label: MODES[k].name, sub: MODES[k].desc }));
 const tkMaps = (mode) => MAP_IDS.map(k => ({ v: k, label: MAPS[k].name + (MODES[mode] && MODES[mode].map === k ? ' · 推荐' : ''), sub: MAPS[k].desc }));
+/* (round 45) a room from a save: the save decides difficulty / mode / map, so those give way to a summary of the save; the choice of save is remembered;
+   your own new-game choices (SET.diff / mode / map) are never overwritten by a save's */
+const tkEsc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+const fromOn = v => { const n = +(v && v.from || 0); return n > 0 && !!loadSlot(n); }; /* a save that still exists */
+const tkFixFrom = () => { try { if (TK.setup.from && !loadSlot(+TK.setup.from)) TK.setSetup({ from: 0 }); } catch (e) { } };
+const hostSave = () => { const n = SET.hostFrom || 0, S = n ? loadSlot(n) : null; return S ? { n, S } : null; };
+const fromDef = () => hostSave() ? SET.hostFrom : 0;
+const saveSummary = (n, S) => { const P = S.p || [], mine = P.find(q => q && q.name === SET.name), kits = P.filter(Boolean).map(q => q.name).join('、');
+  return '继续存档 ' + n + (S.name ? '「' + tkEsc(S.name) + '」' : '') + '：' + tkEsc(saveLabel(S)) + '<br><small>难度、模式和地图跟着存档，不能改。存档里的装备：' + tkEsc(kits || '—') + (mine ? '（你的会还给你）' : '') + '；队友用同一个名字进来就能拿回他的装备。</small>'; };
 const tkFields = (vals, host) => [
-  { key: 'from', label: '从哪开始', hint: '可以用存档开房间：队友进来后接着这个存档玩（存档里有队友的装备就还给他）', type: 'cards', modes: ['host'], options: () => [{ v: 0, label: '新开一局', sub: '用下面的难度、模式和地图' }].concat([1, 2, 3, 4, 5].map(n => { const s = loadSlot(n); return s ? { v: n, label: '存档 ' + n, sub: saveLabel(s) + (s.p && s.p.length > 1 ? ' · 双人' : '') } : null; }).filter(Boolean)), def: () => 0, change: v => { SET.hostFrom = +v || 0; } }, // (round 32)
-  { key: 'diff', label: '难度', type: 'seg', options: TK_DIFFS, def: () => SET.diff, change: v => { SET.diff = v; saveSet(); markDiff(); } },
-  { key: 'mode', label: '模式', type: 'cards', options: tkModes, def: () => curMode(), change: (v, o) => { SET.mode = v; SET.map = o.map = MODES[v].map; saveSet(); uiModeLbl(); tkDemo(); } },
-  { key: 'map', label: '地图', hint: '每种模式在哪张图上都能玩', type: 'cards', options: () => tkMaps((vals || TK.setup).mode || curMode()), def: () => curMap(), change: v => { SET.map = v; saveSet(); uiModeLbl(); tkDemo(); } }
+  { key: 'from', label: '从哪开始', hint: '可以用存档开房间：队友进来后接着这个存档玩（装备按名字还给各自）', type: 'cards', modes: ['host'], options: () => [{ v: 0, label: '新开一局', sub: '用下面的难度、模式和地图' }].concat([1, 2, 3, 4, 5].map(n => { const s = loadSlot(n); return s ? { v: n, label: '存档 ' + n, sub: saveLabel(s) + (s.p && s.p.length > 1 ? ' · 双人' : '') } : null; }).filter(Boolean)), def: fromDef, change: v => { SET.hostFrom = +v || 0; saveSet(); } }, // (round 32 / 45)
+  { key: 'fromNote', type: 'note', modes: ['host'], when: (m, v) => m === 'host' && fromOn(v), html: () => { const n = +(TK.setup && TK.setup.from || 0), S = n && loadSlot(n); return S ? saveSummary(n, S) : ''; } },
+  { key: 'diff', label: '难度', type: 'seg', options: TK_DIFFS, when: (m, v) => !(m === 'host' && fromOn(v)), def: () => SET.diff, change: v => { SET.diff = v; saveSet(); markDiff(); } },
+  { key: 'mode', label: '模式', type: 'cards', options: tkModes, when: (m, v) => !(m === 'host' && fromOn(v)), def: () => curMode(), change: (v, o) => { SET.mode = v; SET.map = o.map = MODES[v].map; saveSet(); uiModeLbl(); tkDemo(); } },
+  { key: 'map', label: '地图', hint: '每种模式在哪张图上都能玩', type: 'cards', options: () => tkMaps((vals || TK.setup).mode || curMode()), when: (m, v) => !(m === 'host' && fromOn(v)), def: () => curMap(), change: v => { SET.map = v; saveSet(); uiModeLbl(); tkDemo(); } }
 ];
 const tkDemo = () => { if (STATE.mode === 'title' && (!W || W.demo) && MAP_ID !== curMap()) startDemo(); };
 let tkArm = 0;
@@ -23,10 +33,10 @@ const TK = TitleKit.create({
   setup: { fields: () => tkFields(), start: '开始守夜', wide: true },
   saves: {
     label: '存档', slots: 5, export: true, remove: true, import: true, rename: (n, name) => renameSave(+n, name),
-    note: '一共 5 个存档位。新开一局会用一个空位，不会覆盖别的存档；5 个都满了才会提示覆盖最早的那个。每个天亮、暂停菜单里点「存档」、以及关掉页面时自动写入（单人或房主）。',
+    note: '一共 5 个存档位。新开一局会用一个空位，不会覆盖别的存档；5 个都满了才会提示覆盖最早的那个。每个天亮、暂停菜单里点「存档」、以及关掉页面时自动写入（单人或房主）。双人时房主存档会同时给队友存一份（同一局总是存在同一个位置），所以下次谁开房间都行；用存档开房间时难度、模式和地图跟着存档，装备按名字还给各自。',
     list: () => { const l = []; for (let n = 1; n <= NSLOT; n++) { const s = loadSlot(n); l.push(s ? { slot: n, name: s.name || '', title: (s.name ? s.name + ' · ' : '') + saveLabel(s), detail: (s.p && s.p[0] ? s.p[0].name : '') + (s.p && s.p.length > 1 ? ' · 双人' : ''), time: s.at } : { slot: n, empty: true, title: '空位', detail: '新开一局会存到这里' }); } return l; },
     load: n => continueGame(+n),
-    remove: n => clearSave(+n),
+    remove: n => { clearSave(+n); if (SET.hostFrom === +n) { SET.hostFrom = 0; saveSet(); } tkFixFrom(); }, /* (round 45) */
     export: n => { try { const raw = localStorage.getItem(SKEY + slotKey(+n)); return raw ? 'DTS1' + btoa(unescape(encodeURIComponent(raw))) : ''; } catch (e) { return ''; } },
     import: code => {
       try {
@@ -58,13 +68,15 @@ const TK = TitleKit.create({
     Object.assign(SET, { diff: setup.diff, mode: setup.mode, map: setup.map }); saveSet();
     audioInit(); netLeave(); NETROLE = 'solo'; startGame((Math.random() * 1e9) | 0, [SET.name || '幸存者'], SET.diff, 0, SET.mode, SET.map);
   },
-  host: ({ setup }) => { Object.assign(SET, { diff: setup.diff, mode: setup.mode, map: setup.map }); SET.hostFrom = +setup.from || 0; saveSet(); audioInit(); netHost(); }, // (round 32) from: 0 = a new run, n = save slot n
+  host: ({ setup }) => { SET.hostFrom = fromOn(setup) ? +setup.from : 0; if (!SET.hostFrom) Object.assign(SET, { diff: setup.diff, mode: setup.mode, map: setup.map }); saveSet(); audioInit(); netHost(); }, // (round 32) from: 0 = a new run, n = save slot n; (round 45) a save leaves your new-game choices alone
   join: ({ code }) => { audioInit(); netJoin(code); },
   leaveRoom: () => { netLeave(); STATE.mode = 'title'; },
   roomReady: () => $('lReady').click(),
   roomStart: () => hostStart(),
   roomSet: (k, v) => {
     if (NETROLE !== 'host') return;
+    if (k === 'from') { SET.hostFrom = +v || 0; saveSet(); sendLobby(); tkRoom(); return; } /* (round 45) switch between a new run and a save in the room */
+    if (hostSave()) return; /* a save's settings are fixed */
     if (k === 'diff') { SET.diff = v; markDiff(); }
     if (k === 'mode') { SET.mode = v; SET.map = MODES[v].map; }
     if (k === 'map') SET.map = v;
@@ -74,7 +86,8 @@ const TK = TitleKit.create({
 function tkRoom() {
   if (STATE.mode !== 'lobby') return;
   const host = NETROLE === 'host', hostName = host ? (SET.name || '房主') : (NET.hostName || '房主'), guest = host ? NET.guestName : (SET.name || '你');
-  const vals = host ? { diff: SET.diff, mode: curMode(), map: curMap() } : { diff: NET.diff, mode: NET.mode || 'classic', map: NET.map || MODES[NET.mode || 'classic'].map };
+  const HS = host ? hostSave() : null, vals = HS ? { from: HS.n, diff: HS.S.diff, mode: HS.S.mode || 'classic', map: HS.S.map || 'town' } : host ? { from: 0, diff: SET.diff, mode: curMode(), map: curMap() } : { diff: NET.diff, mode: NET.mode || 'classic', map: NET.map || MODES[NET.mode || 'classic'].map }; /* (round 45) a room from a save shows the save's settings */
+  const fromSave = HS || (!host && NET.fromLbl);
   TK.room({
     host, code: NET.code || '',
     status: guest && NET.code ? (NET.ready ? (host ? '队友准备好了，可以开始' : '等房主开始') : (host ? '等队友点「准备」' : '准备好了就点「准备」')) : $('lStatus').textContent,
@@ -82,7 +95,8 @@ function tkRoom() {
       { name: hostName, sub: '房主 · 橙色', me: host, color: '#ff9a3c' },
       guest ? { name: guest, sub: '队友 · 青色', me: !host, tag: NET.ready ? '已准备' : '未准备', ok: NET.ready, color: '#4fd1c5' } : { empty: true, name: '等待队友加入', sub: '队友 · 青色' }
     ],
-    fields: tkFields(vals, host).map(f => Object.assign({}, f, { label: f.label + (host ? '' : '（房主决定）') })), values: vals,
+    fields: tkFields(vals, host).filter(f => f.key !== 'fromNote' && (host || f.key !== 'from')).map(f => Object.assign({}, f, { label: (f.label || '') + (host ? (fromSave && f.key !== 'from' ? '（跟着存档）' : '') : '（房主决定）'), ro: f.key === 'from' ? !host : (!host || !!fromSave), when: undefined }))
+      .concat(fromSave ? [{ key: 'fromNote', type: 'note', html: HS ? saveSummary(HS.n, HS.S) : tkEsc(NET.fromLbl) }] : []).sort((a, b) => (a.key === 'fromNote' ? 0.5 : a.key === 'from' ? 0 : 1) - (b.key === 'fromNote' ? 0.5 : b.key === 'from' ? 0 : 1)), values: vals,
     readyBtn: !host, ready: NET.ready, startBtn: host, canStart: !!(host && NET.guestName && NET.ready), startLabel: '开始守夜'
   });
 }

@@ -550,8 +550,8 @@ function initUI() {
   $('lLeave').onclick = () => { netLeave(); showScreen('title'); };
   $('craftClose').onclick = closeCraft; $('kitClose').onclick = closeKit;
   $('resumeBtn').onclick = () => togglePause(false);
-  confirmBtn($('pTitle'), () => { saveGame(true); netLeave(); W = null; STATE.paused = false; showScreen('title'); renderBest(); });
-  $('pSave').onclick = () => { if (NETROLE === 'guest') { toast('联机时由房主存档'); return; } saveGame(false); sfx('click'); };
+  confirmBtn($('pTitle'), () => { saveGame(true, true); netLeave(); W = null; STATE.paused = false; showScreen('title'); renderBest(); });
+  $('pSave').onclick = () => { if (NETROLE === 'guest') { toast('联机时由房主存档，每天早上会给你也存一份'); return; } saveGame(false, true); sfx('click'); };
   $('contBtn').onclick = () => continueGame();
   confirmBtn($('pHub'), () => { netLeave(); location.href = '../'; });
   $('pauseBtn').onclick = () => togglePause();

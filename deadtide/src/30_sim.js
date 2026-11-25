@@ -1222,7 +1222,7 @@ function dawn() {
   if (W.mode === 'classic' && W.night >= BAL.nights && !W.endless) return endGame('win', '救援直升机到了');
   W.phase = 'day'; W.dayLen = W.clock = BAL.dayFor(W.night + 1); // (round 34b) days get shorter
   rollTasks();
-  setTimeout(() => saveGame(true), 0); // autosave every morning
+  setTimeout(() => saveGame(true, true), 0); // autosave every morning (round 45: and the teammate gets a copy)
   for (const i of [...W.srch]) { const S = SPOTS[B[W.blk[i]].spot]; if (!S || rand() < (S.refill || 1)) { W.srch.delete(i); emit({ k: 'spot', i, v: 0 }); } }
   W.ver++; restockSpots(false);
   for (const p of activeP()) {

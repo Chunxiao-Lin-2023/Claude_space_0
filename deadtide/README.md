@@ -508,3 +508,11 @@
 - 风暴陨击 (铁卫 + 苍隼): tornado on the aim point (≤ 9; was 2 ahead), 1.3 → 2.2 s, pull 9 → 10 at speed 6 → 9 with ≥ 60 % pull at the edge, lifts zombies within 3, 0 → 15 / 0.5 s; the fusion rides up and lands on the eye: r 4 → 5.5, 320 → 360. Walking crowd of 20: 10566 → 19977 total, 15 → 20 hit.
 - Version check: lobby / hello carry `BUILD_TAG`; a mismatch shows a warning in the lobby and twice in game (old cached page → refresh).
 - test/round45.js.
+
+## Round 45b — rooms and saves reworked; every fusion ultimate bigger
+- Room setup: 「从哪开始」 is remembered; picking a save hides difficulty / mode / map (`when`) and shows the save (settings, kits); your new-game choices are no longer overwritten by a save. The room shows the save's settings read-only to both (`sendLobby` sends the save's diff / mode / map + `fromLbl`); the host can switch save in the room. A remembered save that was deleted falls back to 新开一局.
+- The teammate gets a copy: `saveGame(quiet, share)` at dawn / manual save / leaving sends `savecopy`; `keepSaveCopy` stores it in the slot holding the same run (`S.rid`), else an empty one, never over another run.
+- Kits follow names (`kitOf`): whoever hosts gets their own kit, the teammate theirs; solo continue from a copy plays your own kit.
+- Ultimates (all 21 reviewed with screenshots): 浮游刃阵 8 big blades on a 3.2 ring (was 0.42-size on 1.8) flying out to cut 3 zombies within 10 every 0.35 s + a ring sweep r 6 every 2.5 s, 10 s; 蜂群空投 drop every 0.2 s (was 0.4); 空中炮阵 shells the crowd from the air; 炮台模式 30 shells (was 18); 快递斩 12 × 2.4 cut + a fan of 18 boxes; 居合·断地 three fissures (16 / 13 long, 2 wide) + cut r 5; 隼刃回旋 5 s, r 4.2 (was 3 s, 2.4) + ring of 8 blade waves each second; 炮进斩 6 shells + 14 × 2.4 charge; 快递堡垒 r 7.5, 160; 空投轰炸 44 boxes over 17 × 10; 集束炸弹 5 bombs × 10; 地震炮 6 shells; 满天星 dome r 7; 修罗六连斩 8 dashes + X cut r 5.5; 蜂王巢 1.8× hive, 12 s, two boxes / 0.3 s within 11; 不动明王 stomps r 8 + gold aura r 3; 流星雨 5 dives r 4.5.
+- Whirlwinds have a visible streaked funnel (day and night). A fusion's lasting ult visuals end with that fusion (blades used to linger after a split).
+- test/round45b.js.

@@ -23,10 +23,10 @@ const b64d = s => { const b = atob(s), u = new Uint8Array(b.length); for (let i 
 const hpPack = f => { const u = new Uint16Array(f.length); for (let i = 0; i < f.length; i++) u[i] = Math.max(0, Math.min(65535, Math.round(f[i]))); return new Uint8Array(u.buffer); };
 const hpUnpack = (u8, f) => { const u = new Uint16Array(u8.buffer, u8.byteOffset, f.length); for (let i = 0; i < f.length; i++) f[i] = u[i]; };
 function canSave() { return W && !W.demo && !W.over && STATE.mode === 'play' && NETROLE !== 'guest'; }
-function saveGame(quiet) {
-  if (!canSave()) return false;
+function saveGame(quiet, share) {
+  if (!canSave()) return false; if (!W.rid) W.rid = ((Math.random() * 2 ** 31) >>> 0).toString(36) + Date.now().toString(36); /* (round 45) a run id: the teammate's copy of this run goes back into the same slot */
   const S = {
-    v: SAVE_V, mw: MW, at: Date.now(), name: W.saveName || '', mode: W.mode, map: W.map, obj: W.obj, seed: W.seed, diff: W.diff, night: W.night, phase: W.phase, clock: W.clock, dayLen: W.dayLen, nightT: W.nightT,
+    v: SAVE_V, rid: W.rid, mw: MW, at: Date.now(), name: W.saveName || '', mode: W.mode, map: W.map, obj: W.obj, seed: W.seed, diff: W.diff, night: W.night, phase: W.phase, clock: W.clock, dayLen: W.dayLen, nightT: W.nightT,
     res: W.res, upg: W.upg, bp: { vbp: W.vbp || null, n: W.bpN || 0, mlv: W.mlv || null, wlv: W.wlv || null, bps: W.bps || [] }, /* (round 38i/j) */ kills: W.kills, stats: W.stats, endless: W.endless, clean: W.clean, tasks: W.tasks, srch: [...W.srch], spotN: W.spotN, t: W.t,
     p: W.p.map(p => ({ name: p.name, x: p.x, y: p.y, L: inAirZ(p) != null ? skyTop(p.x, p.y) : p.L, /* (round 31) saved in flight: put them on what is below */ hp: p.hp, dead: p.dead, wpn: p.wpn, owned: p.owned, mag: p.mag, ammo: p.ammo, meds: p.meds, nades: p.nades, kills: p.kills, veh: p.veh || 0, vehs: p.vehs || 0, shield: p.shield ? 1 : 0, melee: p.melee || 0, gn: p.gn || [0, 0, 0], lives: p.lives || 0, fuel: p.fuel != null ? +p.fuel.toFixed(1) : 60, gam: p.gam || 0, shl: p.shl || 0, mh: (p.mh || []).map(h => h == null ? null : Math.round(h)), bat: +(p.bat != null ? p.bat : BAL.mechBat).toFixed(1), evo: Math.round(p.evo || 0), arm: p.arm || 0 })).concat(W.p.length < 2 && W.p2keep ? [W.p2keep] : []), /* (round 34) a two-player save played on alone still keeps the teammate's kit */
     zs: W.zs.filter(z => z.hp > 0).slice(0, 300).map(z => [z.k, +z.x.toFixed(2), +z.y.toFixed(2), z.L, Math.round(z.hp), Math.round(z.max), z.mz ? 1 : 0, z.g || 0, z.sleep ? 1 : 0, z.occ == null ? -1 : z.occ]),
@@ -38,8 +38,15 @@ function saveGame(quiet) {
   try { localStorage.setItem(SKEY + slotKey(SLOT), JSON.stringify(S)); }
   catch (e) { if (!quiet) toast('存档失败：浏览器存储空间不够', '#ff8a7a'); return false; }
   if (!quiet) toast('已存档（存档 ' + SLOT + '）· ' + saveLabel(S), '#7dff8a');
+  if (share && NETROLE === 'host' && NET.gctl && NET.gctl.open) netSendCtl({ t: 'savecopy', S }); /* (round 45) the teammate keeps a copy, so either of you can open the next room from it */
   return true;
 }
+// (round 45) the teammate's copy: into the slot that already holds this run, else an empty one (never over another run)
+function keepSaveCopy(S) { if (!S || S.v !== SAVE_V || !S.g) return; let n = 0; for (let k = 1; k <= NSLOT; k++) { const q = loadSlot(k); if (q && q.rid && q.rid === S.rid) { n = k; break; } } const first = !n; if (!n) n = freeSlot();
+  if (!n) { if (!NET.copyWarn) { NET.copyWarn = 1; uiMsg('你的 5 个存档位都满了，这局没在你这台设备上存副本', '#ffb35a'); } return; }
+  try { localStorage.setItem(SKEY + slotKey(n), JSON.stringify(S)); } catch (e) { return; } if (first) uiMsg('这局也存了一份在你的设备上（存档 ' + n + '）：下次你也可以用它开房间，装备跟着名字走', '#7dff8a'); }
+// (round 45) whose kit is whose: by name, so the two of you can swap who hosts; no match → by position
+function kitOf(S, name, other) { const L = S.p || []; let i = name ? L.findIndex(P => P && P.name === name) : -1; if (i < 0) i = other != null ? (other === 0 ? 1 : 0) : 0; if (i === other) i = other === 0 ? 1 : 0; return { i, P: L[i] || null }; }
 const NSLOT = 5; let SLOT = 0; // (round 30) 3 → 5 slots                                   // the slot this run saves into (0 = not chosen yet)
 const slotKey = n => n > 1 ? 'save' + n : 'save';
 // (round 34d) give a save slot your own name (kept when the game saves into it again)
@@ -61,7 +68,8 @@ function saveLabel(s) { return (MODES[s.mode] && s.mode !== 'classic' ? MODES[s.
 function continueGame(n) {
   n = n || latestSlot(); const S = n && loadSlot(n); if (!S) return;
   audioInit(); netLeave(); NETROLE = 'solo'; SLOT = n;
-  startGame(S.seed, [S.p[0] ? S.p[0].name : SET.name || '幸存者'], S.diff, 0, S.mode || 'classic', S.map || 'town');
+  const mine = SET.name && (S.p || []).some(P => P && P.name === SET.name); /* (round 45) a copy from a teammate: carry on with your own kit */
+  startGame(S.seed, [mine ? SET.name : S.p[0] ? S.p[0].name : SET.name || '幸存者'], S.diff, 0, S.mode || 'classic', S.map || 'town');
   try { applySave(S); } catch (e) { console.error(e); toast('存档读取失败，已开始新的一局', '#ff8a7a'); return; }
   TIPS.forEach(clearTimeout); TIPS = [];
   banner('继续 · 存档 ' + n, saveLabel(S), '#ffe7b0');
@@ -86,12 +94,13 @@ function applySave(S) {
   const leg = S.mw === MW0 && MW !== MW0; // (round 33) an old 160×160 save
   if (leg) { S = JSON.parse(JSON.stringify(S)); S.srch = (S.srch || []).map(legIdx); S.mine = (S.mine || []).map(legIdx); for (const z of S.zs || []) { z[1] += MOFF; z[2] += MOFF; } for (const P of S.p || []) { P.x += MOFF; P.y += MOFF; } legObj(S.obj); }
   applyWorld(S.g, leg);
-  W.p2keep = S.p && S.p[1] ? JSON.parse(JSON.stringify(S.p[1])) : null; // (round 34) the teammate's kit stays in the save even when you carry on alone
-  W.saveName = S.name || ''; W.perm = S.perm || null; W.perk = S.perk || null; W.mine = new Set(S.mine || []);
+  const K0 = kitOf(S, W.p[0] && W.p[0].name), K1 = kitOf(S, null, K0.i); /* (round 45) your own kit by name */
+  W.p2keep = K1.P ? JSON.parse(JSON.stringify(K1.P)) : null; // (round 34) the teammate's kit stays in the save even when you carry on alone
+  W.saveName = S.name || ''; W.rid = S.rid || null; W.perm = S.perm || null; W.perk = S.perk || null; W.mine = new Set(S.mine || []);
   Object.assign(W, { night: S.night, phase: S.phase, clock: S.clock, dayLen: S.dayLen, nightT: S.nightT || 0, res: S.res, upg: Math.max(S.upg || 0, BAL.upgStart), kills: S.kills, stats: S.stats, endless: !!S.endless, clean: S.clean !== false, tasks: S.tasks || [], t: S.t || 0 });
   W.vbp = S.bp && S.bp.vbp ? S.bp.vbp.slice() : VEH.filter(Boolean).map(q => q.k); W.bpN = S.bp ? S.bp.n || 0 : 0; W.mlv = S.bp && S.bp.mlv ? S.bp.mlv.map(x => Math.min(UPG_MAX, x)) : [0, 0, 0, 0, 0, 0, 0]; W.wlv = S.bp && S.bp.wlv ? S.bp.wlv.slice() : WPN.map(() => 0); W.bps = S.bp && S.bp.bps ? S.bp.bps.slice() : []; /* (round 38i/j) older saves: every vehicle unlocked */
   W.srch = new Set(S.srch || []); W.spotN = S.spotN || null; if (!W.spotN) { W.spotN = spotCount(); for (const k in W.spotN) W.spotN[k] = Math.round(W.spotN[k] * 2); } W.tkv++; W.rng = mulberry((S.seed ^ (S.night * 7919) ^ (S.at & 0xffff)) >>> 0);
-  const p = W.p[0], P = S.p[0];
+  const p = W.p[0], P = K0.P;
   if (P) { Object.assign(p, { x: P.x, y: P.y, L: P.L, hp: P.dead ? BAL.pMaxHp * 0.5 : P.hp, wpn: P.wpn, owned: P.owned, mag: P.mag, ammo: P.ammo, meds: P.meds, nades: P.nades, kills: P.kills, veh: P.veh || 0, vehs: P.vehs != null ? P.vehs : (P.veh ? 1 << P.veh : 0), shield: 0, melee: 0, /* (round 36f) no more riot shield */ gn: P.gn || [0, 0, 0], lives: P.lives != null ? P.lives : livesFor(W.diff, W.mode), fuel: P.fuel != null ? P.fuel : 60, gam: P.gam || 0, shl: P.shl || 0, mh: P.mh || [], bat: P.bat != null ? P.bat : BAL.mechBat, evo: Math.min(BAL.evoCap, P.evo || 0), arm: P.arm || 0 }); p.vehs &= 127; if (p.veh === 7) p.veh = [4, 2, 3, 1, 5, 6].find(k => p.vehs >> k & 1) || 0; p.dead = false; /* (round 34b) the stand-alone mech of 34a became the vehicles' second stage */ p.down = false; } // (round 22) vehs = owned bitmask; older saves only knew the best one
   // older saves may have fewer weapons
   for (const k of ['owned', 'mag', 'ammo']) while (p[k].length < NW) p[k].push(0);

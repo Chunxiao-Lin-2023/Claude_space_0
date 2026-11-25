@@ -56,7 +56,8 @@ function fusFxTick(dt) {
       for (let q = 0; q < (H ? 3 : 1); q++) if (FXR() < 0.5) addP({ x: w.x + frnd(-2.5, 2.5) * (H ? 2.4 : 1), y: w.y + frnd(-2.5, 2.5) * (H ? 2.4 : 1), z: w.z + 0.2, vx: 0, vy: 0, vz: 0.8, g: -0.2, col: H ? '#c8c2b4' : '#a89a80', s: 0.16, life: 0.6, smoke: 1 });
       if (H && thr('whH' + w.id, 0.05)) { const a = FXR() * 6.28, r = frnd(5, 9.5); addP({ x: w.x + Math.cos(a) * r, y: w.y + Math.sin(a) * r, z: w.z + 0.3, vx: -Math.cos(a) * 7 - Math.sin(a) * 5, vy: -Math.sin(a) * 7 + Math.cos(a) * 5, vz: 0.4, g: 0, col: '#dff8ff', s: 0.09, life: 0.7 }); } /* the inflow: streaks rushing in from the edge */
       if (thr('wh' + w.id, 0.12)) { fxAdd({ kind: 'wave', x: w.x, y: w.y, z: w.z + 0.5, s0: 1.4 * k, s1: 0.6 * k, life: 0.3, col: '#9fe8ff', op: 0.3, sy: 1.6 }); fxAdd({ kind: 'shock', x: w.x, y: w.y, z: w.z + 0.05, s0: H ? 9 : 3.6, s1: 1.0, life: H ? 0.5 : 0.35, col: '#cfefff', op: 0.35 }); if (H) fxAdd({ kind: 'wave', x: w.x, y: w.y, z: w.z + 3, s0: 3.2 * k, s1: 1.6 * k, life: 0.3, col: '#cfefff', op: 0.25, sy: 2.6 }); } }
-    RND.whirls = RND.whirls.filter(w => w.t < w.T); }
+    whirlFunnels(); RND.whirls = RND.whirls.filter(w => w.t < w.T); }
+  else whirlFunnels();
   // the landing spot, the last half second of the flight: a ring on the driver's aim point (≤ 8)
   const F = W.fus; if (F && fusFlyKind(F) === 1) { const left = F.fly ? F.fly.T - F.fly.t : F.flyL || 0; if (left > 0 && left < 0.55) { const D = W.p[F.d]; if (D) { const tg = D.aimPt && !D.aimPt.auto ? D.aimPt : { x: D.x + Math.cos(D.aim) * 6, y: D.y + Math.sin(D.aim) * 6 }, a = Math.atan2(tg.y - D.y, tg.x - D.x), dd = Math.min(BAL.fDiveR, Math.hypot(tg.x - D.x, tg.y - D.y)), x = D.x + Math.cos(a) * dd, y = D.y + Math.sin(a) * dd, gz = surfZ(x, y, skyTop(x, y));
       fxAdd({ kind: 'shock', x, y, z: gz + 0.05, s0: 3.2, s1: 3.2, life: 0.04, col: '#ffd040', op: 0.75 }); fxAdd({ kind: 'shock', x, y, z: gz + 0.06, s0: 3.2 * (left / 0.55), s1: 3.2 * (left / 0.55), life: 0.04, col: '#ffffff', op: 0.5 }); } } }
@@ -78,6 +79,19 @@ function fusFxEvent(e) {
   }
   return false;
 }
+/* (round 45) a visible funnel for each whirlwind: two open cones (pale wind + a darker dust band near the ground), normal blending so they read on a
+   bright day as well as at night; the 风暴陨击 tornado (big 2) is a tall wide one, the ultimates' (big 1) medium, the glide's small */
+const WFUN = []; let WFTEX = null;
+function wfTex() { if (WFTEX) return WFTEX; const c = document.createElement('canvas'); c.width = 64; c.height = 128; const g = c.getContext('2d'); g.clearRect(0, 0, 64, 128); /* diagonal wind streaks, soft-edged */
+  for (let k = -4; k < 10; k++) { const gr = g.createLinearGradient(0, 0, 64, 0); gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(0.5, 'rgba(255,255,255,' + (0.55 + (k % 3) * 0.15) + ')'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.save(); g.translate(0, k * 16); g.transform(1, 0.45, 0, 1, 0, 0); g.fillStyle = gr; g.fillRect(0, 0, 64, 5 + (k % 2) * 3); g.restore(); }
+  g.fillStyle = 'rgba(255,255,255,0.18)'; g.fillRect(0, 0, 64, 128); WFTEX = new THREE.CanvasTexture(c); WFTEX.wrapS = WFTEX.wrapT = THREE.RepeatWrapping; WFTEX.repeat.set(3, 1); return WFTEX; }
+function whirlFunnels() { const L = RND.whirls || []; let n = 0;
+  for (const w of L) { const k = Math.min(1, w.t / 0.25) * (w.t > w.T - 0.3 ? Math.max(0, (w.T - w.t) / 0.3) : 1); if (k <= 0.01) continue; let F = WFUN[n];
+    if (!F) { F = new THREE.Group(); const mk = (r0, r1, h, col, op) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(r1, r0, h, 28, 6, true).translate(0, h / 2, 0), new THREE.MeshBasicMaterial({ color: col, map: wfTex(), transparent: true, opacity: op, depthWrite: false, side: THREE.DoubleSide })); m.userData.op = op; F.add(m); return m; };
+      mk(0.35, 1.6, 4.2, '#e8f4f8', 0.55); mk(0.5, 1.15, 3.2, '#ffffff', 0.4); mk(0.9, 1.5, 1.0, '#a89a82', 0.6); for (const c of F.children) c.renderOrder = 5; SCN.add(F); WFUN[n] = F; }
+    const S = w.big > 1 ? 2.4 : w.big ? 1.5 : 0.85; F.visible = true; F.position.set(w.x, w.z, w.y); F.scale.set(S * k, S * (0.5 + 0.5 * k), S * k);
+    F.children[0].rotation.y = W.t * 5; F.children[1].rotation.y = -W.t * 7; F.children[2].rotation.y = W.t * 3; F.children.forEach((c, i) => { c.material.opacity = c.userData.op * k * (1 + 0.15 * Math.sin(W.t * 11 + i * 2)); c.scale.x = c.scale.z = 1 + 0.06 * Math.sin(W.t * 9 + i); }); n++; }
+  for (let i = n; i < WFUN.length; i++) WFUN[i].visible = false; }
 /* ================= (round 44) anti-air throws: what a melee mech / beast sends up at a flyer it can't reach ================= */
 const AAK = { blade: ['#ffa040', '#ffffff', 'cres'], shield: ['#5fe0ff', '#cfefff', 'ring'], venom: ['#7dff5a', '#d8ff90', 'ball'], fire: ['#ff7a2a', '#ffd27a', 'ball'], moon: ['#cfe8ff', '#ffffff', 'cres'], water: ['#5ab8ff', '#e0f4ff', 'ball'], rock: ['#8a7a60', '#c8b898', 'rock'] };
 function aaFxTick(dt) { if (!RND.aas || !RND.aas.length) return;
