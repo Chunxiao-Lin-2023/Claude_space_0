@@ -537,7 +537,7 @@ function draw(dt) {
   if (key !== CUT_KEY) { CUT_KEY = key; rebuildCells(); }
   if (STATE.mode === 'play' && !W.demo) qualTick(dt);
   applyTime(darkness()); archFrame();
-  drawZombies(vl, dt); drawPlayers(vl, dt); fuseAnimPost(dt); sboomDraw(dt); fusFxTick(dt); fusUltTick(dt); /* (round 43) */ zTellTick(dt); /* (round 41) */ drawFx(); drawGhost(me); drawPlan(); drawNadeMark(); drawTells(); drawMechLock(me, dt); fxTick(dt); drawDrones(dt); evoZoneTick(dt); drawClouds(); drawTrapAreas(vl);
+  drawZombies(vl, dt); drawPlayers(vl, dt); fuseAnimPost(dt); sboomDraw(dt); fusFxTick(dt); fusUltTick(dt); /* (round 43) */ aaFxTick(dt); /* (round 44) */ zTellTick(dt); /* (round 41) */ drawFx(); drawGhost(me); drawPlan(); drawNadeMark(); drawTells(); drawMechLock(me, dt); fxTick(dt); drawDrones(dt); evoZoneTick(dt); drawClouds(); drawTrapAreas(vl);
   OBJ.zone.visible = (!W.demo && W.phase === 'day' || !!(me && me.build)) && !modeDef().anyBuild;
   RENDER.render(SCN, CAMO);
   drawOverlay();
@@ -727,7 +727,7 @@ function fxEvent(e) {
       for (let k = 0; k < 16; k++) { const a = FXR() * 6.283, v = frnd(3, 7); addP({ x: e.x, y: e.y, z: e.z + 0.3, vx: Math.cos(a) * v, vy: Math.sin(a) * v, vz: frnd(1, 4), g: 8, col: k % 3 ? '#ffd27a' : '#9fe8ff', s: frnd(0.05, 0.09), life: frnd(0.25, 0.5) }); }
       for (let k = 0; k < 6; k++) addP({ x: e.x + frnd(-0.6, 0.6), y: e.y + frnd(-0.6, 0.6), z: e.z + 0.2, vx: frnd(-0.6, 0.6), vy: frnd(-0.6, 0.6), vz: frnd(0.4, 1), g: -0.3, col: '#8a8478', s: frnd(0.18, 0.3), life: frnd(0.7, 1.1), smoke: 1 });
       debrisFx(e.x, e.y, Math.max(0, e.z - 0.2), '#7a6a58', 6); sfx('boom', e.x, e.y); shake(e.x, e.y, 0.25); break; }
-    case 'ffly': case 'fdive': case 'fland': case 'fdhit': case 'bwave': case 'whirl': fusFxEvent(e); break; case 'fult': fusUltFx(e); break; /* (round 43) */
+    case 'ffly': case 'fdive': case 'fland': case 'fdhit': case 'bwave': case 'whirl': fusFxEvent(e); break; case 'fult': fusUltFx(e); break; /* (round 43) */ case 'aa': case 'aahit': aaFxEvent(e); break; /* (round 44) */
     case 'sboom': { RND.sbm = { x: e.x, y: e.y, z: e.z, a: e.a, L: e.L, T: e.T, t0: W.t, o: e.o }; RND.shOutT = W.t + e.T; sfx('throw', e.x, e.y); break; } /* (round 43) the tower shield thrown */
     case 'sslam': { fxShock(e.x, e.y, e.z, e.r * 1.1, '#cfefff', '#5a5040'); fxFlash(e.x, e.y, e.z + 0.3, 0.9, '#5fe0ff'); debrisFx(e.x, e.y, e.z + 0.05, '#7a6a58', 8); sfx('smash', e.x, e.y); shake(e.x, e.y, 0.2); break; }
     case 'sblock': { const q = W.p[e.o]; if (q) { const x = q.x + Math.cos(e.a) * 1.2, y = q.y + Math.sin(e.a) * 1.2, z = pZ(q) + 1.4; fxFlash(x, y, z, 0.6, '#5fe0ff'); for (let k = 0; k < 6; k++) addP({ x, y, z, vx: Math.cos(e.a) * 2 + frnd(-1.5, 1.5), vy: Math.sin(e.a) * 2 + frnd(-1.5, 1.5), vz: frnd(0.5, 2.5), g: 8, col: '#ffe08a', s: 0.06, life: 0.3 }); if (thr('sblk', 0.2)) sfx('clank', x, y); } break; }

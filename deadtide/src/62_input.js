@@ -553,8 +553,8 @@ function drawReticle(me, pt, show, px0, py0) {
   if (!pt) { el.classList.add('hidden'); return; }
   const wi = me.down ? 0 : me.wpn, w = WPN[wi], [sx, sy, sz] = shoulder(me), dist = Math.hypot(pt.x - sx, pt.y - sy, pt.z - sz);
   const sp = w.spread * (me.down ? 1.6 : 1) * (1 + (w.bloom ? me.bloom || 0 : 0)), half = VH > VW ? clamp(CAM.zoom, 4, 22) * 1.25 : clamp(CAM.zoom, 4, 22);
-  const px = clamp(2 * Math.tan(sp) * Math.min(dist, w.range) * VH / (2 * half), 12, 170);
-  const c = el.children[0]; c.style.width = c.style.height = px + 'px';
+  const px = clamp(2 * Math.tan(sp) * Math.min(dist, w.range) * VH / (2 * half), 22, 170); /* (round 44) never smaller than 22 px */
+  const c = el.children[0]; c.style.width = c.style.height = px + 'px'; el.style.setProperty('--rr', (px / 2).toFixed(1) + 'px'); /* the tick marks sit just outside the ring */
   el.style.transform = `translate(${px0 != null ? px0 : INP.mx}px,${py0 != null ? py0 : INP.my}px)`;
   const rl = me.reloadT > 0 ? 1 - me.reloadT / WPN[me.reloadW != null ? me.reloadW : wi].reload : me.reloadVis > 0 ? 1 - me.reloadVis / w.reload : 0;
   el.children[1].style.display = rl > 0 ? '' : 'none'; el.children[1].style.setProperty('--p', (rl * 100).toFixed(0) + '%');

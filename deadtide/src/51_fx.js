@@ -77,3 +77,16 @@ function fusFxEvent(e) {
   }
   return false;
 }
+/* ================= (round 44) anti-air throws: what a melee mech / beast sends up at a flyer it can't reach ================= */
+const AAK = { blade: ['#ffa040', '#ffffff', 'cres'], shield: ['#5fe0ff', '#cfefff', 'ring'], venom: ['#7dff5a', '#d8ff90', 'ball'], fire: ['#ff7a2a', '#ffd27a', 'ball'], moon: ['#cfe8ff', '#ffffff', 'cres'], water: ['#5ab8ff', '#e0f4ff', 'ball'], rock: ['#8a7a60', '#c8b898', 'rock'] };
+function aaFxTick(dt) { if (!RND.aas || !RND.aas.length) return;
+  for (const r of RND.aas) { r.t += dt; const u = Math.min(1, r.t / r.T), x = lerp(r.x, r.e[0], u), y = lerp(r.y, r.e[1], u), z = lerp(r.z, r.e[2], u) + Math.sin(u * Math.PI) * (r.kd === 'rock' ? 0.8 : 0.2), K = AAK[r.kd] || AAK.fire, yaw = Math.atan2(r.e[1] - r.y, r.e[0] - r.x);
+    if (K[2] === 'cres') { fxAdd({ kind: 'cres', x, y, z, s0: 0.75, s1: 0.8, life: 0.04, col: K[0], op: 0.9, yaw, roll: 0.9 }); fxAdd({ kind: 'cres', x, y, z: z + 0.01, s0: 0.55, s1: 0.6, life: 0.04, col: K[1], op: 0.6, yaw, roll: 0.9 }); }
+    else if (K[2] === 'ring') fxAdd({ kind: 'ring', x, y, z, s0: 0.45, s1: 0.5, life: 0.04, col: K[0], op: 0.85 });
+    else if (K[2] === 'rock') { fxAdd({ kind: 'ball', x, y, z, s0: 0.22, s1: 0.24, life: 0.04, col: K[1], op: 0.25 }); addP({ x, y, z, vx: 0, vy: 0, vz: 0, g: 0, col: K[0], s: 0.22, life: 0.035 }); }
+    else { fxAdd({ kind: 'ball', x, y, z, s0: 0.26, s1: 0.3, life: 0.04, col: K[0], op: 0.75 }); fxAdd({ kind: 'ball', x, y, z, s0: 0.12, s1: 0.14, life: 0.04, col: K[1], op: 0.9 }); }
+    for (let k = 0; k < 2; k++) addP({ x: x + frnd(-0.12, 0.12), y: y + frnd(-0.12, 0.12), z, vx: 0, vy: 0, vz: r.kd === 'venom' || r.kd === 'water' ? -1 : 0.3, g: r.kd === 'venom' || r.kd === 'water' ? 4 : 0, col: k ? K[0] : K[1], s: 0.06, life: 0.3, smoke: r.kd === 'rock' ? 1 : 0 }); }
+  RND.aas = RND.aas.filter(r => r.t < r.T); }
+function aaFxEvent(e) { const K = AAK[e.kd] || AAK.fire;
+  if (e.k === 'aa') { (RND.aas = RND.aas || []).push({ x: e.x, y: e.y, z: e.z, e: e.e, T: Math.max(0.05, e.t), t: 0, kd: e.kd }); sfx(e.kd === 'blade' || e.kd === 'moon' ? 'mslash' : e.kd === 'rock' ? 'throw' : e.kd === 'fire' ? 'flamer' : 'spit', e.x, e.y); return; }
+  fxFlash(e.x, e.y, e.z, 0.7, K[0]); for (let k = 0; k < 10; k++) { const a = FXR() * 6.283, v = frnd(1.5, 4); addP({ x: e.x, y: e.y, z: e.z, vx: Math.cos(a) * v, vy: Math.sin(a) * v, vz: frnd(-1, 2.5), g: 6, col: k % 2 ? K[0] : K[1], s: 0.06, life: 0.4 }); } if (thr('aah', 0.08)) sfx(e.kd === 'rock' ? 'thunk' : 'rhit', e.x, e.y); }

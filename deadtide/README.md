@@ -494,3 +494,10 @@
 - 构建：`python3 deadtide/src/build.py --deploy`；`src/out/` 另有 `test.html`（带 `window.__dbg`）和 `artifact.html`（单人版）。
 - 测试（`node test/serve.js out 8766`）：`test/smoke.js`、`test/phone.js`、`test/coop.js`（需 `node test/peerserver.js`）、`test/balance.js`、`test/touchctl.js`、`test/views.js`、`test/buildings.js`、`test/mechanics.js`（任务 / 矮墙 / 建造指向 / 楼梯 / 门洞 / 摇杆）、`test/chars.js`（角色总览截图）、`test/round3.js`（搜刮补货 / 新丧尸 / 新武器 / 翻越 / 爬梯 / 捕兽夹 / 建造确认）、`56_props.js` 见源码、`test/cover.js`、`test/coop2.js`（2P 渲染 / 搜刮 / 天亮补货后两边地图一致）、`test/cut.js`、`test/qual.js`、`test/perf.js`、`test/aim.js`、`test/stances.js`、`test/knife.js`、`test/touchaim.js`、`test/round14.js`。无头 Chromium 的软件渲染很慢，测试时关掉绘制（`__dbg.skipDraw`），只在截图时渲染。
 - 本地存储键前缀 `deadtide.`；联机房间 id 前缀 `deadtide-`。
+
+## Round 44 — every mech and beast can hit flyers; bolder crosshair
+- Melee mechs / beasts reach flying zombies up to `BAL.aaZ` 5.8 above (was 2–3); melee target lock includes flyers.
+- Anti-air throw: when a flyer is beyond melee reach (≤ `BAL.aaR` 10), the normal attack becomes a homing shot ×`aaMul` 0.8 — 赤刃 blade wave, 青蛇 venom (poison), 赤龙 fireball (burn), 玉兔 crescent, 玄龟 water jet, 铁熊 rock; 铁卫 fires its rocket fist at once.
+- 工蜂 parcels burst at the flyer's height; mech guns aim steeply up at flyers (dz clamp 0.4 → 2.2).
+- Crosshair: 3 px ring with dark outline and faint dark disc, four tick marks, 6 px centre dot, minimum size 12 → 22 px.
+- test/round44.js: 12 mechs/beasts × 7 flyer types, near and mid range — all hit.
